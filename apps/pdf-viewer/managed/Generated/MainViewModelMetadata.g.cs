@@ -25,9 +25,13 @@ public static class MainViewModelMetadata
             new(12, "SearchMatchLabel", RustViewModelValueKind.String, false, false, "", null),
             new(13, "CanGoPreviousMatch", RustViewModelValueKind.Boolean, false, false, false, null),
             new(14, "CanGoNextMatch", RustViewModelValueKind.Boolean, false, false, false, null),
+            new(15, "OutlineVisible", RustViewModelValueKind.Boolean, true, false, true, null),
+            new(16, "HasOutline", RustViewModelValueKind.Boolean, false, false, false, null),
+            new(17, "OutlineStatus", RustViewModelValueKind.String, false, false, "No bookmarks", null),
         ],
         [
             new(1, "RecentFiles", RustViewModelValueKind.String, null, null, null, null, false),
+            new(2, "Outline", RustViewModelValueKind.Model, global::PdfViewer.Presentation.Generated.OutlineItemViewModelMetadata.Descriptor, null, null, new("Children", "Title", "HasChildren"), false),
         ],
         [
             new(1, "OpenFileCommand", true, null, false, null, false, false),

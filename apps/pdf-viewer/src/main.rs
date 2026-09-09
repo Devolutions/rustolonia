@@ -26,10 +26,12 @@ use avalonia::{
 };
 use base64::Engine;
 use generated_view_models::{
-    mount_main_window, MainViewModel, MainViewModelSink, MAIN_VIEW_MODEL_RECENT_FILES_CAPACITY,
+    mount_main_window, MainViewModel, MainViewModelSink, OutlineItemViewModel,
+    OutlineItemViewModelSink, MAIN_VIEW_MODEL_RECENT_FILES_CAPACITY,
 };
 use pdf::{
-    create_sample_pdf, load_page, render_page, search_document, DocumentState, PdfHandle, SearchHit,
+    create_sample_pdf, load_page, outline_len, render_page, search_document, DocumentState,
+    OutlineEntry, PdfHandle, SearchHit,
 };
 use std::path::{Path, PathBuf};
 use std::sync::{
@@ -58,6 +60,7 @@ struct Shared {
     search_results: Vec<SearchHit>,
     search_index: usize,
     search_generation: i64,
+    outline_visible: bool,
 }
 
 impl Shared {
@@ -79,7 +82,91 @@ impl Shared {
             search_results: Vec::new(),
             search_index: 0,
             search_generation: 0,
+            outline_visible: true,
         }
+    }
+}
+
+struct OutlineItemModel {
+    title: String,
+    page_label: String,
+    page: Option<usize>,
+    children: Vec<OutlineItemModel>,
+    shared: Arc<Mutex<Shared>>,
+}
+
+impl OutlineItemViewModel for OutlineItemModel {
+    fn attach(&mut self, sink: OutlineItemViewModelSink) -> Result<()> {
+        sink.set_title(&self.title)?;
+        sink.set_page_label(&self.page_label)?;
+        sink.set_has_children(!self.children.is_empty())?;
+        sink.set_go_to_enabled(self.page.is_some())?;
+        for child in self.children.drain(..) {
+            sink.add_children(child)?;
+        }
+        Ok(())
+    }
+
+    fn detach(&mut self) -> Result<()> {
+        Ok(())
+    }
+
+    fn go_to(&mut self) -> Result<()> {
+        let Some(page) = self.page else {
+            return Ok(());
+        };
+        let (path, pdf, current) = {
+            let shared = self.shared.lock().expect("shared state lock poisoned");
+            let Some(document) = shared.document.as_ref() else {
+                return Ok(());
+            };
+            (
+                document.path.clone(),
+                document.pdf.clone(),
+                document.page,
+            )
+        };
+        if current == page {
+            return Ok(());
+        }
+        start_loading(
+            &self.shared,
+            path,
+            page,
+            Some(pdf),
+            format!("Opening bookmark on page {}...", page + 1),
+            false,
+        )
+    }
+}
+
+fn outline_models(
+    entries: Vec<OutlineEntry>,
+    shared: Arc<Mutex<Shared>>,
+) -> Vec<OutlineItemModel> {
+    entries
+        .into_iter()
+        .map(|entry| OutlineItemModel {
+            title: entry.title,
+            page_label: entry
+                .page
+                .map(|page| (page + 1).to_string())
+                .unwrap_or_default(),
+            page: entry.page,
+            children: outline_models(entry.children, shared.clone()),
+            shared: shared.clone(),
+        })
+        .collect()
+}
+
+fn outline_status(entries: &[OutlineEntry]) -> (bool, String) {
+    let count = outline_len(entries);
+    if count == 0 {
+        (false, "This document has no bookmarks".to_string())
+    } else if count == 1 {
+        (true, "1 bookmark".to_string())
+    } else {
+        (true, format!("{count} bookmarks"))
     }
 }
 
@@ -105,7 +192,8 @@ impl MainViewModel for Model {
         }
         publish_state(&self.shared)?;
         let recent = self.shared().recent.clone();
-        sink.publish_recent_files(&recent)
+        sink.publish_recent_files(&recent)?;
+        Ok(())
     }
 
     fn detach(&mut self) -> Result<()> {
@@ -172,6 +260,18 @@ impl MainViewModel for Model {
         }
         if is_empty {
             clear_search_state(&self.shared)?;
+        }
+        Ok(())
+    }
+
+    fn set_outline_visible(&mut self, value: bool) -> Result<()> {
+        let sink = {
+            let mut shared = self.shared();
+            shared.outline_visible = value;
+            shared.sink.clone()
+        };
+        if let Some(sink) = sink {
+            sink.set_outline_visible(value)?;
         }
         Ok(())
     }
@@ -305,13 +405,14 @@ impl Model {
 }
 
 fn publish_state(shared: &Arc<Mutex<Shared>>) -> Result<()> {
-    let (sink, document, status, loading) = {
+    let (sink, document, status, loading, outline_visible) = {
         let shared = shared.lock().expect("shared state lock poisoned");
         (
             shared.sink.clone(),
             shared.document.clone(),
             shared.status.clone(),
             shared.loading,
+            shared.outline_visible,
         )
     };
     let Some(sink) = sink else {
@@ -321,7 +422,9 @@ fn publish_state(shared: &Arc<Mutex<Shared>>) -> Result<()> {
     sink.set_title(APP_TITLE)?;
     sink.set_status(status)?;
     sink.set_is_loading(loading)?;
+    sink.set_outline_visible(outline_visible)?;
     if let Some(document) = document {
+        let (has_outline, outline_status) = outline_status(&document.outline);
         sink.set_document_name(document.name)?;
         sink.set_page_image(base64::engine::general_purpose::STANDARD.encode(document.image))?;
         sink.set_page_text(document.text)?;
@@ -332,6 +435,12 @@ fn publish_state(shared: &Arc<Mutex<Shared>>) -> Result<()> {
         ))?;
         sink.set_can_go_previous(document.page > 0)?;
         sink.set_can_go_next(document.page + 1 < document.page_count)?;
+        sink.set_has_outline(has_outline)?;
+        sink.set_outline_status(outline_status)?;
+        sink.clear_outline()?;
+        for item in outline_models(document.outline, shared.clone()) {
+            sink.add_outline(item)?;
+        }
     } else {
         sink.set_document_name("")?;
         sink.set_page_image("")?;
@@ -339,6 +448,9 @@ fn publish_state(shared: &Arc<Mutex<Shared>>) -> Result<()> {
         sink.set_page_label("No page loaded")?;
         sink.set_can_go_previous(false)?;
         sink.set_can_go_next(false)?;
+        sink.set_has_outline(false)?;
+        sink.set_outline_status("No bookmarks")?;
+        sink.clear_outline()?;
     }
     Ok(())
 }
@@ -559,11 +671,18 @@ fn apply_document(
     let page_label = format!("Page {} of {}", document.page + 1, document.page_count);
     let can_go_previous = document.page > 0;
     let can_go_next = document.page + 1 < document.page_count;
-    let (sink, recent, status) = {
+    let (has_outline, outline_status) = outline_status(&document.outline);
+    let outline = document.outline.clone();
+    let (sink, recent, status, republish_outline) = {
         let mut shared = shared.lock().expect("shared state lock poisoned");
         if shared.load_generation != generation {
             return Ok(());
         }
+        let republish_outline = shared
+            .document
+            .as_ref()
+            .map(|current| current.path != document.path)
+            .unwrap_or(true);
         shared.status = format!(
             "Loaded {} with {} page{}",
             document.name,
@@ -579,6 +698,7 @@ fn apply_document(
             shared.sink.clone(),
             shared.recent.clone(),
             shared.status.clone(),
+            republish_outline,
         )
     };
     if let Some(sink) = sink {
@@ -593,6 +713,11 @@ fn apply_document(
         batch.set_can_go_next(can_go_next);
         batch.set_is_loading(false);
         batch.set_recent_files(&recent);
+        if republish_outline {
+            batch.set_has_outline(has_outline);
+            batch.set_outline_status(outline_status);
+            batch.replace_outline_snapshot(outline_models(outline, shared.clone()));
+        }
         sink.submit_batch(batch).map(|_| ())?;
     }
     Ok(())
@@ -638,7 +763,12 @@ fn start_loading(
             let result = if create_sample {
                 create_sample_pdf(&worker_path).and_then(|_| load_page(&worker_path, page))
             } else if let Some(pdf) = pdf {
-                render_page(pdf, &worker_path, page)
+                let outline = worker_shared
+                    .lock()
+                    .ok()
+                    .and_then(|state| state.document.as_ref().map(|document| document.outline.clone()))
+                    .unwrap_or_default();
+                render_page(pdf, &worker_path, page, outline)
             } else {
                 load_page(&worker_path, page)
             };

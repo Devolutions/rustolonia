@@ -118,6 +118,30 @@
           "writable": false,
           "nullable": false,
           "initialBoolean": false
+        },
+        {
+          "id": 15,
+          "name": "OutlineVisible",
+          "kind": "Boolean",
+          "writable": true,
+          "nullable": false,
+          "initialBoolean": true
+        },
+        {
+          "id": 16,
+          "name": "HasOutline",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 17,
+          "name": "OutlineStatus",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "No bookmarks"
         }
       ],
       "collections": [
@@ -126,6 +150,18 @@
           "name": "RecentFiles",
           "elementKind": "String",
           "recursive": false
+        },
+        {
+          "id": 2,
+          "name": "Outline",
+          "elementKind": "Model",
+          "elementModelName": "OutlineItemViewModel",
+          "recursive": false,
+          "tree": {
+            "childrenCollection": "Children",
+            "headerPath": "Title",
+            "hasChildrenProperty": "HasChildren"
+          }
         }
       ],
       "maps": [],
@@ -257,6 +293,23 @@
                   "items": []
                 }
               ]
+            },
+            {
+              "id": 9,
+              "name": "View",
+              "kind": "Submenu",
+              "header": "_View",
+              "items": [
+                {
+                  "id": 10,
+                  "name": "Bookmarks",
+                  "kind": "Toggle",
+                  "header": "_Bookmarks",
+                  "toggleProperty": "OutlineVisible",
+                  "gesture": "Ctrl\u002BB",
+                  "items": []
+                }
+              ]
             }
           ]
         }
@@ -267,6 +320,57 @@
         "activateCommand": "OpenRecentFile",
         "capacity": 5
       }
+    },
+    {
+      "id": 2,
+      "name": "OutlineItemViewModel",
+      "managedNamespace": "PdfViewer.Presentation.Generated",
+      "properties": [
+        {
+          "id": 1,
+          "name": "Title",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 2,
+          "name": "PageLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 3,
+          "name": "HasChildren",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        }
+      ],
+      "collections": [
+        {
+          "id": 1,
+          "name": "Children",
+          "elementKind": "Model",
+          "elementModelName": "OutlineItemViewModel",
+          "recursive": true
+        }
+      ],
+      "maps": [],
+      "commands": [
+        {
+          "id": 1,
+          "name": "GoTo",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        }
+      ],
+      "menus": []
     }
   ],
   "views": [

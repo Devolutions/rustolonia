@@ -3,15 +3,23 @@
   "files": [
     {
       "path": "MainViewModelAdapter.g.cs",
-      "sha256": "8f6cd3b672c4b45a1de8dbc868dd548bfd8850fd936fb0900e1872eea1cfed94"
+      "sha256": "a08c1189a689594e440c9f3ee1a44a22c25a44570edbc8cdb56db95007427422"
     },
     {
       "path": "MainViewModelMenus.g.cs",
-      "sha256": "c45507a6ae76117c39a1aec13bcad6c1113dcebc737764ed921ffe1dd9f2d527"
+      "sha256": "26fdea5a3f6fa4a3b2539c3b4cf809a31b832e14c8672e308a09406aa4515333"
     },
     {
       "path": "MainViewModelMetadata.g.cs",
-      "sha256": "8d450647afa77afda44003dcdd5fe3023db0dcf14de6a76725f978f5e3e1b19e"
+      "sha256": "fd3c61296fe9ac6cf691b001779c69e4a206be642c24b76cc457e9ec02dc418a"
+    },
+    {
+      "path": "OutlineItemViewModelAdapter.g.cs",
+      "sha256": "8d925dd9abe563750b161fd653e026bc7d410ad7e2047488ff267a040042428e"
+    },
+    {
+      "path": "OutlineItemViewModelMetadata.g.cs",
+      "sha256": "daec627f30a9d80a7c35403a6ef97ea21ab63355b37d2e26ff1a3649b990a337"
     }
   ]
 }

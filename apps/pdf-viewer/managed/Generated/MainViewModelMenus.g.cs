@@ -68,6 +68,17 @@ public static class MainViewModelMenus
         pageMenu.Items.Add(nextPageItem);
         keyBindings?.Add(new KeyBinding { Gesture = RustMenu.ParseGesture("Alt+Right")!, Command = nextPageCommand });
         menu.Items.Add(pageItem);
+        var viewItem = new NativeMenuItem("_View");
+        var viewMenu = new NativeMenu();
+        viewItem.Menu = viewMenu;
+        var bookmarksCommand = new RustMenuCommand(parameter => { model.OutlineVisible = !model.OutlineVisible; }, null);
+        var bookmarksItem = new NativeMenuItem("_Bookmarks") { Command = bookmarksCommand };
+        bookmarksItem.ToggleType = MenuItemToggleType.CheckBox;
+        bookmarksItem.Gesture = RustMenu.ParseGesture("Ctrl+B");
+        scope.Observe("OutlineVisible", () => bookmarksItem.IsChecked = model.OutlineVisible);
+        viewMenu.Items.Add(bookmarksItem);
+        keyBindings?.Add(new KeyBinding { Gesture = RustMenu.ParseGesture("Ctrl+B")!, Command = bookmarksCommand });
+        menu.Items.Add(viewItem);
         return menu;
     }
 

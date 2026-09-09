@@ -15,6 +15,11 @@ temporary directory and renders its first page. Passing a local PDF path opens
 that document instead. The **Open PDF** command uses Avalonia's platform file
 picker, and **Previous**/**Next** navigate rendered pages.
 
+The left **Bookmarks** pane reads the PDF outline (table of contents) the same
+way Acrobat Reader does: nested entries expand in place, and clicking a
+bookmark seeks to that page. **View → Bookmarks** (Ctrl+B) shows or hides the
+pane. Documents without an `/Outlines` dictionary show an empty-state message.
+
 ## Build on Windows x64
 
 From the repository root:
@@ -40,11 +45,21 @@ Pop-Location
 ```
 
 After building, the Windows UI Automation smoke test exercises startup sample
-generation, page rendering, next/previous navigation and natural shutdown:
+generation, page rendering, bookmark jumps, next/previous navigation and
+natural shutdown:
 
 ```powershell
 powershell.exe -NoProfile -STA -ExecutionPolicy Bypass `
   -File ./apps/pdf-viewer/tests/test-bundle.ps1
+```
+
+To exercise Acrobat-style table-of-contents navigation on a real document:
+
+```powershell
+powershell.exe -NoProfile -STA -ExecutionPolicy Bypass `
+  -File ./apps/pdf-viewer/tests/test-bundle.ps1 `
+  -PdfPath 'C:\Users\mamoreau\Downloads\[MS-RDPBCGR].pdf' `
+  -TimeoutSeconds 90
 ```
 
 The app is a portable Win32 GUI bundle, not an installer. File-association

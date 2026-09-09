@@ -4,9 +4,9 @@
         xmlns:local="using:PdfViewer.Presentation"
         x:Class="PdfViewer.Presentation.Views.MainWindow"
         x:DataType="vm:MainViewModelAdapter"
-        Width="1280"
+        Width="1520"
         Height="860"
-        MinWidth="980"
+        MinWidth="1180"
         MinHeight="660"
         Title="{Binding Title}"
         Background="{StaticResource WindowBrush}"
@@ -112,6 +112,52 @@
     </Style>
     <Style Selector="Button.toolbar:disabled">
       <Setter Property="Opacity" Value="0.4" />
+    </Style>
+    <Style Selector="ToggleButton.toolbar">
+      <Setter Property="MinHeight" Value="34" />
+      <Setter Property="Padding" Value="14,5" />
+      <Setter Property="Background" Value="{StaticResource ToolbarBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+      <Setter Property="CornerRadius" Value="7" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="ToggleButton.toolbar:pointerover">
+      <Setter Property="Background" Value="#2A3449" />
+      <Setter Property="BorderBrush" Value="#42516D" />
+    </Style>
+    <Style Selector="ToggleButton.toolbar:checked">
+      <Setter Property="Background" Value="{StaticResource AccentMutedBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+      <Setter Property="Foreground" Value="{StaticResource AccentHoverBrush}" />
+    </Style>
+    <Style Selector="Button.bookmark">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="4,2" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+      <Setter Property="FontSize" Value="13" />
+    </Style>
+    <Style Selector="Button.bookmark:pointerover">
+      <Setter Property="Background" Value="{StaticResource AccentMutedBrush}" />
+    </Style>
+    <Style Selector="Button.bookmark:disabled">
+      <Setter Property="Opacity" Value="0.55" />
+    </Style>
+    <Style Selector="TreeView.bookmarks">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+    </Style>
+    <Style Selector="TreeView.bookmarks TreeViewItem">
+      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+      <Setter Property="MinHeight" Value="26" />
+      <Setter Property="Padding" Value="2,1" />
     </Style>
     <Style Selector="Button.iconButton">
       <Setter Property="Width" Value="32" />
@@ -240,14 +286,21 @@
                        AutomationProperties.Name="Status" />
           </StackPanel>
         </Grid>
-        <Grid Grid.Row="1" ColumnDefinitions="Auto,Auto,*,Auto,Auto" ColumnSpacing="10">
+        <Grid Grid.Row="1" ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto" ColumnSpacing="10">
           <Button x:Name="OpenButton"
                   Grid.Column="0"
                   Classes="toolbar primary"
                   Content="Open PDF"
                   Command="{Binding OpenFileCommand}"
                   AutomationProperties.Name="OpenButton" />
-          <Border Grid.Column="1" Classes="pageControl">
+          <ToggleButton x:Name="BookmarksButton"
+                        Grid.Column="1"
+                        Classes="toolbar"
+                        Content="Bookmarks"
+                        IsChecked="{Binding OutlineVisible, Mode=TwoWay}"
+                        ToolTip.Tip="Show or hide the bookmarks pane (Ctrl+B)"
+                        AutomationProperties.Name="BookmarksButton" />
+          <Border Grid.Column="2" Classes="pageControl">
             <Grid ColumnDefinitions="Auto,Auto,Auto" ColumnSpacing="3">
               <Button x:Name="PreviousPageButton"
                       Grid.Column="0"
@@ -276,7 +329,7 @@
                       AutomationProperties.Name="NextPageButton" />
             </Grid>
           </Border>
-          <Border Grid.Column="3" Classes="searchControl">
+          <Border Grid.Column="4" Classes="searchControl">
             <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="3">
               <TextBox x:Name="SearchBox"
                        Grid.Column="0"
@@ -308,7 +361,7 @@
                       AutomationProperties.Name="NextMatchButton" />
             </Grid>
           </Border>
-          <Border Grid.Column="4" Classes="statusPill">
+          <Border Grid.Column="5" Classes="statusPill">
             <StackPanel Orientation="Horizontal" Spacing="7">
               <Ellipse Width="8"
                        Height="8"
@@ -323,8 +376,66 @@
         </Grid>
       </Grid>
     </Border>
-    <Grid Margin="18,18,18,20" ColumnDefinitions="*,340" ColumnSpacing="18">
-      <Border Grid.Column="0" Classes="card" Padding="16">
+    <Grid Margin="18,18,18,20" ColumnDefinitions="Auto,Auto,*,340" ColumnSpacing="12">
+      <Border Grid.Column="0"
+              Width="280"
+              MinWidth="180"
+              Classes="card"
+              Padding="14"
+              IsVisible="{Binding OutlineVisible}">
+        <Grid RowDefinitions="Auto,Auto,*" RowSpacing="10">
+          <StackPanel Spacing="2">
+            <TextBlock Classes="eyebrow" Text="NAVIGATION" />
+            <TextBlock Classes="sectionTitle" Text="Bookmarks" />
+          </StackPanel>
+          <TextBlock x:Name="OutlineStatus"
+                     Grid.Row="1"
+                     Classes="muted"
+                     Text="{Binding OutlineStatus}"
+                     TextWrapping="Wrap"
+                     AutomationProperties.Name="{Binding OutlineStatus}" />
+          <Grid Grid.Row="2">
+            <TextBlock Classes="muted"
+                       Margin="8,16"
+                       Text="This PDF has no table of contents. Open a document with bookmarks to navigate like Acrobat Reader."
+                       TextAlignment="Center"
+                       TextWrapping="Wrap"
+                       IsVisible="{Binding !HasOutline}"
+                       AutomationProperties.Name="OutlineEmpty" />
+            <TreeView x:Name="OutlineTree"
+                      Classes="bookmarks"
+                      ItemsSource="{Binding Outline}"
+                      IsVisible="{Binding HasOutline}"
+                      AutomationProperties.Name="OutlineTree">
+              <TreeView.ItemTemplate>
+                <TreeDataTemplate x:DataType="vm:OutlineItemViewModelAdapter"
+                                  ItemsSource="{Binding Children}">
+                  <Button Classes="bookmark"
+                          Command="{Binding GoToCommand}"
+                          ToolTip.Tip="{Binding Title}"
+                          AutomationProperties.Name="{Binding Title}">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                      <TextBlock Text="{Binding Title}"
+                                 TextTrimming="CharacterEllipsis"
+                                 VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="1"
+                                 Classes="muted"
+                                 Text="{Binding PageLabel}"
+                                 VerticalAlignment="Center" />
+                    </Grid>
+                  </Button>
+                </TreeDataTemplate>
+              </TreeView.ItemTemplate>
+            </TreeView>
+          </Grid>
+        </Grid>
+      </Border>
+      <GridSplitter Grid.Column="1"
+                    Width="4"
+                    Background="{StaticResource DividerBrush}"
+                    ResizeDirection="Columns"
+                    IsVisible="{Binding OutlineVisible}" />
+      <Border Grid.Column="2" Classes="card" Padding="16">
         <Grid RowDefinitions="Auto,*" RowSpacing="14">
           <Grid Grid.Row="0" ColumnDefinitions="*,Auto" ColumnSpacing="12">
             <StackPanel Spacing="2">
@@ -379,7 +490,7 @@
           </Border>
         </Grid>
       </Border>
-      <Border Grid.Column="1" Classes="card" Padding="16">
+      <Border Grid.Column="3" Classes="card" Padding="16">
         <Grid RowDefinitions="Auto,Auto,Auto,*" RowSpacing="16">
           <StackPanel Grid.Row="0" Spacing="2">
             <TextBlock Classes="eyebrow" Text="DOCUMENT INSIGHTS" />
@@ -414,13 +525,15 @@
                          Grid.Column="1"
                          Foreground="{StaticResource AccentHoverBrush}"
                          FontWeight="SemiBold"
-                         Text="{Binding SearchMatchLabel}" />
+                         Text="{Binding SearchMatchLabel}"
+                         AutomationProperties.Name="{Binding SearchMatchLabel}" />
               <TextBlock x:Name="SearchStatus"
                          Grid.Row="1"
                          Grid.ColumnSpan="2"
                          Classes="muted"
                          Text="{Binding SearchStatus}"
-                         TextWrapping="Wrap" />
+                         TextWrapping="Wrap"
+                         AutomationProperties.Name="{Binding SearchStatus}" />
             </Grid>
           </Border>
           <Border Grid.Row="3"
@@ -441,7 +554,7 @@
                            LineHeight="21"
                            Text="{Binding PageText}"
                            TextWrapping="Wrap"
-                           AutomationProperties.Name="PageText" />
+                           AutomationProperties.Name="{Binding PageText}" />
               </ScrollViewer>
             </Grid>
           </Border>
