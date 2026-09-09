@@ -13,6 +13,8 @@
     <RootNamespace>Avalonia.Host</RootNamespace>
     <IsAotCompatible>true</IsAotCompatible>
     <EnableRuntimeMarshalling>true</EnableRuntimeMarshalling>
+    <AvaloniaRustDeveloperTools Condition="'$(AvaloniaRustDeveloperTools)' == ''">false</AvaloniaRustDeveloperTools>
+    <DefineConstants Condition="'$(AvaloniaRustDeveloperTools)' == 'true'">$(DefineConstants);AVN_DEVELOPER_TOOLS</DefineConstants>
     <UseMicroCom>true</UseMicroCom>
     <UseMicroComGeneratorRoslyn>true</UseMicroComGeneratorRoslyn>
     <!-- Code-first host default: no sample presentation. Apps supply AvaloniaRustPresentationProjects and AvaloniaRustViewRegistryFile. -->
@@ -61,6 +63,9 @@
     <ProjectReference Include="$(AvaloniaProducerRoot)\src\Avalonia.Themes.Fluent\Avalonia.Themes.Fluent.csproj" />
     <ProjectReference Include="..\interop\Avalonia.Rust\Avalonia.Rust.csproj" />
     <ProjectReference Include="..\interop\Avalonia.Rust.Interop\Avalonia.Rust.Interop.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(AvaloniaRustDeveloperTools)' == 'true'">
+    <PackageReference Include="AvaloniaUI.DiagnosticsSupport" />
   </ItemGroup>
   <ItemGroup Condition="'$(AvaloniaRustPresentationProjects)' != ''">
     <AvaloniaRustPresentationProject Include="$(AvaloniaRustPresentationProjects)" />

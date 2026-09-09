@@ -22,6 +22,7 @@ mod filter;
 mod format;
 mod icon;
 mod monitoring;
+mod reconcile;
 mod refresh;
 mod sort;
 
@@ -112,6 +113,8 @@ struct MonitorState {
     processes: Vec<ProcessInfo>,
     stats: SystemStats,
     visible: Vec<usize>,
+    published_keys: Vec<String>,
+    published_rows: HashMap<String, RowModel>,
     search_text: String,
     filters: Filters,
     pinned: HashSet<String>,
@@ -132,7 +135,6 @@ struct MonitorState {
     show_search_help: bool,
     columns: ColumnVisibility,
     refresh_ms: u64,
-    window_generation: i64,
     batch_generation: i64,
     regex_cache: Mutex<HashMap<String, Option<Regex>>>,
 }
@@ -155,6 +157,8 @@ impl MonitorState {
             processes: Vec::new(),
             stats: SystemStats::default(),
             visible: Vec::new(),
+            published_keys: Vec::new(),
+            published_rows: HashMap::new(),
             search_text: String::new(),
             filters: Filters::default(),
             pinned: HashSet::new(),
@@ -175,7 +179,6 @@ impl MonitorState {
             show_search_help: false,
             columns: ColumnVisibility::default(),
             refresh_ms: 3000,
-            window_generation: 1,
             batch_generation: 1,
             regex_cache: Mutex::new(HashMap::new()),
         }
@@ -228,11 +231,6 @@ impl MonitorState {
         self.batch_generation
     }
 
-    fn bump_window(&mut self) -> i64 {
-        self.window_generation = self.window_generation.saturating_add(1);
-        self.window_generation
-    }
-
     fn selected_process(&self) -> Option<&ProcessInfo> {
         self.visible
             .get(usize::try_from(self.selected_index).ok()?)
@@ -274,8 +272,9 @@ impl MainViewModel for Model {
         {
             let mut state = self.state.lock().expect("monitor state lock poisoned");
             let _ = state.collect();
-            let generation = state.window_generation;
-            publish_snapshot(&mut state, &sink, generation, true)?;
+            state.published_keys.clear();
+            state.published_rows.clear();
+            publish_snapshot(&mut state, &sink)?;
         }
         {
             let mut shared = self.shared.lock().expect("shared lock poisoned");
@@ -297,15 +296,14 @@ impl MainViewModel for Model {
 
     fn set_search_text(&mut self, value: String) -> Result<()> {
         let sink = self.sink.clone();
-        let generation = {
+        {
             let mut state = self.state.lock().expect("monitor state lock poisoned");
             state.search_text = value;
             state.rebuild_visible();
-            state.bump_window()
         };
         if let Some(sink) = sink {
             let mut state = self.state.lock().expect("monitor state lock poisoned");
-            publish_snapshot(&mut state, &sink, generation, true)?;
+            publish_snapshot(&mut state, &sink)?;
         }
         Ok(())
     }
@@ -437,7 +435,7 @@ impl MainViewModel for Model {
 
     fn refresh(&mut self) -> Result<()> {
         let sink = self.sink.clone();
-        let generation = {
+        {
             let mut state = self.state.lock().expect("monitor state lock poisoned");
             if let Err(error) = state.collect() {
                 if let Some(sink) = &sink {
@@ -445,11 +443,10 @@ impl MainViewModel for Model {
                 }
                 return Ok(());
             }
-            state.bump_window()
         };
         if let Some(sink) = sink {
             let mut state = self.state.lock().expect("monitor state lock poisoned");
-            publish_snapshot(&mut state, &sink, generation, true)?;
+            publish_snapshot(&mut state, &sink)?;
         }
         Ok(())
     }
@@ -490,7 +487,7 @@ impl MainViewModel for Model {
 
     fn pin(&mut self, value: String) -> Result<()> {
         let sink = self.sink.clone();
-        let generation = {
+        {
             let mut state = self.state.lock().expect("monitor state lock poisoned");
             let command = state
                 .visible_process_by_key(&value)
@@ -502,11 +499,10 @@ impl MainViewModel for Model {
                 state.pinned.insert(command);
             }
             state.rebuild_visible();
-            state.bump_window()
         };
         if let Some(sink) = sink {
             let mut state = self.state.lock().expect("monitor state lock poisoned");
-            publish_snapshot(&mut state, &sink, generation, true)?;
+            publish_snapshot(&mut state, &sink)?;
         }
         Ok(())
     }
@@ -554,7 +550,7 @@ impl MainViewModel for Model {
             },
         )?;
         let sink = self.sink.clone();
-        let generation = {
+        {
             let mut state = self.state.lock().expect("monitor state lock poisoned");
             if state.sort_column == column {
                 state.sort_descending = !state.sort_descending;
@@ -563,18 +559,17 @@ impl MainViewModel for Model {
                 state.sort_descending = true;
             }
             state.rebuild_visible();
-            state.bump_window()
         };
         if let Some(sink) = sink {
             let mut state = self.state.lock().expect("monitor state lock poisoned");
-            publish_snapshot(&mut state, &sink, generation, true)?;
+            publish_snapshot(&mut state, &sink)?;
         }
         Ok(())
     }
 
     fn confirm_kill(&mut self) -> Result<()> {
         let sink = self.sink.clone();
-        let generation = {
+        {
             let mut state = self.state.lock().expect("monitor state lock poisoned");
             state.show_kill_confirm = false;
             let Some(pending) = state.pending_kill.take() else {
@@ -594,12 +589,11 @@ impl MainViewModel for Model {
                 return Ok(());
             }
             let _ = state.collect();
-            state.bump_window()
         };
         if let Some(sink) = sink {
             let mut state = self.state.lock().expect("monitor state lock poisoned");
             sink.set_show_kill_confirm(false)?;
-            publish_snapshot(&mut state, &sink, generation, true)?;
+            publish_snapshot(&mut state, &sink)?;
         }
         Ok(())
     }
@@ -867,47 +861,6 @@ impl MainViewModel for Model {
         self.set_overlay(Overlay::None, false)
     }
 
-    fn request_processes_range(&mut self, request: RangeRequest) -> Result<()> {
-        let Some(sink) = self.sink.clone() else {
-            return Ok(());
-        };
-        if !sink.supports_richer_shapes() {
-            return Ok(());
-        }
-        let Some(mut page) = sink.processes_page(request.offset) else {
-            return Ok(());
-        };
-        if page.generation() != request.generation {
-            return Ok(());
-        }
-        let rows = {
-            let state = self.state.lock().expect("monitor state lock poisoned");
-            if state.window_generation != request.generation {
-                return Ok(());
-            }
-            let start = request.offset.max(0) as usize;
-            let end = (start + request.length.max(0) as usize).min(state.visible.len());
-            state.visible[start.min(end)..end]
-                .iter()
-                .filter_map(|&index| state.processes.get(index).cloned())
-                .map(|process| {
-                    let pinned = state.pinned.contains(&process.command);
-                    let high_usage = process.cpu_usage > 50.0
-                        || (state.stats.memory_total > 0
-                            && process.memory_usage * 10 > state.stats.memory_total);
-                    RowModel {
-                        process,
-                        pinned,
-                        high_usage,
-                    }
-                })
-                .collect::<Vec<_>>()
-        };
-        for row in rows {
-            sink.push_processes_row(&mut page, row);
-        }
-        sink.publish_processes_page(page).map(|_| ())
-    }
 }
 
 #[derive(Clone, Copy)]
@@ -949,15 +902,14 @@ impl Model {
 
     fn update_filter(&mut self, update: impl FnOnce(&mut Filters)) -> Result<()> {
         let sink = self.sink.clone();
-        let generation = {
+        {
             let mut state = self.state.lock().expect("monitor state lock poisoned");
             update(&mut state.filters);
             state.rebuild_visible();
-            state.bump_window()
         };
         if let Some(sink) = sink {
             let mut state = self.state.lock().expect("monitor state lock poisoned");
-            publish_snapshot(&mut state, &sink, generation, true)?;
+            publish_snapshot(&mut state, &sink)?;
         }
         Ok(())
     }
@@ -983,18 +935,7 @@ fn start_refresh_thread(
                 if state.is_frozen {
                     None
                 } else {
-                    let previous = state.visible.len();
-                    if let Err(error) = state.collect() {
-                        Some(Err(error))
-                    } else {
-                        let reset = state.visible.len() != previous;
-                        let generation = if reset {
-                            state.bump_window()
-                        } else {
-                            state.window_generation
-                        };
-                        Some(Ok((generation, reset)))
-                    }
+                    Some(state.collect())
                 }
             };
             match outcome {
@@ -1002,9 +943,9 @@ fn start_refresh_thread(
                 Some(Err(error)) => {
                     let _ = sink.set_error_message(Some(error));
                 }
-                Some(Ok((generation, reset))) => {
+                Some(Ok(())) => {
                     let mut state = state.lock().expect("monitor state lock poisoned");
-                    let _ = publish_snapshot(&mut state, &sink, generation, reset);
+                    let _ = publish_snapshot(&mut state, &sink);
                 }
             }
         },
@@ -1014,8 +955,6 @@ fn start_refresh_thread(
 fn publish_snapshot(
     state: &mut MonitorState,
     sink: &MainViewModelSink,
-    generation: i64,
-    reset_window: bool,
 ) -> Result<()> {
     let cpu_avg = if state.stats.cpu_usage.is_empty() {
         0.0
@@ -1026,7 +965,6 @@ fn publish_snapshot(
     let storage_percent =
         format::percent(state.stats.disk_used_bytes, state.stats.disk_total_bytes);
     let mut batch = sink.batch(state.next_batch_generation());
-    // Use a unique generation even when we don't bump the window.
     batch.set_search_text(&state.search_text);
     batch.set_is_frozen(state.is_frozen);
     batch.set_is_dark_theme(state.is_dark_theme);
@@ -1135,14 +1073,38 @@ fn publish_snapshot(
     batch.set_memory_percent_label(format!("{memory_percent:.1}%"));
     batch.set_storage_percent_label(format!("{storage_percent:.1}%"));
     batch.replace_cpu_cores_snapshot(core_rows(&state.stats.cpu_usage));
-    sink.submit_batch(batch)?;
-    if sink.supports_richer_shapes() {
-        if reset_window {
-            sink.reset_processes(generation, state.visible.len() as i64)?;
+    let desired: Vec<_> = state
+        .visible
+        .iter()
+        .map(|&index| process_key(&state.processes[index]))
+        .collect();
+    for (&index, key) in state.visible.iter().zip(&desired) {
+        let process = &state.processes[index];
+        let values = RowValues {
+            process: process.clone(),
+            pinned: state.pinned.contains(&process.command),
+            high_usage: process.cpu_usage > 50.0
+                || (state.stats.memory_total > 0
+                    && process.memory_usage > state.stats.memory_total / 10),
+        };
+        if let Some(row) = state.published_rows.get(key) {
+            row.update(values)?;
         } else {
-            sink.refresh_processes()?;
+            state.published_rows.insert(key.clone(), RowModel::new(values));
         }
     }
+    for change in reconcile::reconcile(&mut state.published_keys, &desired) {
+        match change {
+            reconcile::Change::Remove(index) => batch.remove_processes(index as i32),
+            reconcile::Change::Insert(index) => {
+                batch.insert_processes(index as i32, state.published_rows[&desired[index]].clone());
+            }
+            reconcile::Change::Move { from, to } => batch.move_processes(from as i32, to as i32),
+        }
+    }
+    let wanted: HashSet<_> = desired.iter().collect();
+    state.published_rows.retain(|key, _| wanted.contains(key));
+    sink.submit_batch(batch)?;
     Ok(())
 }
 
@@ -1258,56 +1220,97 @@ impl CpuCoreViewModel for CoreRow {
     }
 }
 
-struct RowModel {
+struct RowValues {
     process: ProcessInfo,
     pinned: bool,
     high_usage: bool,
 }
 
+struct RowState {
+    values: RowValues,
+    sink: Option<ProcessRowViewModelSink>,
+    generation: i64,
+}
+
+#[derive(Clone)]
+struct RowModel(Arc<Mutex<RowState>>);
+
+impl RowModel {
+    fn new(values: RowValues) -> Self {
+        Self(Arc::new(Mutex::new(RowState {
+            values,
+            sink: None,
+            generation: 1,
+        })))
+    }
+
+    fn update(&self, values: RowValues) -> Result<()> {
+        let mut state = self.0.lock().expect("process row lock poisoned");
+        state.values = values;
+        state.generation = state.generation.saturating_add(1);
+        if let Some(sink) = &state.sink {
+            state.values.publish(sink, state.generation)?;
+        }
+        Ok(())
+    }
+}
+
 impl ProcessRowViewModel for RowModel {
     fn attach(&mut self, sink: ProcessRowViewModelSink) -> Result<()> {
+        let mut state = self.0.lock().expect("process row lock poisoned");
+        state.values.publish(&sink, state.generation)?;
+        state.sink = Some(sink);
+        Ok(())
+    }
+
+    fn detach(&mut self) -> Result<()> {
+        self.0.lock().expect("process row lock poisoned").sink = None;
+        Ok(())
+    }
+}
+
+impl RowValues {
+    fn publish(&self, sink: &ProcessRowViewModelSink, generation: i64) -> Result<()> {
         let process = &self.process;
-        sink.set_name(&process.name)?;
-        sink.set_pid(process.pid as i64)?;
-        sink.set_ppid(process.ppid as i64)?;
-        sink.set_status(&process.status)?;
-        sink.set_user(&process.user)?;
-        sink.set_cpu_usage(f64::from(process.cpu_usage))?;
-        sink.set_memory_usage(process.memory_usage as i64)?;
-        sink.set_virtual_memory(process.virtual_memory as i64)?;
-        sink.set_disk_read(process.disk_usage.0 as i64)?;
-        sink.set_disk_write(process.disk_usage.1 as i64)?;
-        sink.set_command(&process.command)?;
-        sink.set_root(&process.root)?;
-        sink.set_session_id(process.session_id.unwrap_or(0) as i64)?;
-        sink.set_start_time(process.start_time as i64)?;
-        sink.set_run_time(process.run_time as i64)?;
-        sink.set_is_pinned(self.pinned)?;
-        sink.set_key(process_key(process))?;
-        sink.set_environ(process.environ.join("; "))?;
-        sink.set_disk_io(format::disk_io(process.disk_usage.0, process.disk_usage.1))?;
-        sink.set_run_time_label(format::runtime(process.run_time))?;
-        sink.set_memory_label(format::bytes(process.memory_usage))?;
-        sink.set_virtual_memory_label(format::bytes(process.virtual_memory))?;
-        sink.set_cpu_label(format::cpu(process.cpu_usage))?;
-        sink.set_pin_label(if self.pinned { "Unpin" } else { "Pin" })?;
-        sink.set_is_high_usage(self.high_usage)?;
-        sink.set_start_time_label(format::start_time(process.start_time))?;
-        sink.set_session_label(
+        let mut batch = sink.batch(generation);
+        batch.set_name(&process.name);
+        batch.set_pid(process.pid as i64);
+        batch.set_ppid(process.ppid as i64);
+        batch.set_status(&process.status);
+        batch.set_user(&process.user);
+        batch.set_cpu_usage(f64::from(process.cpu_usage));
+        batch.set_memory_usage(process.memory_usage as i64);
+        batch.set_virtual_memory(process.virtual_memory as i64);
+        batch.set_disk_read(process.disk_usage.0 as i64);
+        batch.set_disk_write(process.disk_usage.1 as i64);
+        batch.set_command(&process.command);
+        batch.set_root(&process.root);
+        batch.set_session_id(process.session_id.unwrap_or(0) as i64);
+        batch.set_start_time(process.start_time as i64);
+        batch.set_run_time(process.run_time as i64);
+        batch.set_is_pinned(self.pinned);
+        batch.set_key(process_key(process));
+        batch.set_environ(process.environ.join("; "));
+        batch.set_disk_io(format::disk_io(process.disk_usage.0, process.disk_usage.1));
+        batch.set_run_time_label(format::runtime(process.run_time));
+        batch.set_memory_label(format::bytes(process.memory_usage));
+        batch.set_virtual_memory_label(format::bytes(process.virtual_memory));
+        batch.set_cpu_label(format::cpu(process.cpu_usage));
+        batch.set_pin_label(if self.pinned { "Unpin" } else { "Pin" });
+        batch.set_is_high_usage(self.high_usage);
+        batch.set_start_time_label(format::start_time(process.start_time));
+        batch.set_session_label(
             process
                 .session_id
                 .map(|id| id.to_string())
                 .unwrap_or_else(|| "-".to_owned()),
-        )?;
-        sink.set_icon_png(crate::icon::png_for_process(
+        );
+        batch.set_icon_png(crate::icon::png_for_process(
             process.pid,
             &process.exe_path,
             &process.command,
-        ))
-    }
-
-    fn detach(&mut self) -> Result<()> {
-        Ok(())
+        ));
+        sink.submit_batch(batch).map(|_| ())
     }
 }
 

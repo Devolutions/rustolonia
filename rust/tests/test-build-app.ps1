@@ -137,6 +137,9 @@ try {
 
     $hostProperties = New-HostPublishProperties -ProducerRoot producer -RustoloniaRoot rustolonia -Rid win-x64 -HostPlatform Win32
     Assert-True ($hostProperties -contains '-p:AvaloniaProducerRoot=producer') 'Host publish must use the declared producer.'
+    Assert-True ($hostProperties -contains '-p:AvaloniaRustDeveloperTools=false') 'Normal publication must explicitly disable developer tools.'
+    $diagnosticProperties = New-HostPublishProperties -ProducerRoot producer -RustoloniaRoot rustolonia -Rid win-x64 -HostPlatform Win32 -DeveloperTools
+    Assert-True ($diagnosticProperties -contains '-p:AvaloniaRustDeveloperTools=true') 'Opt-in publication must enable developer tools even in Release.'
     Assert-True (@($hostProperties | Where-Object { $_ -like '-p:ObjCopyName=*' }).Count -eq 0) 'Windows publish must not set objcopy.'
     $linuxProperties = New-HostPublishProperties -ProducerRoot producer -RustoloniaRoot rustolonia -Rid linux-arm64 -HostPlatform X11 -CurrentArchitecture x64 -ObjCopyName aarch64-linux-gnu-objcopy
     Assert-True ($linuxProperties -contains '-p:ObjCopyName=aarch64-linux-gnu-objcopy') 'Linux publish must pass its cross objcopy.'
@@ -516,8 +519,12 @@ Add-Content -LiteralPath (Join-Path $PSScriptRoot 'signatures.log') -Value $Arti
         function dotnet {
             $global:LASTEXITCODE = 0
             if ($args[0] -eq '--version') { return '10.0.400' }
-            if ($args -contains '-getProperty:ProjectAssetsFile') { return $mockAssets }
+            if ($args -contains '-getProperty:ProjectAssetsFile') {
+                Assert-True ($args -contains "-p:AvaloniaRustDeveloperTools=$expectedDeveloperTools") 'SBOM metadata evaluation must preserve diagnostics mode.'
+                return $mockAssets
+            }
             if ($args[0] -ne 'publish') { return }
+            Assert-True ($args -contains "-p:AvaloniaRustDeveloperTools=$expectedDeveloperTools") 'Publish must preserve diagnostics mode.'
             $publishOverride = @($args | Where-Object { $_ -like '-p:PublishDir=*' })
             $publish = if ($publishOverride.Count) { $publishOverride[0].Substring('-p:PublishDir='.Length) }
                 else { Join-Path $mockArtifacts 'publish' 'Avalonia.Host' "release_$nativeRid" }
@@ -569,6 +576,7 @@ Add-Content -LiteralPath (Join-Path $PSScriptRoot 'signatures.log') -Value $Arti
             $mockManifestPath = Join-Path $consumer 'mock-build.json'
             $mockManifest | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $mockManifestPath
             $expectLockedMetadata = $true
+            $expectedDeveloperTools = 'false'
             foreach ($failureStage in @('cargo', 'signing')) {
                 Assert-Throws {
                     & (Join-Path $root 'rust' 'package.ps1') -Rid $nativeRid -ProducerRoot $fakeProducer -OutputRoot $sampleOutput
@@ -588,6 +596,11 @@ Add-Content -LiteralPath (Join-Path $PSScriptRoot 'signatures.log') -Value $Arti
             & (Join-Path $root 'rust' 'package.ps1') -Rid $nativeRid -ProducerRoot $fakeProducer -OutputRoot $sampleOutput
             & (Join-Path $root 'rust' 'build-app.ps1') -ProducerRoot $fakeProducer -Manifest $mockManifestPath -SkipGenerate
             Assert-True ((Get-Content -LiteralPath (Join-Path $consumerBundle 'LICENSE.app') -Raw).Trim() -eq 'application license') 'Consumer bundles must include application-specific notice files.'
+            $releaseChecksum = (Get-FileHash -LiteralPath (Join-Path $consumerBundle 'checksums.sha256')).Hash
+            $expectedDeveloperTools = 'true'
+            & (Join-Path $root 'rust' 'build-app.ps1') -ProducerRoot $fakeProducer -Manifest $mockManifestPath -SkipGenerate -DeveloperTools
+            Assert-True (Test-Path -LiteralPath (Join-Path "$consumerBundle-devtools" 'checksums.sha256')) 'Diagnostics must publish to a separate bundle.'
+            Assert-True ((Get-FileHash -LiteralPath (Join-Path $consumerBundle 'checksums.sha256')).Hash -eq $releaseChecksum) 'Diagnostics publication must preserve the normal release bundle.'
             foreach ($output in @($sampleBundle, $consumerBundle)) {
                 Assert-True (-not (Test-Path -LiteralPath (Join-Path $output 'previous.bin'))) 'Successful entry points must replace stale bundles.'
                 Assert-True (Test-Path -LiteralPath (Join-Path $output 'sbom.cdx.json')) 'Successful entry points must publish an SBOM.'

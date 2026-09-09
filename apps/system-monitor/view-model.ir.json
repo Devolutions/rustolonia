@@ -965,10 +965,6 @@
               "directionProperty": "SortDirection"
             }
           },
-          "window": {
-            "pageSize": 64,
-            "maxLivePages": 8
-          },
           "recursive": false
         },
         {

@@ -20,7 +20,7 @@ using Avalonia.Threading;
 namespace NeoHtop.Presentation.Generated;
 
 [GeneratedComClass]
-public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSink2, IAvnRustVmSink3, IAvnRustVmSink4, IRustVmStringSnapshotSink, IRustVmModelSnapshotSink, IRustVmBatchTarget, IRustVmTableSelectionBatchTarget, INotifyPropertyChanged, INotifyDataErrorInfo, IDisposable
+public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSink2, IAvnRustVmSink3, IRustVmStringSnapshotSink, IRustVmModelSnapshotSink, IRustVmBatchTarget, IRustVmTableSelectionBatchTarget, INotifyPropertyChanged, INotifyDataErrorInfo, IDisposable
 {
     private readonly IAvnRustViewModel _model;
     private readonly Action<Action> _dispatch;
@@ -28,7 +28,6 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
     private readonly RustVmBatchCoordinator _batch;
     private readonly Dictionary<string, string> _errors = new(StringComparer.Ordinal);
     private readonly RustVmInboundWriteTracker _inboundWrites = new();
-    private readonly RustRangeCoordinator _ranges;
     private string _searchText = "";
     private bool _isFrozen = false;
     private bool _isDarkTheme = true;
@@ -144,11 +143,6 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
         _dispatch = dispatch ?? Dispatch;
         _post = post;
         _batch = new RustVmBatchCoordinator(this, post);
-        _ranges = new RustRangeCoordinator(ResolveWindow, post);
-        var rangeSource = RustAsyncCommands.TryResolveRangeSource(model);
-        Processes = new RustWindowedCollection(1, 64, 8, (nested, _) => new global::NeoHtop.Presentation.Generated.ProcessRowViewModelAdapter(nested!, _dispatch, _post));
-        Processes.SetSource(rangeSource);
-        Processes.SetPeerResolver(ResolveWindow);
         RefreshCommand = new DelegateCommand(parameter => Check(_model.Execute(1, null)));
         KillCommand = new DelegateCommand(parameter => Check(_model.BeginAsync(2, CommandArgumentOrFallback(parameter, SelectedKey))));
         PinCommand = new DelegateCommand(parameter => Check(_model.Execute(3, CommandArgumentOrFallback(parameter, SelectedKey))));
@@ -174,9 +168,6 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
         try
         {
             Check(_model.Attach(this));
-            // Primed after attach: a producer publishes its dataset identity
-            // from attach, so reading it before would always come back empty.
-            PrimeWindows(rangeSource);
         }
         catch
         {
@@ -1575,12 +1566,8 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
         get => _storagePercentLabel;
     }
 
+    public BatchObservableCollection<global::NeoHtop.Presentation.Generated.ProcessRowViewModelAdapter> Processes { get; } = [];
     public BatchObservableCollection<global::NeoHtop.Presentation.Generated.CpuCoreViewModelAdapter> CpuCores { get; } = [];
-    /// <summary>
-    /// Range-backed projection: <c>Count</c> is the Rust dataset's total size while at
-    /// most 64 x 8 element objects are live.
-    /// </summary>
-    public RustWindowedCollection Processes { get; }
 
     public DelegateCommand RefreshCommand { get; }
     public DelegateCommand KillCommand { get; }
@@ -1758,6 +1745,7 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
 
     public int AddModel(int collectionId, IAvnRustViewModel? model) => collectionId switch
     {
+        1 => model is null ? unchecked((int)0x80070057) : Apply(() => Processes.Add(new global::NeoHtop.Presentation.Generated.ProcessRowViewModelAdapter(model, _dispatch, _post))),
         2 => model is null ? unchecked((int)0x80070057) : Apply(() => CpuCores.Add(new global::NeoHtop.Presentation.Generated.CpuCoreViewModelAdapter(model, _dispatch, _post))),
         _ => unchecked((int)0x80070057),
     };
@@ -1769,6 +1757,7 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
 
     public int InsertModel(int collectionId, int index, IAvnRustViewModel? model) => collectionId switch
     {
+        1 => model is null ? unchecked((int)0x80070057) : Apply(() => { if ((uint)index > (uint)Processes.Count) return unchecked((int)0x80070057); Processes.Insert(index, new global::NeoHtop.Presentation.Generated.ProcessRowViewModelAdapter(model, _dispatch, _post)); return 0; }),
         2 => model is null ? unchecked((int)0x80070057) : Apply(() => { if ((uint)index > (uint)CpuCores.Count) return unchecked((int)0x80070057); CpuCores.Insert(index, new global::NeoHtop.Presentation.Generated.CpuCoreViewModelAdapter(model, _dispatch, _post)); return 0; }),
         _ => unchecked((int)0x80070057),
     };
@@ -1780,6 +1769,14 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
 
     public int ReplaceModel(int collectionId, int index, IAvnRustViewModel? model) => collectionId switch
     {
+        1 => model is null ? unchecked((int)0x80070057) : Apply(() =>
+        {
+            if ((uint)index >= (uint)Processes.Count) return unchecked((int)0x80070057);
+            var previous = Processes[index];
+            Processes[index] = new global::NeoHtop.Presentation.Generated.ProcessRowViewModelAdapter(model, _dispatch, _post);
+            previous.Dispose();
+            return 0;
+        }),
         2 => model is null ? unchecked((int)0x80070057) : Apply(() =>
         {
             if ((uint)index >= (uint)CpuCores.Count) return unchecked((int)0x80070057);
@@ -1793,6 +1790,14 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
 
     public int RemoveAt(int collectionId, int index) => collectionId switch
     {
+        1 => Apply(() =>
+        {
+            if ((uint)index >= (uint)Processes.Count) return unchecked((int)0x80070057);
+            var item = Processes[index];
+            Processes.RemoveAt(index);
+            item.Dispose();
+            return 0;
+        }),
         2 => Apply(() =>
         {
             if ((uint)index >= (uint)CpuCores.Count) return unchecked((int)0x80070057);
@@ -1806,12 +1811,18 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
 
     public int MoveItem(int collectionId, int fromIndex, int toIndex) => collectionId switch
     {
+        1 => Apply(() => { if ((uint)fromIndex >= (uint)Processes.Count || (uint)toIndex >= (uint)Processes.Count) return unchecked((int)0x80070057); Processes.Move(fromIndex, toIndex); return 0; }),
         2 => Apply(() => { if ((uint)fromIndex >= (uint)CpuCores.Count || (uint)toIndex >= (uint)CpuCores.Count) return unchecked((int)0x80070057); CpuCores.Move(fromIndex, toIndex); return 0; }),
         _ => unchecked((int)0x80070057),
     };
 
     public int ClearCollection(int collectionId) => collectionId switch
     {
+        1 => Apply(() =>
+        {
+            foreach (var item in Processes) item.Dispose();
+            Processes.Clear();
+        }),
         2 => Apply(() =>
         {
             foreach (var item in CpuCores) item.Dispose();
@@ -1950,62 +1961,6 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
         _ => unchecked((int)0x80070057),
     };
 
-    public int MapSetString(int mapId, string? stringKey, long integerKey, string? value) => mapId switch
-    {
-        _ => unchecked((int)0x80070057),
-    };
-
-    public int MapSetInteger(int mapId, string? stringKey, long integerKey, long value) => mapId switch
-    {
-        _ => unchecked((int)0x80070057),
-    };
-
-    public int MapSetBoolean(int mapId, string? stringKey, long integerKey, int value) => mapId switch
-    {
-        _ => unchecked((int)0x80070057),
-    };
-
-    public int MapSetDouble(int mapId, string? stringKey, long integerKey, double value) => mapId switch
-    {
-        _ => unchecked((int)0x80070057),
-    };
-
-    public int MapSetModel(int mapId, string? stringKey, long integerKey, IAvnRustViewModel? value) => mapId switch
-    {
-        _ => unchecked((int)0x80070057),
-    };
-
-    public int MapRemove(int mapId, string? stringKey, long integerKey) => mapId switch
-    {
-        _ => unchecked((int)0x80070057),
-    };
-
-    public int MapClear(int mapId) => mapId switch
-    {
-        _ => unchecked((int)0x80070057),
-    };
-
-    public int SetCommandProgress(int commandId, int hasValue, double value, string? message) => commandId switch
-    {
-        _ => unchecked((int)0x80070057),
-    };
-
-    public int SetCommandResult(int commandId, IAvnRustViewModel? result) => commandId switch
-    {
-        _ => unchecked((int)0x80070057),
-    };
-
-    public int SetCommandRunning(int commandId, int running) => commandId switch
-    {
-        _ => unchecked((int)0x80070057),
-    };
-
-    /// <summary>
-    /// Enqueues one range batch. Like <see cref="SubmitBatch"/> this never reads,
-    /// applies or completes the batch on the submitting (Rust worker) stack.
-    /// </summary>
-    public int PublishRange(IAvnRustVmRangeBatch? batch) => _ranges.Publish(batch);
-
     public int ReplaceStringSnapshot(int collectionId, IReadOnlyList<string> values) => collectionId switch
     {
         _ => unchecked((int)0x80070057),
@@ -2013,6 +1968,15 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
 
     public int ReplaceModelSnapshot(int collectionId, IReadOnlyList<IAvnRustViewModel> values) => collectionId switch
     {
+        1 => Apply(() =>
+        {
+            var staged = new List<global::NeoHtop.Presentation.Generated.ProcessRowViewModelAdapter>();
+            try { foreach (var value in values) staged.Add(new global::NeoHtop.Presentation.Generated.ProcessRowViewModelAdapter(value, _dispatch, _post)); }
+            catch { foreach (var value in staged) TryDispose(value); throw; }
+            var previous = Processes.ToArray();
+            Processes.ReplaceSnapshot(staged);
+            foreach (var value in previous) TryDispose(value);
+        }),
         2 => Apply(() =>
         {
             var staged = new List<global::NeoHtop.Presentation.Generated.CpuCoreViewModelAdapter>();
@@ -2131,6 +2095,7 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
     {
         collection = collectionId switch
         {
+            1 => new RustVmBatchCollectionInfo(nameof(Processes), RustVmValueWireKind.Model, Processes),
             2 => new RustVmBatchCollectionInfo(nameof(CpuCores), RustVmValueWireKind.Model, CpuCores),
             _ => default,
         };
@@ -2180,6 +2145,7 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
 
     IDisposable IRustVmBatchTarget.CreateNestedElement(int collectionId, IAvnRustViewModel model) => collectionId switch
     {
+        1 => new global::NeoHtop.Presentation.Generated.ProcessRowViewModelAdapter(model, _dispatch, _post),
         2 => new global::NeoHtop.Presentation.Generated.CpuCoreViewModelAdapter(model, _dispatch, _post),
         _ => throw new ArgumentOutOfRangeException(nameof(collectionId)),
     };
@@ -2894,7 +2860,6 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
 
     private void DisposeCore()
     {
-        _ranges.Close();
         try
         {
             Check(_model.Detach());
@@ -2905,28 +2870,10 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
         }
     }
 
-    private RustWindowedCollection? ResolveWindow(int collectionId) => collectionId switch
-    {
-        1 => Processes,
-        _ => null,
-    };
-
-    /// <summary>
-    /// Reads each window's dataset identity once, so the first frame already
-    /// reports the real total count instead of an empty list. Reading it is a
-    /// lock-free producer-side lookup; it never enters application model code.
-    /// </summary>
-    private void PrimeWindows(IAvnRustRangeSource? source)
-    {
-        if (source is null) return;
-        if (source.GetRangeState(1, out var generation1, out var total1) >= 0)
-            Processes.ResetTo(generation1, total1);
-    }
-
     private void DisposeNestedAdapters()
     {
+        foreach (var item in Processes) TryDispose(item);
         foreach (var item in CpuCores) TryDispose(item);
-        TryDispose(Processes);
     }
 
     private static void TryDispose(IDisposable? value)

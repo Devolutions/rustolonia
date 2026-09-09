@@ -11,7 +11,7 @@
     },
     {
       "path": "MainViewModelAdapter.g.cs",
-      "sha256": "4c6186b5d1a5e9f4240eb76d7d92e7d1e9c899d454e025922070a5c2c50ae8fd"
+      "sha256": "76284340a29f17a1f3d694489a0d1e7371c322b69f25b0e666e56baafe6bbcad"
     },
     {
       "path": "MainViewModelMenus.g.cs",
@@ -19,7 +19,7 @@
     },
     {
       "path": "MainViewModelMetadata.g.cs",
-      "sha256": "c3c728088b40b0c889320092ab45bba0235e9e94bdb78ab234693d23c030f2db"
+      "sha256": "3bdcd3b112da520952442d86a5364e8f35856b88fa6f050cfaa6b8aaa0b735b5"
     },
     {
       "path": "ProcessRowViewModelAdapter.g.cs",

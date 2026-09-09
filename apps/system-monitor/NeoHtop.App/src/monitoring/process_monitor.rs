@@ -42,12 +42,14 @@ fn os_string_vec_to_string_vec(v: &[OsString]) -> Vec<String> {
 #[derive(Debug)]
 pub struct ProcessMonitor {
     process_cache: HashMap<(u32, u64), ProcessStaticInfo>,
+    users: sysinfo::Users,
 }
 
 impl ProcessMonitor {
     pub fn new() -> Self {
         Self {
             process_cache: HashMap::new(),
+            users: sysinfo::Users::new_with_refreshed_list(),
         }
     }
 
@@ -123,7 +125,12 @@ impl ProcessMonitor {
                     identity: Self::process_identity(pid, start_time),
                     name: process.name().to_string_lossy().into_owned(),
                     cmd: os_string_vec_to_string_vec(process.cmd()),
-                    user_id: process.user_id().map(|uid| uid.to_string()),
+                    user_id: process.user_id().map(|uid| {
+                        self.users
+                            .get_user_by_id(uid)
+                            .map(|user| user.name().to_owned())
+                            .unwrap_or_else(|| uid.to_string())
+                    }),
                     cpu_usage: process.cpu_usage(),
                     memory: process.memory(),
                     status: process.status(),
