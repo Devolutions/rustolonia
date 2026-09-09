@@ -25,6 +25,20 @@ pwsh ./rust/build-app.ps1 `
 The portable bundle is written to `apps/archive-tool/artifacts/win-x64`.
 Subsequent locked builds omit `-UpdateLockFile`.
 
+## Opt-in developer tools (MCP)
+
+```powershell
+pwsh ./rust/build-app.ps1 `
+  -ProducerRoot ./avalonia-src `
+  -Manifest ./apps/archive-tool/avalonia-app.json `
+  -DeveloperTools
+.\apps\archive-tool\artifacts\win-x64-devtools\archive-tool.exe
+```
+
+This attaches Avalonia DevTools on the NativeAOT host. Use the DevTools MCP
+`attach-to-app` tool against the process. Do not distribute the instrumented
+bundle.
+
 ## Tests
 
 ```powershell
