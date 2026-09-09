@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>$(AvsCurrentTargetFramework)</TargetFramework>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsPackable>false</IsPackable>
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(AvaloniaProducerRoot)\src\Avalonia.Base\Avalonia.Base.csproj" />
+    <!--
+      Menus (stage 31) are presentation, so the generated factories build real
+      Avalonia menu objects. Avalonia.Controls does not reference Avalonia.Rust,
+      so this stays a one-way dependency, and Avalonia.Rust is not packable, so
+      it adds nothing to a shipped package.
+    -->
+    <ProjectReference Include="$(AvaloniaProducerRoot)\src\Avalonia.Controls\Avalonia.Controls.csproj" />
+    <ProjectReference Include="..\Avalonia.Rust.Interop\Avalonia.Rust.Interop.csproj" />
+  </ItemGroup>
+  <Import Project="..\..\build\NullableEnable.props" />
+  <Import Project="..\..\build\TrimmingEnable.props" />
+</Project>

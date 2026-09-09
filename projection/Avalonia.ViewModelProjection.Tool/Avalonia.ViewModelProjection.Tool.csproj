@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(AvsCurrentTargetFramework)</TargetFramework>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Avalonia.Projection.Ir\Avalonia.Projection.Ir.csproj" />
+    <ProjectReference Include="..\Avalonia.Projection.Generator\Avalonia.Projection.Generator.csproj" />
+  </ItemGroup>
+  <Import Project="..\..\build\NullableEnable.props" />
+</Project>

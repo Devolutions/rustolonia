@@ -1,0 +1,27 @@
+Windows Registry Editor Version 5.00
+
+; File type association for the PDF viewer.
+;
+; Installing this association claims PDF files for the sample viewer.
+; "%1" is what makes the shell pass the selected file to the executable; the
+; Rust entry point forwards it to the managed desktop lifetime, so it arrives
+; through AppScope::activation_items().
+;
+; Written under HKEY_CURRENT_USER so it can be applied and undone without
+; elevation while developing. A real installer writes the same keys under
+; HKEY_LOCAL_MACHINE\Software\Classes and owns their removal on uninstall.
+
+[HKEY_CURRENT_USER\Software\Classes\.pdf]
+@="pdf-viewer.Document"
+
+[HKEY_CURRENT_USER\Software\Classes\.pdf\OpenWithProgids]
+"pdf-viewer.Document"=""
+
+[HKEY_CURRENT_USER\Software\Classes\pdf-viewer.Document]
+@="PDF document"
+
+[HKEY_CURRENT_USER\Software\Classes\pdf-viewer.Document\DefaultIcon]
+@="C:\\Program Files\\pdf-viewer\\pdf-viewer.exe,0"
+
+[HKEY_CURRENT_USER\Software\Classes\pdf-viewer.Document\shell\open\command]
+@="\"C:\\Program Files\\pdf-viewer\\pdf-viewer.exe\" \"%1\""

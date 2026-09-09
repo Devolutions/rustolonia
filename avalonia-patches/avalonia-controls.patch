@@ -1,0 +1,724 @@
+diff --git a/src/Avalonia.Controls/Automation/Peers/TableViewRowAutomationPeer.cs b/src/Avalonia.Controls/Automation/Peers/TableViewRowAutomationPeer.cs
+new file mode 100644
+index 000000000..b64ad4df9
+--- /dev/null
++++ b/src/Avalonia.Controls/Automation/Peers/TableViewRowAutomationPeer.cs
+@@ -0,0 +1,113 @@
++using System.Collections.Generic;
++using System.Text;
++using Avalonia.Controls;
++using Avalonia.Controls.Presenters;
++using Avalonia.Media;
++using Avalonia.VisualTree;
++
++namespace Avalonia.Automation.Peers
++{
++    /// <summary>
++    /// Automation peer for a <see cref="TableViewRow"/>.
++    /// </summary>
++    /// <remarks>
++    /// A row's data item is an arbitrary object, so the inherited
++    /// <see cref="ContentControlAutomationPeer"/> fallback of
++    /// <c>Content.ToString()</c> reports the item's CLR type name for any view
++    /// model that does not override it - which is useless to a screen reader and
++    /// to UI automation. This peer instead composes the name from the row's own
++    /// cells, which is the text the user actually sees. An explicit
++    /// <see cref="AutomationProperties.NameProperty"/> still wins, and the
++    /// inherited behaviour is used when the row has no realized cells.
++    /// </remarks>
++    public class TableViewRowAutomationPeer : ListItemAutomationPeer
++    {
++        public TableViewRowAutomationPeer(TableViewRow owner)
++            : base(owner)
++        {
++        }
++
++        public new TableViewRow Owner => (TableViewRow)base.Owner;
++
++        protected override AutomationControlType GetAutomationControlTypeCore()
++            => AutomationControlType.DataItem;
++
++        protected override string? GetNameCore()
++        {
++            var explicitName = AutomationProperties.GetName(Owner);
++            if (!string.IsNullOrWhiteSpace(explicitName))
++                return explicitName;
++
++            var cells = GetCells();
++            if (cells is null)
++                return base.GetNameCore();
++
++            var builder = new StringBuilder();
++            foreach (var cell in cells)
++            {
++                var text = GetCellText(cell);
++                if (string.IsNullOrWhiteSpace(text))
++                    continue;
++                if (builder.Length > 0)
++                    builder.Append(' ');
++                builder.Append(text);
++            }
++
++            return builder.Length > 0 ? builder.ToString() : base.GetNameCore();
++        }
++
++        private IEnumerable<TableViewCell>? GetCells()
++        {
++            if (Owner.CellsPresenter is not { } presenter)
++                return null;
++
++            var cells = new List<TableViewCell>(presenter.Children.Count);
++            foreach (var child in presenter.Children)
++            {
++                if (child is TableViewCell cell)
++                    cells.Add(cell);
++            }
++
++            return cells.Count > 0 ? cells : null;
++        }
++
++        private string? GetCellText(TableViewCell cell)
++        {
++            // A templated cell renders the row item itself, so its text has to
++            // come from the realized content; only a value-bound cell may fall
++            // back to the content's own string form.
++            if (cell.Presenter?.Child is { } child)
++            {
++                if (FindText(child) is { } realized)
++                    return realized;
++                var childPeer = CreatePeerForElement(child);
++                var childName = childPeer.GetName();
++                if (!string.IsNullOrWhiteSpace(childName))
++                    return childName;
++            }
++
++            var content = cell.Content;
++            if (content is null || ReferenceEquals(content, Owner.Content))
++                return null;
++            return content as string ?? content.ToString();
++        }
++
++        /// <summary>
++        /// Finds the text a realized cell actually shows. A templated cell may
++        /// wrap its text in decoration (a border, a panel), so the whole
++        /// subtree is searched rather than just the presenter's direct child.
++        /// </summary>
++        private static string? FindText(Visual root)
++        {
++            if (root is TextBlock text && !string.IsNullOrWhiteSpace(text.Text))
++                return text.Text;
++            foreach (var descendant in root.GetVisualDescendants())
++            {
++                if (descendant is TextBlock nested && !string.IsNullOrWhiteSpace(nested.Text))
++                    return nested.Text;
++            }
++
++            return null;
++        }
++    }
++}
+diff --git a/src/Avalonia.Controls/Avalonia.Controls.csproj b/src/Avalonia.Controls/Avalonia.Controls.csproj
+index 2a67934a9..188ee7bb2 100644
+--- a/src/Avalonia.Controls/Avalonia.Controls.csproj
++++ b/src/Avalonia.Controls/Avalonia.Controls.csproj
+@@ -12,7 +12,9 @@
+ 
+   <ItemGroup Label="InternalsVisibleTo">
+     <InternalsVisibleTo Include="Avalonia.Controls.ItemsRepeater, PublicKey=$(AvaloniaPublicKey)" />
+-    <InternalsVisibleTo Include="Avalonia.UnitTests, PublicKey=$(AvaloniaPublicKey)" />
++        <InternalsVisibleTo Include="Avalonia.Host, PublicKey=$(AvaloniaPublicKey)" />
++        <InternalsVisibleTo Include="Avalonia.Host.Tests, PublicKey=$(AvaloniaPublicKey)" />
++        <InternalsVisibleTo Include="Avalonia.UnitTests, PublicKey=$(AvaloniaPublicKey)" />
+     <InternalsVisibleTo Include="Avalonia.Skia.RenderTests, PublicKey=$(AvaloniaPublicKey)" />
+     <InternalsVisibleTo Include="Avalonia.Base.UnitTests, PublicKey=$(AvaloniaPublicKey)" />
+     <InternalsVisibleTo Include="Avalonia.Controls.UnitTests, PublicKey=$(AvaloniaPublicKey)" />
+diff --git a/src/Avalonia.Controls/IViewportRangeSource.cs b/src/Avalonia.Controls/IViewportRangeSource.cs
+new file mode 100644
+index 000000000..c9cfbfe8d
+--- /dev/null
++++ b/src/Avalonia.Controls/IViewportRangeSource.cs
+@@ -0,0 +1,16 @@
++namespace Avalonia.Controls;
++
++/// <summary>
++/// An items source that can realize a visible index range on demand.
++/// <see cref="TableView"/> (and other virtualizing presenters) call this after
++/// layout with the realized row range so a windowed collection can request
++/// pages for the viewport instead of waiting on indexer misses.
++/// </summary>
++public interface IViewportRangeSource
++{
++    /// <summary>
++    /// Ensures elements in <paramref name="firstIndex"/>..<paramref name="lastIndex"/>
++    /// (inclusive) are requested. Implementations must not block the UI thread.
++    /// </summary>
++    void EnsureVisibleRange(int firstIndex, int lastIndex);
++}
+diff --git a/src/Avalonia.Controls/Presenters/TableViewLayoutHelper.cs b/src/Avalonia.Controls/Presenters/TableViewLayoutHelper.cs
+index 9492427db..2cdb29c8c 100644
+--- a/src/Avalonia.Controls/Presenters/TableViewLayoutHelper.cs
++++ b/src/Avalonia.Controls/Presenters/TableViewLayoutHelper.cs
+@@ -26,10 +26,20 @@ public static bool UpdateActualWidths(
+ 
+         for (var i = 0; i < columns.Count; i++)
+         {
++            if (!columns[i].IsVisible)
++            {
++                if (columns[i].ActualWidth != 0)
++                {
++                    columns[i].ActualWidth = 0;
++                    modified = true;
++                }
++                continue;
++            }
++
+             var width = columns[i].Width;
+             if (width.IsAbsolute)
+             {
+-                var actualWidth = width.Value;
++                var actualWidth = columns[i].ClampWidth(width.Value);
+ 
+                 if (useLayoutRounding)
+                     actualWidth = LayoutHelper.RoundLayoutValue(actualWidth, layoutScale);
+@@ -68,6 +78,9 @@ public static bool UpdateActualWidths(
+ 
+         for (var i = 0; i < columns.Count; i++)
+         {
++            if (!columns[i].IsVisible)
++                continue;
++
+             var width = columns[i].Width;
+             if (!width.IsAbsolute)
+             {
+@@ -85,6 +98,18 @@ public static bool UpdateActualWidths(
+                 else
+                     roundedEdge = unroundedEdge;
+ 
++                // The min/max limits are applied after the proportional share so a
++                // constrained star column keeps its place in the distribution; the
++                // cumulative-edge bookkeeping above stays on the unconstrained share,
++                // which is what keeps the remaining columns from drifting.
++                var clamped = columns[i].ClampWidth(actualWidth);
++                if (clamped != actualWidth)
++                {
++                    actualWidth = useLayoutRounding
++                        ? LayoutHelper.RoundLayoutValue(clamped, layoutScale)
++                        : clamped;
++                }
++
+                 if (columns[i].ActualWidth != actualWidth)
+                 {
+                     columns[i].ActualWidth = actualWidth;
+diff --git a/src/Avalonia.Controls/TableView.cs b/src/Avalonia.Controls/TableView.cs
+index 6fbc63447..da93c8fe8 100644
+--- a/src/Avalonia.Controls/TableView.cs
++++ b/src/Avalonia.Controls/TableView.cs
+@@ -284,4 +284,30 @@ protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs chang
+                 column.UpdateCanUserEffectivelyResize();
+         }
+     }
++
++    /// <inheritdoc />
++    protected override Size ArrangeOverride(Size finalSize)
++    {
++        var arranged = base.ArrangeOverride(finalSize);
++        NotifyVisibleRange();
++        return arranged;
++    }
++
++    /// <summary>
++    /// Asks a windowed items source to realize the currently visible rows.
++    /// Indexer misses still work; this is the viewport-driven path so fast
++    /// scrolling does not wait on per-cell reads.
++    /// </summary>
++    private void NotifyVisibleRange()
++    {
++        if (ItemsSource is not IViewportRangeSource source)
++            return;
++        if (ItemsPanelRoot is not VirtualizingStackPanel panel)
++            return;
++        var first = panel.FirstRealizedIndex;
++        var last = panel.LastRealizedIndex;
++        if (first < 0 || last < first)
++            return;
++        source.EnsureVisibleRange(first, last);
++    }
+ }
+diff --git a/src/Avalonia.Controls/TableViewColumn.cs b/src/Avalonia.Controls/TableViewColumn.cs
+index d10278faf..37ee24d40 100644
+--- a/src/Avalonia.Controls/TableViewColumn.cs
++++ b/src/Avalonia.Controls/TableViewColumn.cs
+@@ -38,6 +38,18 @@ public class TableViewColumn : StyledElement, IHeadered
+     public static readonly StyledProperty<GridLength> WidthProperty =
+         AvaloniaProperty.Register<TableViewColumn, GridLength>(nameof(Width), new GridLength(1, GridUnitType.Star));
+ 
++    /// <summary>
++    /// Defines the <see cref="MinWidth"/> property.
++    /// </summary>
++    public static readonly StyledProperty<double> MinWidthProperty =
++        AvaloniaProperty.Register<TableViewColumn, double>(nameof(MinWidth), 0d, validate: IsValidWidthLimit);
++
++    /// <summary>
++    /// Defines the <see cref="MaxWidth"/> property.
++    /// </summary>
++    public static readonly StyledProperty<double> MaxWidthProperty =
++        AvaloniaProperty.Register<TableViewColumn, double>(nameof(MaxWidth), double.PositiveInfinity, validate: IsValidWidthLimit);
++
+     /// <summary>
+     /// Defines the <see cref="CellTheme"/> property.
+     /// </summary>
+@@ -56,6 +68,18 @@ public class TableViewColumn : StyledElement, IHeadered
+     public static readonly StyledProperty<BindingBase?> BindingProperty =
+         AvaloniaProperty.Register<TableViewColumn, BindingBase?>(nameof(Binding));
+ 
++    /// <summary>
++    /// Defines the <see cref="IsVisible"/> property.
++    /// </summary>
++    /// <remarks>
++    /// <see cref="TableViewColumn"/> is not a <see cref="Visual"/>, so
++    /// <c>Visual.IsVisible</c> is not available in compiled AXAML. This
++    /// property is the column-level hide: layout assigns it zero width and
++    /// the resize thumb is disabled.
++    /// </remarks>
++    public static readonly StyledProperty<bool> IsVisibleProperty =
++        AvaloniaProperty.Register<TableViewColumn, bool>(nameof(IsVisible), true);
++
+     /// <summary>
+     /// Defines the <see cref="CanUserResize"/> property.
+     /// </summary>
+@@ -125,6 +149,52 @@ public GridLength Width
+         set => SetValue(WidthProperty, value);
+     }
+ 
++    /// <summary>
++    /// Gets or sets the minimum width of the column, in device independent
++    /// pixels. Applies to every width mode and to interactive resizing.
++    /// The default is 0.
++    /// </summary>
++    public double MinWidth
++    {
++        get => GetValue(MinWidthProperty);
++        set => SetValue(MinWidthProperty, value);
++    }
++
++    /// <summary>
++    /// Gets or sets the maximum width of the column, in device independent
++    /// pixels. Applies to every width mode and to interactive resizing.
++    /// The default is <see cref="double.PositiveInfinity"/>.
++    /// </summary>
++    /// <remarks>
++    /// When <see cref="MinWidth"/> is greater than <see cref="MaxWidth"/> the
++    /// minimum wins, matching how <see cref="Layoutable"/> resolves the same
++    /// conflict.
++    /// </remarks>
++    public double MaxWidth
++    {
++        get => GetValue(MaxWidthProperty);
++        set => SetValue(MaxWidthProperty, value);
++    }
++
++    /// <summary>
++    /// Clamps <paramref name="width"/> into this column's
++    /// <see cref="MinWidth"/>/<see cref="MaxWidth"/> range.
++    /// </summary>
++    internal double ClampWidth(double width)
++    {
++        var min = MinWidth;
++        var max = MaxWidth;
++        if (double.IsNaN(width))
++            return width;
++        if (width > max)
++            width = max;
++        if (width < min)
++            width = min;
++        return width;
++    }
++
++    private static bool IsValidWidthLimit(double value) => value >= 0 && !double.IsNaN(value);
++
+     /// <summary>
+     /// Gets or sets the theme to apply to the cells.
+     /// It must target <see cref="TableViewCell"/>.
+@@ -159,6 +229,16 @@ public BindingBase? Binding
+         set => SetValue(BindingProperty, value);
+     }
+ 
++    /// <summary>
++    /// Gets or sets whether the column is shown. Hidden columns occupy no
++    /// layout width. The default is true. Bindable from compiled AXAML.
++    /// </summary>
++    public bool IsVisible
++    {
++        get => GetValue(IsVisibleProperty);
++        set => SetValue(IsVisibleProperty, value);
++    }
++
+     /// <summary>
+     /// Gets or sets whether the column can be resized.
+     /// Set to null to use the value from <see cref="Avalonia.Controls.TableView.CanUserResizeColumns"/>.
+@@ -232,6 +312,13 @@ protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs chang
+ 
+         if (change.Property == WidthProperty)
+             TableView?.OnColumnsSizeChanged();
++        else if (change.Property == MinWidthProperty || change.Property == MaxWidthProperty)
++            TableView?.OnColumnsSizeChanged();
++        else if (change.Property == IsVisibleProperty)
++        {
++            UpdateCanUserEffectivelyResize();
++            TableView?.OnColumnsSizeChanged();
++        }
+         else if (change.Property == CanUserResizeProperty)
+             UpdateCanUserEffectivelyResize();
+         else
+@@ -244,7 +331,7 @@ protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs chang
+     }
+ 
+     internal void UpdateCanUserEffectivelyResize()
+-        => CanUserEffectivelyResize = CanUserResize ?? TableView?.CanUserResizeColumns ?? true;
++        => CanUserEffectivelyResize = IsVisible && (CanUserResize ?? TableView?.CanUserResizeColumns ?? true);
+ 
+     internal override void BuildDebugDisplay(StringBuilder builder, bool includeContent)
+     {
+diff --git a/src/Avalonia.Controls/TableViewColumnHeader.cs b/src/Avalonia.Controls/TableViewColumnHeader.cs
+index 4afe51e47..b5c954dc9 100644
+--- a/src/Avalonia.Controls/TableViewColumnHeader.cs
++++ b/src/Avalonia.Controls/TableViewColumnHeader.cs
+@@ -61,8 +61,10 @@ private void OnResizerDragDelta(object? sender, VectorEventArgs e)
+         if (double.IsNaN(actualWidth))
+             return;
+ 
+-        var minWidth = _resizer?.Bounds.Width ?? 0;
++        var minWidth = Math.Max(_resizer?.Bounds.Width ?? 0, column.MinWidth);
+         var newWidth = Math.Max(minWidth, actualWidth + e.Vector.X);
++        if (newWidth > column.MaxWidth)
++            newWidth = Math.Max(minWidth, column.MaxWidth);
+         column.Width = new GridLength(newWidth, GridUnitType.Pixel);
+     }
+ 
+diff --git a/src/Avalonia.Controls/TableViewRow.cs b/src/Avalonia.Controls/TableViewRow.cs
+index 3084f2384..edfe5773c 100644
+--- a/src/Avalonia.Controls/TableViewRow.cs
++++ b/src/Avalonia.Controls/TableViewRow.cs
+@@ -1,4 +1,5 @@
+ using System.Diagnostics;
++using Avalonia.Automation.Peers;
+ using Avalonia.Collections;
+ using Avalonia.Controls.Metadata;
+ using Avalonia.Controls.Presenters;
+@@ -18,6 +19,16 @@ public class TableViewRow : ListBoxItem
+ 
+     internal AvaloniaList<TableViewColumn>? Columns { get; set; }
+ 
++    /// <summary>
++    /// The realized cells presenter, or null before the template is applied.
++    /// </summary>
++    /// <remarks>
++    /// A row's template hosts the cells presenter directly rather than through
++    /// a <see cref="ContentPresenter"/>, so the inherited
++    /// <see cref="ContentControl.Presenter"/> is not the way to reach it.
++    /// </remarks>
++    internal TableViewCellsPresenter? CellsPresenter => _cellsPresenter;
++
+     /// <inheritdoc />
+     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
+     {
+@@ -51,4 +62,8 @@ internal void RebuildCells()
+ 
+     internal void RefreshCell(int columnIndex)
+         => _cellsPresenter?.RefreshCell(columnIndex);
++
++    /// <inheritdoc />
++    protected override AutomationPeer OnCreateAutomationPeer()
++        => new TableViewRowAutomationPeer(this);
+ }
+diff --git a/tests/Avalonia.Controls.UnitTests/Automation/TableViewRowAutomationPeerTests.cs b/tests/Avalonia.Controls.UnitTests/Automation/TableViewRowAutomationPeerTests.cs
+new file mode 100644
+index 000000000..fd23c7e91
+--- /dev/null
++++ b/tests/Avalonia.Controls.UnitTests/Automation/TableViewRowAutomationPeerTests.cs
+@@ -0,0 +1,135 @@
++using System.Linq;
++using Avalonia.Automation;
++using Avalonia.Automation.Peers;
++using Avalonia.Controls.Presenters;
++using Avalonia.Controls.Primitives;
++using Avalonia.Controls.Templates;
++using Avalonia.Data;
++using Avalonia.Styling;
++using Avalonia.UnitTests;
++using Avalonia.VisualTree;
++using Xunit;
++
++namespace Avalonia.Controls.UnitTests.Automation;
++
++/// <summary>
++/// A row's accessible name.
++/// </summary>
++/// <remarks>
++/// A row's data item is an arbitrary object, so the inherited content-control
++/// fallback of <c>Content.ToString()</c> reports the item's CLR type name for
++/// any view model that does not override it - which is what a screen reader and
++/// a UI automation client would then read out. The name is composed from the
++/// row's own cells instead.
++/// </remarks>
++public sealed class TableViewRowAutomationPeerTests : ScopedTestBase
++{
++    [Fact]
++    public void Row_Name_Comes_From_Cell_Values_Not_The_Item_Type_Name()
++    {
++        using var app = UnitTestApplication.Start(TestServices.MockPlatformRenderInterface);
++        var target = CreateTarget();
++        target.Columns.Add(new TableViewColumn { Binding = new Binding("Name") });
++        target.Columns.Add(new TableViewColumn { Binding = new Binding("Severity") });
++        target.ItemsSource = new[] { new Row("boot.log", "Warning") };
++        Prepare(target);
++
++        var row = (TableViewRow)target.GetRealizedContainers().Single();
++        var peer = ControlAutomationPeer.CreatePeerForElement(row);
++
++        Assert.Equal("boot.log Warning", peer.GetName());
++        Assert.DoesNotContain("Row", peer.GetName()!);
++    }
++
++    [Fact]
++    public void A_Templated_Cell_Contributes_The_Text_It_Actually_Renders()
++    {
++        using var app = UnitTestApplication.Start(TestServices.MockPlatformRenderInterface);
++        var target = CreateTarget();
++        target.Columns.Add(new TableViewColumn { Binding = new Binding("Name") });
++        target.Columns.Add(new TableViewColumn
++        {
++            // A templated cell's content is the row item itself, so its text
++            // has to come from the realized visual rather than ToString().
++            CellTemplate = new FuncDataTemplate<Row>((_, _) =>
++                new Border { Child = new TextBlock { [!TextBlock.TextProperty] = new Binding("Severity") } }),
++        });
++        target.ItemsSource = new[] { new Row("boot.log", "Warning") };
++        Prepare(target);
++
++        var row = (TableViewRow)target.GetRealizedContainers().Single();
++
++        Assert.Equal("boot.log Warning", ControlAutomationPeer.CreatePeerForElement(row).GetName());
++    }
++
++    [Fact]
++    public void An_Explicit_Automation_Name_Still_Wins()
++    {
++        using var app = UnitTestApplication.Start(TestServices.MockPlatformRenderInterface);
++        var target = CreateTarget();
++        target.Columns.Add(new TableViewColumn { Binding = new Binding("Name") });
++        target.ItemsSource = new[] { new Row("boot.log", "Warning") };
++        Prepare(target);
++
++        var row = (TableViewRow)target.GetRealizedContainers().Single();
++        AutomationProperties.SetName(row, "Explicit");
++
++        Assert.Equal("Explicit", ControlAutomationPeer.CreatePeerForElement(row).GetName());
++    }
++
++    [Fact]
++    public void A_Row_Without_Realized_Cells_Falls_Back_To_The_Inherited_Name()
++    {
++        using var app = UnitTestApplication.Start(TestServices.MockPlatformRenderInterface);
++        var row = new TableViewRow { Content = "plain" };
++
++        Assert.Equal("plain", ControlAutomationPeer.CreatePeerForElement(row).GetName());
++    }
++
++    [Fact]
++    public void A_Row_Reports_The_Data_Item_Control_Type()
++    {
++        using var app = UnitTestApplication.Start(TestServices.MockPlatformRenderInterface);
++        var row = new TableViewRow();
++
++        Assert.Equal(
++            AutomationControlType.DataItem,
++            ControlAutomationPeer.CreatePeerForElement(row).GetAutomationControlType());
++    }
++
++    private static TableView CreateTarget() => new()
++    {
++        Template = Template(),
++        ItemContainerTheme = RowTheme(),
++    };
++
++    private static void Prepare(TableView target)
++    {
++        target.Width = 300;
++        target.Height = 200;
++        var root = new TestRoot(target);
++        root.LayoutManager.ExecuteInitialLayoutPass();
++    }
++
++    private static ControlTheme RowTheme() => new(typeof(TableViewRow))
++    {
++        Setters =
++        {
++            new Setter(
++                TemplatedControl.TemplateProperty,
++                new FuncControlTemplate<TableViewRow>((_, scope) =>
++                    new TableViewCellsPresenter { Name = "PART_CellsPresenter" }.RegisterInNameScope(scope))),
++        },
++    };
++
++    private static FuncControlTemplate Template() =>
++        new FuncControlTemplate<TableView>((_, scope) =>
++            new ItemsPresenter { Name = "PART_ItemsPresenter" }.RegisterInNameScope(scope));
++
++    private sealed class Row(string name, string severity)
++    {
++        public string Name { get; } = name;
++
++        public string Severity { get; } = severity;
++    }
++}
+diff --git a/tests/Avalonia.Controls.UnitTests/Presenters/TableViewColumnWidthLimitTests.cs b/tests/Avalonia.Controls.UnitTests/Presenters/TableViewColumnWidthLimitTests.cs
+new file mode 100644
+index 000000000..8ab53caa3
+--- /dev/null
++++ b/tests/Avalonia.Controls.UnitTests/Presenters/TableViewColumnWidthLimitTests.cs
+@@ -0,0 +1,109 @@
++using Avalonia.Collections;
++using Avalonia.Controls.Presenters;
++using Avalonia.UnitTests;
++using Xunit;
++
++namespace Avalonia.Controls.UnitTests.Presenters;
++
++/// <summary>
++/// Per-column minimum and maximum widths. They apply to every width mode, not
++/// just interactive resizing, so a narrow window cannot collapse a column that
++/// declared a floor.
++/// </summary>
++public sealed class TableViewColumnWidthLimitTests : ScopedTestBase
++{
++    [Fact]
++    public void UpdateActualWidths_Clamps_A_Pixel_Column_To_Its_Minimum()
++    {
++        var columns = new AvaloniaList<TableViewColumn>
++        {
++            new() { Width = new GridLength(40), MinWidth = 100 },
++        };
++
++        TableViewLayoutHelper.UpdateActualWidths(columns, 500, false, 1.0);
++
++        Assert.Equal(100, columns[0].ActualWidth);
++    }
++
++    [Fact]
++    public void UpdateActualWidths_Clamps_A_Pixel_Column_To_Its_Maximum()
++    {
++        var columns = new AvaloniaList<TableViewColumn>
++        {
++            new() { Width = new GridLength(400), MaxWidth = 120 },
++        };
++
++        TableViewLayoutHelper.UpdateActualWidths(columns, 500, false, 1.0);
++
++        Assert.Equal(120, columns[0].ActualWidth);
++    }
++
++    [Fact]
++    public void UpdateActualWidths_Clamps_A_Star_Column_To_Its_Minimum()
++    {
++        var columns = new AvaloniaList<TableViewColumn>
++        {
++            new() { Width = new GridLength(1, GridUnitType.Star), MinWidth = 260 },
++            new() { Width = new GridLength(1, GridUnitType.Star) },
++        };
++
++        TableViewLayoutHelper.UpdateActualWidths(columns, 200, false, 1.0);
++
++        Assert.Equal(260, columns[0].ActualWidth);
++        Assert.Equal(100, columns[1].ActualWidth);
++    }
++
++    [Fact]
++    public void A_Minimum_Greater_Than_The_Maximum_Wins()
++    {
++        var columns = new AvaloniaList<TableViewColumn>
++        {
++            new() { Width = new GridLength(40), MinWidth = 200, MaxWidth = 100 },
++        };
++
++        TableViewLayoutHelper.UpdateActualWidths(columns, 500, false, 1.0);
++
++        Assert.Equal(200, columns[0].ActualWidth);
++    }
++
++    [Fact]
++    public void A_hidden_column_occupies_no_width_and_does_not_take_star_budget()
++    {
++        var columns = new AvaloniaList<TableViewColumn>
++        {
++            new() { Width = new GridLength(80), IsVisible = false },
++            new() { Width = new GridLength(1, GridUnitType.Star) },
++        };
++
++        TableViewLayoutHelper.UpdateActualWidths(columns, 400, false, 1.0);
++
++        Assert.Equal(0, columns[0].ActualWidth);
++        Assert.Equal(400, columns[1].ActualWidth);
++    }
++
++    [Fact]
++    public void Unconstrained_Columns_Keep_Their_Previous_Distribution()
++    {
++        var columns = new AvaloniaList<TableViewColumn>
++        {
++            new() { Width = new GridLength(1, GridUnitType.Star) },
++            new() { Width = new GridLength(3, GridUnitType.Star) },
++        };
++
++        TableViewLayoutHelper.UpdateActualWidths(columns, 400, false, 1.0);
++
++        Assert.Equal(100, columns[0].ActualWidth);
++        Assert.Equal(300, columns[1].ActualWidth);
++    }
++
++    [Fact]
++    public void Width_Limits_Reject_Negative_And_NaN_Values()
++    {
++        var column = new TableViewColumn();
++
++        Assert.Throws<System.ArgumentException>(() => column.MinWidth = -1);
++        Assert.Throws<System.ArgumentException>(() => column.MaxWidth = double.NaN);
++        Assert.Equal(0, column.MinWidth);
++        Assert.Equal(double.PositiveInfinity, column.MaxWidth);
++    }
++}
+diff --git a/tests/Avalonia.Controls.UnitTests/TableViewTests.cs b/tests/Avalonia.Controls.UnitTests/TableViewTests.cs
+index e347d436d..5babf022b 100644
+--- a/tests/Avalonia.Controls.UnitTests/TableViewTests.cs
++++ b/tests/Avalonia.Controls.UnitTests/TableViewTests.cs
+@@ -30,6 +30,30 @@ public void Container_For_Each_Item_Is_TableViewRow()
+         Assert.All(containers, c => Assert.IsType<TableViewRow>(c));
+     }
+ 
++    [Fact]
++    public void Fixed_height_table_virtualizes_a_100000_item_source_when_scrolling()
++    {
++        using var app = Start();
++
++        var target = CreateTarget(Enumerable.Range(0, 100_000).ToArray());
++        target.Columns.Add(new TableViewColumn { Width = new GridLength(1, GridUnitType.Star) });
++        Prepare(target, width: 300, height: 100);
++        target.SelectedIndex = 50_000;
++
++        var initial = target.GetRealizedContainers().ToArray();
++        Assert.NotEmpty(initial);
++        Assert.True(initial.Length < 100, $"Expected viewport-bounded realization, got {initial.Length} rows.");
++
++        target.ScrollIntoView(50_000);
++        Layout(target);
++
++        var distant = target.GetRealizedContainers().ToArray();
++        Assert.NotEmpty(distant);
++        Assert.True(distant.Length < 100, $"Expected viewport-bounded realization, got {distant.Length} rows.");
++        Assert.Contains(distant, row => target.IndexFromContainer(row) == 50_000);
++        Assert.Equal(50_000, target.SelectedIndex);
++    }
++
+     [Fact]
+     public void Row_Has_One_Cell_Per_Column()
+     {

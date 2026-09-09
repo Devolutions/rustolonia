@@ -1,0 +1,16 @@
+[Desktop Entry]
+Type=Application
+Name=pdf-viewer
+Comment=Rustolonia PDF viewer powered by PDF Oxide
+# %F passes the selected file paths as separate arguments. Use %U instead if
+# your application should also receive non-local URIs; both reach Rust through
+# AppScope::activation_items(), which keeps a URI when there is no local path.
+Exec=/opt/pdf-viewer/pdf-viewer %F
+Icon=pdf-viewer
+Terminal=false
+Categories=Utility;
+MimeType=application/pdf;
+
+# Install with (from a package post-install step, not from the application):
+#   desktop-file-install --dir="$HOME/.local/share/applications" this-file.desktop
+#   update-desktop-database "$HOME/.local/share/applications"

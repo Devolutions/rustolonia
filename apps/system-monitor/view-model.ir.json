@@ -1,0 +1,1606 @@
+{
+  "version": 5,
+  "enums": [],
+  "models": [
+    {
+      "id": 1,
+      "name": "MainViewModel",
+      "managedNamespace": "NeoHtop.Presentation.Generated",
+      "properties": [
+        {
+          "id": 1,
+          "name": "SearchText",
+          "kind": "String",
+          "writable": true,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 2,
+          "name": "IsFrozen",
+          "kind": "Boolean",
+          "writable": true,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 3,
+          "name": "IsDarkTheme",
+          "kind": "Boolean",
+          "writable": true,
+          "nullable": false,
+          "initialBoolean": true
+        },
+        {
+          "id": 4,
+          "name": "CpuPercent",
+          "kind": "Double",
+          "writable": false,
+          "nullable": false,
+          "initialDouble": 0.0
+        },
+        {
+          "id": 5,
+          "name": "MemoryPercent",
+          "kind": "Double",
+          "writable": false,
+          "nullable": false,
+          "initialDouble": 0.0
+        },
+        {
+          "id": 6,
+          "name": "MemoryUsed",
+          "kind": "Integer",
+          "writable": false,
+          "nullable": false,
+          "initialInteger": 0
+        },
+        {
+          "id": 7,
+          "name": "MemoryTotal",
+          "kind": "Integer",
+          "writable": false,
+          "nullable": false,
+          "initialInteger": 0
+        },
+        {
+          "id": 8,
+          "name": "ProcessCount",
+          "kind": "Integer",
+          "writable": false,
+          "nullable": false,
+          "initialInteger": 0
+        },
+        {
+          "id": 9,
+          "name": "Status",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "Collecting process list..."
+        },
+        {
+          "id": 10,
+          "name": "SelectedPid",
+          "kind": "Integer",
+          "writable": true,
+          "nullable": false,
+          "initialInteger": 0
+        },
+        {
+          "id": 11,
+          "name": "SelectedIndex",
+          "kind": "Integer",
+          "writable": true,
+          "nullable": false,
+          "initialInteger": -1
+        },
+        {
+          "id": 12,
+          "name": "SelectedKey",
+          "kind": "String",
+          "writable": true,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 13,
+          "name": "SortDirection",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "CpuUsage Descending"
+        },
+        {
+          "id": 14,
+          "name": "ErrorMessage",
+          "kind": "String",
+          "writable": false,
+          "nullable": true
+        },
+        {
+          "id": 15,
+          "name": "CpuSummary",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "CPU \u2014"
+        },
+        {
+          "id": 16,
+          "name": "MemorySummary",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "Memory \u2014"
+        },
+        {
+          "id": 17,
+          "name": "NetworkSummary",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "Network \u2014"
+        },
+        {
+          "id": 18,
+          "name": "StorageSummary",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "Storage \u2014"
+        },
+        {
+          "id": 19,
+          "name": "StoragePercent",
+          "kind": "Double",
+          "writable": false,
+          "nullable": false,
+          "initialDouble": 0.0
+        },
+        {
+          "id": 20,
+          "name": "SystemSummary",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "System \u2014"
+        },
+        {
+          "id": 21,
+          "name": "FreezeActionLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "Freeze"
+        },
+        {
+          "id": 22,
+          "name": "ThemeActionLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "Light theme"
+        },
+        {
+          "id": 23,
+          "name": "ShowKillConfirm",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 24,
+          "name": "KillConfirmMessage",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 25,
+          "name": "IsKilling",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 26,
+          "name": "ShowDetails",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 27,
+          "name": "DetailTitle",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 28,
+          "name": "DetailBody",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 29,
+          "name": "ShowParentEnabled",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 30,
+          "name": "CpuFilterEnabled",
+          "kind": "Boolean",
+          "writable": true,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 31,
+          "name": "CpuFilterOperator",
+          "kind": "String",
+          "writable": true,
+          "nullable": false,
+          "initialString": ">"
+        },
+        {
+          "id": 32,
+          "name": "CpuFilterValue",
+          "kind": "Integer",
+          "writable": true,
+          "nullable": false,
+          "initialInteger": 50
+        },
+        {
+          "id": 33,
+          "name": "RamFilterEnabled",
+          "kind": "Boolean",
+          "writable": true,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 34,
+          "name": "RamFilterOperator",
+          "kind": "String",
+          "writable": true,
+          "nullable": false,
+          "initialString": ">"
+        },
+        {
+          "id": 35,
+          "name": "RamFilterValue",
+          "kind": "Integer",
+          "writable": true,
+          "nullable": false,
+          "initialInteger": 100
+        },
+        {
+          "id": 36,
+          "name": "RuntimeFilterEnabled",
+          "kind": "Boolean",
+          "writable": true,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 37,
+          "name": "RuntimeFilterOperator",
+          "kind": "String",
+          "writable": true,
+          "nullable": false,
+          "initialString": ">"
+        },
+        {
+          "id": 38,
+          "name": "RuntimeFilterValue",
+          "kind": "Integer",
+          "writable": true,
+          "nullable": false,
+          "initialInteger": 60
+        },
+        {
+          "id": 39,
+          "name": "StatusFilter",
+          "kind": "String",
+          "writable": true,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 40,
+          "name": "ProcessCountLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "0 processes"
+        },
+        {
+          "id": 41,
+          "name": "MemoryFree",
+          "kind": "Integer",
+          "writable": false,
+          "nullable": false,
+          "initialInteger": 0
+        },
+        {
+          "id": 42,
+          "name": "NetworkRx",
+          "kind": "Integer",
+          "writable": false,
+          "nullable": false,
+          "initialInteger": 0
+        },
+        {
+          "id": 43,
+          "name": "NetworkTx",
+          "kind": "Integer",
+          "writable": false,
+          "nullable": false,
+          "initialInteger": 0
+        },
+        {
+          "id": 44,
+          "name": "StorageUsed",
+          "kind": "Integer",
+          "writable": false,
+          "nullable": false,
+          "initialInteger": 0
+        },
+        {
+          "id": 45,
+          "name": "StorageTotal",
+          "kind": "Integer",
+          "writable": false,
+          "nullable": false,
+          "initialInteger": 0
+        },
+        {
+          "id": 46,
+          "name": "StorageFree",
+          "kind": "Integer",
+          "writable": false,
+          "nullable": false,
+          "initialInteger": 0
+        },
+        {
+          "id": 47,
+          "name": "RefreshRateMs",
+          "kind": "Integer",
+          "writable": true,
+          "nullable": false,
+          "initialInteger": 3000
+        },
+        {
+          "id": 48,
+          "name": "RefreshRateLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "3s"
+        },
+        {
+          "id": 49,
+          "name": "MemoryUsedLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "-"
+        },
+        {
+          "id": 50,
+          "name": "MemoryTotalLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "-"
+        },
+        {
+          "id": 51,
+          "name": "MemoryFreeLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "-"
+        },
+        {
+          "id": 52,
+          "name": "NetworkRxLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "-"
+        },
+        {
+          "id": 53,
+          "name": "NetworkTxLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "-"
+        },
+        {
+          "id": 54,
+          "name": "StorageUsedLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "-"
+        },
+        {
+          "id": 55,
+          "name": "StorageTotalLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "-"
+        },
+        {
+          "id": 56,
+          "name": "StorageFreeLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "-"
+        },
+        {
+          "id": 57,
+          "name": "UptimeLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "-"
+        },
+        {
+          "id": 58,
+          "name": "LoadOneLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "-"
+        },
+        {
+          "id": 59,
+          "name": "LoadFiveLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "-"
+        },
+        {
+          "id": 60,
+          "name": "LoadFifteenLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "-"
+        },
+        {
+          "id": 61,
+          "name": "ShowFilters",
+          "kind": "Boolean",
+          "writable": true,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 62,
+          "name": "ShowColumns",
+          "kind": "Boolean",
+          "writable": true,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 63,
+          "name": "ShowSearchHelp",
+          "kind": "Boolean",
+          "writable": true,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 64,
+          "name": "ShowPid",
+          "kind": "Boolean",
+          "writable": true,
+          "nullable": false,
+          "initialBoolean": true
+        },
+        {
+          "id": 65,
+          "name": "ShowStatus",
+          "kind": "Boolean",
+          "writable": true,
+          "nullable": false,
+          "initialBoolean": true
+        },
+        {
+          "id": 66,
+          "name": "ShowUser",
+          "kind": "Boolean",
+          "writable": true,
+          "nullable": false,
+          "initialBoolean": true
+        },
+        {
+          "id": 67,
+          "name": "ShowCpu",
+          "kind": "Boolean",
+          "writable": true,
+          "nullable": false,
+          "initialBoolean": true
+        },
+        {
+          "id": 68,
+          "name": "ShowRam",
+          "kind": "Boolean",
+          "writable": true,
+          "nullable": false,
+          "initialBoolean": true
+        },
+        {
+          "id": 69,
+          "name": "ShowVirt",
+          "kind": "Boolean",
+          "writable": true,
+          "nullable": false,
+          "initialBoolean": true
+        },
+        {
+          "id": 70,
+          "name": "ShowDisk",
+          "kind": "Boolean",
+          "writable": true,
+          "nullable": false,
+          "initialBoolean": true
+        },
+        {
+          "id": 71,
+          "name": "ShowRunTime",
+          "kind": "Boolean",
+          "writable": true,
+          "nullable": false,
+          "initialBoolean": true
+        },
+        {
+          "id": 72,
+          "name": "ShowCommand",
+          "kind": "Boolean",
+          "writable": true,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 73,
+          "name": "ShowPpid",
+          "kind": "Boolean",
+          "writable": true,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 74,
+          "name": "ShowRoot",
+          "kind": "Boolean",
+          "writable": true,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 75,
+          "name": "ShowEnviron",
+          "kind": "Boolean",
+          "writable": true,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 76,
+          "name": "ShowSession",
+          "kind": "Boolean",
+          "writable": true,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 77,
+          "name": "ShowStartTime",
+          "kind": "Boolean",
+          "writable": true,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 78,
+          "name": "DetailName",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 79,
+          "name": "DetailPidLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 80,
+          "name": "DetailPpidLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 81,
+          "name": "DetailUser",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 82,
+          "name": "DetailStatus",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 83,
+          "name": "DetailSessionLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 84,
+          "name": "DetailCpuLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 85,
+          "name": "DetailMemoryLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 86,
+          "name": "DetailVirtLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 87,
+          "name": "DetailDiskLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 88,
+          "name": "DetailCommand",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 89,
+          "name": "DetailRoot",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 90,
+          "name": "DetailChildren",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 91,
+          "name": "CpuPercentLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "-"
+        },
+        {
+          "id": 92,
+          "name": "MemoryPercentLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "-"
+        },
+        {
+          "id": 93,
+          "name": "StoragePercentLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "-"
+        }
+      ],
+      "collections": [
+        {
+          "id": 1,
+          "name": "Processes",
+          "elementKind": "Model",
+          "elementModelName": "ProcessRowViewModel",
+          "table": {
+            "columns": [
+              {
+                "id": 1,
+                "name": "Name",
+                "header": "Process Name",
+                "path": "Name",
+                "star": true,
+                "auto": false,
+                "minWidth": 160,
+                "resizable": true,
+                "sortable": true,
+                "horizontalAlignment": "Left"
+              },
+              {
+                "id": 2,
+                "name": "Pid",
+                "header": "PID",
+                "path": "Pid",
+                "width": 80,
+                "star": false,
+                "auto": false,
+                "minWidth": 64,
+                "resizable": true,
+                "sortable": true,
+                "horizontalAlignment": "Right"
+              },
+              {
+                "id": 3,
+                "name": "Status",
+                "header": "Status",
+                "path": "Status",
+                "width": 100,
+                "star": false,
+                "auto": false,
+                "minWidth": 80,
+                "resizable": true,
+                "sortable": true,
+                "horizontalAlignment": "Left"
+              },
+              {
+                "id": 4,
+                "name": "User",
+                "header": "User",
+                "path": "User",
+                "width": 120,
+                "star": false,
+                "auto": false,
+                "minWidth": 80,
+                "resizable": true,
+                "sortable": true,
+                "horizontalAlignment": "Left"
+              },
+              {
+                "id": 5,
+                "name": "CpuUsage",
+                "header": "CPU %",
+                "path": "CpuUsage",
+                "width": 90,
+                "star": false,
+                "auto": false,
+                "minWidth": 72,
+                "resizable": true,
+                "sortable": true,
+                "horizontalAlignment": "Right"
+              },
+              {
+                "id": 6,
+                "name": "MemoryUsage",
+                "header": "RAM",
+                "path": "MemoryUsage",
+                "width": 100,
+                "star": false,
+                "auto": false,
+                "minWidth": 80,
+                "resizable": true,
+                "sortable": true,
+                "horizontalAlignment": "Right"
+              },
+              {
+                "id": 7,
+                "name": "VirtualMemory",
+                "header": "VIRT",
+                "path": "VirtualMemory",
+                "width": 100,
+                "star": false,
+                "auto": false,
+                "minWidth": 80,
+                "resizable": true,
+                "sortable": true,
+                "horizontalAlignment": "Right"
+              },
+              {
+                "id": 8,
+                "name": "DiskIo",
+                "header": "Disk I/O (R/W)",
+                "path": "DiskIo",
+                "width": 140,
+                "star": false,
+                "auto": false,
+                "minWidth": 110,
+                "resizable": true,
+                "sortable": true,
+                "horizontalAlignment": "Right"
+              },
+              {
+                "id": 9,
+                "name": "RunTime",
+                "header": "Run Time",
+                "path": "RunTimeLabel",
+                "width": 120,
+                "star": false,
+                "auto": false,
+                "minWidth": 90,
+                "resizable": true,
+                "sortable": true,
+                "horizontalAlignment": "Left"
+              },
+              {
+                "id": 10,
+                "name": "Command",
+                "header": "Command",
+                "path": "Command",
+                "width": 240,
+                "star": false,
+                "auto": false,
+                "minWidth": 140,
+                "resizable": true,
+                "sortable": true,
+                "horizontalAlignment": "Left"
+              },
+              {
+                "id": 11,
+                "name": "Ppid",
+                "header": "Parent PID",
+                "path": "Ppid",
+                "width": 90,
+                "star": false,
+                "auto": false,
+                "minWidth": 72,
+                "resizable": true,
+                "sortable": true,
+                "horizontalAlignment": "Right"
+              },
+              {
+                "id": 12,
+                "name": "Root",
+                "header": "Root",
+                "path": "Root",
+                "width": 160,
+                "star": false,
+                "auto": false,
+                "minWidth": 100,
+                "resizable": true,
+                "sortable": true,
+                "horizontalAlignment": "Left"
+              },
+              {
+                "id": 13,
+                "name": "Environ",
+                "header": "Environment Variables",
+                "path": "Environ",
+                "width": 200,
+                "star": false,
+                "auto": false,
+                "minWidth": 120,
+                "resizable": true,
+                "sortable": false,
+                "horizontalAlignment": "Left"
+              },
+              {
+                "id": 14,
+                "name": "SessionId",
+                "header": "Session ID",
+                "path": "SessionId",
+                "width": 100,
+                "star": false,
+                "auto": false,
+                "minWidth": 80,
+                "resizable": true,
+                "sortable": true,
+                "horizontalAlignment": "Right"
+              },
+              {
+                "id": 15,
+                "name": "StartTime",
+                "header": "Start Time",
+                "path": "StartTimeLabel",
+                "width": 160,
+                "star": false,
+                "auto": false,
+                "minWidth": 120,
+                "resizable": true,
+                "sortable": true,
+                "horizontalAlignment": "Left"
+              }
+            ],
+            "selection": {
+              "selectedIndexProperty": "SelectedIndex",
+              "selectedKeyProperty": "SelectedKey",
+              "rowKeyPath": "Key"
+            },
+            "sort": {
+              "command": "SortProcesses",
+              "column": "CpuUsage",
+              "directionProperty": "SortDirection"
+            }
+          },
+          "window": {
+            "pageSize": 64,
+            "maxLivePages": 8
+          },
+          "recursive": false
+        },
+        {
+          "id": 2,
+          "name": "CpuCores",
+          "elementKind": "Model",
+          "recursive": false,
+          "elementModelName": "CpuCoreViewModel"
+        }
+      ],
+      "maps": [],
+      "commands": [
+        {
+          "id": 1,
+          "name": "Refresh",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 2,
+          "name": "Kill",
+          "isAsync": true,
+          "supportsProgress": false,
+          "supportsCancellation": false,
+          "parameterProperty": "SelectedKey"
+        },
+        {
+          "id": 3,
+          "name": "Pin",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false,
+          "parameterProperty": "SelectedKey"
+        },
+        {
+          "id": 4,
+          "name": "ShowDetails",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false,
+          "parameterProperty": "SelectedKey"
+        },
+        {
+          "id": 5,
+          "name": "ToggleTheme",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 6,
+          "name": "ToggleFreeze",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 7,
+          "name": "SortProcesses",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 8,
+          "name": "ConfirmKill",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 9,
+          "name": "CancelKill",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 10,
+          "name": "CloseDetails",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 11,
+          "name": "ShowParentDetails",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 12,
+          "name": "CopySelectedRow",
+          "isAsync": true,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 13,
+          "name": "ExitApplication",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 14,
+          "name": "ClearSearch",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 15,
+          "name": "ToggleCpuOperator",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 16,
+          "name": "ToggleRamOperator",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 17,
+          "name": "ToggleRuntimeOperator",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 18,
+          "name": "ToggleFilters",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 19,
+          "name": "ToggleColumns",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 20,
+          "name": "ToggleSearchHelp",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 21,
+          "name": "CycleRefreshRate",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 22,
+          "name": "CloseOverlays",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        }
+      ],
+      "menus": [
+        {
+          "id": 1,
+          "name": "Main",
+          "kind": "Application",
+          "items": [
+            {
+              "id": 1,
+              "name": "File",
+              "kind": "Submenu",
+              "header": "_File",
+              "items": [
+                {
+                  "id": 2,
+                  "name": "Refresh",
+                  "kind": "Command",
+                  "header": "_Refresh",
+                  "command": "Refresh",
+                  "gesture": "F5",
+                  "items": []
+                },
+                {
+                  "id": 3,
+                  "name": "Freeze",
+                  "kind": "Toggle",
+                  "header": "F_reeze",
+                  "toggleProperty": "IsFrozen",
+                  "gesture": "Ctrl+F",
+                  "items": []
+                },
+                {
+                  "id": 4,
+                  "name": "FileSeparator",
+                  "kind": "Separator",
+                  "items": []
+                },
+                {
+                  "id": 5,
+                  "name": "Exit",
+                  "kind": "Command",
+                  "header": "E_xit",
+                  "command": "ExitApplication",
+                  "gesture": "Ctrl+Q",
+                  "items": []
+                }
+              ]
+            },
+            {
+              "id": 6,
+              "name": "View",
+              "kind": "Submenu",
+              "header": "_View",
+              "items": [
+                {
+                  "id": 7,
+                  "name": "DarkTheme",
+                  "kind": "Toggle",
+                  "header": "_Dark theme",
+                  "toggleProperty": "IsDarkTheme",
+                  "gesture": "Ctrl+T",
+                  "items": []
+                },
+                {
+                  "id": 14,
+                  "name": "Filters",
+                  "kind": "Toggle",
+                  "header": "_Filters",
+                  "toggleProperty": "ShowFilters",
+                  "items": []
+                },
+                {
+                  "id": 15,
+                  "name": "Columns",
+                  "kind": "Toggle",
+                  "header": "_Columns",
+                  "toggleProperty": "ShowColumns",
+                  "items": []
+                },
+                {
+                  "id": 16,
+                  "name": "SearchHelp",
+                  "kind": "Command",
+                  "header": "Search _help",
+                  "command": "ToggleSearchHelp",
+                  "items": []
+                }
+              ]
+            },
+            {
+              "id": 8,
+              "name": "Process",
+              "kind": "Submenu",
+              "header": "_Process",
+              "items": [
+                {
+                  "id": 9,
+                  "name": "PinSelected",
+                  "kind": "Command",
+                  "header": "_Pin / unpin",
+                  "command": "Pin",
+                  "gesture": "Ctrl+P",
+                  "items": []
+                },
+                {
+                  "id": 10,
+                  "name": "Details",
+                  "kind": "Command",
+                  "header": "Show _details",
+                  "command": "ShowDetails",
+                  "gesture": "Ctrl+I",
+                  "items": []
+                },
+                {
+                  "id": 11,
+                  "name": "EndProcess",
+                  "kind": "Command",
+                  "header": "_End process",
+                  "command": "Kill",
+                  "gesture": "Delete",
+                  "items": []
+                },
+                {
+                  "id": 12,
+                  "name": "ProcessSeparator",
+                  "kind": "Separator",
+                  "items": []
+                },
+                {
+                  "id": 13,
+                  "name": "Copy",
+                  "kind": "Command",
+                  "header": "_Copy row",
+                  "command": "CopySelectedRow",
+                  "gesture": "Ctrl+C",
+                  "items": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "name": "Processes",
+          "kind": "Context",
+          "items": [
+            {
+              "id": 1,
+              "name": "PinRow",
+              "kind": "Command",
+              "header": "Pin / unpin",
+              "command": "Pin",
+              "items": []
+            },
+            {
+              "id": 2,
+              "name": "DetailsRow",
+              "kind": "Command",
+              "header": "Show details",
+              "command": "ShowDetails",
+              "items": []
+            },
+            {
+              "id": 3,
+              "name": "KillRow",
+              "kind": "Command",
+              "header": "End process",
+              "command": "Kill",
+              "items": []
+            },
+            {
+              "id": 4,
+              "name": "ContextSeparator",
+              "kind": "Separator",
+              "items": []
+            },
+            {
+              "id": 5,
+              "name": "CopyRow",
+              "kind": "Command",
+              "header": "Copy row",
+              "command": "CopySelectedRow",
+              "items": []
+            }
+          ]
+        }
+      ],
+      "themeVariantProperty": "IsDarkTheme"
+    },
+    {
+      "id": 2,
+      "name": "ProcessRowViewModel",
+      "managedNamespace": "NeoHtop.Presentation.Generated",
+      "properties": [
+        {
+          "id": 1,
+          "name": "Name",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 2,
+          "name": "Pid",
+          "kind": "Integer",
+          "writable": false,
+          "nullable": false,
+          "initialInteger": 0
+        },
+        {
+          "id": 3,
+          "name": "Ppid",
+          "kind": "Integer",
+          "writable": false,
+          "nullable": false,
+          "initialInteger": 0
+        },
+        {
+          "id": 4,
+          "name": "Status",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 5,
+          "name": "User",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 6,
+          "name": "CpuUsage",
+          "kind": "Double",
+          "writable": false,
+          "nullable": false,
+          "initialDouble": 0.0
+        },
+        {
+          "id": 7,
+          "name": "MemoryUsage",
+          "kind": "Integer",
+          "writable": false,
+          "nullable": false,
+          "initialInteger": 0
+        },
+        {
+          "id": 8,
+          "name": "VirtualMemory",
+          "kind": "Integer",
+          "writable": false,
+          "nullable": false,
+          "initialInteger": 0
+        },
+        {
+          "id": 9,
+          "name": "DiskRead",
+          "kind": "Integer",
+          "writable": false,
+          "nullable": false,
+          "initialInteger": 0
+        },
+        {
+          "id": 10,
+          "name": "DiskWrite",
+          "kind": "Integer",
+          "writable": false,
+          "nullable": false,
+          "initialInteger": 0
+        },
+        {
+          "id": 11,
+          "name": "Command",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 12,
+          "name": "Root",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 13,
+          "name": "SessionId",
+          "kind": "Integer",
+          "writable": false,
+          "nullable": false,
+          "initialInteger": 0
+        },
+        {
+          "id": 14,
+          "name": "StartTime",
+          "kind": "Integer",
+          "writable": false,
+          "nullable": false,
+          "initialInteger": 0
+        },
+        {
+          "id": 15,
+          "name": "RunTime",
+          "kind": "Integer",
+          "writable": false,
+          "nullable": false,
+          "initialInteger": 0
+        },
+        {
+          "id": 16,
+          "name": "IsPinned",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 17,
+          "name": "Key",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 18,
+          "name": "Environ",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 19,
+          "name": "DiskIo",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 20,
+          "name": "RunTimeLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 21,
+          "name": "MemoryLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 22,
+          "name": "VirtualMemoryLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 23,
+          "name": "CpuLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 24,
+          "name": "PinLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "Pin"
+        },
+        {
+          "id": 25,
+          "name": "IsHighUsage",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 26,
+          "name": "StartTimeLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 27,
+          "name": "SessionLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 28,
+          "name": "IconPng",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        }
+      ],
+      "collections": [],
+      "maps": [],
+      "commands": [],
+      "menus": [],
+      "displayPath": "Name"
+    },
+    {
+      "id": 3,
+      "name": "CpuCoreViewModel",
+      "managedNamespace": "NeoHtop.Presentation.Generated",
+      "displayPath": "Label",
+      "properties": [
+        {
+          "id": 1,
+          "name": "Label",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 2,
+          "name": "Usage",
+          "kind": "Double",
+          "writable": false,
+          "nullable": false,
+          "initialDouble": 0.0
+        }
+      ],
+      "collections": [],
+      "maps": [],
+      "commands": [],
+      "menus": []
+    }
+  ],
+  "views": [
+    {
+      "id": 1,
+      "name": "MainWindow",
+      "model": "MainViewModel",
+      "managedTypeName": "NeoHtop.Presentation.Views.MainWindow",
+      "dynamicBindings": false,
+      "converters": []
+    }
+  ],
+  "converters": []
+}

@@ -1,0 +1,15 @@
+[package]
+name = "avalonia"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Idiomatic Rust API for Avalonia"
+repository = "https://github.com/mamoreau-devolutions/rustolonia"
+readme = "README.md"
+publish = false
+
+[dependencies]
+avalonia-sys = { path = "../avalonia-sys" }
+
+[dev-dependencies]
+avalonia-sample = { path = "../avalonia-sample" }

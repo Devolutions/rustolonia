@@ -1,0 +1,19 @@
+<Project>
+
+  <!--
+    Test-project build configuration for the rustolonia repository. Mirrors the
+    Avalonia producer's tests/Directory.Build.props: the xunit v3 MTP runner
+    needs UseMicrosoftTestingPlatformRunner so dotnet test uses the Microsoft
+    Testing Platform experience on the .NET 10 SDK. The parent chain (root
+    Directory.Build.props with the vendored build configuration) is imported
+    explicitly because a Directory.Build.props stops MSBuild's upward walk.
+  -->
+  <Import Project="..\Directory.Build.props" />
+
+  <PropertyGroup>
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+  </PropertyGroup>
+
+</Project>

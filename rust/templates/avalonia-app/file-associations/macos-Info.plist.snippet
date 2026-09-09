@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Merge these keys into the .app bundle's Info.plist. This is metadata only;
+  bundling, signing and notarization stay with your distribution channel.
+
+  CFBundleDocumentTypes makes Finder offer this application in "Open With".
+  UTExportedTypeDeclarations declares the type itself, so the extension maps to
+  a uniform type identifier that the same string can be used for in a Rust
+  FileTypeFilter (`with_apple_uniform_type_identifier`).
+
+  macOS delivers documents through the application lifetime rather than argv,
+  which the host already bridges: startup documents appear in
+  AppScope::activation_items(), and documents opened while the application is
+  running arrive through AppScope::on_activation as ActivationEvent::Files.
+-->
+<plist version="1.0">
+<dict>
+  <key>CFBundleDocumentTypes</key>
+  <array>
+    <dict>
+      <key>CFBundleTypeName</key>
+      <string>__AVALONIA_APP_NAME__ document</string>
+      <key>CFBundleTypeRole</key>
+      <string>Editor</string>
+      <key>LSHandlerRank</key>
+      <string>Owner</string>
+      <key>LSItemContentTypes</key>
+      <array>
+        <string>com.example.__AVALONIA_APP_NAME__.document</string>
+      </array>
+    </dict>
+  </array>
+  <key>UTExportedTypeDeclarations</key>
+  <array>
+    <dict>
+      <key>UTTypeIdentifier</key>
+      <string>com.example.__AVALONIA_APP_NAME__.document</string>
+      <key>UTTypeDescription</key>
+      <string>__AVALONIA_APP_NAME__ document</string>
+      <key>UTTypeConformsTo</key>
+      <array>
+        <string>public.data</string>
+      </array>
+      <key>UTTypeTagSpecification</key>
+      <dict>
+        <key>public.filename-extension</key>
+        <array>
+          <string>myapp</string>
+        </array>
+      </dict>
+    </dict>
+  </array>
+</dict>
+</plist>

@@ -1,0 +1,87 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>$(AvsCurrentTargetFramework)</TargetFramework>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <PublishAot>true</PublishAot>
+    <NativeLib>Shared</NativeLib>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)GeneratedFiles</CompilerGeneratedFilesOutputPath>
+    <RootNamespace>Avalonia.Host</RootNamespace>
+    <IsAotCompatible>true</IsAotCompatible>
+    <EnableRuntimeMarshalling>true</EnableRuntimeMarshalling>
+    <UseMicroCom>true</UseMicroCom>
+    <UseMicroComGeneratorRoslyn>true</UseMicroComGeneratorRoslyn>
+    <!-- Code-first host default: no sample presentation. Apps supply AvaloniaRustPresentationProjects and AvaloniaRustViewRegistryFile. -->
+    <AvaloniaRustHostPlatform Condition="'$(AvaloniaRustHostPlatform)' == '' and $([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('win-'))">Win32</AvaloniaRustHostPlatform>
+    <AvaloniaRustHostPlatform Condition="'$(AvaloniaRustHostPlatform)' == '' and $([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('linux-'))">X11</AvaloniaRustHostPlatform>
+    <AvaloniaRustHostPlatform Condition="'$(AvaloniaRustHostPlatform)' == '' and $([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('osx-'))">OSX</AvaloniaRustHostPlatform>
+    <AvaloniaRustHostPlatform Condition="'$(AvaloniaRustHostPlatform)' == '' and $([MSBuild]::IsOSPlatform('Windows'))">Win32</AvaloniaRustHostPlatform>
+    <AvaloniaRustHostPlatform Condition="'$(AvaloniaRustHostPlatform)' == '' and $([MSBuild]::IsOSPlatform('Linux'))">X11</AvaloniaRustHostPlatform>
+    <AvaloniaRustHostPlatform Condition="'$(AvaloniaRustHostPlatform)' == '' and $([MSBuild]::IsOSPlatform('OSX'))">OSX</AvaloniaRustHostPlatform>
+    <DefineConstants Condition="'$(AvaloniaRustHostPlatform)' == 'Win32'">$(DefineConstants);AVN_HOST_WIN32</DefineConstants>
+    <DefineConstants Condition="'$(AvaloniaRustHostPlatform)' == 'X11'">$(DefineConstants);AVN_HOST_X11</DefineConstants>
+    <DefineConstants Condition="'$(AvaloniaRustHostPlatform)' == 'OSX'">$(DefineConstants);AVN_HOST_OSX</DefineConstants>
+  </PropertyGroup>
+  <Target Name="ValidateAvaloniaRustHostPlatform" BeforeTargets="PrepareForBuild">
+    <Error Condition="'$(AvaloniaRustHostPlatform)' != 'Win32' and '$(AvaloniaRustHostPlatform)' != 'X11' and '$(AvaloniaRustHostPlatform)' != 'OSX'"
+           Text="AvaloniaRustHostPlatform must be Win32, X11, or OSX for runtime identifier '$(RuntimeIdentifier)'." />
+  </Target>
+  <Target Name="ValidateAvaloniaRustConsumerInputs" BeforeTargets="PrepareForBuild">
+    <Error Condition="'@(AvaloniaRustPresentationProject)' != '' and !Exists('%(AvaloniaRustPresentationProject.Identity)')"
+           Text="AvaloniaRustPresentationProjects contains a project that does not exist: '%(AvaloniaRustPresentationProject.Identity)'." />
+    <Error Condition="'$(AvaloniaRustViewRegistryFile)' != '' and !Exists('$(AvaloniaRustViewRegistryFile)')"
+           Text="AvaloniaRustViewRegistryFile does not exist: '$(AvaloniaRustViewRegistryFile)'." />
+  </Target>
+  <!--
+    Strip host-composition-only properties (AvaloniaRustPresentationProjects,
+    AvaloniaRustViewRegistryFile) from EVERY downstream reference below.
+    Without this, a project that references host with these properties
+    supplied via AdditionalProperties (e.g. tests/Avalonia.Host.Tests.csproj,
+    which also references some of these same producer/interop projects
+    directly) causes MSBuild to see two distinct global-property sets for the
+    shared subtree, and can build both concurrently, racing to write the same
+    output files (observed as sporadic "the process cannot access the file"
+    failures). Stripping them here keeps host's entire dependency subtree on
+    one canonical property set regardless of how host itself was reached.
+  -->
+  <ItemDefinitionGroup>
+    <ProjectReference>
+      <GlobalPropertiesToRemove>AvaloniaRustPresentationProjects;AvaloniaRustViewRegistryFile</GlobalPropertiesToRemove>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Avalonia.Host.Tests, PublicKey=$(AvaloniaPublicKey)" />
+    <MicroComIdl Include="Ownership\microcom-ownership.idl" />
+    <ProjectReference Include="$(AvaloniaProducerRoot)\src\Skia\Avalonia.Skia\Avalonia.Skia.csproj" />
+    <ProjectReference Include="$(AvaloniaProducerRoot)\src\HarfBuzz\Avalonia.HarfBuzz\Avalonia.HarfBuzz.csproj" />
+    <ProjectReference Include="$(AvaloniaProducerRoot)\src\Avalonia.Themes.Fluent\Avalonia.Themes.Fluent.csproj" />
+    <ProjectReference Include="..\interop\Avalonia.Rust\Avalonia.Rust.csproj" />
+    <ProjectReference Include="..\interop\Avalonia.Rust.Interop\Avalonia.Rust.Interop.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(AvaloniaRustPresentationProjects)' != ''">
+    <AvaloniaRustPresentationProject Include="$(AvaloniaRustPresentationProjects)" />
+    <ProjectReference Include="@(AvaloniaRustPresentationProject)" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(AvaloniaRustViewRegistryFile)' != ''">
+    <Compile Remove="ViewRegistry.cs" />
+    <Compile Include="$(AvaloniaRustViewRegistryFile)" Link="Generated\ViewModels\RustViewRegistry.g.cs" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(AvaloniaRustHostPlatform)' == 'Win32'">
+    <ProjectReference Include="$(AvaloniaProducerRoot)\src\Windows\Avalonia.Win32\Avalonia.Win32.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(AvaloniaRustHostPlatform)' == 'X11'">
+    <ProjectReference Include="$(AvaloniaProducerRoot)\src\Avalonia.X11\Avalonia.X11.csproj" />
+    <LinkerArg Include="-Wl,-rpath,'$ORIGIN'" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(AvaloniaRustHostPlatform)' == 'OSX'">
+    <ProjectReference Include="$(AvaloniaProducerRoot)\src\Avalonia.Native\Avalonia.Native.csproj" />
+    <LinkerArg Include="-Wl,-rpath,@loader_path" />
+  </ItemGroup>
+  <Import Project="..\build\NullableEnable.props" />
+  <Import Project="..\build\TrimmingEnable.props" />
+  <Import Project="..\build\MicroCOM.props" />
+</Project>

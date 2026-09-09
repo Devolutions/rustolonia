@@ -1,0 +1,8 @@
+[workspace]
+resolver = "2"
+members = ["avalonia", "avalonia-sys", "avalonia-bindgen", "avalonia-sample"]
+# templates/avalonia-app is a copyable starting point for new applications
+# (see rust/new-app.ps1), not a member of this workspace: it is meant to be
+# copied outside this repository with its own path dependency updated to point
+# at the local Rustolonia checkout so it remains a standalone crate.
+exclude = ["templates/avalonia-app"]

@@ -1,0 +1,17 @@
+Rustolonia uses source from the Avalonia UI project and includes patches under the
+managed producer checkout pinned as `avalonia-src`.
+
+Original upstream project:
+  Avalonia UI (https://github.com/AvaloniaUI/Avalonia)
+  Copyright (c) AvaloniaUI OÜ
+  All Rights Reserved
+  MIT License terms apply to the upstream source tree.
+
+This repository keeps the producer pin at:
+  9654332a79f637473da96054f75b2a16deaa557e
+
+Rustolonia-specific changes, generated output, and build tooling are repository-
+local additions. They are attributed to the Rustolonia project in the repository
+LICENSE and do not replace, revoke, or reassign the upstream Avalonia copyright
+and MIT notice. The upstream notices remain in their original source tree and are
+preserved alongside the pinned producer source.

@@ -1,0 +1,18 @@
+@clr-namespace Avalonia.Host.Ownership.MicroCom
+@clr-access internal
+@clr-map bool int
+@cpp-preamble @@
+#pragma once
+#include "stdint.h"
+@@
+
+[uuid(587641ae-e4be-49bb-86a6-16c826a60f73)]
+interface IAvnMicroComOwnershipProbe : IUnknown
+{
+    HRESULT GetValue(int* value);
+}
+
+[uuid(a5f550dd-27a0-492f-914d-bd4363f1716d)]
+interface IAvnMicroComLifetimeToken : IUnknown
+{
+}

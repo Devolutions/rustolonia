@@ -1,0 +1,290 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Avalonia.Rust.Sample.Generated"
+        xmlns:sys="using:System"
+        xmlns:conv="using:Avalonia.Data.Converters"
+        x:Class="Avalonia.Rust.Sample.Views.RustVmWindow"
+        x:DataType="vm:SampleViewModelAdapter"
+        Title="Rust VM + AXAML"
+        Width="560"
+        Height="900">
+  <Window.Resources>
+    <!--
+      Deferred realization: this DataTemplate resource is only built by a
+      ContentPresenter when its content is actually displayed, proving the
+      Rust value-converter provider resolves after window construction, not
+      only while the window's own top-level bindings are wired up. Typed with
+      a real CLR x:DataType (not x:CompileBindings="False") so the template
+      stays on the compiled-binding, NativeAOT-safe path.
+    -->
+    <DataTemplate x:Key="CountTemplate" x:DataType="sys:Int64">
+      <TextBlock Text="{Binding Converter={x:Static vm:CountToLabelConverter.Instance}}" />
+    </DataTemplate>
+    <!--
+      Nested view-model item template: `Done` is two-way bound straight to
+      the item's own generated `TaskItemViewModelAdapter`, so toggling it
+      calls that specific nested Rust view model's sink, not the parent's.
+    -->
+    <DataTemplate x:Key="TaskTemplate" x:DataType="vm:TaskItemViewModelAdapter">
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <CheckBox IsChecked="{Binding Done, Mode=TwoWay}" />
+        <TextBlock Text="{Binding Title}" VerticalAlignment="Center" />
+      </StackPanel>
+    </DataTemplate>
+  </Window.Resources>
+  <DockPanel>
+    <!--
+      One declared menu model serves both platforms: on macOS the host exports
+      it as the real application menu, and everywhere else this NativeMenuBar
+      renders the same NativeMenu in-window. The menu itself is attached in
+      code-behind through the generated `SampleViewModelMenus.AttachMain`, which
+      also installs the declared accelerators as window key bindings - only a
+      native menu bar handles its own shortcuts.
+    -->
+    <NativeMenuBar x:Name="MainMenuBar" DockPanel.Dock="Top" />
+    <ScrollViewer>
+    <StackPanel Margin="20" Spacing="10">
+      <TextBlock Text="Managed AXAML presentation, Rust-owned state" FontSize="20" />
+      <TextBlock Text="Name (validated by Rust: cannot be empty)" />
+      <TextBox Text="{Binding Name, Mode=TwoWay}" />
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button Content="Increment" Command="{Binding IncrementCommand}" />
+        <TextBlock Text="{Binding Count, Converter={x:Static vm:CountToLabelConverter.Instance}}"
+                   VerticalAlignment="Center" />
+        <ContentControl Content="{Binding Count}" ContentTemplate="{StaticResource CountTemplate}" />
+      </StackPanel>
+      <TextBlock Text="New item" />
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <TextBox x:Name="NewItemTextBox"
+                 Text="{Binding NewItem, Mode=TwoWay}"
+                 Width="300" />
+        <Button Content="Add" Command="{Binding AddCommand}" />
+      </StackPanel>
+      <ListBox ItemsSource="{Binding Items}" Height="100" />
+      <!-- CanExecute: Save disables itself while the Rust worker runs. -->
+      <Button Content="Run Rust async save" Command="{Binding SaveCommand}" />
+      <TextBlock Text="{Binding Status}" />
+
+      <TextBlock Text="Async progress, cancellation and structured result (Stage 30)" FontWeight="Bold" />
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <ProgressBar x:Name="SaveProgressBar"
+                     Width="200"
+                     Minimum="0"
+                     Maximum="1"
+                     Value="{Binding SaveProgress, FallbackValue=0}"
+                     IsIndeterminate="{Binding SaveProgress, Converter={x:Static conv:ObjectConverters.IsNull}}"
+                     IsVisible="{Binding SaveIsRunning}" />
+        <Button x:Name="CancelSaveButton" Content="Cancel save" Command="{Binding CancelSaveCommand}" />
+        <TextBlock x:Name="SaveProgressText" Text="{Binding SaveProgressMessage}" VerticalAlignment="Center" />
+      </StackPanel>
+      <!--
+        The structured result is a real nested view model, not a formatted
+        string: its own generated adapter carries typed members.
+      -->
+      <StackPanel Orientation="Horizontal" Spacing="8"
+                  IsVisible="{Binding SaveResult, Converter={x:Static conv:ObjectConverters.IsNotNull}}">
+        <TextBlock x:Name="SaveResultDestination" Text="{Binding SaveResult.Destination}" />
+        <TextBlock x:Name="SaveResultBytes" Text="{Binding SaveResult.Bytes, StringFormat='{}{0} bytes'}" />
+        <TextBlock x:Name="SaveResultSucceeded" Text="{Binding SaveResult.Succeeded, StringFormat='succeeded: {0}'}" />
+      </StackPanel>
+
+      <TextBlock Text="Desktop files (Rust-owned, platform-neutral)" FontWeight="Bold" />
+      <!--
+        These three buttons are the only thing in the sample that opens a
+        platform dialog, so UI automation can drive everything else (including
+        the drop panel below) without a modal picker appearing. The picker flows
+        themselves are covered by managed fake-storage-provider tests.
+      -->
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button x:Name="OpenFilesButton" Content="Open files..." Command="{Binding OpenFilesCommand}" />
+        <Button x:Name="OpenFolderButton" Content="Open folder..." Command="{Binding OpenFolderCommand}" />
+        <Button x:Name="SaveExportButton" Content="Save/export..." Command="{Binding SaveExportCommand}" />
+      </StackPanel>
+      <TextBlock x:Name="FileStatusText" Text="{Binding FileStatus}" />
+      <TextBlock x:Name="ActivationStatusText" Text="{Binding ActivationStatus}" />
+      <!--
+        Drop status. Rust subscribes to the window, so a file dropped anywhere
+        in it is reported here; it declares its accepted effect once, and the
+        host answers the platform drag loop synchronously and delivers the file
+        list to Rust asynchronously.
+      -->
+      <Border x:Name="DropPanel"
+              BorderBrush="#3B82F6"
+              BorderThickness="1"
+              CornerRadius="4"
+              Padding="12"
+              MinHeight="60"
+              Background="#111D4ED8">
+        <TextBlock x:Name="DropStatusText" Text="{Binding DropStatus}" TextWrapping="Wrap" />
+      </Border>
+      <ListBox x:Name="SelectedFilesList" ItemsSource="{Binding SelectedFiles}" Height="90" />
+
+      <TextBlock Text="Nullable value (Nickname)" FontWeight="Bold" />
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <TextBox Text="{Binding Nickname, Mode=TwoWay}" Width="200"
+                 PlaceholderText="(no nickname set)" />
+        <Button Content="Clear nickname" Command="{Binding ClearNicknameCommand}" />
+      </StackPanel>
+
+      <TextBlock Text="Enum value (Priority)" FontWeight="Bold" />
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <TextBlock Text="{Binding Priority}" VerticalAlignment="Center" />
+        <Button Content="Cycle priority" Click="OnCyclePriorityClick" />
+      </StackPanel>
+
+      <TextBlock Text="Nested view model (Address, nullable)" FontWeight="Bold" />
+      <Button Content="Toggle address" Command="{Binding ToggleAddressCommand}" />
+      <StackPanel Orientation="Horizontal" Spacing="8"
+                  IsVisible="{Binding Address, Converter={x:Static conv:ObjectConverters.IsNotNull}}">
+        <TextBox Text="{Binding Address.Street, Mode=TwoWay}" Width="150" PlaceholderText="Street" />
+        <TextBox Text="{Binding Address.City, Mode=TwoWay}" Width="150" PlaceholderText="City" />
+      </StackPanel>
+
+      <TextBlock Text="Nested collection (Tasks)" FontWeight="Bold" />
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <TextBox Text="{Binding NewTaskTitle, Mode=TwoWay}" Width="200" />
+        <Button Content="Add task" Command="{Binding AddTaskCommand}" />
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button Content="Remove first" Command="{Binding RemoveFirstTaskCommand}" />
+        <Button Content="Shuffle" Command="{Binding ShuffleTasksCommand}" />
+        <Button Content="Clear" Command="{Binding ClearTasksCommand}" />
+      </StackPanel>
+      <ListBox ItemsSource="{Binding Tasks}" ItemTemplate="{StaticResource TaskTemplate}" Height="120" />
+
+      <TextBlock Text="CMTrace snapshot (100,000 Rust-owned rows)" FontWeight="Bold" />
+      <TextBlock Text="{Binding TraceSortDirection, StringFormat='Sort: {0}'}" />
+      <TextBlock x:Name="ClipboardStatusText" Text="{Binding ClipboardStatus}" />
+      <!-- TableView virtualizes TableViewRow containers.  Its cells use compiled
+           AXAML bindings; the generated descriptor supplies the matching stable
+           table contract without manufacturing reflection bindings.
+           MinWidth mirrors the schema's declared per-column minimum, so a
+           resize or a narrow window cannot collapse a column to nothing. -->
+      <TableView x:Name="TraceTable"
+                 ItemsSource="{Binding TraceRows}"
+                 SelectedIndex="{Binding SelectedTraceIndex, Mode=TwoWay}"
+                 Height="300"
+                 CanUserResizeColumns="True">
+        <!--
+          The generated context menu is a real ContextMenu subclass, so it is
+          declared here in compiled AXAML and inherits the table's data context;
+          its items bind to the same generated commands the application menu
+          uses.
+        -->
+        <TableView.ContextMenu>
+          <vm:SampleViewModelTraceRowsContextMenu />
+        </TableView.ContextMenu>
+        <TableView.Columns>
+          <TableViewColumn Width="150" MinWidth="100" CanUserResize="True" Binding="{Binding Timestamp}">
+            <TableViewColumn.Header>
+              <Button x:DataType="vm:SampleViewModelAdapter"
+                      Command="{Binding SortTraceRowsCommand}"
+                      CommandParameter="Timestamp:Descending"
+                      Content="Timestamp" />
+            </TableViewColumn.Header>
+          </TableViewColumn>
+          <TableViewColumn Width="90" MinWidth="70" CanUserResize="True"
+                           HorizontalContentAlignment="Center">
+            <TableViewColumn.Header>
+              <Button x:DataType="vm:SampleViewModelAdapter"
+                      Command="{Binding SortTraceRowsCommand}"
+                      CommandParameter="Severity:Ascending"
+                      Content="Severity" />
+            </TableViewColumn.Header>
+            <TableViewColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:TraceRowViewModelAdapter">
+                <Border Background="#33D97706" CornerRadius="3" Padding="4,1">
+                  <TextBlock Text="{Binding Severity}" FontWeight="Bold" Foreground="#B45309" />
+                </Border>
+              </DataTemplate>
+            </TableViewColumn.CellTemplate>
+          </TableViewColumn>
+          <TableViewColumn Width="120" CanUserResize="True" Binding="{Binding Event.Source}">
+            <TableViewColumn.Header>
+              <Button x:DataType="vm:SampleViewModelAdapter"
+                      Command="{Binding SortTraceRowsCommand}"
+                      CommandParameter="Source:Ascending"
+                      Content="Source" />
+            </TableViewColumn.Header>
+          </TableViewColumn>
+          <TableViewColumn Width="*" MinWidth="260" CanUserResize="True" Binding="{Binding Message}" />
+        </TableView.Columns>
+      </TableView>
+      <TextBlock Text="{Binding SelectedTraceKey, StringFormat='Selected row: {0}'}" />
+
+      <TextBlock Text="Recent files (Rust-owned MRU list, projected into the File menu)" FontWeight="Bold" />
+      <ListBox x:Name="RecentFilesList" ItemsSource="{Binding RecentFiles}" Height="70" />
+
+      <TextBlock Text="Windowed CMTrace log (Stage 30: data objects bounded, not just visuals)" FontWeight="Bold" />
+      <TextBlock x:Name="LogWindowStatusText" Text="{Binding LogWindowStatus}" />
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button x:Name="RefreshLogWindowButton" Content="New generation" Command="{Binding RefreshLogWindowCommand}" />
+        <TextBlock Text="{Binding LogWindow.Count, StringFormat='Total rows: {0}'}" VerticalAlignment="Center" />
+        <TextBlock x:Name="LogWindowLiveText"
+                   Text="{Binding LogWindow.LiveElementCount, StringFormat='Live row adapters: {0}'}"
+                   VerticalAlignment="Center" />
+      </StackPanel>
+      <!--
+        Unlike TraceRows above, this TableView's ItemsSource reports the full
+        Rust dataset size while only the realized pages ever become managed row
+        adapters. Rows outside a realized page read as null until Rust answers
+        the range request the indexer posted.
+      -->
+      <TableView x:Name="LogWindowTable"
+                 ItemsSource="{Binding LogWindow}"
+                 Height="220"
+                 CanUserResizeColumns="True">
+        <TableView.Columns>
+          <!--
+            The window's element type is `object?` (an unrealized row reads as
+            null), so cells use typed CellTemplates rather than a column
+            Binding: compiled bindings still resolve against the real row
+            adapter, and a null row simply renders empty.
+          -->
+          <TableViewColumn Width="150" CanUserResize="True" Header="Timestamp">
+            <TableViewColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:TraceRowViewModelAdapter">
+                <TextBlock Text="{Binding Timestamp}" />
+              </DataTemplate>
+            </TableViewColumn.CellTemplate>
+          </TableViewColumn>
+          <TableViewColumn Width="90" CanUserResize="True" Header="Severity">
+            <TableViewColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:TraceRowViewModelAdapter">
+                <TextBlock Text="{Binding Severity}" />
+              </DataTemplate>
+            </TableViewColumn.CellTemplate>
+          </TableViewColumn>
+          <TableViewColumn Width="*" CanUserResize="True" Header="Message">
+            <TableViewColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:TraceRowViewModelAdapter">
+                <TextBlock Text="{Binding Message}" />
+              </DataTemplate>
+            </TableViewColumn.CellTemplate>
+          </TableViewColumn>
+        </TableView.Columns>
+      </TableView>
+
+      <TextBlock Text="Hierarchical model (TreeDataTemplate over recursive Rust children)" FontWeight="Bold" />
+      <TreeView x:Name="LogTreeView" ItemsSource="{Binding LogTree}" Height="140">
+        <TreeView.ItemTemplate>
+          <TreeDataTemplate x:DataType="vm:LogNodeViewModelAdapter" ItemsSource="{Binding Children}">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <TextBlock Text="{Binding Label}" FontWeight="Bold" />
+              <TextBlock Text="{Binding Detail}" />
+            </StackPanel>
+          </TreeDataTemplate>
+        </TreeView.ItemTemplate>
+      </TreeView>
+
+      <TextBlock Text="Observable keyed maps" FontWeight="Bold" />
+      <!--
+        A map enumerates as KeyValuePair, so the default ItemsControl template
+        renders each entry directly. The point being demonstrated is the
+        incremental notification, not the formatting.
+      -->
+      <ItemsControl x:Name="SeverityCountsList" ItemsSource="{Binding SeverityCounts}" />
+    </StackPanel>
+  </ScrollViewer>
+  </DockPanel>
+</Window>

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "rustoloniaVersion": "0.1.0",
+  "producerPin": "9654332a79f637473da96054f75b2a16deaa557e",
+  "producerRemote": "https://github.com/mamoreau-devolutions/Avalonia",
+  "patches": [
+    {
+      "path": "avalonia-patches/avalonia-controls.patch",
+      "sha256": "a1f051d24183c68745d7354ad1d5403fb58924533e79001c5234611d2a149839"
+    }
+  ],
+  "schemas": {
+    "projectionIr": 16,
+    "viewModelIr": 5,
+    "abiBaseline": 3,
+    "consumerAppManifest": 1
+  }
+}

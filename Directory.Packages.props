@@ -1,0 +1,23 @@
+<Project>
+
+  <!--
+    Central package management for the rustolonia repository. Versions mirror
+    the Avalonia producer's Directory.Packages.props at the pinned tag so the
+    vendored build props (MicroCOM, xunit v3 MTP runner, TRX reporting) resolve
+    identically here.
+  -->
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="MicroCom.Runtime" Version="0.11.6" />
+    <PackageVersion Include="MicroCom.CodeGenerator" Version="0.11.6" />
+    <PackageVersion Include="MicroCom.CodeGenerator.MSBuild" Version="0.11.6" />
+    <PackageVersion Include="MicroCom.CodeGenerator.Roslyn" Version="0.11.6" />
+    <PackageVersion Include="xunit.v3.mtp-v2" Version="3.2.2" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="2.0.2" />
+  </ItemGroup>
+
+</Project>

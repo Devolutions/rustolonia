@@ -1,0 +1,17 @@
+{
+  "generator": "avalonia-viewmodel",
+  "files": [
+    {
+      "path": "generated_view_models.rs",
+      "sha256": "e289e67a071703b88622d0668d4f5ea107b45c9a6a23cc131c852a08860294d6"
+    },
+    {
+      "path": "RustViewRegistry.g.cs",
+      "sha256": "f172d7ec40c7161b6b37b002fc8c65eda3b6a1ba15264a00440fdd1073772572"
+    },
+    {
+      "path": "view-model.contract.md",
+      "sha256": "8e307c0c44e37d1aec215483bf9c4e6507e53a3051e7fead72f594c63d158a8d"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  shared-mime-info declaration for __AVALONIA_APP_NAME__ documents.
+
+  Install with (from a package post-install step):
+    xdg-mime install --mode user this-file.xml
+    update-mime-database "$HOME/.local/share/mime"
+    xdg-mime default __AVALONIA_APP_NAME__.desktop application/x-__AVALONIA_APP_NAME__
+
+  The glob pattern must match the extension used in the .desktop entry.
+-->
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-__AVALONIA_APP_NAME__">
+    <comment>__AVALONIA_APP_NAME__ document</comment>
+    <glob pattern="*.myapp"/>
+    <icon name="__AVALONIA_APP_NAME__"/>
+  </mime-type>
+</mime-info>

@@ -1,0 +1,13 @@
+{
+  "generator": "avalonia-projection",
+  "files": [
+    {
+      "path": "projection.ir.gaps.txt",
+      "sha256": "fe1b069f5c73e5d665fed8323f5992308146064a9bbdb0ad7e89c99ca0f2793e"
+    },
+    {
+      "path": "projection.ir.json",
+      "sha256": "1c3f0e0b5b21f98ecd7a6de97f207f0f90fc0b5eb42eb4fd2bec4c583db0c802"
+    }
+  ]
+}

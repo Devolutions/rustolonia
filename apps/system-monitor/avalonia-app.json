@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "presentationProject": "NeoHtop.Presentation/NeoHtop.Presentation.csproj",
+  "viewModelIr": "view-model.ir.json",
+  "generatedAdaptersDirectory": "NeoHtop.Presentation/Generated",
+  "generatedRegistryFile": "GeneratedHostRegistry/RustViewRegistry.g.cs",
+  "generatedRustFile": "generated_view_models.rs",
+  "generatedContractFile": "view-model.contract.md",
+  "cargoManifest": "NeoHtop.App/Cargo.toml",
+  "packageName": "neohtop-avalonia",
+  "binary": "neohtop-avalonia",
+  "noticeFiles": ["LICENSE.neohtop"],
+  "rid": "win-x64",
+  "configuration": "Release",
+  "outputDirectory": "artifacts/win-x64"
+}

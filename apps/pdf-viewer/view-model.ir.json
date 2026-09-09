@@ -1,0 +1,283 @@
+{
+  "version": 5,
+  "enums": [],
+  "models": [
+    {
+      "id": 1,
+      "name": "MainViewModel",
+      "managedNamespace": "PdfViewer.Presentation.Generated",
+      "properties": [
+        {
+          "id": 1,
+          "name": "Title",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "PDF Viewer"
+        },
+        {
+          "id": 2,
+          "name": "Status",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "Preparing sample PDF..."
+        },
+        {
+          "id": 3,
+          "name": "DocumentName",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 4,
+          "name": "PageImage",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 5,
+          "name": "PageText",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 6,
+          "name": "PageLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "No page loaded"
+        },
+        {
+          "id": 7,
+          "name": "CanGoPrevious",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 8,
+          "name": "CanGoNext",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 9,
+          "name": "IsLoading",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": true
+        },
+        {
+          "id": 10,
+          "name": "SearchText",
+          "kind": "String",
+          "writable": true,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 11,
+          "name": "SearchStatus",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "Type a word to search"
+        },
+        {
+          "id": 12,
+          "name": "SearchMatchLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 13,
+          "name": "CanGoPreviousMatch",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 14,
+          "name": "CanGoNextMatch",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        }
+      ],
+      "collections": [
+        {
+          "id": 1,
+          "name": "RecentFiles",
+          "elementKind": "String",
+          "recursive": false
+        }
+      ],
+      "maps": [],
+      "commands": [
+        {
+          "id": 1,
+          "name": "OpenFile",
+          "isAsync": true,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 2,
+          "name": "PreviousPage",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 3,
+          "name": "NextPage",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 4,
+          "name": "OpenRecentFile",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 5,
+          "name": "Exit",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 6,
+          "name": "Search",
+          "isAsync": true,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 7,
+          "name": "PreviousMatch",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 8,
+          "name": "NextMatch",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        }
+      ],
+      "menus": [
+        {
+          "id": 1,
+          "name": "Main",
+          "kind": "Application",
+          "items": [
+            {
+              "id": 1,
+              "name": "File",
+              "kind": "Submenu",
+              "header": "_File",
+              "items": [
+                {
+                  "id": 2,
+                  "name": "OpenFile",
+                  "kind": "Command",
+                  "header": "_Open PDF...",
+                  "command": "OpenFile",
+                  "gesture": "Ctrl\u002BO",
+                  "items": []
+                },
+                {
+                  "id": 3,
+                  "name": "Recent",
+                  "kind": "RecentFiles",
+                  "header": "Recent _files",
+                  "items": []
+                },
+                {
+                  "id": 4,
+                  "name": "FileSeparator",
+                  "kind": "Separator",
+                  "items": []
+                },
+                {
+                  "id": 5,
+                  "name": "Exit",
+                  "kind": "Command",
+                  "header": "E_xit",
+                  "command": "Exit",
+                  "gesture": "Ctrl\u002BQ",
+                  "items": []
+                }
+              ]
+            },
+            {
+              "id": 6,
+              "name": "Page",
+              "kind": "Submenu",
+              "header": "_Page",
+              "items": [
+                {
+                  "id": 7,
+                  "name": "PreviousPage",
+                  "kind": "Command",
+                  "header": "_Previous page",
+                  "command": "PreviousPage",
+                  "gesture": "Alt\u002BLeft",
+                  "items": []
+                },
+                {
+                  "id": 8,
+                  "name": "NextPage",
+                  "kind": "Command",
+                  "header": "_Next page",
+                  "command": "NextPage",
+                  "gesture": "Alt\u002BRight",
+                  "items": []
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "recentFiles": {
+        "id": 1,
+        "collection": "RecentFiles",
+        "activateCommand": "OpenRecentFile",
+        "capacity": 5
+      }
+    }
+  ],
+  "views": [
+    {
+      "id": 1,
+      "name": "MainWindow",
+      "model": "MainViewModel",
+      "managedTypeName": "PdfViewer.Presentation.Views.MainWindow",
+      "dynamicBindings": false,
+      "converters": []
+    }
+  ],
+  "converters": []
+}

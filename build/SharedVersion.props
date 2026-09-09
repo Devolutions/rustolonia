@@ -1,0 +1,20 @@
+<Project DefaultTargets="Build" 
+  xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Product>Rustolonia</Product>
+    <Version>0.1.0</Version>
+    <Authors>Rustolonia contributors</Authors>
+    <Copyright>Copyright $([System.DateTime]::Now.ToString(`yyyy`)) Rustolonia contributors. Upstream Avalonia material retains its original copyright notices.</Copyright>
+    <PackageProjectUrl>https://github.com/mamoreau-devolutions/rustolonia</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/mamoreau-devolutions/rustolonia</RepositoryUrl>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591;NU5104</NoWarn>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageDescription>Rust-facing framework bindings and NativeAOT hosting for Avalonia, with project-managed producer pins and application-owned composition.</PackageDescription>
+    <PackageTags>rust;avalonia;nativeaot;interop;com;dotnet</PackageTags>
+    <PackageReleaseNotes>https://github.com/mamoreau-devolutions/rustolonia</PackageReleaseNotes>
+    <RepositoryType>git</RepositoryType>
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)\avalonia.snk</AssemblyOriginatorKeyFile>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+</Project>

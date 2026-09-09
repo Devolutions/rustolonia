@@ -1,0 +1,11 @@
+﻿[package]
+name = "__AVALONIA_APP_NAME__"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Starting point for a new Avalonia Rust application"
+
+[dependencies]
+avalonia = { path = "__RUSTOLONIA_ROOT__/rust/avalonia" }
+
+[workspace]

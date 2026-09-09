@@ -1,0 +1,77 @@
+{
+  "generator": "avalonia-viewmodel",
+  "files": [
+    {
+      "path": "AddressViewModelAdapter.g.cs",
+      "sha256": "52d8f368019c7e24e6908232697bfceed93c439a81a8418e0755e563ade73a9a"
+    },
+    {
+      "path": "AddressViewModelMetadata.g.cs",
+      "sha256": "f7e14f62e8a30920afdd753e60a7ded99aa6cc505d8ce258421df086196615c0"
+    },
+    {
+      "path": "CountToLabelConverter.g.cs",
+      "sha256": "3bd6bd8b1dcffd0b817f345dd3a622c0ea2a2fa0d37fb3763b2d60dbe5b07405"
+    },
+    {
+      "path": "LogNodeViewModelAdapter.g.cs",
+      "sha256": "ca7cadec6fdd0593e2b5f1c6dde7bd31d0229555f68b1328a976dc12053912c7"
+    },
+    {
+      "path": "LogNodeViewModelMetadata.g.cs",
+      "sha256": "de227caa10597316bea9498b495b04cb3f2f6d2ef616f32b91a2a7a55002c3e3"
+    },
+    {
+      "path": "Priority.g.cs",
+      "sha256": "de129a7b6b97a659743c7fab468f37003b6ba30b60753e63b06131e6c973ba32"
+    },
+    {
+      "path": "RustViewRegistry.g.cs",
+      "sha256": "10fc1b676cbb85e76bdf0ac16bf05fa24083e606b455b367751c3b7bd112e2b9"
+    },
+    {
+      "path": "SampleViewModelAdapter.g.cs",
+      "sha256": "042093d020971e8c757a3aa0ee3bbbedaeea60b9a1532480d7664263b406825a"
+    },
+    {
+      "path": "SampleViewModelMenus.g.cs",
+      "sha256": "848667204c43d3e17ade8d3f62eb81423ef093f990ee4d9a1c9e035230858ef7"
+    },
+    {
+      "path": "SampleViewModelMetadata.g.cs",
+      "sha256": "5fe1971c6a347f5c7b07294c888d0f7d40ebd65d67384de9a5a3c82812e30a2d"
+    },
+    {
+      "path": "SaveReportViewModelAdapter.g.cs",
+      "sha256": "46c3d242a2d3b7ff1298b588ad364396dbd8d1daedfaa24a5dd8e953c0457750"
+    },
+    {
+      "path": "SaveReportViewModelMetadata.g.cs",
+      "sha256": "78a6f70f379e938f04873af018d184ce7271337660f69b0420d521cd9c76617a"
+    },
+    {
+      "path": "TaskItemViewModelAdapter.g.cs",
+      "sha256": "af476ae26f65d7641fe10298e789f5369aa33bd7c8b76e488464e72f0e50c97b"
+    },
+    {
+      "path": "TaskItemViewModelMetadata.g.cs",
+      "sha256": "71a3e6613efcbd7023ae16541356995ffe28e72071668352117386fa028fa93e"
+    },
+    {
+      "path": "TraceEventViewModelAdapter.g.cs",
+      "sha256": "317e5cdf36f573dab38ce7827aa20e8e1c267ba0c90e334a767db5572d907eb3"
+    },
+    {
+      "path": "TraceEventViewModelMetadata.g.cs",
+      "sha256": "3c428f369ff3e913cf8fdf119a88cd3a6641bb12eb1d59bb7d0389f79bee65d4"
+    },
+    {
+      "path": "TraceRowViewModelAdapter.g.cs",
+      "sha256": "c79806d15782fd33d1c0a1347b485f00559ccb6b40a66b724bf42b6b3fb105d0"
+    },
+    {
+      "path": "TraceRowViewModelMetadata.g.cs",
+      "sha256": "1e0e422043d0c4c51c54e5d042f0a4b55a713138e5eb5d950bc088d98fee9ce8"
+    }
+  ]
+}

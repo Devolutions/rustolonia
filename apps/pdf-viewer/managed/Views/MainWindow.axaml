@@ -1,0 +1,452 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:PdfViewer.Presentation.Generated"
+        xmlns:local="using:PdfViewer.Presentation"
+        x:Class="PdfViewer.Presentation.Views.MainWindow"
+        x:DataType="vm:MainViewModelAdapter"
+        Width="1280"
+        Height="860"
+        MinWidth="980"
+        MinHeight="660"
+        Title="{Binding Title}"
+        Background="{StaticResource WindowBrush}"
+        Foreground="{StaticResource PrimaryTextBrush}"
+        FontFamily="Segoe UI"
+        FontSize="14">
+  <Window.Resources>
+    <ResourceDictionary>
+      <local:PngBitmapConverter x:Key="PngBitmap" />
+      <SolidColorBrush x:Key="WindowBrush" Color="#11151F" />
+      <SolidColorBrush x:Key="ChromeBrush" Color="#1A2030" />
+      <SolidColorBrush x:Key="ToolbarBrush" Color="#20283A" />
+      <SolidColorBrush x:Key="PanelBrush" Color="#1B2231" />
+      <SolidColorBrush x:Key="CanvasBrush" Color="#0C1018" />
+      <SolidColorBrush x:Key="PrimaryTextBrush" Color="#F5F7FB" />
+      <SolidColorBrush x:Key="SecondaryTextBrush" Color="#AAB4C7" />
+      <SolidColorBrush x:Key="MutedTextBrush" Color="#7E8AA1" />
+      <SolidColorBrush x:Key="DividerBrush" Color="#2B3549" />
+      <SolidColorBrush x:Key="AccentBrush" Color="#5B8CFF" />
+      <SolidColorBrush x:Key="AccentHoverBrush" Color="#75A0FF" />
+      <SolidColorBrush x:Key="AccentMutedBrush" Color="#253A70" />
+      <SolidColorBrush x:Key="SuccessBrush" Color="#61D6A2" />
+    </ResourceDictionary>
+  </Window.Resources>
+  <Window.Styles>
+    <Style Selector="TextBlock.eyebrow">
+      <Setter Property="FontSize" Value="10" />
+      <Setter Property="FontWeight" Value="Bold" />
+      <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}" />
+      <Setter Property="LetterSpacing" Value="1.2" />
+    </Style>
+    <Style Selector="TextBlock.appTitle">
+      <Setter Property="FontSize" Value="22" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+    </Style>
+    <Style Selector="TextBlock.sectionTitle">
+      <Setter Property="FontSize" Value="16" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+    </Style>
+    <Style Selector="TextBlock.muted">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}" />
+    </Style>
+    <Style Selector="TextBlock.metaLabel">
+      <Setter Property="FontSize" Value="10" />
+      <Setter Property="FontWeight" Value="Bold" />
+      <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}" />
+      <Setter Property="LetterSpacing" Value="0.8" />
+    </Style>
+    <Style Selector="TextBlock.metaValue">
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="Foreground" Value="{StaticResource SecondaryTextBrush}" />
+    </Style>
+    <Style Selector="TextBox.searchInput">
+      <Setter Property="MinHeight" Value="30" />
+      <Setter Property="Padding" Value="9,3" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.searchAction">
+      <Setter Property="MinHeight" Value="28" />
+      <Setter Property="Padding" Value="10,3" />
+      <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Foreground" Value="#FFFFFF" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="Button.searchAction:pointerover">
+      <Setter Property="Background" Value="{StaticResource AccentHoverBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource AccentHoverBrush}" />
+    </Style>
+    <Style Selector="Button.toolbar">
+      <Setter Property="MinHeight" Value="34" />
+      <Setter Property="Padding" Value="14,5" />
+      <Setter Property="Background" Value="{StaticResource ToolbarBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+      <Setter Property="CornerRadius" Value="7" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.toolbar:pointerover">
+      <Setter Property="Background" Value="#2A3449" />
+      <Setter Property="BorderBrush" Value="#42516D" />
+    </Style>
+    <Style Selector="Button.toolbar.primary">
+      <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+      <Setter Property="Foreground" Value="#FFFFFF" />
+    </Style>
+    <Style Selector="Button.toolbar.primary:pointerover">
+      <Setter Property="Background" Value="{StaticResource AccentHoverBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource AccentHoverBrush}" />
+    </Style>
+    <Style Selector="Button.toolbar:disabled">
+      <Setter Property="Opacity" Value="0.4" />
+    </Style>
+    <Style Selector="Button.iconButton">
+      <Setter Property="Width" Value="32" />
+      <Setter Property="Height" Value="32" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+      <Setter Property="FontSize" Value="25" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.iconButton:pointerover">
+      <Setter Property="Background" Value="{StaticResource AccentMutedBrush}" />
+      <Setter Property="Foreground" Value="{StaticResource AccentHoverBrush}" />
+    </Style>
+    <Style Selector="Button.iconButton:disabled">
+      <Setter Property="Opacity" Value="0.35" />
+    </Style>
+    <Style Selector="Button.iconButton.small">
+      <Setter Property="Width" Value="28" />
+      <Setter Property="Height" Value="28" />
+      <Setter Property="FontSize" Value="21" />
+    </Style>
+    <Style Selector="Border.card">
+      <Setter Property="Background" Value="{StaticResource PanelBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="12" />
+    </Style>
+    <Style Selector="Border.pageControl">
+      <Setter Property="Background" Value="{StaticResource ToolbarBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Padding" Value="4,2" />
+    </Style>
+    <Style Selector="Border.statusPill">
+      <Setter Property="Background" Value="#193A35" />
+      <Setter Property="BorderBrush" Value="#285B4D" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="14" />
+      <Setter Property="Padding" Value="12,5" />
+    </Style>
+    <Style Selector="Border.searchControl">
+      <Setter Property="MinWidth" Value="360" />
+      <Setter Property="Background" Value="#151D2C" />
+      <Setter Property="BorderBrush" Value="{StaticResource AccentMutedBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Padding" Value="3,2" />
+    </Style>
+    <Style Selector="Border.pageCanvas">
+      <Setter Property="Background" Value="{StaticResource CanvasBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="9" />
+    </Style>
+    <Style Selector="Border.paper">
+      <Setter Property="Background" Value="#FFFFFF" />
+      <Setter Property="BorderBrush" Value="#D7DDE8" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="2" />
+      <Setter Property="Padding" Value="4" />
+    </Style>
+    <Style Selector="Border.infoCard">
+      <Setter Property="Background" Value="#20283A" />
+      <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="9" />
+      <Setter Property="Padding" Value="14" />
+    </Style>
+    <Style Selector="Border.tipCard">
+      <Setter Property="Background" Value="#182744" />
+      <Setter Property="BorderBrush" Value="#2E4F8C" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="9" />
+      <Setter Property="Padding" Value="12" />
+    </Style>
+    <Style Selector="Border.searchInfoCard">
+      <Setter Property="Background" Value="#182744" />
+      <Setter Property="BorderBrush" Value="#2E4F8C" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="9" />
+      <Setter Property="Padding" Value="12" />
+    </Style>
+  </Window.Styles>
+  <DockPanel Background="{StaticResource WindowBrush}">
+    <NativeMenuBar DockPanel.Dock="Top" />
+    <Border DockPanel.Dock="Top"
+            Background="{StaticResource ChromeBrush}"
+            BorderBrush="{StaticResource DividerBrush}"
+            BorderThickness="0,0,0,1"
+            Padding="20,16,20,14">
+      <Grid RowDefinitions="Auto,Auto" RowSpacing="15">
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="13">
+          <Border Width="42"
+                  Height="42"
+                  Background="{StaticResource AccentBrush}"
+                  CornerRadius="12">
+            <TextBlock HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       FontSize="22"
+                       FontWeight="Bold"
+                       Foreground="#FFFFFF"
+                       Text="P" />
+          </Border>
+          <StackPanel Grid.Column="1" Spacing="1" VerticalAlignment="Center">
+            <TextBlock Classes="eyebrow" Text="RUSTOLONIA READER" />
+            <TextBlock Classes="appTitle" Text="{Binding Title}" />
+          </StackPanel>
+          <StackPanel Grid.Column="2"
+                      MaxWidth="390"
+                      Spacing="3"
+                      HorizontalAlignment="Right"
+                      VerticalAlignment="Center">
+            <TextBlock HorizontalAlignment="Right"
+                       Foreground="{StaticResource PrimaryTextBrush}"
+                       Text="{Binding DocumentName}"
+                       TextTrimming="CharacterEllipsis"
+                       AutomationProperties.Name="DocumentName" />
+            <TextBlock Classes="muted"
+                       HorizontalAlignment="Right"
+                       Text="{Binding Status}"
+                       TextTrimming="CharacterEllipsis"
+                       AutomationProperties.Name="Status" />
+          </StackPanel>
+        </Grid>
+        <Grid Grid.Row="1" ColumnDefinitions="Auto,Auto,*,Auto,Auto" ColumnSpacing="10">
+          <Button x:Name="OpenButton"
+                  Grid.Column="0"
+                  Classes="toolbar primary"
+                  Content="Open PDF"
+                  Command="{Binding OpenFileCommand}"
+                  AutomationProperties.Name="OpenButton" />
+          <Border Grid.Column="1" Classes="pageControl">
+            <Grid ColumnDefinitions="Auto,Auto,Auto" ColumnSpacing="3">
+              <Button x:Name="PreviousPageButton"
+                      Grid.Column="0"
+                      Classes="iconButton"
+                      Content="&#x2039;"
+                      Command="{Binding PreviousPageCommand}"
+                      IsEnabled="{Binding CanGoPrevious}"
+                      ToolTip.Tip="Previous page"
+                      AutomationProperties.Name="PreviousPageButton" />
+              <TextBlock x:Name="PageLabel"
+                         Grid.Column="1"
+                         MinWidth="112"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Center"
+                         Foreground="{StaticResource PrimaryTextBrush}"
+                         Text="{Binding PageLabel}"
+                         TextAlignment="Center"
+                         AutomationProperties.Name="PageLabel" />
+              <Button x:Name="NextPageButton"
+                      Grid.Column="2"
+                      Classes="iconButton"
+                      Content="&#x203A;"
+                      Command="{Binding NextPageCommand}"
+                      IsEnabled="{Binding CanGoNext}"
+                      ToolTip.Tip="Next page"
+                      AutomationProperties.Name="NextPageButton" />
+            </Grid>
+          </Border>
+          <Border Grid.Column="3" Classes="searchControl">
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="3">
+              <TextBox x:Name="SearchBox"
+                       Grid.Column="0"
+                       Classes="searchInput"
+                       Text="{Binding SearchText, Mode=TwoWay}"
+                       Watermark="Find in document"
+                       AutomationProperties.Name="SearchBox" />
+              <Button x:Name="SearchButton"
+                      Grid.Column="1"
+                      Classes="searchAction"
+                      Content="Find"
+                      Command="{Binding SearchCommand}"
+                      AutomationProperties.Name="SearchButton" />
+              <Button x:Name="PreviousMatchButton"
+                      Grid.Column="2"
+                      Classes="iconButton small"
+                      Content="&#x2039;"
+                      Command="{Binding PreviousMatchCommand}"
+                      IsEnabled="{Binding CanGoPreviousMatch}"
+                      ToolTip.Tip="Previous match"
+                      AutomationProperties.Name="PreviousMatchButton" />
+              <Button x:Name="NextMatchButton"
+                      Grid.Column="3"
+                      Classes="iconButton small"
+                      Content="&#x203A;"
+                      Command="{Binding NextMatchCommand}"
+                      IsEnabled="{Binding CanGoNextMatch}"
+                      ToolTip.Tip="Next match"
+                      AutomationProperties.Name="NextMatchButton" />
+            </Grid>
+          </Border>
+          <Border Grid.Column="4" Classes="statusPill">
+            <StackPanel Orientation="Horizontal" Spacing="7">
+              <Ellipse Width="8"
+                       Height="8"
+                       Fill="{StaticResource SuccessBrush}"
+                       VerticalAlignment="Center" />
+              <TextBlock VerticalAlignment="Center"
+                         FontSize="12"
+                         Foreground="{StaticResource SecondaryTextBrush}"
+                         Text="PDF Oxide renderer" />
+            </StackPanel>
+          </Border>
+        </Grid>
+      </Grid>
+    </Border>
+    <Grid Margin="18,18,18,20" ColumnDefinitions="*,340" ColumnSpacing="18">
+      <Border Grid.Column="0" Classes="card" Padding="16">
+        <Grid RowDefinitions="Auto,*" RowSpacing="14">
+          <Grid Grid.Row="0" ColumnDefinitions="*,Auto" ColumnSpacing="12">
+            <StackPanel Spacing="2">
+              <TextBlock Classes="sectionTitle" Text="Document preview" />
+              <TextBlock Classes="muted" Text="Rendered locally for a focused reading experience" />
+            </StackPanel>
+            <Border Grid.Column="1"
+                    Background="{StaticResource AccentMutedBrush}"
+                    CornerRadius="12"
+                    Padding="11,5">
+              <TextBlock FontSize="11"
+                         FontWeight="SemiBold"
+                         Foreground="{StaticResource AccentHoverBrush}"
+                         Text="{Binding PageLabel}" />
+            </Border>
+          </Grid>
+          <Border Grid.Row="1" Classes="pageCanvas">
+            <ScrollViewer x:Name="PageScrollViewer"
+                          HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Auto"
+                          Padding="20"
+                          PointerWheelChanged="OnPageWheelChanged">
+              <Grid HorizontalAlignment="Center" VerticalAlignment="Top">
+                <Border Classes="paper">
+                  <Image x:Name="PageImage"
+                         Width="760"
+                         Source="{Binding PageImage, Converter={StaticResource PngBitmap}}"
+                         Stretch="Uniform"
+                         AutomationProperties.Name="PageImage" />
+                </Border>
+                <Border IsVisible="{Binding IsLoading}"
+                        Background="#D91A2232"
+                        CornerRadius="8"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Padding="24">
+                  <StackPanel Spacing="6">
+                    <TextBlock HorizontalAlignment="Center"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Text="Rendering page" />
+                    <TextBlock Classes="muted"
+                               MaxWidth="300"
+                               Text="{Binding Status}"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"
+                               AutomationProperties.Name="LoadingStatus" />
+                  </StackPanel>
+                </Border>
+              </Grid>
+            </ScrollViewer>
+          </Border>
+        </Grid>
+      </Border>
+      <Border Grid.Column="1" Classes="card" Padding="16">
+        <Grid RowDefinitions="Auto,Auto,Auto,*" RowSpacing="16">
+          <StackPanel Grid.Row="0" Spacing="2">
+            <TextBlock Classes="eyebrow" Text="DOCUMENT INSIGHTS" />
+            <TextBlock Classes="sectionTitle" Text="Reading panel" />
+          </StackPanel>
+          <Border Grid.Row="1" Classes="infoCard">
+            <Grid RowDefinitions="Auto,Auto" RowSpacing="14">
+              <StackPanel Grid.Row="0" Spacing="4">
+                <TextBlock Classes="metaLabel" Text="FILE" />
+                <TextBlock Foreground="{StaticResource PrimaryTextBrush}"
+                           Text="{Binding DocumentName}"
+                           TextTrimming="CharacterEllipsis" />
+              </StackPanel>
+              <Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="12">
+                <StackPanel Grid.Column="0" Spacing="4">
+                  <TextBlock Classes="metaLabel" Text="PAGE" />
+                  <TextBlock Classes="metaValue" Text="{Binding PageLabel}" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Spacing="4">
+                  <TextBlock Classes="metaLabel" Text="STATUS" />
+                  <TextBlock Classes="metaValue"
+                             Text="{Binding Status}"
+                             TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+              </Grid>
+            </Grid>
+          </Border>
+          <Border Grid.Row="2" Classes="searchInfoCard">
+            <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto" RowSpacing="7">
+              <TextBlock Classes="metaLabel" Text="SEARCH RESULTS" />
+              <TextBlock x:Name="SearchMatchLabel"
+                         Grid.Column="1"
+                         Foreground="{StaticResource AccentHoverBrush}"
+                         FontWeight="SemiBold"
+                         Text="{Binding SearchMatchLabel}" />
+              <TextBlock x:Name="SearchStatus"
+                         Grid.Row="1"
+                         Grid.ColumnSpan="2"
+                         Classes="muted"
+                         Text="{Binding SearchStatus}"
+                         TextWrapping="Wrap" />
+            </Grid>
+          </Border>
+          <Border Grid.Row="3"
+                  Background="{StaticResource CanvasBrush}"
+                  BorderBrush="{StaticResource DividerBrush}"
+                  BorderThickness="1"
+                  CornerRadius="9"
+                  Padding="14">
+            <Grid RowDefinitions="Auto,Auto,*" RowSpacing="10">
+              <TextBlock Classes="sectionTitle" Text="Extracted text" />
+              <TextBlock Grid.Row="1"
+                         Classes="muted"
+                         Text="Text extracted from the current page with PDF Oxide."
+                         TextWrapping="Wrap" />
+              <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                <TextBlock x:Name="PageText"
+                           Foreground="{StaticResource SecondaryTextBrush}"
+                           LineHeight="21"
+                           Text="{Binding PageText}"
+                           TextWrapping="Wrap"
+                           AutomationProperties.Name="PageText" />
+              </ScrollViewer>
+            </Grid>
+          </Border>
+        </Grid>
+      </Border>
+    </Grid>
+  </DockPanel>
+</Window>

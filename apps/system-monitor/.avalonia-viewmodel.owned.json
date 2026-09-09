@@ -1,0 +1,13 @@
+{
+  "generator": "avalonia-viewmodel",
+  "files": [
+    {
+      "path": "generated_view_models.rs",
+      "sha256": "289f02ebb57648ad7d12e50ea355eac7d0365b710b96c65703e7be47a07cf45e"
+    },
+    {
+      "path": "view-model.contract.md",
+      "sha256": "3f7e5fe3d30761d8b32e319667673cc14ede1507e73dddd2dd34f7a26cb9e230"
+    }
+  ]
+}

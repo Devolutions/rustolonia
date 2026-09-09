@@ -1,0 +1,54 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ResourceDictionary.ThemeDictionaries>
+    <!-- Catppuccin Mocha — original NeoHtop dark theme. -->
+    <ResourceDictionary x:Key="Dark">
+      <Color x:Key="WinUiAccent">#89B4FA</Color>
+      <SolidColorBrush x:Key="WinUiBaseBrush" Color="#1E1E2E" />
+      <SolidColorBrush x:Key="WinUiLayerBrush" Color="#181825" />
+      <SolidColorBrush x:Key="WinUiCardBrush" Color="#181825" />
+      <SolidColorBrush x:Key="WinUiSubtleFillBrush" Color="#313244" />
+      <SolidColorBrush x:Key="WinUiStrokeBrush" Color="#313244" />
+      <SolidColorBrush x:Key="WinUiTextBrush" Color="#CDD6F4" />
+      <SolidColorBrush x:Key="WinUiTextSecondaryBrush" Color="#A6ADC8" />
+      <SolidColorBrush x:Key="WinUiSelectionBrush" Color="#2689B4FA" />
+      <SolidColorBrush x:Key="WinUiDangerBrush" Color="#F38BA8" />
+      <SolidColorBrush x:Key="WinUiOverlayBrush" Color="#CC11111B" />
+      <SolidColorBrush x:Key="WinUiBlueBrush" Color="#89B4FA" />
+      <SolidColorBrush x:Key="WinUiYellowBrush" Color="#F9E2AF" />
+      <SolidColorBrush x:Key="WinUiPeachBrush" Color="#FAB387" />
+      <SolidColorBrush x:Key="WinUiLavenderBrush" Color="#B4BEFE" />
+      <SolidColorBrush x:Key="WinUiSapphireBrush" Color="#74C7EC" />
+      <SolidColorBrush x:Key="WinUiSurface0Brush" Color="#313244" />
+      <SolidColorBrush x:Key="WinUiSurface1Brush" Color="#45475A" />
+      <SolidColorBrush x:Key="WinUiPillBrush" Color="#313244" />
+    </ResourceDictionary>
+    <!-- Catppuccin Latte -->
+    <ResourceDictionary x:Key="Light">
+      <Color x:Key="WinUiAccent">#1E66F5</Color>
+      <SolidColorBrush x:Key="WinUiBaseBrush" Color="#EFF1F5" />
+      <SolidColorBrush x:Key="WinUiLayerBrush" Color="#E6E9EF" />
+      <SolidColorBrush x:Key="WinUiCardBrush" Color="#E6E9EF" />
+      <SolidColorBrush x:Key="WinUiSubtleFillBrush" Color="#CCD0DA" />
+      <SolidColorBrush x:Key="WinUiStrokeBrush" Color="#CCD0DA" />
+      <SolidColorBrush x:Key="WinUiTextBrush" Color="#4C4F69" />
+      <SolidColorBrush x:Key="WinUiTextSecondaryBrush" Color="#6C6F85" />
+      <SolidColorBrush x:Key="WinUiSelectionBrush" Color="#261E66F5" />
+      <SolidColorBrush x:Key="WinUiDangerBrush" Color="#D20F39" />
+      <SolidColorBrush x:Key="WinUiOverlayBrush" Color="#99DCE0E8" />
+      <SolidColorBrush x:Key="WinUiBlueBrush" Color="#1E66F5" />
+      <SolidColorBrush x:Key="WinUiYellowBrush" Color="#DF8E1D" />
+      <SolidColorBrush x:Key="WinUiPeachBrush" Color="#FE640B" />
+      <SolidColorBrush x:Key="WinUiLavenderBrush" Color="#7287FD" />
+      <SolidColorBrush x:Key="WinUiSapphireBrush" Color="#209FB5" />
+      <SolidColorBrush x:Key="WinUiSurface0Brush" Color="#CCD0DA" />
+      <SolidColorBrush x:Key="WinUiSurface1Brush" Color="#BCC0CC" />
+      <SolidColorBrush x:Key="WinUiPillBrush" Color="#CCD0DA" />
+    </ResourceDictionary>
+  </ResourceDictionary.ThemeDictionaries>
+  <CornerRadius x:Key="WinUiControlRadius">6</CornerRadius>
+  <CornerRadius x:Key="WinUiCardRadius">6</CornerRadius>
+  <FontFamily x:Key="WinUiFont">Segoe UI Variable, Segoe UI</FontFamily>
+  <FontFamily x:Key="Mdl2Font">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+</ResourceDictionary>
+

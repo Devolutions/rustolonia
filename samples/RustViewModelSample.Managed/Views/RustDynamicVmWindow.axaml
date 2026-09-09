@@ -1,0 +1,104 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:rust="using:Avalonia.Rust"
+        xmlns:vm="using:Avalonia.Rust.Sample.Generated"
+        x:Class="Avalonia.Rust.Sample.Views.RustDynamicVmWindow"
+        x:CompileBindings="False"
+        Title="Rust Dynamic VM + AXAML"
+        Width="560"
+        Height="760">
+  <ScrollViewer>
+    <StackPanel Margin="20" Spacing="10">
+      <TextBlock Text="Dynamic AXAML bindings, Rust-owned state" FontSize="20" />
+      <TextBlock Text="Name (validated by Rust: cannot be empty)" />
+      <TextBox Text="{rust:RustBinding Name, Mode=TwoWay}" />
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button Content="Increment" Command="{rust:RustBinding IncrementCommand}" />
+        <TextBlock Text="{rust:RustBinding Count, Converter={x:Static vm:CountToLabelConverter.Instance}}"
+                   VerticalAlignment="Center" />
+      </StackPanel>
+      <TextBlock Text="New item" />
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <TextBox Text="{rust:RustBinding NewItem, Mode=TwoWay}" Width="300" />
+        <Button Content="Add" Command="{rust:RustBinding AddCommand}" />
+      </StackPanel>
+      <ListBox ItemsSource="{rust:RustBinding Items}" Height="100" />
+      <!-- CanExecute: Save disables itself while the Rust worker runs. -->
+      <Button Content="Run Rust async save" Command="{rust:RustBinding SaveCommand}" />
+      <TextBlock Text="{rust:RustBinding Status}" />
+
+      <TextBlock Text="Desktop files (Rust-owned, platform-neutral)" FontWeight="Bold" />
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button x:Name="OpenFilesButton" Content="Open files..." Command="{rust:RustBinding OpenFilesCommand}" />
+        <Button x:Name="OpenFolderButton" Content="Open folder..." Command="{rust:RustBinding OpenFolderCommand}" />
+        <Button x:Name="SaveExportButton" Content="Save/export..." Command="{rust:RustBinding SaveExportCommand}" />
+      </StackPanel>
+      <TextBlock x:Name="FileStatusText" Text="{rust:RustBinding FileStatus}" />
+      <TextBlock x:Name="ActivationStatusText" Text="{rust:RustBinding ActivationStatus}" />
+      <Border x:Name="DropPanel"
+              BorderBrush="#3B82F6"
+              BorderThickness="1"
+              CornerRadius="4"
+              Padding="12"
+              MinHeight="60"
+              Background="#111D4ED8">
+        <TextBlock x:Name="DropStatusText" Text="{rust:RustBinding DropStatus}" TextWrapping="Wrap" />
+      </Border>
+      <ListBox x:Name="SelectedFilesList" ItemsSource="{rust:RustBinding SelectedFiles}" Height="90" />
+
+      <TextBlock Text="Nullable value (Nickname)" FontWeight="Bold" />
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <TextBox Text="{rust:RustBinding Nickname, Mode=TwoWay}" Width="200"
+                 PlaceholderText="(no nickname set)" />
+        <Button Content="Clear nickname" Command="{rust:RustBinding ClearNicknameCommand}" />
+      </StackPanel>
+
+      <TextBlock Text="Enum value (Priority)" FontWeight="Bold" />
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <TextBlock Text="{rust:RustBinding Priority}" VerticalAlignment="Center" />
+        <Button Content="Cycle priority" Click="OnCyclePriorityClick" />
+      </StackPanel>
+
+      <TextBlock Text="Nested view model (Address, nullable)" FontWeight="Bold" />
+      <Button Content="Toggle address" Command="{rust:RustBinding ToggleAddressCommand}" />
+      <!--
+        A nested view model's own properties are bound at the top level of
+        its own DataTemplate (the DataContext becomes the nested adapter),
+        exactly like the Tasks item template below — the dynamic binding
+        path itself never needs to cross a nested-model boundary.
+      -->
+      <ContentControl Content="{rust:RustBinding Address}">
+        <ContentControl.DataTemplates>
+          <DataTemplate DataType="rust:ReflectableRustViewModelAdapter">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <TextBox Text="{rust:RustBinding Street, Mode=TwoWay}" Width="150" PlaceholderText="Street" />
+              <TextBox Text="{rust:RustBinding City, Mode=TwoWay}" Width="150" PlaceholderText="City" />
+            </StackPanel>
+          </DataTemplate>
+        </ContentControl.DataTemplates>
+      </ContentControl>
+
+      <TextBlock Text="Nested collection (Tasks)" FontWeight="Bold" />
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <TextBox Text="{rust:RustBinding NewTaskTitle, Mode=TwoWay}" Width="200" />
+        <Button Content="Add task" Command="{rust:RustBinding AddTaskCommand}" />
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button Content="Remove first" Command="{rust:RustBinding RemoveFirstTaskCommand}" />
+        <Button Content="Shuffle" Command="{rust:RustBinding ShuffleTasksCommand}" />
+        <Button Content="Clear" Command="{rust:RustBinding ClearTasksCommand}" />
+      </StackPanel>
+      <ListBox ItemsSource="{rust:RustBinding Tasks}" Height="120">
+        <ListBox.ItemTemplate>
+          <DataTemplate>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <CheckBox IsChecked="{rust:RustBinding Done, Mode=TwoWay}" />
+              <TextBlock Text="{rust:RustBinding Title}" VerticalAlignment="Center" />
+            </StackPanel>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+    </StackPanel>
+  </ScrollViewer>
+</Window>
+

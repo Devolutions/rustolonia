@@ -1,0 +1,27 @@
+<Solution>
+  <Folder Name="/host/">
+    <Project Path="host/Avalonia.Host.csproj" />
+  </Folder>
+  <Folder Name="/apps/">
+    <Project Path="apps/system-monitor/NeoHtop.Presentation/NeoHtop.Presentation.csproj" />
+    <Project Path="apps/pdf-viewer/managed/Consumer.Presentation.csproj" />
+  </Folder>
+  <Folder Name="/interop/">
+    <Project Path="interop/Avalonia.Rust.Interop/Avalonia.Rust.Interop.csproj" />
+    <Project Path="interop/Avalonia.Rust/Avalonia.Rust.csproj" />
+  </Folder>
+  <Folder Name="/projection/">
+    <Project Path="projection/Avalonia.Projection.Generator/Avalonia.Projection.Generator.csproj" />
+    <Project Path="projection/Avalonia.Projection.Ir/Avalonia.Projection.Ir.csproj" />
+    <Project Path="projection/Avalonia.Projection.Tool/Avalonia.Projection.Tool.csproj" />
+    <Project Path="projection/Avalonia.ViewModelProjection.Tool/Avalonia.ViewModelProjection.Tool.csproj" />
+  </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/RustViewModelSample.Managed/RustViewModelSample.Managed.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Avalonia.Host.Tests/Avalonia.Host.Tests.csproj" />
+    <Project Path="tests/Avalonia.Projection.Generator.Tests/Avalonia.Projection.Generator.Tests.csproj" />
+    <Project Path="tests/Avalonia.Projection.Ir.Tests/Avalonia.Projection.Ir.Tests.csproj" />
+  </Folder>
+</Solution>

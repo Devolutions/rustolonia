@@ -1,0 +1,12 @@
+[package]
+name = "avalonia-sys"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Raw nano-COM bindings for the Avalonia NativeAOT host"
+repository = "https://github.com/mamoreau-devolutions/rustolonia"
+readme = "README.md"
+publish = false
+
+[dependencies]
+libloading = "0.8"

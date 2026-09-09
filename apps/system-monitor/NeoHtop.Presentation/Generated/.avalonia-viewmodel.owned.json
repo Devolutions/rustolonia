@@ -1,0 +1,33 @@
+{
+  "generator": "avalonia-viewmodel",
+  "files": [
+    {
+      "path": "CpuCoreViewModelAdapter.g.cs",
+      "sha256": "21b0a498dc73c76298de5111050803c6ad5030fb159e0b55b216ebef6b025928"
+    },
+    {
+      "path": "CpuCoreViewModelMetadata.g.cs",
+      "sha256": "2e9aceba975d594f0cc5c19795dee6c25824d992f7028a6b78b1a467c22ea106"
+    },
+    {
+      "path": "MainViewModelAdapter.g.cs",
+      "sha256": "4c6186b5d1a5e9f4240eb76d7d92e7d1e9c899d454e025922070a5c2c50ae8fd"
+    },
+    {
+      "path": "MainViewModelMenus.g.cs",
+      "sha256": "344a471c3a799840e9ecc966738b26457eeca6809c4be01e6a5fb089c943e0b9"
+    },
+    {
+      "path": "MainViewModelMetadata.g.cs",
+      "sha256": "c3c728088b40b0c889320092ab45bba0235e9e94bdb78ab234693d23c030f2db"
+    },
+    {
+      "path": "ProcessRowViewModelAdapter.g.cs",
+      "sha256": "0e98be90847b234b80aa1680074ad08ea4fec71b609f1ed90d1ab895090dbbc1"
+    },
+    {
+      "path": "ProcessRowViewModelMetadata.g.cs",
+      "sha256": "afd54c660b15edba78bcade9b0ac757a2742bd9fdefcea7bec3056c0f1fe610f"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!--
+    XAML compilation for the sample presentation project. The Avalonia build
+    tasks and single-project targets come from the pinned avalonia-src
+    producer submodule; this file just points the host project's imports at
+    it while keeping a stable local import surface.
+  -->
+  <PropertyGroup>
+    <AvaloniaProducerRoot Condition="'$(AvaloniaProducerRoot)' == ''">$(MSBuildThisFileDirectory)../avalonia-src</AvaloniaProducerRoot>
+    <AvaloniaBuildTasksLocation>$(AvaloniaProducerRoot)\src\Avalonia.Build.Tasks\bin\$(Configuration)\netstandard2.0\Avalonia.Build.Tasks.dll</AvaloniaBuildTasksLocation>
+    <AvaloniaXamlIlVerifyIl>true</AvaloniaXamlIlVerifyIl>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <AvaloniaXamlVerboseExceptions Condition="'$(AvaloniaXamlVerboseExceptions)' == ''">true</AvaloniaXamlVerboseExceptions>
+  </PropertyGroup>
+
+  <UsingTask TaskName="GenerateAvaloniaResourcesTask" AssemblyFile="$(AvaloniaBuildTasksLocation)" TaskFactory="TaskHostFactory"/>
+  <UsingTask TaskName="CompileAvaloniaXamlTask" AssemblyFile="$(AvaloniaBuildTasksLocation)" TaskFactory="TaskHostFactory"/>
+
+  <Import Project="$(AvaloniaProducerRoot)\build\DevSingleProject.targets"/>
+  <Import Project="$(AvaloniaProducerRoot)\packages\Avalonia\AvaloniaBuildTasks.props"/>
+  <Import Project="$(AvaloniaProducerRoot)\packages\Avalonia\AvaloniaBuildTasks.targets"/>
+</Project>

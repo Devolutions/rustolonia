@@ -1,0 +1,10 @@
+[package]
+name = "avalonia-sample"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Sample-owned Rust view-model API generated from the flagship view-model schema"
+publish = false
+
+[dependencies]
+avalonia = { path = "../avalonia" }

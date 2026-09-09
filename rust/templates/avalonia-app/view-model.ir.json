@@ -1,0 +1,126 @@
+{
+  "version": 5,
+  "enums": [],
+  "models": [
+    {
+      "id": 1,
+      "name": "MainViewModel",
+      "managedNamespace": "Avalonia.Rust.Consumer.Generated",
+      "properties": [
+        {
+          "id": 1,
+          "name": "Title",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "Loading..."
+        },
+        {
+          "id": 2,
+          "name": "Status",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "Ready"
+        }
+      ],
+      "collections": [
+        {
+          "id": 1,
+          "name": "RecentFiles",
+          "elementKind": "String",
+          "recursive": false
+        }
+      ],
+      "maps": [],
+      "commands": [
+        {
+          "id": 1,
+          "name": "CopyTitle",
+          "isAsync": true,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 2,
+          "name": "OpenRecentFile",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 3,
+          "name": "Exit",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        }
+      ],
+      "menus": [
+        {
+          "id": 1,
+          "name": "Main",
+          "kind": "Application",
+          "items": [
+            {
+              "id": 1,
+              "name": "File",
+              "kind": "Submenu",
+              "header": "_File",
+              "items": [
+                {
+                  "id": 2,
+                  "name": "CopyTitle",
+                  "kind": "Command",
+                  "header": "_Copy title",
+                  "command": "CopyTitle",
+                  "gesture": "Ctrl\u002BC",
+                  "items": []
+                },
+                {
+                  "id": 3,
+                  "name": "Recent",
+                  "kind": "RecentFiles",
+                  "header": "Recent _files",
+                  "items": []
+                },
+                {
+                  "id": 4,
+                  "name": "FileSeparator",
+                  "kind": "Separator",
+                  "items": []
+                },
+                {
+                  "id": 5,
+                  "name": "Exit",
+                  "kind": "Command",
+                  "header": "E_xit",
+                  "command": "Exit",
+                  "gesture": "Ctrl\u002BQ",
+                  "items": []
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "recentFiles": {
+        "id": 1,
+        "collection": "RecentFiles",
+        "activateCommand": "OpenRecentFile",
+        "capacity": 5
+      }
+    }
+  ],
+  "views": [
+    {
+      "id": 1,
+      "name": "MainWindow",
+      "model": "MainViewModel",
+      "managedTypeName": "Avalonia.Rust.Consumer.Views.MainWindow",
+      "dynamicBindings": false,
+      "converters": []
+    }
+  ],
+  "converters": []
+}

@@ -1,0 +1,13 @@
+[package]
+name = "pdf-viewer"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "A sample Rustolonia PDF viewer powered by PDF Oxide"
+
+[dependencies]
+avalonia = { path = "../../rust/avalonia" }
+base64 = "0.22"
+pdf_oxide = { version = "0.3.78", features = ["rendering"] }
+
+[workspace]

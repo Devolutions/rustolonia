@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(AvsCurrentTargetFramework)</TargetFramework>
+    <IsTestProject>true</IsTestProject>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\host\Avalonia.Host.csproj" AdditionalProperties="AvaloniaRustPresentationProjects=..\samples\RustViewModelSample.Managed\RustViewModelSample.Managed.csproj;AvaloniaRustViewRegistryFile=..\samples\RustViewModelSample.Managed\Generated\RustViewRegistry.g.cs" />
+    <ProjectReference Include="..\..\interop\Avalonia.Rust\Avalonia.Rust.csproj" />
+    <ProjectReference Include="..\..\samples\RustViewModelSample.Managed\RustViewModelSample.Managed.csproj" />
+    <ProjectReference Include="..\..\avalonia-src\tests\Avalonia.UnitTests\Avalonia.UnitTests.csproj" />
+  </ItemGroup>
+  <Import Project="..\..\build\UnitTests.NetCore.targets" />
+  <Import Project="..\..\build\XUnit.props" />
+  <!--
+    XUnit.props clears assembly signing, but this test assembly is named in
+    InternalsVisibleTo entries (with PublicKey) inside Avalonia.Controls, so its
+    output must be signed with avalonia.snk for friend access to apply.
+  -->
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)..\..\build\avalonia.snk</AssemblyOriginatorKeyFile>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <Import Project="..\..\build\NullableEnable.props" />
+</Project>

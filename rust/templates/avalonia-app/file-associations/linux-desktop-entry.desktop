@@ -1,0 +1,16 @@
+[Desktop Entry]
+Type=Application
+Name=__AVALONIA_APP_NAME__
+Comment=Avalonia application with a Rust-owned view model
+# %F passes the selected file paths as separate arguments. Use %U instead if
+# your application should also receive non-local URIs; both reach Rust through
+# AppScope::activation_items(), which keeps a URI when there is no local path.
+Exec=/opt/__AVALONIA_APP_NAME__/__AVALONIA_APP_NAME__ %F
+Icon=__AVALONIA_APP_NAME__
+Terminal=false
+Categories=Utility;
+MimeType=application/x-__AVALONIA_APP_NAME__;
+
+# Install with (from a package post-install step, not from the application):
+#   desktop-file-install --dir="$HOME/.local/share/applications" this-file.desktop
+#   update-desktop-database "$HOME/.local/share/applications"

@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "presentationProject": "managed/Consumer.Presentation.csproj",
+  "viewModelIr": "view-model.ir.json",
+  "generatedAdaptersDirectory": "managed/Generated",
+  "generatedRegistryFile": "generated/RustViewRegistry.g.cs",
+  "generatedRustFile": "generated/generated_view_models.rs",
+  "generatedContractFile": "generated/view-model.contract.md",
+  "cargoManifest": "Cargo.toml",
+  "packageName": "__AVALONIA_APP_NAME__",
+  "binary": "__AVALONIA_APP_NAME__",
+  "rid": "__CONSUMER_RID__",
+  "configuration": "Release",
+  "outputDirectory": "artifacts/__CONSUMER_RID__"
+}

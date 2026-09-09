@@ -1,0 +1,908 @@
+{
+  "version": 5,
+  "enums": [
+    {
+      "id": 1,
+      "name": "Priority",
+      "managedNamespace": "Avalonia.Rust.Sample.Generated",
+      "members": [
+        {
+          "name": "Low",
+          "value": 0
+        },
+        {
+          "name": "Normal",
+          "value": 1
+        },
+        {
+          "name": "High",
+          "value": 2
+        }
+      ]
+    }
+  ],
+  "models": [
+    {
+      "id": 1,
+      "name": "SampleViewModel",
+      "managedNamespace": "Avalonia.Rust.Sample.Generated",
+      "properties": [
+        {
+          "id": 1,
+          "name": "Name",
+          "kind": "String",
+          "writable": true,
+          "nullable": false,
+          "initialString": "Avalonia from Rust"
+        },
+        {
+          "id": 2,
+          "name": "Count",
+          "kind": "Integer",
+          "writable": false,
+          "nullable": false
+        },
+        {
+          "id": 3,
+          "name": "NewItem",
+          "kind": "String",
+          "writable": true,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 4,
+          "name": "Status",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "Ready"
+        },
+        {
+          "id": 5,
+          "name": "Nickname",
+          "kind": "String",
+          "writable": true,
+          "nullable": true
+        },
+        {
+          "id": 6,
+          "name": "Priority",
+          "kind": "Enum",
+          "writable": true,
+          "nullable": false,
+          "enumName": "Priority",
+          "initialInteger": 1
+        },
+        {
+          "id": 7,
+          "name": "Address",
+          "kind": "Model",
+          "writable": false,
+          "nullable": true,
+          "modelName": "AddressViewModel"
+        },
+        {
+          "id": 8,
+          "name": "NewTaskTitle",
+          "kind": "String",
+          "writable": true,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 9,
+          "name": "SelectedTraceIndex",
+          "kind": "Integer",
+          "writable": true,
+          "nullable": false,
+          "initialInteger": 0
+        },
+        {
+          "id": 10,
+          "name": "SelectedTraceKey",
+          "kind": "String",
+          "writable": true,
+          "nullable": false,
+          "initialString": "trace-000000"
+        },
+        {
+          "id": 11,
+          "name": "TraceSortDirection",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "Ascending"
+        },
+        {
+          "id": 12,
+          "name": "FileStatus",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "No file operation yet"
+        },
+        {
+          "id": 13,
+          "name": "DropStatus",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "Drop files or folders onto the panel below"
+        },
+        {
+          "id": 14,
+          "name": "ActivationStatus",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "No startup files"
+        },
+        {
+          "id": 15,
+          "name": "LogWindowStatus",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "Idle"
+        },
+        {
+          "id": 16,
+          "name": "ShowTraceDetails",
+          "kind": "Boolean",
+          "writable": true,
+          "nullable": false,
+          "initialBoolean": true
+        },
+        {
+          "id": 17,
+          "name": "ClipboardStatus",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "Clipboard idle"
+        }
+      ],
+      "collections": [
+        {
+          "id": 1,
+          "name": "Items",
+          "elementKind": "String",
+          "recursive": false
+        },
+        {
+          "id": 2,
+          "name": "Tasks",
+          "elementKind": "Model",
+          "elementModelName": "TaskItemViewModel",
+          "recursive": false
+        },
+        {
+          "id": 3,
+          "name": "TraceRows",
+          "elementKind": "Model",
+          "elementModelName": "TraceRowViewModel",
+          "table": {
+            "columns": [
+              {
+                "id": 1,
+                "name": "Timestamp",
+                "header": "Timestamp",
+                "path": "Timestamp",
+                "width": 150,
+                "star": false,
+                "auto": false,
+                "minWidth": 100,
+                "resizable": true,
+                "sortable": true,
+                "horizontalAlignment": "Left"
+              },
+              {
+                "id": 2,
+                "name": "Severity",
+                "header": "Severity",
+                "path": "Severity",
+                "width": 90,
+                "star": false,
+                "auto": false,
+                "minWidth": 70,
+                "resizable": true,
+                "sortable": true,
+                "horizontalAlignment": "Center"
+              },
+              {
+                "id": 3,
+                "name": "Source",
+                "header": "Source",
+                "path": "Event.Source",
+                "width": 120,
+                "star": false,
+                "auto": false,
+                "resizable": true,
+                "sortable": true,
+                "horizontalAlignment": "Left"
+              },
+              {
+                "id": 4,
+                "name": "Message",
+                "header": "Message",
+                "path": "Message",
+                "star": true,
+                "auto": false,
+                "minWidth": 260,
+                "resizable": true,
+                "sortable": false,
+                "horizontalAlignment": "Left"
+              }
+            ],
+            "selection": {
+              "selectedIndexProperty": "SelectedTraceIndex",
+              "selectedKeyProperty": "SelectedTraceKey",
+              "rowKeyPath": "Event.Id"
+            },
+            "sort": {
+              "command": "SortTraceRows",
+              "column": "Timestamp",
+              "directionProperty": "TraceSortDirection"
+            }
+          },
+          "recursive": false
+        },
+        {
+          "id": 4,
+          "name": "SelectedFiles",
+          "elementKind": "String",
+          "recursive": false
+        },
+        {
+          "id": 5,
+          "name": "LogWindow",
+          "elementKind": "Model",
+          "elementModelName": "TraceRowViewModel",
+          "window": {
+            "pageSize": 64,
+            "maxLivePages": 8
+          },
+          "recursive": false
+        },
+        {
+          "id": 6,
+          "name": "LogTree",
+          "elementKind": "Model",
+          "elementModelName": "LogNodeViewModel",
+          "recursive": false,
+          "tree": {
+            "childrenCollection": "Children",
+            "headerPath": "Label",
+            "hasChildrenProperty": "HasChildren"
+          }
+        },
+        {
+          "id": 7,
+          "name": "RecentFiles",
+          "elementKind": "String",
+          "recursive": false
+        },
+        {
+          "id": 8,
+          "name": "CoreLoads",
+          "elementKind": "Double",
+          "recursive": false
+        },
+        {
+          "id": 9,
+          "name": "CoreTicks",
+          "elementKind": "Integer",
+          "recursive": false
+        }
+      ],
+      "maps": [
+        {
+          "id": 1,
+          "name": "SeverityCounts",
+          "keyKind": "String",
+          "valueKind": "Integer"
+        },
+        {
+          "id": 2,
+          "name": "SourceDetails",
+          "keyKind": "String",
+          "valueKind": "Model",
+          "valueModelName": "TraceEventViewModel"
+        }
+      ],
+      "commands": [
+        {
+          "id": 1,
+          "name": "Increment",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 2,
+          "name": "Add",
+          "isAsync": false,
+          "parameterProperty": "NewItem",
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 3,
+          "name": "Save",
+          "isAsync": true,
+          "resultModelName": "SaveReportViewModel",
+          "supportsProgress": true,
+          "supportsCancellation": true
+        },
+        {
+          "id": 4,
+          "name": "ClearNickname",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 5,
+          "name": "ToggleAddress",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 6,
+          "name": "AddTask",
+          "isAsync": false,
+          "parameterProperty": "NewTaskTitle",
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 7,
+          "name": "RemoveFirstTask",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 8,
+          "name": "ShuffleTasks",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 9,
+          "name": "ClearTasks",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 10,
+          "name": "SortTraceRows",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 11,
+          "name": "OpenFiles",
+          "isAsync": true,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 12,
+          "name": "OpenFolder",
+          "isAsync": true,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 13,
+          "name": "SaveExport",
+          "isAsync": true,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 14,
+          "name": "RefreshLogWindow",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 15,
+          "name": "OpenRecentFile",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 16,
+          "name": "CopySelectedRow",
+          "isAsync": true,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 17,
+          "name": "CutSelectedRow",
+          "isAsync": true,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 18,
+          "name": "PasteFromClipboard",
+          "isAsync": true,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 19,
+          "name": "ClearClipboard",
+          "isAsync": true,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 20,
+          "name": "ExitApplication",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        }
+      ],
+      "menus": [
+        {
+          "id": 1,
+          "name": "Main",
+          "kind": "Application",
+          "items": [
+            {
+              "id": 1,
+              "name": "File",
+              "kind": "Submenu",
+              "header": "_File",
+              "items": [
+                {
+                  "id": 2,
+                  "name": "Open",
+                  "kind": "Command",
+                  "header": "_Open files...",
+                  "command": "OpenFiles",
+                  "gesture": "Ctrl\u002BO",
+                  "items": []
+                },
+                {
+                  "id": 3,
+                  "name": "OpenFolder",
+                  "kind": "Command",
+                  "header": "Open f_older...",
+                  "command": "OpenFolder",
+                  "items": []
+                },
+                {
+                  "id": 4,
+                  "name": "Recent",
+                  "kind": "RecentFiles",
+                  "header": "Recent _files",
+                  "items": []
+                },
+                {
+                  "id": 5,
+                  "name": "FileSeparator",
+                  "kind": "Separator",
+                  "items": []
+                },
+                {
+                  "id": 6,
+                  "name": "Exit",
+                  "kind": "Command",
+                  "header": "E_xit",
+                  "command": "ExitApplication",
+                  "gesture": "Ctrl\u002BQ",
+                  "items": []
+                }
+              ]
+            },
+            {
+              "id": 7,
+              "name": "Edit",
+              "kind": "Submenu",
+              "header": "_Edit",
+              "items": [
+                {
+                  "id": 8,
+                  "name": "Copy",
+                  "kind": "Command",
+                  "header": "_Copy row",
+                  "command": "CopySelectedRow",
+                  "gesture": "Ctrl\u002BC",
+                  "items": []
+                },
+                {
+                  "id": 9,
+                  "name": "Cut",
+                  "kind": "Command",
+                  "header": "Cu_t row",
+                  "command": "CutSelectedRow",
+                  "gesture": "Ctrl\u002BX",
+                  "items": []
+                },
+                {
+                  "id": 10,
+                  "name": "Paste",
+                  "kind": "Command",
+                  "header": "_Paste",
+                  "command": "PasteFromClipboard",
+                  "gesture": "Ctrl\u002BV",
+                  "items": []
+                },
+                {
+                  "id": 11,
+                  "name": "EditSeparator",
+                  "kind": "Separator",
+                  "items": []
+                },
+                {
+                  "id": 12,
+                  "name": "ClearClipboard",
+                  "kind": "Command",
+                  "header": "C_lear clipboard",
+                  "command": "ClearClipboard",
+                  "items": []
+                }
+              ]
+            },
+            {
+              "id": 13,
+              "name": "View",
+              "kind": "Submenu",
+              "header": "_View",
+              "items": [
+                {
+                  "id": 14,
+                  "name": "ShowDetails",
+                  "kind": "Toggle",
+                  "header": "Show trace _details",
+                  "toggleProperty": "ShowTraceDetails",
+                  "items": []
+                },
+                {
+                  "id": 15,
+                  "name": "ViewSeparator",
+                  "kind": "Separator",
+                  "items": []
+                },
+                {
+                  "id": 16,
+                  "name": "PriorityLow",
+                  "kind": "Radio",
+                  "header": "Priority: low",
+                  "radioProperty": "Priority",
+                  "radioValue": "Low",
+                  "items": []
+                },
+                {
+                  "id": 17,
+                  "name": "PriorityNormal",
+                  "kind": "Radio",
+                  "header": "Priority: normal",
+                  "radioProperty": "Priority",
+                  "radioValue": "Normal",
+                  "items": []
+                },
+                {
+                  "id": 18,
+                  "name": "PriorityHigh",
+                  "kind": "Radio",
+                  "header": "Priority: high",
+                  "radioProperty": "Priority",
+                  "radioValue": "High",
+                  "items": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "name": "TraceRows",
+          "kind": "Context",
+          "items": [
+            {
+              "id": 1,
+              "name": "CopyRow",
+              "kind": "Command",
+              "header": "Copy row",
+              "command": "CopySelectedRow",
+              "gesture": "Ctrl\u002BC",
+              "items": []
+            },
+            {
+              "id": 2,
+              "name": "Separator",
+              "kind": "Separator",
+              "items": []
+            },
+            {
+              "id": 3,
+              "name": "ShowDetails",
+              "kind": "Toggle",
+              "header": "Show trace details",
+              "toggleProperty": "ShowTraceDetails",
+              "items": []
+            },
+            {
+              "id": 4,
+              "name": "Recent",
+              "kind": "RecentFiles",
+              "header": "Recent files",
+              "items": []
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "name": "Shortcuts",
+          "kind": "Accelerators",
+          "items": [
+            {
+              "id": 1,
+              "name": "RefreshLogWindow",
+              "kind": "Command",
+              "header": "Refresh log window",
+              "command": "RefreshLogWindow",
+              "gesture": "Ctrl\u002BR",
+              "items": []
+            }
+          ]
+        }
+      ],
+      "recentFiles": {
+        "id": 1,
+        "collection": "RecentFiles",
+        "activateCommand": "OpenRecentFile",
+        "capacity": 8
+      }
+    },
+    {
+      "id": 2,
+      "name": "AddressViewModel",
+      "managedNamespace": "Avalonia.Rust.Sample.Generated",
+      "properties": [
+        {
+          "id": 1,
+          "name": "Street",
+          "kind": "String",
+          "writable": true,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 2,
+          "name": "City",
+          "kind": "String",
+          "writable": true,
+          "nullable": false,
+          "initialString": ""
+        }
+      ],
+      "collections": [],
+      "maps": [],
+      "commands": [],
+      "menus": []
+    },
+    {
+      "id": 3,
+      "name": "TaskItemViewModel",
+      "managedNamespace": "Avalonia.Rust.Sample.Generated",
+      "properties": [
+        {
+          "id": 1,
+          "name": "Title",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 2,
+          "name": "Done",
+          "kind": "Boolean",
+          "writable": true,
+          "nullable": false
+        }
+      ],
+      "collections": [],
+      "maps": [],
+      "commands": [],
+      "menus": []
+    },
+    {
+      "id": 4,
+      "name": "TraceRowViewModel",
+      "managedNamespace": "Avalonia.Rust.Sample.Generated",
+      "properties": [
+        {
+          "id": 1,
+          "name": "Timestamp",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 2,
+          "name": "Severity",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 3,
+          "name": "Message",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 4,
+          "name": "Event",
+          "kind": "Model",
+          "writable": false,
+          "nullable": true,
+          "modelName": "TraceEventViewModel"
+        }
+      ],
+      "collections": [],
+      "maps": [],
+      "commands": [],
+      "menus": [],
+      "displayPath": "Message"
+    },
+    {
+      "id": 5,
+      "name": "TraceEventViewModel",
+      "managedNamespace": "Avalonia.Rust.Sample.Generated",
+      "properties": [
+        {
+          "id": 1,
+          "name": "Id",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 2,
+          "name": "Source",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        }
+      ],
+      "collections": [],
+      "maps": [],
+      "commands": [],
+      "menus": []
+    },
+    {
+      "id": 6,
+      "name": "LogNodeViewModel",
+      "managedNamespace": "Avalonia.Rust.Sample.Generated",
+      "properties": [
+        {
+          "id": 1,
+          "name": "Label",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 2,
+          "name": "Detail",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 3,
+          "name": "HasChildren",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        }
+      ],
+      "collections": [
+        {
+          "id": 1,
+          "name": "Children",
+          "elementKind": "Model",
+          "elementModelName": "LogNodeViewModel",
+          "recursive": true
+        }
+      ],
+      "maps": [],
+      "commands": [],
+      "menus": []
+    },
+    {
+      "id": 7,
+      "name": "SaveReportViewModel",
+      "managedNamespace": "Avalonia.Rust.Sample.Generated",
+      "properties": [
+        {
+          "id": 1,
+          "name": "Destination",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 2,
+          "name": "Bytes",
+          "kind": "Integer",
+          "writable": false,
+          "nullable": false,
+          "initialInteger": 0
+        },
+        {
+          "id": 3,
+          "name": "Succeeded",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        }
+      ],
+      "collections": [],
+      "maps": [],
+      "commands": [],
+      "menus": []
+    }
+  ],
+  "views": [
+    {
+      "id": 1,
+      "name": "RustVmWindow",
+      "model": "SampleViewModel",
+      "managedTypeName": "Avalonia.Rust.Sample.Views.RustVmWindow",
+      "dynamicBindings": false,
+      "converters": [
+        "CountToLabel"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "RustDynamicVmWindow",
+      "model": "SampleViewModel",
+      "managedTypeName": "Avalonia.Rust.Sample.Views.RustDynamicVmWindow",
+      "dynamicBindings": true,
+      "converters": [
+        "CountToLabel"
+      ]
+    }
+  ],
+  "converters": [
+    {
+      "id": 1,
+      "name": "CountToLabel",
+      "managedNamespace": "Avalonia.Rust.Sample.Generated",
+      "valueKind": "Integer",
+      "resultKind": "String",
+      "supportsConvertBack": false
+    }
+  ]
+}

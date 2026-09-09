@@ -1,0 +1,381 @@
+name: Avalonia Rust
+
+on:
+  pull_request:
+    paths:
+      - '**'
+      - '.github/workflows/avalonia-rust.yml'
+  push:
+    branches: [main]
+    paths:
+      - '**'
+      - '.github/workflows/avalonia-rust.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quick-checks:
+    name: helper and scaffold checks
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-14]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run helper and scaffold regressions without native builds
+        shell: pwsh
+        run: ./rust/tests/test-build-app.ps1
+
+  release-gate:
+    name: ${{ matrix.rid }}
+    runs-on: ${{ matrix.os }}
+    env:
+      # Keep the producer's package-source names and source mapping paired.
+      # Windows runners otherwise contribute a nuget.org alias for the same URL,
+      # which can supersede api.nuget.org while remaining unmapped.
+      RestoreConfigFile: ${{ github.workspace }}/avalonia-src/NuGet.Config
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            rid: win-x64
+            platform: Win32
+            architecture: x64
+          - os: ubuntu-latest
+            rid: linux-x64
+            platform: X11
+            architecture: x64
+          - os: macos-15-intel
+            rid: osx-x64
+            platform: OSX
+            architecture: x64
+          - os: macos-14
+            rid: osx-arm64
+            platform: OSX
+            architecture: arm64
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Apply Avalonia source patches
+        shell: pwsh
+        run: ./avalonia-patches/apply-avalonia-patches.ps1 -AvaloniaRoot ./avalonia-src
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.201
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Linux smoke-test display
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install --yes xvfb
+
+      - name: Restore packages (retries on NuGet flakes)
+        shell: pwsh
+        run: |
+          $projects = @(
+            'projection/Avalonia.Projection.Tool/Avalonia.Projection.Tool.csproj',
+            'projection/Avalonia.ViewModelProjection.Tool/Avalonia.ViewModelProjection.Tool.csproj',
+            'avalonia-src/src/Avalonia.Build.Tasks/Avalonia.Build.Tasks.csproj'
+          )
+          $delays = @(15, 30, 60, 90, 120)
+          foreach ($project in $projects) {
+            $attempt = 0
+            while ($true) {
+              $attempt++
+              dotnet restore $project
+              if ($LASTEXITCODE -eq 0) { break }
+              if ($attempt -gt $delays.Length) { throw "restore failed after $attempt attempts: $project" }
+              $delay = $delays[$attempt - 1]
+              Write-Host "restore of $project failed (attempt $attempt); retrying in ${delay}s"
+              Start-Sleep -Seconds $delay
+            }
+          }
+
+      - name: Check generator determinism
+        shell: pwsh
+        run: |
+          ./rust/regenerate-and-build.ps1 -Configuration Release -SkipManagedBuild
+          git status --porcelain -- . ':!avalonia-src' | ForEach-Object { Write-Host "CHANGED: $_" }
+          git diff --check -- . ':!avalonia-src'
+          git diff --exit-code -- . ':!avalonia-src'
+          if (git status --porcelain -- . ':!avalonia-src') { throw "Generation changed the checkout." }
+
+      - name: Generate Avalonia.Native COM headers
+        if: runner.os == 'macOS'
+        shell: pwsh
+        run: dotnet run --project nukebuild/_build.csproj --target GenerateCppHeaders
+        working-directory: ./avalonia-src
+
+      - name: Build Avalonia.Native for managed tests
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          xcodebuild \
+            -project avalonia-src/native/Avalonia.Native/src/OSX/Avalonia.Native.OSX.xcodeproj/ \
+            -configuration Release \
+            ARCHS="${{ runner.arch == 'ARM64' && 'arm64' || 'x86_64' }}" \
+            "CONFIGURATION_BUILD_DIR=$GITHUB_WORKSPACE/avalonia-src/Build/Products/Release"
+
+      - name: Run managed host and generator tests
+        shell: pwsh
+        run: |
+          $projects = @(
+            'tests/Avalonia.Host.Tests/Avalonia.Host.Tests.csproj',
+            'tests/Avalonia.Projection.Generator.Tests/Avalonia.Projection.Generator.Tests.csproj',
+            'tests/Avalonia.Projection.Ir.Tests/Avalonia.Projection.Ir.Tests.csproj'
+          )
+          foreach ($project in $projects) {
+            & dotnet test $project -c Release
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+          pwsh ./rust/tests/test-build-app.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Build and launch a fresh external consumer
+        if: runner.os != 'Linux'
+        shell: pwsh
+        run: ./rust/tests/test-build-app.ps1 -RunNativeSmoke
+
+      - name: Run patched Avalonia control regressions
+        shell: pwsh
+        run: dotnet test avalonia-src/tests/Avalonia.Controls.UnitTests/Avalonia.Controls.UnitTests.csproj -c Release --framework net10.0 -- --filter-method '*TableViewRowAutomationPeerTests.*' '*TableViewColumnWidthLimitTests.*' '*TableViewTests.Fixed_height_table_virtualizes_a_100000_item_source_when_scrolling' --minimum-expected-tests 13
+
+      - name: Build and launch a fresh external consumer under Xvfb
+        if: runner.os == 'Linux'
+        shell: bash
+        run: xvfb-run -a pwsh -NoProfile -File ./rust/tests/test-build-app.ps1 -RunNativeSmoke
+
+      - name: Publish NativeAOT host and run cargo workspace tests
+        shell: pwsh
+        run: ./rust/build.ps1 -Architecture ${{ matrix.architecture }}
+
+      - name: Build flagship Rust view-model samples
+        shell: pwsh
+        run: |
+          cargo build --manifest-path rust/Cargo.toml -p avalonia --example rust_vm_axaml --release
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo build --manifest-path rust/Cargo.toml -p avalonia --example rust_dynamic_vm_axaml --release
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Test in-repository system monitor
+        if: matrix.rid == 'win-x64'
+        shell: pwsh
+        working-directory: apps/system-monitor
+        run: cargo test --locked --manifest-path NeoHtop.App/Cargo.toml
+
+      - name: Build in-repository system monitor
+        if: matrix.rid == 'win-x64'
+        shell: pwsh
+        run: ./apps/system-monitor/build.ps1
+
+      - name: Verify system monitor bundle and generated sources
+        if: matrix.rid == 'win-x64'
+        shell: pwsh
+        run: |
+          git diff --exit-code -- apps/system-monitor
+          $bundle = 'apps/system-monitor/artifacts/win-x64'
+          if (-not (Test-Path -LiteralPath "$bundle/.rustolonia-bundle-owner")) {
+            throw 'Bundle ownership marker is missing.'
+          }
+          Get-Content -LiteralPath "$bundle/checksums.sha256" | ForEach-Object {
+            $expected, $file = $_ -split '\s+\*', 2
+            $actual = (Get-FileHash -LiteralPath (Join-Path $bundle $file) -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($actual -ne $expected) { throw "Checksum mismatch for $file" }
+          }
+          tar -czf apps/system-monitor/artifacts/win-x64.tar.gz -C $bundle .
+
+      - uses: actions/upload-artifact@v4
+        if: matrix.rid == 'win-x64'
+        with:
+          name: rustolonia-system-monitor-win-x64
+          path: apps/system-monitor/artifacts/win-x64.tar.gz
+          if-no-files-found: error
+
+      - name: Package NativeAOT sample artifacts
+        shell: pwsh
+        run: ./rust/package.ps1 -Rid ${{ matrix.rid }} -Configuration Release -Example rust_vm_axaml -PresentationProject samples/RustViewModelSample.Managed/RustViewModelSample.Managed.csproj -ViewRegistryFile samples/RustViewModelSample.Managed/Generated/RustViewRegistry.g.cs
+
+      - name: Archive complete bundle with file modes
+        shell: pwsh
+        run: tar -czf "rust/artifacts/${{ matrix.rid }}.tar.gz" -C "rust/artifacts/${{ matrix.rid }}" .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: avalonia-rust-native-${{ matrix.rid }}
+          path: rust/artifacts/${{ matrix.rid }}.tar.gz
+          if-no-files-found: error
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: avalonia-rust-native-${{ matrix.rid }}
+          path: rust/downloaded
+
+      - name: Extract downloaded bundle
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path "rust/downloaded/${{ matrix.rid }}" | Out-Null
+          tar -xzf "rust/downloaded/${{ matrix.rid }}.tar.gz" -C "rust/downloaded/${{ matrix.rid }}"
+
+      - name: Verify downloaded package checksums
+        shell: pwsh
+        run: |
+          $package = Join-Path 'rust' 'downloaded' '${{ matrix.rid }}'
+          Get-Content (Join-Path $package 'checksums.sha256') | ForEach-Object {
+            $expected, $file = $_ -split '\s+\*', 2
+            if ((Get-FileHash (Join-Path $package $file) -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected) {
+              throw "Checksum mismatch for $file"
+            }
+          }
+
+      - name: Launch packaged sample smoke test
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $process = Start-Process "./rust/downloaded/${{ matrix.rid }}/rust_vm_axaml.exe" -PassThru
+          Start-Sleep -Seconds 5
+          if ($process.HasExited) { throw "Packaged sample exited during startup." }
+          Stop-Process -Id $process.Id
+
+      - name: Launch packaged sample smoke test
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          xvfb-run -a ./rust/downloaded/${{ matrix.rid }}/rust_vm_axaml &
+          process=$!
+          sleep 5
+          kill -0 "$process"
+          kill "$process"
+          wait "$process" || true
+
+      - name: Launch packaged sample process smoke test
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          ./rust/downloaded/${{ matrix.rid }}/rust_vm_axaml &
+          process=$!
+          sleep 5
+          kill -0 "$process"
+          kill "$process"
+          wait "$process" || true
+
+  cross-build:
+    name: cross-build (${{ matrix.rid }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            rid: win-arm64
+            platform: Win32
+            rust-target: aarch64-pc-windows-msvc
+          - os: ubuntu-latest
+            rid: linux-arm64
+            platform: X11
+            rust-target: aarch64-unknown-linux-gnu
+          - os: macos-14
+            rid: osx-x64
+            platform: OSX
+            rust-target: x86_64-apple-darwin
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Apply Avalonia source patches
+        shell: pwsh
+        run: ./avalonia-patches/apply-avalonia-patches.ps1 -AvaloniaRoot ./avalonia-src
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.201
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-target }}
+
+      - name: Install Linux cross toolchain
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install --yes gcc-aarch64-linux-gnu
+
+      - name: Set Linux cross-linker
+        if: runner.os == 'Linux'
+        shell: bash
+        run: echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> "$GITHUB_ENV"
+
+      - name: Generate Avalonia.Native COM headers
+        if: runner.os == 'macOS'
+        shell: pwsh
+        run: dotnet run --project nukebuild/_build.csproj --target GenerateCppHeaders
+        working-directory: ./avalonia-src
+
+      - name: Restore producer packages (retries on NuGet flakes)
+        shell: pwsh
+        run: |
+          $project = 'avalonia-src/src/Avalonia.Build.Tasks/Avalonia.Build.Tasks.csproj'
+          $delays = @(15, 30, 60, 90, 120)
+          $attempt = 0
+          while ($true) {
+            $attempt++
+            dotnet restore $project
+            if ($LASTEXITCODE -eq 0) { break }
+            if ($attempt -gt $delays.Length) { throw "restore failed after $attempt attempts: $project" }
+            $delay = $delays[$attempt - 1]
+            Write-Host "restore of $project failed (attempt $attempt); retrying in ${delay}s"
+            Start-Sleep -Seconds $delay
+          }
+
+      - name: Build the producer's build tasks
+        shell: pwsh
+        run: dotnet build avalonia-src/src/Avalonia.Build.Tasks/Avalonia.Build.Tasks.csproj -c Release --no-restore
+
+      - name: Cross-package NativeAOT sample artifacts
+        shell: pwsh
+        run: ./rust/package.ps1 -Rid ${{ matrix.rid }} -Configuration Release -Example rust_vm_axaml -PresentationProject samples/RustViewModelSample.Managed/RustViewModelSample.Managed.csproj -ViewRegistryFile samples/RustViewModelSample.Managed/Generated/RustViewRegistry.g.cs
+
+      - name: Archive complete bundle with file modes
+        shell: pwsh
+        run: tar -czf "rust/artifacts/${{ matrix.rid }}.tar.gz" -C "rust/artifacts/${{ matrix.rid }}" .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: avalonia-rust-cross-${{ matrix.rid }}
+          path: rust/artifacts/${{ matrix.rid }}.tar.gz
+          if-no-files-found: error
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: avalonia-rust-cross-${{ matrix.rid }}
+          path: rust/downloaded
+
+      - name: Extract downloaded bundle
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path "rust/downloaded/${{ matrix.rid }}" | Out-Null
+          tar -xzf "rust/downloaded/${{ matrix.rid }}.tar.gz" -C "rust/downloaded/${{ matrix.rid }}"
+
+      - name: Verify downloaded cross-package checksums and modes
+        shell: pwsh
+        run: |
+          $package = Join-Path 'rust' 'downloaded' '${{ matrix.rid }}'
+          Get-Content (Join-Path $package 'checksums.sha256') | ForEach-Object {
+            $expected, $file = $_ -split '\s+\*', 2
+            if ((Get-FileHash (Join-Path $package $file) -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected) {
+              throw "Checksum mismatch for $file"
+            }
+          }
+          if (-not $IsWindows) {
+            $mode = [IO.File]::GetUnixFileMode((Join-Path $package 'rust_vm_axaml'))
+            if (-not ($mode -band [IO.UnixFileMode]::UserExecute)) {
+              throw 'Downloaded cross-package executable lost its execute permission.'
+            }
+          }

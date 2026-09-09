@@ -1,0 +1,22 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Avalonia.Rust.Consumer.Generated"
+        x:Class="Avalonia.Rust.Consumer.Views.MainWindow"
+        x:DataType="vm:MainViewModelAdapter"
+        Width="480" Height="220" Title="Avalonia Rust consumer">
+  <DockPanel>
+    <!--
+      One declared menu model: exported as the real application menu where the
+      platform has a menu bar (macOS), rendered in-window by this NativeMenuBar
+      everywhere else. It is attached in code-behind through the generated
+      MainViewModelMenus.AttachMain, which also installs the declared gestures
+      as window key bindings.
+    -->
+    <NativeMenuBar DockPanel.Dock="Top" />
+    <StackPanel Margin="24" Spacing="12">
+      <TextBlock FontSize="20" Text="{Binding Title}" />
+      <TextBlock Text="{Binding Status}" />
+      <ListBox ItemsSource="{Binding RecentFiles}" Height="80" />
+    </StackPanel>
+  </DockPanel>
+</Window>

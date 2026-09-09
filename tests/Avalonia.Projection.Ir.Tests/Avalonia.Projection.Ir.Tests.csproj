@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(AvsCurrentTargetFramework)</TargetFramework>
+    <IsTestProject>true</IsTestProject>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\projection\Avalonia.Projection.Ir\Avalonia.Projection.Ir.csproj" />
+    <ProjectReference Include="..\..\host\Avalonia.Host.csproj" AdditionalProperties="AvaloniaRustPresentationProjects=..\samples\RustViewModelSample.Managed\RustViewModelSample.Managed.csproj;AvaloniaRustViewRegistryFile=..\samples\RustViewModelSample.Managed\Generated\RustViewRegistry.g.cs" />
+    <ProjectReference Include="..\..\interop\Avalonia.Rust.Interop\Avalonia.Rust.Interop.csproj" />
+    <ProjectReference Include="..\..\avalonia-src\src\Avalonia.Controls\Avalonia.Controls.csproj" />
+  </ItemGroup>
+  <Import Project="..\..\build\UnitTests.NetCore.targets" />
+  <Import Project="..\..\build\XUnit.props" />
+  <Import Project="..\..\build\NullableEnable.props" />
+</Project>

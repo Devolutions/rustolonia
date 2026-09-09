@@ -1,0 +1,845 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:NeoHtop.Presentation.Generated"
+        xmlns:local="using:NeoHtop.Presentation"
+        x:Class="NeoHtop.Presentation.Views.MainWindow"
+        x:DataType="vm:MainViewModelAdapter"
+        Title="NeoHtop"
+        Icon="avares://NeoHtop.Presentation/Assets/32x32.png"
+        RequestedThemeVariant="Dark"
+        Background="{DynamicResource WinUiBaseBrush}"
+        FontFamily="Segoe UI Variable, Segoe UI"
+        FontSize="13"
+        Foreground="{DynamicResource WinUiTextBrush}"
+        MinWidth="1100"
+        MinHeight="700"
+        Width="1400"
+        Height="900">
+  <Window.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="avares://NeoHtop.Presentation/Themes/WinUiFluent.axaml" />
+      </ResourceDictionary.MergedDictionaries>
+      <local:UsageToBrushConverter x:Key="UsageToBrush" />
+      <local:SortGlyphConverter x:Key="SortGlyph" />
+      <local:SortGlyphOpacityConverter x:Key="SortGlyphOpacity" />
+      <local:RowHighlightConverter x:Key="RowHighlight" />
+      <local:BoolToAngleConverter x:Key="BoolToAngle" />
+      <local:FreezeGlyphConverter x:Key="FreezeGlyph" />
+      <local:StatusToBrushConverter x:Key="StatusToBrush" />
+      <local:PercentLabelToDoubleConverter x:Key="PercentLabel" />
+      <local:Int64TextConverter x:Key="Int64Text" />
+      <local:Base64BitmapConverter x:Key="Base64Bitmap" />
+      <local:StringEmptyToBoolConverter x:Key="StringEmpty" />
+    </ResourceDictionary>
+  </Window.Resources>
+  <Window.Styles>
+    <Style Selector="Button.toolbar">
+      <Setter Property="MinHeight" Value="28" />
+      <Setter Property="Height" Value="28" />
+      <Setter Property="Padding" Value="10,0" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Background" Value="{DynamicResource WinUiSurface0Brush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource WinUiSurface1Brush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Foreground" Value="{DynamicResource WinUiTextBrush}" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="UseLayoutRounding" Value="True" />
+    </Style>
+    <Style Selector="Button.toolbar /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="Padding" Value="10,0" />
+    </Style>
+    <Style Selector="Button.link">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Foreground" Value="{DynamicResource WinUiBlueBrush}" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Button.closeX">
+      <Setter Property="Width" Value="32" />
+      <Setter Property="Height" Value="32" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Foreground" Value="{DynamicResource WinUiTextSecondaryBrush}" />
+      <Setter Property="FontSize" Value="22" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Border.detailCard">
+      <Setter Property="Background" Value="{DynamicResource WinUiSurface0Brush}" />
+      <Setter Property="CornerRadius" Value="8" />
+    </Style>
+    <Style Selector="Border.detailHeader">
+      <Setter Property="Background" Value="{DynamicResource WinUiSurface1Brush}" />
+      <Setter Property="Padding" Value="12,10" />
+    </Style>
+    <Style Selector="Button.toolbar:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource WinUiSurface1Brush}" />
+    </Style>
+    <Style Selector="Button.icon">
+      <Setter Property="Width" Value="28" />
+      <Setter Property="Height" Value="28" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Background" Value="{DynamicResource WinUiSurface0Brush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource WinUiSurface1Brush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.icon:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource WinUiSurface0Brush}" />
+    </Style>
+    <Style Selector="Button.kill">
+      <Setter Property="Width" Value="28" />
+      <Setter Property="Height" Value="28" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="{DynamicResource WinUiDangerBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Foreground" Value="{DynamicResource WinUiDangerBrush}" />
+    </Style>
+    <Style Selector="Button.columnHeader">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="12,8" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="FontWeight" Value="Medium" />
+      <Setter Property="Foreground" Value="{DynamicResource WinUiTextSecondaryBrush}" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+    </Style>
+    <Style Selector="TextBlock.sortGlyph">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Foreground" Value="{DynamicResource WinUiBlueBrush}" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBox.filterValue">
+      <Setter Property="Width" Value="56" />
+      <Setter Property="MinWidth" Value="56" />
+      <Setter Property="MaxWidth" Value="56" />
+      <Setter Property="Height" Value="28" />
+      <Setter Property="MinHeight" Value="28" />
+      <Setter Property="MaxHeight" Value="28" />
+      <Setter Property="Padding" Value="8,0" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="Background" Value="{DynamicResource WinUiSurface0Brush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource WinUiSurface1Brush}" />
+      <Setter Property="Foreground" Value="{DynamicResource WinUiTextBrush}" />
+    </Style>
+    <Style Selector="TextBox.toolbar">
+      <Setter Property="MinHeight" Value="28" />
+      <Setter Property="Height" Value="28" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Padding" Value="12,0" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="Background" Value="{DynamicResource WinUiSurface0Brush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource WinUiSurface1Brush}" />
+      <Setter Property="Foreground" Value="{DynamicResource WinUiTextBrush}" />
+    </Style>
+    <Style Selector="Border.statCard">
+      <Setter Property="Background" Value="{DynamicResource WinUiLayerBrush}" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Padding" Value="12" />
+    </Style>
+    <Style Selector="Border.usagePill">
+      <Setter Property="Background" Value="{DynamicResource WinUiPillBrush}" />
+      <Setter Property="CornerRadius" Value="10" />
+      <Setter Property="Padding" Value="8,2" />
+    </Style>
+    <Style Selector="TextBlock.statLabel">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="Foreground" Value="{DynamicResource WinUiTextSecondaryBrush}" />
+    </Style>
+    <Style Selector="TextBlock.statValue">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="FontWeight" Value="Medium" />
+      <Setter Property="Foreground" Value="{DynamicResource WinUiTextBrush}" />
+    </Style>
+    <Style Selector="TextBlock.mdl2">
+      <Setter Property="FontFamily" Value="{StaticResource Mdl2Font}" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="ProgressBar">
+      <Setter Property="Minimum" Value="0" />
+      <Setter Property="Maximum" Value="100" />
+      <Setter Property="Height" Value="8" />
+      <Setter Property="MinHeight" Value="8" />
+      <Setter Property="MinWidth" Value="0" />
+      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="Foreground" Value="{DynamicResource WinUiBlueBrush}" />
+      <Setter Property="Background" Value="{DynamicResource WinUiSurface0Brush}" />
+    </Style>
+    <Style Selector="TableView">
+      <Setter Property="Background" Value="{DynamicResource WinUiBaseBrush}" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="ClipToBounds" Value="True" />
+      <Setter Property="FontSize" Value="13" />
+    </Style>
+    <Style Selector="TableView Thumb#PART_Resizer">
+      <Setter Property="Width" Value="4" />
+      <Setter Property="Opacity" Value="0.15" />
+    </Style>
+    <Style Selector="TableViewRow">
+      <Setter Property="MinHeight" Value="34" />
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="TableViewRow:selected">
+      <Setter Property="Background" Value="{DynamicResource WinUiSelectionBrush}" />
+    </Style>
+    <Style Selector="TableViewRow:pointerover">
+      <Setter Property="Background" Value="{DynamicResource WinUiSubtleFillBrush}" />
+    </Style>
+  </Window.Styles>
+
+  <Grid>
+    <DockPanel>
+      <NativeMenuBar DockPanel.Dock="Top" IsVisible="False" />
+      <Border DockPanel.Dock="Top" Height="32" Background="{DynamicResource WinUiCardBrush}">
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4">
+          <Image Width="24" Height="24" Source="avares://NeoHtop.Presentation/Assets/32x32.png" />
+          <TextBlock Text="NeoHtop" FontFamily="Courier New, Consolas" FontWeight="Bold" FontSize="14" VerticalAlignment="Center" Foreground="{DynamicResource WinUiTextBrush}" />
+        </StackPanel>
+      </Border>
+
+      <Border DockPanel.Dock="Top" Padding="8" Background="{DynamicResource WinUiBaseBrush}">
+        <Grid ColumnDefinitions="2.5*,2*,0.9*,0.9*,0.9*" ColumnSpacing="8">
+          <Border Classes="statCard">
+            <DockPanel>
+              <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,10" ColumnSpacing="8">
+                <TextBlock Classes="mdl2" Text="&#xE950;" FontSize="13" Foreground="{DynamicResource WinUiBlueBrush}" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="CPU Usage" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" />
+                <Border Grid.Column="2" Classes="usagePill">
+                  <TextBlock Text="{Binding CpuPercentLabel}" FontSize="11" FontWeight="Medium" />
+                </Border>
+              </Grid>
+              <ItemsControl x:Name="CpuCoresList" ItemsSource="{Binding CpuCores}" AutomationProperties.Name="CpuCores">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <UniformGrid Columns="2" />
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:CpuCoreViewModelAdapter">
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="6" Margin="0,3,16,3">
+                      <TextBlock Text="{Binding Label}" Width="44" FontSize="11" VerticalAlignment="Center" Foreground="{DynamicResource WinUiTextSecondaryBrush}" />
+                      <ProgressBar Grid.Column="1" Value="{Binding Usage}" MinWidth="0" VerticalAlignment="Center" Foreground="{Binding Usage, Converter={StaticResource UsageToBrush}}" />
+                      <TextBlock Grid.Column="2" Text="{Binding Usage, StringFormat='{}{0:0}%'}" Width="28" FontSize="11" TextAlignment="Right" VerticalAlignment="Center" Foreground="{DynamicResource WinUiTextBrush}" />
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </DockPanel>
+          </Border>
+          <Border Grid.Column="1" Classes="statCard">
+            <StackPanel Spacing="6">
+              <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                <TextBlock Classes="mdl2" Text="&#xE950;" FontSize="13" Foreground="{DynamicResource WinUiBlueBrush}" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="Memory" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" />
+                <Border Grid.Column="2" Classes="usagePill">
+                  <TextBlock Text="{Binding MemoryPercentLabel}" FontSize="11" FontWeight="Medium" />
+                </Border>
+              </Grid>
+              <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="6">
+                <TextBlock Classes="statLabel" Text="Memory usage" Width="80" VerticalAlignment="Center" />
+                <ProgressBar Grid.Column="1" Value="{Binding MemoryPercent}" VerticalAlignment="Center" Foreground="{Binding MemoryPercent, Converter={StaticResource UsageToBrush}}" />
+                <TextBlock Grid.Column="2" Classes="statValue" Text="{Binding MemoryPercentLabel}" Width="36" TextAlignment="Right" VerticalAlignment="Center" />
+              </Grid>
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Classes="statLabel" Text="Total" />
+                <TextBlock Grid.Column="1" Classes="statValue" Text="{Binding MemoryTotalLabel}" />
+              </Grid>
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Classes="statLabel" Text="Used" />
+                <TextBlock Grid.Column="1" Classes="statValue" Text="{Binding MemoryUsedLabel}" />
+              </Grid>
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Classes="statLabel" Text="Free" />
+                <TextBlock Grid.Column="1" Classes="statValue" Text="{Binding MemoryFreeLabel}" />
+              </Grid>
+            </StackPanel>
+          </Border>
+          <Border Grid.Column="2" Classes="statCard">
+            <StackPanel Spacing="6">
+              <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                <TextBlock Classes="mdl2" Text="&#xEDA2;" FontSize="13" Foreground="{DynamicResource WinUiBlueBrush}" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="Storage" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" />
+                <Border Grid.Column="2" Classes="usagePill">
+                  <TextBlock Text="{Binding StoragePercentLabel}" FontSize="11" FontWeight="Medium" />
+                </Border>
+              </Grid>
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Classes="statLabel" Text="Total" />
+                <TextBlock Grid.Column="1" Classes="statValue" Text="{Binding StorageTotalLabel}" />
+              </Grid>
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Classes="statLabel" Text="Used" />
+                <TextBlock Grid.Column="1" Classes="statValue" Text="{Binding StorageUsedLabel}" />
+              </Grid>
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Classes="statLabel" Text="Free" />
+                <TextBlock Grid.Column="1" Classes="statValue" Text="{Binding StorageFreeLabel}" />
+              </Grid>
+            </StackPanel>
+          </Border>
+          <Border Grid.Column="3" Classes="statCard">
+            <StackPanel Spacing="6">
+              <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                <TextBlock Classes="mdl2" Text="&#xE83B;" FontSize="13" Foreground="{DynamicResource WinUiBlueBrush}" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="System" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" />
+              </Grid>
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Classes="statLabel" Text="Uptime" />
+                <TextBlock Grid.Column="1" Classes="statValue" Text="{Binding UptimeLabel}" />
+              </Grid>
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Classes="statLabel" Text="1m Load" />
+                <TextBlock Grid.Column="1" Classes="statValue" Text="{Binding LoadOneLabel}" />
+              </Grid>
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Classes="statLabel" Text="5m Load" />
+                <TextBlock Grid.Column="1" Classes="statValue" Text="{Binding LoadFiveLabel}" />
+              </Grid>
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Classes="statLabel" Text="15m Load" />
+                <TextBlock Grid.Column="1" Classes="statValue" Text="{Binding LoadFifteenLabel}" />
+              </Grid>
+            </StackPanel>
+          </Border>
+          <Border Grid.Column="4" Classes="statCard">
+            <StackPanel Spacing="6">
+              <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                <TextBlock Classes="mdl2" Text="&#xE968;" FontSize="13" Foreground="{DynamicResource WinUiBlueBrush}" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="Network I/O" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" />
+              </Grid>
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Classes="statLabel" Text="↓ Receiving" />
+                <TextBlock Grid.Column="1" Classes="statValue" Text="{Binding NetworkRxLabel}" />
+              </Grid>
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Classes="statLabel" Text="↑ Sending" />
+                <TextBlock Grid.Column="1" Classes="statValue" Text="{Binding NetworkTxLabel}" />
+              </Grid>
+            </StackPanel>
+          </Border>
+        </Grid>
+      </Border>
+
+      <Border DockPanel.Dock="Top" Padding="8,8" Background="{DynamicResource WinUiCardBrush}" BorderBrush="{DynamicResource WinUiStrokeBrush}" BorderThickness="0,0,0,1">
+        <Grid ColumnDefinitions="240,Auto,*,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8">
+          <TextBox x:Name="SearchBox" Classes="toolbar" PlaceholderText="Try: systemd, dbus" Text="{Binding SearchText, Mode=TwoWay}" AutomationProperties.Name="SearchText" />
+          <Button Grid.Column="1" Classes="toolbar" Command="{Binding ToggleFiltersCommand}">
+            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+              <TextBlock Classes="mdl2" Text="&#xE71C;" Foreground="{DynamicResource WinUiTextSecondaryBrush}" VerticalAlignment="Center" />
+              <TextBlock Text="Filters" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+          <TextBlock Grid.Column="2" Text="{Binding ProcessCountLabel}" FontSize="12" Opacity="0.75" HorizontalAlignment="Center" VerticalAlignment="Center" />
+          <Button Grid.Column="3" Classes="toolbar" Content="Columns" Command="{Binding ToggleColumnsCommand}" />
+          <Button x:Name="RefreshRateButton" Grid.Column="4" Classes="toolbar" Content="{Binding RefreshRateLabel}" Command="{Binding CycleRefreshRateCommand}" />
+          <Button x:Name="FreezeButton" Grid.Column="5" Classes="icon" Command="{Binding ToggleFreezeCommand}" ToolTip.Tip="{Binding FreezeActionLabel}">
+            <TextBlock Classes="mdl2" FontSize="14" Text="{Binding IsFrozen, Converter={StaticResource FreezeGlyph}}" Foreground="{DynamicResource WinUiTextSecondaryBrush}" />
+          </Button>
+          <Button x:Name="ThemeButton" Grid.Column="6" Classes="icon" Command="{Binding ToggleThemeCommand}" ToolTip.Tip="{Binding ThemeActionLabel}">
+            <TextBlock Classes="mdl2" FontSize="14" Text="&#xE790;" Foreground="{DynamicResource WinUiLavenderBrush}" />
+          </Button>
+          <Button Grid.Column="7" Classes="icon" Click="OnAppInfoClick" ToolTip.Tip="App info">
+            <TextBlock Classes="mdl2" FontSize="14" Text="&#xE946;" Foreground="{DynamicResource WinUiLavenderBrush}" />
+          </Button>
+        </Grid>
+      </Border>
+
+      <Border DockPanel.Dock="Top" IsVisible="{Binding ShowFilters}" Padding="12,8" Background="{DynamicResource WinUiLayerBrush}">
+        <WrapPanel ItemSpacing="10" LineSpacing="6">
+          <CheckBox Content="CPU" IsChecked="{Binding CpuFilterEnabled, Mode=TwoWay}" VerticalAlignment="Center" />
+          <Button Content="{Binding CpuFilterOperator}" Command="{Binding ToggleCpuOperatorCommand}" MinWidth="36" Height="28" VerticalContentAlignment="Center" />
+          <TextBox Classes="filterValue" Text="{Binding CpuFilterValue, Mode=TwoWay, Converter={StaticResource Int64Text}}" />
+          <CheckBox Content="RAM MB" IsChecked="{Binding RamFilterEnabled, Mode=TwoWay}" VerticalAlignment="Center" />
+          <Button Content="{Binding RamFilterOperator}" Command="{Binding ToggleRamOperatorCommand}" MinWidth="36" Height="28" VerticalContentAlignment="Center" />
+          <TextBox Classes="filterValue" Text="{Binding RamFilterValue, Mode=TwoWay, Converter={StaticResource Int64Text}}" />
+          <CheckBox Content="Runtime min" IsChecked="{Binding RuntimeFilterEnabled, Mode=TwoWay}" VerticalAlignment="Center" />
+          <Button Content="{Binding RuntimeFilterOperator}" Command="{Binding ToggleRuntimeOperatorCommand}" MinWidth="36" Height="28" VerticalContentAlignment="Center" />
+          <TextBox Classes="filterValue" Text="{Binding RuntimeFilterValue, Mode=TwoWay, Converter={StaticResource Int64Text}}" />
+          <TextBox Width="180" Classes="toolbar" PlaceholderText="Status: Running, Sleeping" Text="{Binding StatusFilter, Mode=TwoWay}" />
+          <Button Classes="toolbar" Content="Close" Command="{Binding CloseOverlaysCommand}" />
+        </WrapPanel>
+      </Border>
+
+      <Border DockPanel.Dock="Top" IsVisible="{Binding ShowColumns}" Padding="12,8" Background="{DynamicResource WinUiLayerBrush}">
+        <WrapPanel ItemSpacing="12" LineSpacing="6">
+          <CheckBox Content="PID" IsChecked="{Binding ShowPid, Mode=TwoWay}" />
+          <CheckBox Content="Status" IsChecked="{Binding ShowStatus, Mode=TwoWay}" />
+          <CheckBox Content="User" IsChecked="{Binding ShowUser, Mode=TwoWay}" />
+          <CheckBox Content="CPU %" IsChecked="{Binding ShowCpu, Mode=TwoWay}" />
+          <CheckBox Content="RAM" IsChecked="{Binding ShowRam, Mode=TwoWay}" />
+          <CheckBox Content="VIRT" IsChecked="{Binding ShowVirt, Mode=TwoWay}" />
+          <CheckBox Content="Disk I/O" IsChecked="{Binding ShowDisk, Mode=TwoWay}" />
+          <CheckBox Content="Run Time" IsChecked="{Binding ShowRunTime, Mode=TwoWay}" />
+          <CheckBox Content="Command" IsChecked="{Binding ShowCommand, Mode=TwoWay}" />
+          <CheckBox Content="Parent PID" IsChecked="{Binding ShowPpid, Mode=TwoWay}" />
+          <CheckBox Content="Root" IsChecked="{Binding ShowRoot, Mode=TwoWay}" />
+          <CheckBox Content="Environment" IsChecked="{Binding ShowEnviron, Mode=TwoWay}" />
+          <CheckBox Content="Session ID" IsChecked="{Binding ShowSession, Mode=TwoWay}" />
+          <CheckBox Content="Start Time" IsChecked="{Binding ShowStartTime, Mode=TwoWay}" />
+          <Button Classes="toolbar" Content="Close" Command="{Binding CloseOverlaysCommand}" />
+        </WrapPanel>
+      </Border>
+
+      <Border DockPanel.Dock="Top" IsVisible="{Binding ShowSearchHelp}" Padding="12,8" Background="{DynamicResource WinUiLayerBrush}">
+        <StackPanel Spacing="6">
+          <TextBlock Text="Search name, command, or PID. Comma-separated terms match any; regex is tried on the process name." />
+          <TextBlock FontFamily="Cascadia Mono, Consolas" FontSize="12" Text="Examples: systemd, dbus    d$    ^kernel    ssh.*server    1234" />
+          <Button HorizontalAlignment="Left" Classes="toolbar" Content="Close help" Command="{Binding CloseOverlaysCommand}" />
+        </StackPanel>
+      </Border>
+
+      <TableView x:Name="ProcessTable" Margin="0,0,0,0" ItemsSource="{Binding Processes}" SelectedIndex="{Binding SelectedIndex, Mode=TwoWay}" CanUserResizeColumns="True" AutomationProperties.Name="ProcessTable">
+        <TableView.ContextMenu>
+          <vm:MainViewModelProcessesContextMenu />
+        </TableView.ContextMenu>
+        <TableView.Columns>
+          <TableViewColumn Width="*" MinWidth="160" CanUserResize="True">
+            <TableViewColumn.Header>
+              <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortProcessesCommand}" CommandParameter="Name">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="Process Name" VerticalAlignment="Center" />
+                  <TextBlock Classes="sortGlyph" Text="{Binding SortDirection, Converter={StaticResource SortGlyph}, ConverterParameter=Name}" Opacity="{Binding SortDirection, Converter={StaticResource SortGlyphOpacity}, ConverterParameter=Name}" />
+                </StackPanel>
+              </Button>
+            </TableViewColumn.Header>
+            <TableViewColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:ProcessRowViewModelAdapter">
+                <Border Padding="0,2">
+                  <Border.Background>
+                    <MultiBinding Converter="{StaticResource RowHighlight}">
+                      <Binding Path="IsPinned" />
+                      <Binding Path="IsHighUsage" />
+                    </MultiBinding>
+                  </Border.Background>
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Grid Width="16" Height="16" VerticalAlignment="Center">
+                      <TextBlock Classes="mdl2" FontSize="14" Text="&#xE8A5;" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource WinUiTextSecondaryBrush}" IsVisible="{Binding IconPng, Converter={StaticResource StringEmpty}}" />
+                      <Image Width="16" Height="16" Stretch="Uniform" Source="{Binding IconPng, Converter={StaticResource Base64Bitmap}}" />
+                    </Grid>
+                    <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </TableViewColumn.CellTemplate>
+          </TableViewColumn>
+          <TableViewColumn Width="80" MinWidth="64" CanUserResize="True" HorizontalContentAlignment="Right" IsVisible="{Binding ShowPid}">
+            <TableViewColumn.Header>
+              <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortProcessesCommand}" CommandParameter="Pid">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="PID" VerticalAlignment="Center" />
+                  <TextBlock Classes="sortGlyph" Text="{Binding SortDirection, Converter={StaticResource SortGlyph}, ConverterParameter=Pid}" Opacity="{Binding SortDirection, Converter={StaticResource SortGlyphOpacity}, ConverterParameter=Pid}" />
+                </StackPanel>
+              </Button>
+            </TableViewColumn.Header>
+            <TableViewColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:ProcessRowViewModelAdapter">
+                <TextBlock Text="{Binding Pid}" HorizontalAlignment="Right" Opacity="0.86" />
+              </DataTemplate>
+            </TableViewColumn.CellTemplate>
+          </TableViewColumn>
+          <TableViewColumn Width="100" MinWidth="80" CanUserResize="True" IsVisible="{Binding ShowStatus}">
+            <TableViewColumn.Header>
+              <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortProcessesCommand}" CommandParameter="Status">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="Status" VerticalAlignment="Center" />
+                  <TextBlock Classes="sortGlyph" Text="{Binding SortDirection, Converter={StaticResource SortGlyph}, ConverterParameter=Status}" Opacity="{Binding SortDirection, Converter={StaticResource SortGlyphOpacity}, ConverterParameter=Status}" />
+                </StackPanel>
+              </Button>
+            </TableViewColumn.Header>
+            <TableViewColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:ProcessRowViewModelAdapter">
+                <TextBlock Text="{Binding Status}" Foreground="{Binding Status, Converter={StaticResource StatusToBrush}}" />
+              </DataTemplate>
+            </TableViewColumn.CellTemplate>
+          </TableViewColumn>
+          <TableViewColumn Width="120" MinWidth="80" CanUserResize="True" IsVisible="{Binding ShowUser}">
+            <TableViewColumn.Header>
+              <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortProcessesCommand}" CommandParameter="User">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="User" VerticalAlignment="Center" />
+                  <TextBlock Classes="sortGlyph" Text="{Binding SortDirection, Converter={StaticResource SortGlyph}, ConverterParameter=User}" Opacity="{Binding SortDirection, Converter={StaticResource SortGlyphOpacity}, ConverterParameter=User}" />
+                </StackPanel>
+              </Button>
+            </TableViewColumn.Header>
+            <TableViewColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:ProcessRowViewModelAdapter">
+                <TextBlock Text="{Binding User}" TextTrimming="CharacterEllipsis" />
+              </DataTemplate>
+            </TableViewColumn.CellTemplate>
+          </TableViewColumn>
+          <TableViewColumn Width="90" MinWidth="72" CanUserResize="True" HorizontalContentAlignment="Right" IsVisible="{Binding ShowCpu}">
+            <TableViewColumn.Header>
+              <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortProcessesCommand}" CommandParameter="CpuUsage">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="CPU %" VerticalAlignment="Center" />
+                  <TextBlock Classes="sortGlyph" Text="{Binding SortDirection, Converter={StaticResource SortGlyph}, ConverterParameter=CpuUsage}" Opacity="{Binding SortDirection, Converter={StaticResource SortGlyphOpacity}, ConverterParameter=CpuUsage}" />
+                </StackPanel>
+              </Button>
+            </TableViewColumn.Header>
+            <TableViewColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:ProcessRowViewModelAdapter">
+                <TextBlock Text="{Binding CpuLabel}" HorizontalAlignment="Right" />
+              </DataTemplate>
+            </TableViewColumn.CellTemplate>
+          </TableViewColumn>
+          <TableViewColumn Width="100" MinWidth="80" CanUserResize="True" HorizontalContentAlignment="Right" IsVisible="{Binding ShowRam}">
+            <TableViewColumn.Header>
+              <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortProcessesCommand}" CommandParameter="MemoryUsage">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="RAM" VerticalAlignment="Center" />
+                  <TextBlock Classes="sortGlyph" Text="{Binding SortDirection, Converter={StaticResource SortGlyph}, ConverterParameter=MemoryUsage}" Opacity="{Binding SortDirection, Converter={StaticResource SortGlyphOpacity}, ConverterParameter=MemoryUsage}" />
+                </StackPanel>
+              </Button>
+            </TableViewColumn.Header>
+            <TableViewColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:ProcessRowViewModelAdapter">
+                <TextBlock Text="{Binding MemoryLabel}" HorizontalAlignment="Right" />
+              </DataTemplate>
+            </TableViewColumn.CellTemplate>
+          </TableViewColumn>
+          <TableViewColumn Width="100" MinWidth="80" CanUserResize="True" HorizontalContentAlignment="Right" IsVisible="{Binding ShowVirt}">
+            <TableViewColumn.Header>
+              <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortProcessesCommand}" CommandParameter="VirtualMemory">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="VIRT" VerticalAlignment="Center" />
+                  <TextBlock Classes="sortGlyph" Text="{Binding SortDirection, Converter={StaticResource SortGlyph}, ConverterParameter=VirtualMemory}" Opacity="{Binding SortDirection, Converter={StaticResource SortGlyphOpacity}, ConverterParameter=VirtualMemory}" />
+                </StackPanel>
+              </Button>
+            </TableViewColumn.Header>
+            <TableViewColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:ProcessRowViewModelAdapter">
+                <TextBlock Text="{Binding VirtualMemoryLabel}" HorizontalAlignment="Right" />
+              </DataTemplate>
+            </TableViewColumn.CellTemplate>
+          </TableViewColumn>
+          <TableViewColumn Width="140" MinWidth="110" CanUserResize="True" HorizontalContentAlignment="Right" IsVisible="{Binding ShowDisk}">
+            <TableViewColumn.Header>
+              <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortProcessesCommand}" CommandParameter="DiskIo">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="Disk I/O (R/W)" VerticalAlignment="Center" />
+                  <TextBlock Classes="sortGlyph" Text="{Binding SortDirection, Converter={StaticResource SortGlyph}, ConverterParameter=DiskIo}" Opacity="{Binding SortDirection, Converter={StaticResource SortGlyphOpacity}, ConverterParameter=DiskIo}" />
+                </StackPanel>
+              </Button>
+            </TableViewColumn.Header>
+            <TableViewColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:ProcessRowViewModelAdapter">
+                <TextBlock Text="{Binding DiskIo}" HorizontalAlignment="Right" />
+              </DataTemplate>
+            </TableViewColumn.CellTemplate>
+          </TableViewColumn>
+          <TableViewColumn Width="120" MinWidth="90" CanUserResize="True" IsVisible="{Binding ShowRunTime}">
+            <TableViewColumn.Header>
+              <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortProcessesCommand}" CommandParameter="RunTime">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="Run Time" VerticalAlignment="Center" />
+                  <TextBlock Classes="sortGlyph" Text="{Binding SortDirection, Converter={StaticResource SortGlyph}, ConverterParameter=RunTime}" Opacity="{Binding SortDirection, Converter={StaticResource SortGlyphOpacity}, ConverterParameter=RunTime}" />
+                </StackPanel>
+              </Button>
+            </TableViewColumn.Header>
+            <TableViewColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:ProcessRowViewModelAdapter">
+                <TextBlock Text="{Binding RunTimeLabel}" />
+              </DataTemplate>
+            </TableViewColumn.CellTemplate>
+          </TableViewColumn>
+          <TableViewColumn Width="240" MinWidth="140" CanUserResize="True" IsVisible="{Binding ShowCommand}">
+            <TableViewColumn.Header>
+              <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortProcessesCommand}" CommandParameter="Command">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="Command" VerticalAlignment="Center" />
+                  <TextBlock Classes="sortGlyph" Text="{Binding SortDirection, Converter={StaticResource SortGlyph}, ConverterParameter=Command}" Opacity="{Binding SortDirection, Converter={StaticResource SortGlyphOpacity}, ConverterParameter=Command}" />
+                </StackPanel>
+              </Button>
+            </TableViewColumn.Header>
+            <TableViewColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:ProcessRowViewModelAdapter">
+                <TextBlock Text="{Binding Command}" TextTrimming="CharacterEllipsis" Opacity="0.86" />
+              </DataTemplate>
+            </TableViewColumn.CellTemplate>
+          </TableViewColumn>
+          <TableViewColumn Width="90" MinWidth="72" CanUserResize="True" HorizontalContentAlignment="Right" IsVisible="{Binding ShowPpid}">
+            <TableViewColumn.Header>
+              <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortProcessesCommand}" CommandParameter="Ppid">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="Parent PID" VerticalAlignment="Center" />
+                  <TextBlock Classes="sortGlyph" Text="{Binding SortDirection, Converter={StaticResource SortGlyph}, ConverterParameter=Ppid}" Opacity="{Binding SortDirection, Converter={StaticResource SortGlyphOpacity}, ConverterParameter=Ppid}" />
+                </StackPanel>
+              </Button>
+            </TableViewColumn.Header>
+            <TableViewColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:ProcessRowViewModelAdapter">
+                <TextBlock Text="{Binding Ppid}" HorizontalAlignment="Right" />
+              </DataTemplate>
+            </TableViewColumn.CellTemplate>
+          </TableViewColumn>
+          <TableViewColumn Width="160" MinWidth="100" CanUserResize="True" IsVisible="{Binding ShowRoot}">
+            <TableViewColumn.Header>
+              <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortProcessesCommand}" CommandParameter="Root">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="Root" VerticalAlignment="Center" />
+                  <TextBlock Classes="sortGlyph" Text="{Binding SortDirection, Converter={StaticResource SortGlyph}, ConverterParameter=Root}" Opacity="{Binding SortDirection, Converter={StaticResource SortGlyphOpacity}, ConverterParameter=Root}" />
+                </StackPanel>
+              </Button>
+            </TableViewColumn.Header>
+            <TableViewColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:ProcessRowViewModelAdapter">
+                <TextBlock Text="{Binding Root}" TextTrimming="CharacterEllipsis" />
+              </DataTemplate>
+            </TableViewColumn.CellTemplate>
+          </TableViewColumn>
+          <TableViewColumn Width="200" MinWidth="120" CanUserResize="True" IsVisible="{Binding ShowEnviron}">
+            <TableViewColumn.Header>
+              <TextBlock Text="Environment Variables" FontSize="12" FontWeight="SemiBold" Margin="8,6" Foreground="{DynamicResource WinUiTextSecondaryBrush}" />
+            </TableViewColumn.Header>
+            <TableViewColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:ProcessRowViewModelAdapter">
+                <TextBlock Text="{Binding Environ}" TextTrimming="CharacterEllipsis" />
+              </DataTemplate>
+            </TableViewColumn.CellTemplate>
+          </TableViewColumn>
+          <TableViewColumn Width="100" MinWidth="80" CanUserResize="True" HorizontalContentAlignment="Right" IsVisible="{Binding ShowSession}">
+            <TableViewColumn.Header>
+              <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortProcessesCommand}" CommandParameter="SessionId">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="Session ID" VerticalAlignment="Center" />
+                  <TextBlock Classes="sortGlyph" Text="{Binding SortDirection, Converter={StaticResource SortGlyph}, ConverterParameter=SessionId}" Opacity="{Binding SortDirection, Converter={StaticResource SortGlyphOpacity}, ConverterParameter=SessionId}" />
+                </StackPanel>
+              </Button>
+            </TableViewColumn.Header>
+            <TableViewColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:ProcessRowViewModelAdapter">
+                <TextBlock Text="{Binding SessionLabel}" HorizontalAlignment="Right" />
+              </DataTemplate>
+            </TableViewColumn.CellTemplate>
+          </TableViewColumn>
+          <TableViewColumn Width="160" MinWidth="120" CanUserResize="True" IsVisible="{Binding ShowStartTime}">
+            <TableViewColumn.Header>
+              <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortProcessesCommand}" CommandParameter="StartTime">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="Start Time" VerticalAlignment="Center" />
+                  <TextBlock Classes="sortGlyph" Text="{Binding SortDirection, Converter={StaticResource SortGlyph}, ConverterParameter=StartTime}" Opacity="{Binding SortDirection, Converter={StaticResource SortGlyphOpacity}, ConverterParameter=StartTime}" />
+                </StackPanel>
+              </Button>
+            </TableViewColumn.Header>
+            <TableViewColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:ProcessRowViewModelAdapter">
+                <TextBlock Text="{Binding StartTimeLabel}" />
+              </DataTemplate>
+            </TableViewColumn.CellTemplate>
+          </TableViewColumn>
+          <TableViewColumn Width="120" MinWidth="120" CanUserResize="False">
+            <TableViewColumn.Header>
+              <TextBlock Text="Actions" FontSize="12" FontWeight="SemiBold" Margin="12,8" Foreground="{DynamicResource WinUiTextSecondaryBrush}" />
+            </TableViewColumn.Header>
+            <TableViewColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:ProcessRowViewModelAdapter">
+                <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
+                  <Button Classes="icon" ToolTip.Tip="{Binding PinLabel}" Command="{Binding $parent[Window].((vm:MainViewModelAdapter)DataContext).PinCommand}" CommandParameter="{Binding Key}">
+                    <TextBlock Classes="mdl2" Text="&#xE718;" Foreground="{DynamicResource WinUiSapphireBrush}" RenderTransformOrigin="50%,50%">
+                      <TextBlock.RenderTransform>
+                        <RotateTransform Angle="{Binding IsPinned, Converter={StaticResource BoolToAngle}}" />
+                      </TextBlock.RenderTransform>
+                    </TextBlock>
+                  </Button>
+                  <Button Classes="icon" ToolTip.Tip="Show Details" Command="{Binding $parent[Window].((vm:MainViewModelAdapter)DataContext).ShowDetailsCommand}" CommandParameter="{Binding Key}">
+                    <TextBlock Classes="mdl2" Text="&#xE946;" Foreground="{DynamicResource WinUiLavenderBrush}" />
+                  </Button>
+                  <Button Classes="kill" ToolTip.Tip="End Process" Command="{Binding $parent[Window].((vm:MainViewModelAdapter)DataContext).KillCommand}" CommandParameter="{Binding Key}">
+                    <TextBlock Classes="mdl2" Text="&#xE711;" Foreground="{DynamicResource WinUiDangerBrush}" />
+                  </Button>
+                </StackPanel>
+              </DataTemplate>
+            </TableViewColumn.CellTemplate>
+          </TableViewColumn>
+        </TableView.Columns>
+      </TableView>
+    </DockPanel>
+
+    <Border IsVisible="{Binding ShowKillConfirm}" Background="{DynamicResource WinUiOverlayBrush}" ZIndex="10">
+      <Border Width="400" Padding="20" CornerRadius="8" Background="{DynamicResource WinUiCardBrush}" BorderBrush="{DynamicResource WinUiStrokeBrush}" BorderThickness="1" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <StackPanel Spacing="16">
+          <TextBlock Text="Confirm Action" FontSize="16" FontWeight="SemiBold" />
+          <TextBlock Text="Are you sure you want to end this process?" FontSize="14" />
+          <Border Background="{DynamicResource WinUiLayerBrush}" CornerRadius="6" Padding="12">
+            <TextBlock Text="{Binding KillConfirmMessage}" TextWrapping="Wrap" />
+          </Border>
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12">
+            <Button Classes="toolbar" Content="Cancel" Command="{Binding CancelKillCommand}" />
+            <Button x:Name="ConfirmKillButton" Classes="toolbar" Content="End Process" Command="{Binding ConfirmKillCommand}" Background="{DynamicResource WinUiDangerBrush}" Foreground="{DynamicResource WinUiBaseBrush}" BorderThickness="0" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </Border>
+
+    <Border x:Name="AppInfoOverlay" IsVisible="False" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,80,16,0" ZIndex="11" Width="420">
+      <Border Background="{DynamicResource WinUiLayerBrush}" BorderBrush="{DynamicResource WinUiStrokeBrush}" BorderThickness="1" CornerRadius="8" Padding="16">
+        <StackPanel Spacing="10">
+          <TextBlock FontFamily="Cascadia Mono, Consolas" FontSize="10" Text="NEOHTOP" FontWeight="Bold" />
+          <TextBlock Text="NeoHtop (Avalonia-in-Rust)" />
+          <TextBlock Opacity="0.75" Text="app  ::  NeoHtop" />
+          <TextBlock Opacity="0.75" Text="source  ::  https://github.com/Abdenasser/neohtop" TextWrapping="Wrap" />
+          <TextBlock Opacity="0.75" Text="stack  ::  Avalonia, Rust, NativeAOT" TextWrapping="Wrap" />
+          <Button HorizontalAlignment="Left" Classes="toolbar" Content="Close" Click="OnAppInfoClick" />
+        </StackPanel>
+      </Border>
+    </Border>
+
+    <Border IsVisible="{Binding ShowDetails}" Background="#80000000" ZIndex="9">
+      <Border Width="1000" MaxWidth="1000" MaxHeight="820" CornerRadius="8" Background="{DynamicResource WinUiBaseBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" BoxShadow="0 8 32 0 #66000000">
+        <DockPanel>
+          <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="16">
+            <TextBlock Text="{Binding DetailTitle}" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+            <Button Grid.Column="1" Classes="closeX" Content="×" Command="{Binding CloseDetailsCommand}" />
+          </Grid>
+          <Border DockPanel.Dock="Top" Height="1" Background="{DynamicResource WinUiStrokeBrush}" />
+          <ScrollViewer Padding="16" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Spacing="24">
+              <Border Classes="detailCard" Padding="16">
+                <Grid ColumnDefinitions="*,*,*,*">
+                  <StackPanel Spacing="4">
+                    <TextBlock Classes="statLabel" FontWeight="Medium" Text="PID" />
+                    <TextBlock FontSize="16" FontWeight="SemiBold" Text="{Binding DetailPidLabel}" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="4">
+                    <TextBlock Classes="statLabel" FontWeight="Medium" Text="Status" />
+                    <TextBlock FontSize="16" FontWeight="SemiBold" Text="{Binding DetailStatus}" Foreground="{Binding DetailStatus, Converter={StaticResource StatusToBrush}}" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="2" Spacing="4">
+                    <TextBlock Classes="statLabel" FontWeight="Medium" Text="CPU" />
+                    <TextBlock FontSize="16" FontWeight="SemiBold" Text="{Binding DetailCpuLabel}" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="3" Spacing="4">
+                    <TextBlock Classes="statLabel" FontWeight="Medium" Text="Memory" />
+                    <TextBlock FontSize="16" FontWeight="SemiBold" Text="{Binding DetailMemoryLabel}" />
+                  </StackPanel>
+                </Grid>
+              </Border>
+              <Grid ColumnDefinitions="0.4*,0.6*" ColumnSpacing="24">
+                <StackPanel Spacing="24">
+                  <Border Classes="detailCard">
+                    <DockPanel>
+                      <Border Classes="detailHeader" DockPanel.Dock="Top">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                          <TextBlock Classes="mdl2" Text="&#xE950;" Foreground="{DynamicResource WinUiBlueBrush}" />
+                          <TextBlock Text="Process Information" Foreground="{DynamicResource WinUiTextSecondaryBrush}" FontWeight="Medium" VerticalAlignment="Center" />
+                        </StackPanel>
+                      </Border>
+                      <StackPanel Spacing="16" Margin="16">
+                        <StackPanel Spacing="4">
+                          <TextBlock Classes="statLabel" Text="Name" />
+                          <TextBlock Text="{Binding DetailName}" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <StackPanel Spacing="4">
+                          <TextBlock Classes="statLabel" Text="User" />
+                          <TextBlock Text="{Binding DetailUser}" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <StackPanel Spacing="4">
+                          <TextBlock Classes="statLabel" Text="Parent PID" />
+                          <Button Classes="link" Command="{Binding ShowParentDetailsCommand}" IsEnabled="{Binding ShowParentEnabled}" Content="{Binding DetailPpidLabel}" />
+                        </StackPanel>
+                        <StackPanel Spacing="4">
+                          <TextBlock Classes="statLabel" Text="Session ID" />
+                          <TextBlock Text="{Binding DetailSessionLabel}" />
+                        </StackPanel>
+                      </StackPanel>
+                    </DockPanel>
+                  </Border>
+                  <Border Classes="detailCard">
+                    <DockPanel>
+                      <Border Classes="detailHeader" DockPanel.Dock="Top">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                          <TextBlock Classes="mdl2" Text="&#xE950;" Foreground="{DynamicResource WinUiBlueBrush}" />
+                          <TextBlock Text="Resource Usage" Foreground="{DynamicResource WinUiTextSecondaryBrush}" FontWeight="Medium" VerticalAlignment="Center" />
+                        </StackPanel>
+                      </Border>
+                      <StackPanel Spacing="16" Margin="16">
+                        <StackPanel Spacing="8">
+                          <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Classes="statLabel" Text="CPU Usage" />
+                            <TextBlock Grid.Column="1" Text="{Binding DetailCpuLabel}" />
+                          </Grid>
+                          <ProgressBar Value="{Binding DetailCpuLabel, Converter={StaticResource PercentLabel}}" MinWidth="0" />
+                        </StackPanel>
+                        <StackPanel Spacing="8">
+                          <TextBlock Classes="statLabel" Text="Memory Usage" />
+                          <Grid ColumnDefinitions="*,*">
+                            <TextBlock Text="{Binding DetailMemoryLabel, StringFormat='Physical: {0}'}" />
+                            <TextBlock Grid.Column="1" Text="{Binding DetailVirtLabel, StringFormat='Virtual: {0}'}" />
+                          </Grid>
+                        </StackPanel>
+                        <StackPanel Spacing="8">
+                          <TextBlock Classes="statLabel" Text="Disk I/O" />
+                          <TextBlock Text="{Binding DetailDiskLabel}" TextWrapping="Wrap" />
+                        </StackPanel>
+                      </StackPanel>
+                    </DockPanel>
+                  </Border>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Spacing="24">
+                  <Border Classes="detailCard">
+                    <DockPanel>
+                      <Border Classes="detailHeader" DockPanel.Dock="Top">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                          <TextBlock Classes="mdl2" Text="&#xE756;" Foreground="{DynamicResource WinUiBlueBrush}" />
+                          <TextBlock Text="Command" Foreground="{DynamicResource WinUiTextSecondaryBrush}" FontWeight="Medium" VerticalAlignment="Center" />
+                        </StackPanel>
+                      </Border>
+                      <StackPanel Margin="16" Spacing="8">
+                        <TextBlock Text="{Binding DetailCommand}" TextWrapping="Wrap" FontFamily="Cascadia Mono, Consolas" FontSize="12" />
+                        <TextBlock Text="{Binding DetailRoot}" TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource WinUiTextSecondaryBrush}" />
+                      </StackPanel>
+                    </DockPanel>
+                  </Border>
+                  <Border Classes="detailCard">
+                    <DockPanel>
+                      <Border Classes="detailHeader" DockPanel.Dock="Top">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                          <TextBlock Classes="mdl2" Text="&#xE8D2;" Foreground="{DynamicResource WinUiBlueBrush}" />
+                          <TextBlock Text="Child Processes" Foreground="{DynamicResource WinUiTextSecondaryBrush}" FontWeight="Medium" VerticalAlignment="Center" />
+                        </StackPanel>
+                      </Border>
+                      <TextBlock Margin="16" Text="{Binding DetailChildren}" TextWrapping="Wrap" FontFamily="Cascadia Mono, Consolas" FontSize="12" />
+                    </DockPanel>
+                  </Border>
+                  <Border Classes="detailCard">
+                    <DockPanel>
+                      <Border Classes="detailHeader" DockPanel.Dock="Top">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                          <TextBlock Classes="mdl2" Text="&#xE8FD;" Foreground="{DynamicResource WinUiBlueBrush}" />
+                          <TextBlock Text="Environment Variables" Foreground="{DynamicResource WinUiTextSecondaryBrush}" FontWeight="Medium" VerticalAlignment="Center" />
+                        </StackPanel>
+                      </Border>
+                      <ScrollViewer MaxHeight="200" Padding="16">
+                        <TextBlock Text="{Binding DetailBody}" TextWrapping="Wrap" FontFamily="Cascadia Mono, Consolas" FontSize="12" />
+                      </ScrollViewer>
+                    </DockPanel>
+                  </Border>
+                </StackPanel>
+              </Grid>
+            </StackPanel>
+          </ScrollViewer>
+        </DockPanel>
+      </Border>
+    </Border>
+  </Grid>
+</Window>

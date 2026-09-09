@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsPackable>false</IsPackable>
+    <IsAotCompatible>true</IsAotCompatible>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <RustoloniaRoot Condition="'$(RustoloniaRoot)' == ''">$(MSBuildThisFileDirectory)..\..\..</RustoloniaRoot>
+    <AvaloniaProducerRoot Condition="'$(AvaloniaProducerRoot)' == ''">$(RustoloniaRoot)\avalonia-src</AvaloniaProducerRoot>
+  </PropertyGroup>
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(AvaloniaProducerRoot)\packages\Avalonia\Avalonia.csproj" />
+    <ProjectReference Include="$(RustoloniaRoot)\interop\Avalonia.Rust\Avalonia.Rust.csproj" />
+    <ProjectReference Include="$(RustoloniaRoot)\interop\Avalonia.Rust.Interop\Avalonia.Rust.Interop.csproj" />
+  </ItemGroup>
+  <Import Project="$(RustoloniaRoot)\build\NullableEnable.props" />
+  <Import Project="$(RustoloniaRoot)\build\BuildTargets.targets" />
+</Project>

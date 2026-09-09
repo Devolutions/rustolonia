@@ -1,0 +1,9 @@
+{
+  "generator": "avalonia-viewmodel",
+  "files": [
+    {
+      "path": "view-model.contract.md",
+      "sha256": "a027ad7e10db750b2d495b0b0670ddfb871d7a25155d8c0a97a05d476f6a4d6d"
+    }
+  ]
+}

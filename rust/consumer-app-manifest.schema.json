@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://avaloniaui.net/schemas/rust-consumer-app-manifest-v1.json",
+  "title": "Avalonia Rust consumer application",
+  "type": "object",
+  "required": ["version", "presentationProject", "viewModelIr", "generatedAdaptersDirectory", "generatedRegistryFile", "generatedRustFile", "generatedContractFile", "cargoManifest", "packageName", "rid", "configuration", "outputDirectory"],
+  "properties": {
+    "version": { "const": 1 },
+    "presentationProject": { "type": "string", "minLength": 1 },
+    "viewModelIr": { "type": "string", "minLength": 1 },
+    "generatedAdaptersDirectory": { "type": "string", "minLength": 1 },
+    "generatedRegistryFile": {
+      "type": "string",
+      "pattern": "(^|[/\\\\])RustViewRegistry\\.g\\.cs$",
+      "description": "Output path for the generated registry; the filename must be RustViewRegistry.g.cs."
+    },
+    "generatedRustFile": { "type": "string", "minLength": 1 },
+    "generatedContractFile": { "type": "string", "minLength": 1 },
+    "cargoManifest": { "type": "string", "minLength": 1 },
+    "packageName": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$" },
+    "binary": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$" },
+    "noticeFiles": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true,
+      "description": "Application-specific license or notice files. Paths must be relative regular files beneath the manifest directory, must not traverse links, and must have case-insensitively distinct non-reserved basenames. Files are copied into the delivery bundle before its SBOM and checksums are generated."
+    },
+    "rid": { "enum": ["win-x64", "win-arm64", "linux-x64", "linux-arm64", "osx-x64", "osx-arm64"] },
+    "configuration": { "enum": ["Debug", "Release"] },
+    "outputDirectory": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": false
+}

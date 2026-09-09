@@ -1,0 +1,35 @@
+* text=auto
+*.cs     diff=csharp
+*.csproj text
+*.sln    text
+*.props  text
+*.targets text
+*.rs     text
+*.patch  text eol=lf
+*.ps1    text
+
+# Machine-generated Rust artifacts are canonical LF on every platform.
+rust/avalonia-sys/src/generated.rs text eol=lf
+rust/avalonia/src/generated.rs text eol=lf
+rust/avalonia-sample/src/generated_view_models.rs text eol=lf
+
+# Generated artifacts: the projection tools emit LF on every platform, so pin
+# checkout to LF too — otherwise autocrlf on Windows flips them after every regen.
+host/Generated/** text eol=lf
+samples/RustViewModelSample.Managed/Generated/** text eol=lf
+rust/projection.ir.json text eol=lf
+rust/avalonia-sample/view-model.ir.json text eol=lf
+rust/avalonia-sys/include/avalonia-rust-abi.h text eol=lf
+rust/avalonia-sample/view-model.contract.md text eol=lf
+rust/projection.ir.gaps.txt text eol=lf
+
+**/.*.owned.json text eol=lf linguist-generated=true
+host/Generated/** linguist-generated=true
+samples/RustViewModelSample.Managed/Generated/** linguist-generated=true
+rust/avalonia-sys/src/generated.rs linguist-generated=true
+rust/avalonia/src/generated.rs linguist-generated=true
+rust/avalonia-sample/src/generated_view_models.rs linguist-generated=true
+rust/avalonia-sys/include/avalonia-rust-abi.h linguist-generated=true
+rust/projection.ir.json linguist-generated=true
+rust/projection.ir.gaps.txt linguist-generated=true
+rust/avalonia-sample/view-model.contract.md linguist-generated=true

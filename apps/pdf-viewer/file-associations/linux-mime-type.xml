@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  shared-mime-info declaration for PDF documents.
+
+  Install with (from a package post-install step):
+    xdg-mime install --mode user this-file.xml
+    update-mime-database "$HOME/.local/share/mime"
+    xdg-mime default pdf-viewer.desktop application/pdf
+
+  The glob pattern must match the extension used in the .desktop entry.
+-->
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/pdf">
+    <comment>PDF document</comment>
+    <glob pattern="*.pdf"/>
+    <icon name="pdf-viewer"/>
+  </mime-type>
+</mime-info>
