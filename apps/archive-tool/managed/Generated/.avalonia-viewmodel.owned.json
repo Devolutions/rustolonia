@@ -1,0 +1,25 @@
+{
+  "generator": "avalonia-viewmodel",
+  "files": [
+    {
+      "path": "EntryRowViewModelAdapter.g.cs",
+      "sha256": "094a89722f00f5c808b38be3713d284ca7c347fd59a0600e9401dfaaba861b93"
+    },
+    {
+      "path": "EntryRowViewModelMetadata.g.cs",
+      "sha256": "0567d7d13b010b2adc2857b7dc4a5c3ec7bd41e61873179f43814797a3db640b"
+    },
+    {
+      "path": "MainViewModelAdapter.g.cs",
+      "sha256": "36bfbb71aa5f067289a9ba7f2b5f80d688de2d0069b4346492196a2e90ed723e"
+    },
+    {
+      "path": "MainViewModelMenus.g.cs",
+      "sha256": "cc25583382a4a75a0714c30ea7058d2b065bb217b7a14de18e54a62f74259827"
+    },
+    {
+      "path": "MainViewModelMetadata.g.cs",
+      "sha256": "6cfb4664542a750f56108dcf5f39505022250c56a79e315e4019e2407a024408"
+    }
+  ]
+}
