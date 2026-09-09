@@ -1,0 +1,390 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:HashCalculator.Presentation.Generated"
+        x:Class="HashCalculator.Presentation.Views.MainWindow"
+        x:DataType="vm:MainViewModelAdapter"
+        Width="1180"
+        Height="780"
+        MinWidth="880"
+        MinHeight="560"
+        Title="{Binding Title}"
+        Background="{StaticResource WindowBrush}"
+        Foreground="{StaticResource PrimaryTextBrush}"
+        FontFamily="Segoe UI"
+        FontSize="14">
+  <Window.Resources>
+    <ResourceDictionary>
+      <SolidColorBrush x:Key="WindowBrush" Color="#11151F" />
+      <SolidColorBrush x:Key="ChromeBrush" Color="#1A2030" />
+      <SolidColorBrush x:Key="ToolbarBrush" Color="#20283A" />
+      <SolidColorBrush x:Key="PanelBrush" Color="#1B2231" />
+      <SolidColorBrush x:Key="PrimaryTextBrush" Color="#F5F7FB" />
+      <SolidColorBrush x:Key="SecondaryTextBrush" Color="#AAB4C7" />
+      <SolidColorBrush x:Key="MutedTextBrush" Color="#7E8AA1" />
+      <SolidColorBrush x:Key="DividerBrush" Color="#2B3549" />
+      <SolidColorBrush x:Key="AccentBrush" Color="#4ECDC4" />
+      <SolidColorBrush x:Key="AccentHoverBrush" Color="#6EE7DE" />
+      <SolidColorBrush x:Key="AccentMutedBrush" Color="#1C3F3C" />
+      <SolidColorBrush x:Key="SuccessBrush" Color="#61D6A2" />
+    </ResourceDictionary>
+  </Window.Resources>
+  <Window.Styles>
+    <Style Selector="TextBlock.eyebrow">
+      <Setter Property="FontSize" Value="10" />
+      <Setter Property="FontWeight" Value="Bold" />
+      <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}" />
+      <Setter Property="LetterSpacing" Value="1.2" />
+    </Style>
+    <Style Selector="TextBlock.appTitle">
+      <Setter Property="FontSize" Value="22" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+    </Style>
+    <Style Selector="TextBlock.muted">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}" />
+    </Style>
+    <Style Selector="TextBlock.digest">
+      <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, Courier New" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Foreground" Value="{StaticResource SecondaryTextBrush}" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="TextBlock.algo">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="FontWeight" Value="Bold" />
+      <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}" />
+      <Setter Property="Width" Value="72" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBox.compareInput">
+      <Setter Property="MinHeight" Value="34" />
+      <Setter Property="Padding" Value="10,6" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+      <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, Courier New" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.toolbar">
+      <Setter Property="MinHeight" Value="34" />
+      <Setter Property="Padding" Value="14,5" />
+      <Setter Property="Background" Value="{StaticResource ToolbarBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+      <Setter Property="CornerRadius" Value="7" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.toolbar:pointerover">
+      <Setter Property="Background" Value="#2A3449" />
+      <Setter Property="BorderBrush" Value="#42516D" />
+    </Style>
+    <Style Selector="Button.toolbar.primary">
+      <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+      <Setter Property="Foreground" Value="#102422" />
+    </Style>
+    <Style Selector="Button.toolbar.primary:pointerover">
+      <Setter Property="Background" Value="{StaticResource AccentHoverBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource AccentHoverBrush}" />
+    </Style>
+    <Style Selector="Button.toolbar:disabled">
+      <Setter Property="Opacity" Value="0.4" />
+    </Style>
+    <Style Selector="ToggleButton.toolbar">
+      <Setter Property="MinHeight" Value="34" />
+      <Setter Property="Padding" Value="12,5" />
+      <Setter Property="Background" Value="{StaticResource ToolbarBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+      <Setter Property="CornerRadius" Value="7" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="ToggleButton.toolbar:pointerover">
+      <Setter Property="Background" Value="#2A3449" />
+      <Setter Property="BorderBrush" Value="#42516D" />
+    </Style>
+    <Style Selector="ToggleButton.toolbar:checked">
+      <Setter Property="Background" Value="{StaticResource AccentMutedBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+      <Setter Property="Foreground" Value="{StaticResource AccentHoverBrush}" />
+    </Style>
+    <Style Selector="Button.compact">
+      <Setter Property="MinHeight" Value="28" />
+      <Setter Property="Padding" Value="10,3" />
+      <Setter Property="Background" Value="{StaticResource ToolbarBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style Selector="Button.compact:pointerover">
+      <Setter Property="Background" Value="{StaticResource AccentMutedBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+    </Style>
+    <Style Selector="Button.compact:disabled">
+      <Setter Property="Opacity" Value="0.4" />
+    </Style>
+    <Style Selector="Button.iconButton">
+      <Setter Property="Width" Value="32" />
+      <Setter Property="Height" Value="32" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}" />
+      <Setter Property="FontSize" Value="18" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.iconButton:pointerover">
+      <Setter Property="Background" Value="{StaticResource AccentMutedBrush}" />
+      <Setter Property="Foreground" Value="{StaticResource AccentHoverBrush}" />
+    </Style>
+    <Style Selector="Border.card">
+      <Setter Property="Background" Value="{StaticResource PanelBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="12" />
+    </Style>
+    <Style Selector="Border.compareControl">
+      <Setter Property="Background" Value="#151D2C" />
+      <Setter Property="BorderBrush" Value="{StaticResource AccentMutedBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Padding" Value="4,2" />
+    </Style>
+    <Style Selector="Border.statusPill">
+      <Setter Property="Background" Value="#193A35" />
+      <Setter Property="BorderBrush" Value="#285B4D" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="14" />
+      <Setter Property="Padding" Value="12,5" />
+    </Style>
+  </Window.Styles>
+  <DockPanel Background="{StaticResource WindowBrush}">
+    <NativeMenuBar DockPanel.Dock="Top" />
+    <Border DockPanel.Dock="Top"
+            Background="{StaticResource ChromeBrush}"
+            BorderBrush="{StaticResource DividerBrush}"
+            BorderThickness="0,0,0,1"
+            Padding="20,16,20,14">
+      <Grid RowDefinitions="Auto,Auto,Auto" RowSpacing="14">
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="13">
+          <Border Width="42"
+                  Height="42"
+                  Background="{StaticResource AccentBrush}"
+                  CornerRadius="12">
+            <TextBlock HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       FontSize="22"
+                       FontWeight="Bold"
+                       Foreground="#102422"
+                       Text="#" />
+          </Border>
+          <StackPanel Grid.Column="1" Spacing="1" VerticalAlignment="Center">
+            <TextBlock Classes="eyebrow" Text="RUSTOLONIA UTILITY" />
+            <TextBlock Classes="appTitle" Text="{Binding Title}" />
+          </StackPanel>
+          <StackPanel Grid.Column="2"
+                      MaxWidth="520"
+                      Spacing="3"
+                      HorizontalAlignment="Right"
+                      VerticalAlignment="Center">
+            <TextBlock x:Name="FileCountLabel"
+                       HorizontalAlignment="Right"
+                       Foreground="{StaticResource PrimaryTextBrush}"
+                       Text="{Binding FileCountLabel}"
+                       AutomationProperties.Name="{Binding FileCountLabel}" />
+            <TextBlock x:Name="Status"
+                       Classes="muted"
+                       HorizontalAlignment="Right"
+                       Text="{Binding Status}"
+                       TextTrimming="CharacterEllipsis"
+                       AutomationProperties.Name="{Binding Status}" />
+          </StackPanel>
+        </Grid>
+        <Grid Grid.Row="1" ColumnDefinitions="Auto,Auto,Auto,*,Auto" ColumnSpacing="8">
+          <Button x:Name="OpenFilesButton"
+                  Classes="toolbar primary"
+                  Content="Open files"
+                  Command="{Binding OpenFilesCommand}"
+                  AutomationProperties.Name="OpenFilesButton" />
+          <Button x:Name="CopyReportButton"
+                  Grid.Column="1"
+                  Classes="toolbar"
+                  Content="Copy report"
+                  Command="{Binding CopyReportCommand}"
+                  IsEnabled="{Binding CanCopyReport}"
+                  AutomationProperties.Name="CopyReportButton" />
+          <Button x:Name="ClearButton"
+                  Grid.Column="2"
+                  Classes="toolbar"
+                  Content="Clear"
+                  Command="{Binding ClearFilesCommand}"
+                  IsEnabled="{Binding CanClear}"
+                  AutomationProperties.Name="ClearButton" />
+          <StackPanel Grid.Column="3"
+                      Orientation="Horizontal"
+                      Spacing="6"
+                      HorizontalAlignment="Right">
+            <ToggleButton x:Name="IncludeMd5Button"
+                          Content="MD5"
+                          Classes="toolbar"
+                          IsChecked="{Binding IncludeMd5, Mode=TwoWay}"
+                          AutomationProperties.Name="IncludeMd5Button" />
+            <ToggleButton Content="SHA-1"
+                          Classes="toolbar"
+                          IsChecked="{Binding IncludeSha1, Mode=TwoWay}"
+                          AutomationProperties.Name="IncludeSha1Button" />
+            <ToggleButton Content="SHA-256"
+                          Classes="toolbar"
+                          IsChecked="{Binding IncludeSha256, Mode=TwoWay}"
+                          AutomationProperties.Name="IncludeSha256Button" />
+            <ToggleButton Content="SHA-512"
+                          Classes="toolbar"
+                          IsChecked="{Binding IncludeSha512, Mode=TwoWay}"
+                          AutomationProperties.Name="IncludeSha512Button" />
+            <ToggleButton Content="BLAKE3"
+                          Classes="toolbar"
+                          IsChecked="{Binding IncludeBlake3, Mode=TwoWay}"
+                          AutomationProperties.Name="IncludeBlake3Button" />
+          </StackPanel>
+          <Border Grid.Column="4" Classes="statusPill">
+            <TextBlock VerticalAlignment="Center"
+                       FontSize="12"
+                       Foreground="{StaticResource SecondaryTextBrush}"
+                       Text="Streaming hashes" />
+          </Border>
+        </Grid>
+        <Grid Grid.Row="2" ColumnDefinitions="*,Auto" ColumnSpacing="10">
+          <Border Classes="compareControl">
+            <TextBox x:Name="ExpectedHashBox"
+                     Classes="compareInput"
+                     Text="{Binding ExpectedHash, Mode=TwoWay}"
+                     Watermark="Paste an expected digest to compare"
+                     AutomationProperties.Name="ExpectedHashBox" />
+          </Border>
+          <TextBlock x:Name="CompareStatus"
+                     Grid.Column="1"
+                     MinWidth="180"
+                     VerticalAlignment="Center"
+                     Foreground="{StaticResource AccentHoverBrush}"
+                     Text="{Binding CompareStatus}"
+                     AutomationProperties.Name="{Binding CompareStatus}" />
+        </Grid>
+      </Grid>
+    </Border>
+    <Border DockPanel.Dock="Bottom"
+            Background="{StaticResource ChromeBrush}"
+            BorderBrush="{StaticResource DividerBrush}"
+            BorderThickness="0,1,0,0"
+            Padding="20,10">
+      <Grid ColumnDefinitions="*,*">
+        <TextBlock Classes="muted"
+                   Text="SHA-256 of the first file"
+                   VerticalAlignment="Center" />
+        <TextBlock x:Name="PrimaryDigest"
+                   Grid.Column="1"
+                   Classes="digest"
+                   HorizontalAlignment="Right"
+                   Text="{Binding PrimaryDigest}"
+                   TextTrimming="CharacterEllipsis"
+                   AutomationProperties.Name="{Binding PrimaryDigest}" />
+      </Grid>
+    </Border>
+    <ScrollViewer Padding="18,16,18,16">
+      <Grid>
+        <StackPanel Spacing="16"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    IsVisible="{Binding EmptyVisible}">
+          <TextBlock Classes="appTitle" HorizontalAlignment="Center" Text="No files yet" />
+          <TextBlock Classes="muted"
+                     HorizontalAlignment="Center"
+                     Text="Open one or more files to compute checksums." />
+        </StackPanel>
+        <ItemsControl ItemsSource="{Binding Files}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Spacing="12" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:FileRowViewModelAdapter">
+              <Border Classes="card" Padding="16">
+                <Grid RowDefinitions="Auto,Auto,Auto" RowSpacing="10">
+                  <Grid Grid.Row="0" ColumnDefinitions="*,Auto,Auto">
+                    <StackPanel Spacing="2">
+                      <TextBlock FontSize="16"
+                                 FontWeight="SemiBold"
+                                 Text="{Binding Name}"
+                                 TextTrimming="CharacterEllipsis" />
+                      <TextBlock Classes="muted"
+                                 Text="{Binding FilePath}"
+                                 TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                    <Button Grid.Column="1"
+                            Classes="compact"
+                            Margin="8,0,8,0"
+                            Content="Copy all"
+                            Command="{Binding CopyRowCommand}"
+                            VerticalAlignment="Top" />
+                    <Button Grid.Column="2"
+                            Classes="iconButton"
+                            Content="×"
+                            Command="{Binding RemoveCommand}"
+                            ToolTip.Tip="Remove file"
+                            VerticalAlignment="Top" />
+                  </Grid>
+                  <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="14">
+                    <TextBlock Classes="muted" Text="{Binding SizeLabel}" />
+                    <TextBlock Classes="muted" Text="{Binding Status}" />
+                    <TextBlock Foreground="{StaticResource SuccessBrush}"
+                               FontSize="12"
+                               FontWeight="SemiBold"
+                               Text="{Binding MatchLabel}" />
+                  </StackPanel>
+                  <StackPanel Grid.Row="2" Spacing="6">
+                    <Grid ColumnDefinitions="Auto,*,Auto" IsVisible="{Binding ShowMd5}" ColumnSpacing="10">
+                      <TextBlock Classes="algo" Text="MD5" />
+                      <TextBlock Classes="digest" Grid.Column="1" Text="{Binding Md5}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="Auto,*,Auto" IsVisible="{Binding ShowSha1}" ColumnSpacing="10">
+                      <TextBlock Classes="algo" Text="SHA-1" />
+                      <TextBlock Classes="digest" Grid.Column="1" Text="{Binding Sha1}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="Auto,*,Auto" IsVisible="{Binding ShowSha256}" ColumnSpacing="10">
+                      <TextBlock Classes="algo" Text="SHA-256" />
+                      <TextBlock Classes="digest" Grid.Column="1" Text="{Binding Sha256}" />
+                      <Button Grid.Column="2"
+                              Classes="compact"
+                              Content="Copy"
+                              Command="{Binding CopySha256Command}"
+                              IsEnabled="{Binding CanCopySha256}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="Auto,*,Auto" IsVisible="{Binding ShowSha512}" ColumnSpacing="10">
+                      <TextBlock Classes="algo" Text="SHA-512" />
+                      <TextBlock Classes="digest" Grid.Column="1" Text="{Binding Sha512}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="Auto,*,Auto" IsVisible="{Binding ShowBlake3}" ColumnSpacing="10">
+                      <TextBlock Classes="algo" Text="BLAKE3" />
+                      <TextBlock Classes="digest" Grid.Column="1" Text="{Binding Blake3}" />
+                    </Grid>
+                  </StackPanel>
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </Grid>
+    </ScrollViewer>
+  </DockPanel>
+</Window>

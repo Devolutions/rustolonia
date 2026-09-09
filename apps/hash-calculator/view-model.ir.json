@@ -1,0 +1,478 @@
+{
+  "version": 5,
+  "enums": [],
+  "models": [
+    {
+      "id": 1,
+      "name": "MainViewModel",
+      "managedNamespace": "HashCalculator.Presentation.Generated",
+      "properties": [
+        {
+          "id": 1,
+          "name": "Title",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "Hash Calculator"
+        },
+        {
+          "id": 2,
+          "name": "Status",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "Preparing sample file..."
+        },
+        {
+          "id": 3,
+          "name": "FileCountLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "No files"
+        },
+        {
+          "id": 4,
+          "name": "ExpectedHash",
+          "kind": "String",
+          "writable": true,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 5,
+          "name": "CompareStatus",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "Paste a digest to compare"
+        },
+        {
+          "id": 6,
+          "name": "IncludeMd5",
+          "kind": "Boolean",
+          "writable": true,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 7,
+          "name": "IncludeSha1",
+          "kind": "Boolean",
+          "writable": true,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 8,
+          "name": "IncludeSha256",
+          "kind": "Boolean",
+          "writable": true,
+          "nullable": false,
+          "initialBoolean": true
+        },
+        {
+          "id": 9,
+          "name": "IncludeSha512",
+          "kind": "Boolean",
+          "writable": true,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 10,
+          "name": "IncludeBlake3",
+          "kind": "Boolean",
+          "writable": true,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 11,
+          "name": "IsBusy",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": true
+        },
+        {
+          "id": 12,
+          "name": "CanClear",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 13,
+          "name": "CanCopyReport",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 14,
+          "name": "PrimaryDigest",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 15,
+          "name": "EmptyVisible",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        }
+      ],
+      "collections": [
+        {
+          "id": 1,
+          "name": "RecentFiles",
+          "elementKind": "String",
+          "recursive": false
+        },
+        {
+          "id": 2,
+          "name": "Files",
+          "elementKind": "Model",
+          "elementModelName": "FileRowViewModel",
+          "recursive": false
+        }
+      ],
+      "maps": [],
+      "commands": [
+        {
+          "id": 1,
+          "name": "OpenFiles",
+          "isAsync": true,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 2,
+          "name": "ClearFiles",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 3,
+          "name": "CopyReport",
+          "isAsync": true,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 4,
+          "name": "OpenRecentFile",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 5,
+          "name": "Exit",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        }
+      ],
+      "menus": [
+        {
+          "id": 1,
+          "name": "Main",
+          "kind": "Application",
+          "items": [
+            {
+              "id": 1,
+              "name": "File",
+              "kind": "Submenu",
+              "header": "_File",
+              "items": [
+                {
+                  "id": 2,
+                  "name": "OpenFiles",
+                  "kind": "Command",
+                  "header": "_Open files...",
+                  "command": "OpenFiles",
+                  "gesture": "Ctrl\u002BO",
+                  "items": []
+                },
+                {
+                  "id": 3,
+                  "name": "Recent",
+                  "kind": "RecentFiles",
+                  "header": "Recent _files",
+                  "items": []
+                },
+                {
+                  "id": 4,
+                  "name": "CopyReport",
+                  "kind": "Command",
+                  "header": "_Copy report",
+                  "command": "CopyReport",
+                  "gesture": "Ctrl\u002BShift\u002BC",
+                  "items": []
+                },
+                {
+                  "id": 5,
+                  "name": "ClearFiles",
+                  "kind": "Command",
+                  "header": "C_lear list",
+                  "command": "ClearFiles",
+                  "gesture": "Ctrl\u002BShift\u002BN",
+                  "items": []
+                },
+                {
+                  "id": 6,
+                  "name": "FileSeparator",
+                  "kind": "Separator",
+                  "items": []
+                },
+                {
+                  "id": 7,
+                  "name": "Exit",
+                  "kind": "Command",
+                  "header": "E_xit",
+                  "command": "Exit",
+                  "gesture": "Ctrl\u002BQ",
+                  "items": []
+                }
+              ]
+            },
+            {
+              "id": 8,
+              "name": "Hash",
+              "kind": "Submenu",
+              "header": "_Hash",
+              "items": [
+                {
+                  "id": 9,
+                  "name": "IncludeMd5",
+                  "kind": "Toggle",
+                  "header": "_MD5",
+                  "toggleProperty": "IncludeMd5",
+                  "items": []
+                },
+                {
+                  "id": 10,
+                  "name": "IncludeSha1",
+                  "kind": "Toggle",
+                  "header": "SHA-_1",
+                  "toggleProperty": "IncludeSha1",
+                  "items": []
+                },
+                {
+                  "id": 11,
+                  "name": "IncludeSha256",
+                  "kind": "Toggle",
+                  "header": "SHA-_256",
+                  "toggleProperty": "IncludeSha256",
+                  "items": []
+                },
+                {
+                  "id": 12,
+                  "name": "IncludeSha512",
+                  "kind": "Toggle",
+                  "header": "SHA-_512",
+                  "toggleProperty": "IncludeSha512",
+                  "items": []
+                },
+                {
+                  "id": 13,
+                  "name": "IncludeBlake3",
+                  "kind": "Toggle",
+                  "header": "_BLAKE3",
+                  "toggleProperty": "IncludeBlake3",
+                  "items": []
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "recentFiles": {
+        "id": 1,
+        "collection": "RecentFiles",
+        "activateCommand": "OpenRecentFile",
+        "capacity": 8
+      }
+    },
+    {
+      "id": 2,
+      "name": "FileRowViewModel",
+      "managedNamespace": "HashCalculator.Presentation.Generated",
+      "properties": [
+        {
+          "id": 1,
+          "name": "Name",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 2,
+          "name": "FilePath",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 3,
+          "name": "SizeLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 4,
+          "name": "Status",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 5,
+          "name": "MatchLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 6,
+          "name": "Md5",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 7,
+          "name": "Sha1",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 8,
+          "name": "Sha256",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 9,
+          "name": "Sha512",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 10,
+          "name": "Blake3",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 11,
+          "name": "ShowMd5",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 12,
+          "name": "ShowSha1",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 13,
+          "name": "ShowSha256",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": true
+        },
+        {
+          "id": 14,
+          "name": "ShowSha512",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 15,
+          "name": "ShowBlake3",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 16,
+          "name": "CanCopySha256",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        }
+      ],
+      "collections": [],
+      "maps": [],
+      "commands": [
+        {
+          "id": 1,
+          "name": "CopySha256",
+          "isAsync": true,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 2,
+          "name": "CopyRow",
+          "isAsync": true,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 3,
+          "name": "Remove",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        }
+      ],
+      "menus": []
+    }
+  ],
+  "views": [
+    {
+      "id": 1,
+      "name": "MainWindow",
+      "model": "MainViewModel",
+      "managedTypeName": "HashCalculator.Presentation.Views.MainWindow",
+      "dynamicBindings": false,
+      "converters": []
+    }
+  ],
+  "converters": []
+}
