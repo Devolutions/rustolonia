@@ -40,6 +40,9 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
     private string _searchMatchLabel = "";
     private bool _canGoPreviousMatch = false;
     private bool _canGoNextMatch = false;
+    private bool _outlineVisible = true;
+    private bool _hasOutline = false;
+    private string _outlineStatus = "No bookmarks";
 
     /// <summary>Creates an adapter that dispatches and posts through <see cref="Dispatcher.UIThread"/>.</summary>
     public MainViewModelAdapter(IAvnRustViewModel model) : this(model, null, null) { }
@@ -183,7 +186,50 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
         get => _canGoNextMatch;
     }
 
+    public bool OutlineVisible
+    {
+        get => _outlineVisible;
+        set
+        {
+            var accepted = value;
+            if (Equals(_outlineVisible, accepted))
+                return;
+            var previous = _outlineVisible;
+            var inbound = _inboundWrites.Begin(15);
+            try
+            {
+                Check(_model.SetBoolean(15, (accepted ? 1 : 0)));
+                if (!_inboundWrites.WasPublished(inbound))
+                {
+                    _inboundWrites.CommitLocal(15);
+                    SetField(ref _outlineVisible, accepted, nameof(OutlineVisible));
+                }
+            }
+            catch
+            {
+                if (_inboundWrites.ShouldRollback(inbound))
+                {
+                    _inboundWrites.CommitLocal(15);
+                    SetField(ref _outlineVisible, previous, nameof(OutlineVisible));
+                }
+                throw;
+            }
+            finally { _inboundWrites.End(inbound); }
+        }
+    }
+
+    public bool HasOutline
+    {
+        get => _hasOutline;
+    }
+
+    public string OutlineStatus
+    {
+        get => _outlineStatus;
+    }
+
     public BatchObservableCollection<string> RecentFiles { get; } = [];
+    public BatchObservableCollection<global::PdfViewer.Presentation.Generated.OutlineItemViewModelAdapter> Outline { get; } = [];
 
     public DelegateCommand OpenFileCommand { get; }
     public DelegateCommand PreviousPageCommand { get; }
@@ -215,6 +261,7 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
             10 => Apply(() => { var converted = value ?? ""; _inboundWrites.CommitPublication(propertyId, inbound); if (!Equals(_searchText, converted)) SetField(ref _searchText, converted, nameof(SearchText)); }),
             11 => Apply(() => { var converted = value ?? ""; _inboundWrites.CommitPublication(propertyId, inbound); if (!Equals(_searchStatus, converted)) SetField(ref _searchStatus, converted, nameof(SearchStatus)); }),
             12 => Apply(() => { var converted = value ?? ""; _inboundWrites.CommitPublication(propertyId, inbound); if (!Equals(_searchMatchLabel, converted)) SetField(ref _searchMatchLabel, converted, nameof(SearchMatchLabel)); }),
+            17 => Apply(() => { var converted = value ?? ""; _inboundWrites.CommitPublication(propertyId, inbound); if (!Equals(_outlineStatus, converted)) SetField(ref _outlineStatus, converted, nameof(OutlineStatus)); }),
             _ => unchecked((int)0x80070057),
         };
     }
@@ -238,6 +285,8 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
             9 => Apply(() => { var converted = value != 0; _inboundWrites.CommitPublication(propertyId, inbound); if (!Equals(_isLoading, converted)) SetField(ref _isLoading, converted, nameof(IsLoading)); }),
             13 => Apply(() => { var converted = value != 0; _inboundWrites.CommitPublication(propertyId, inbound); if (!Equals(_canGoPreviousMatch, converted)) SetField(ref _canGoPreviousMatch, converted, nameof(CanGoPreviousMatch)); }),
             14 => Apply(() => { var converted = value != 0; _inboundWrites.CommitPublication(propertyId, inbound); if (!Equals(_canGoNextMatch, converted)) SetField(ref _canGoNextMatch, converted, nameof(CanGoNextMatch)); }),
+            15 => Apply(() => { var converted = value != 0; _inboundWrites.CommitPublication(propertyId, inbound); if (!Equals(_outlineVisible, converted)) SetField(ref _outlineVisible, converted, nameof(OutlineVisible)); }),
+            16 => Apply(() => { var converted = value != 0; _inboundWrites.CommitPublication(propertyId, inbound); if (!Equals(_hasOutline, converted)) SetField(ref _hasOutline, converted, nameof(HasOutline)); }),
             _ => unchecked((int)0x80070057),
         };
     }
@@ -267,6 +316,7 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
 
     public int AddModel(int collectionId, IAvnRustViewModel? model) => collectionId switch
     {
+        2 => model is null ? unchecked((int)0x80070057) : Apply(() => Outline.Add(new global::PdfViewer.Presentation.Generated.OutlineItemViewModelAdapter(model, _dispatch, _post))),
         _ => unchecked((int)0x80070057),
     };
 
@@ -278,6 +328,7 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
 
     public int InsertModel(int collectionId, int index, IAvnRustViewModel? model) => collectionId switch
     {
+        2 => model is null ? unchecked((int)0x80070057) : Apply(() => { if ((uint)index > (uint)Outline.Count) return unchecked((int)0x80070057); Outline.Insert(index, new global::PdfViewer.Presentation.Generated.OutlineItemViewModelAdapter(model, _dispatch, _post)); return 0; }),
         _ => unchecked((int)0x80070057),
     };
 
@@ -289,24 +340,46 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
 
     public int ReplaceModel(int collectionId, int index, IAvnRustViewModel? model) => collectionId switch
     {
+        2 => model is null ? unchecked((int)0x80070057) : Apply(() =>
+        {
+            if ((uint)index >= (uint)Outline.Count) return unchecked((int)0x80070057);
+            var previous = Outline[index];
+            Outline[index] = new global::PdfViewer.Presentation.Generated.OutlineItemViewModelAdapter(model, _dispatch, _post);
+            previous.Dispose();
+            return 0;
+        }),
         _ => unchecked((int)0x80070057),
     };
 
     public int RemoveAt(int collectionId, int index) => collectionId switch
     {
         1 => Apply(() => { if ((uint)index >= (uint)RecentFiles.Count) return unchecked((int)0x80070057); RecentFiles.RemoveAt(index); return 0; }),
+        2 => Apply(() =>
+        {
+            if ((uint)index >= (uint)Outline.Count) return unchecked((int)0x80070057);
+            var item = Outline[index];
+            Outline.RemoveAt(index);
+            item.Dispose();
+            return 0;
+        }),
         _ => unchecked((int)0x80070057),
     };
 
     public int MoveItem(int collectionId, int fromIndex, int toIndex) => collectionId switch
     {
         1 => Apply(() => { if ((uint)fromIndex >= (uint)RecentFiles.Count || (uint)toIndex >= (uint)RecentFiles.Count) return unchecked((int)0x80070057); RecentFiles.Move(fromIndex, toIndex); return 0; }),
+        2 => Apply(() => { if ((uint)fromIndex >= (uint)Outline.Count || (uint)toIndex >= (uint)Outline.Count) return unchecked((int)0x80070057); Outline.Move(fromIndex, toIndex); return 0; }),
         _ => unchecked((int)0x80070057),
     };
 
     public int ClearCollection(int collectionId) => collectionId switch
     {
         1 => Apply(RecentFiles.Clear),
+        2 => Apply(() =>
+        {
+            foreach (var item in Outline) item.Dispose();
+            Outline.Clear();
+        }),
         _ => unchecked((int)0x80070057),
     };
 
@@ -339,6 +412,9 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
         12 => Apply(() => SetError(nameof(SearchMatchLabel), message)),
         13 => Apply(() => SetError(nameof(CanGoPreviousMatch), message)),
         14 => Apply(() => SetError(nameof(CanGoNextMatch), message)),
+        15 => Apply(() => SetError(nameof(OutlineVisible), message)),
+        16 => Apply(() => SetError(nameof(HasOutline), message)),
+        17 => Apply(() => SetError(nameof(OutlineStatus), message)),
         _ => unchecked((int)0x80070057),
     };
 
@@ -356,6 +432,15 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
 
     public int ReplaceModelSnapshot(int collectionId, IReadOnlyList<IAvnRustViewModel> values) => collectionId switch
     {
+        2 => Apply(() =>
+        {
+            var staged = new List<global::PdfViewer.Presentation.Generated.OutlineItemViewModelAdapter>();
+            try { foreach (var value in values) staged.Add(new global::PdfViewer.Presentation.Generated.OutlineItemViewModelAdapter(value, _dispatch, _post)); }
+            catch { foreach (var value in staged) TryDispose(value); throw; }
+            var previous = Outline.ToArray();
+            Outline.ReplaceSnapshot(staged);
+            foreach (var value in previous) TryDispose(value);
+        }),
         _ => unchecked((int)0x80070057),
     };
 
@@ -377,6 +462,9 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
             12 => new RustVmBatchProperty(nameof(SearchMatchLabel), RustVmValueWireKind.String, false, false),
             13 => new RustVmBatchProperty(nameof(CanGoPreviousMatch), RustVmValueWireKind.Boolean, false, false),
             14 => new RustVmBatchProperty(nameof(CanGoNextMatch), RustVmValueWireKind.Boolean, false, false),
+            15 => new RustVmBatchProperty(nameof(OutlineVisible), RustVmValueWireKind.Boolean, false, false),
+            16 => new RustVmBatchProperty(nameof(HasOutline), RustVmValueWireKind.Boolean, false, false),
+            17 => new RustVmBatchProperty(nameof(OutlineStatus), RustVmValueWireKind.String, false, false),
             _ => default,
         };
         return property.Name is not null;
@@ -387,6 +475,7 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
         collection = collectionId switch
         {
             1 => new RustVmBatchCollectionInfo(nameof(RecentFiles), RustVmValueWireKind.String, RecentFiles),
+            2 => new RustVmBatchCollectionInfo(nameof(Outline), RustVmValueWireKind.Model, Outline),
             _ => default,
         };
         return collection.Items is not null;
@@ -421,6 +510,7 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
 
     IDisposable IRustVmBatchTarget.CreateNestedElement(int collectionId, IAvnRustViewModel model) => collectionId switch
     {
+        2 => new global::PdfViewer.Presentation.Generated.OutlineItemViewModelAdapter(model, _dispatch, _post),
         _ => throw new ArgumentOutOfRangeException(nameof(collectionId)),
     };
 
@@ -527,6 +617,27 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
                 _canGoNextMatch = next;
                 return true;
             }
+            case 15:
+            {
+                var next = value.Boolean;
+                if (Equals(_outlineVisible, next)) return false;
+                _outlineVisible = next;
+                return true;
+            }
+            case 16:
+            {
+                var next = value.Boolean;
+                if (Equals(_hasOutline, next)) return false;
+                _hasOutline = next;
+                return true;
+            }
+            case 17:
+            {
+                var next = value.Text ?? "";
+                if (Equals(_outlineStatus, next)) return false;
+                _outlineStatus = next;
+                return true;
+            }
             default: return false;
         }
     }
@@ -572,6 +683,7 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
 
     private void DisposeNestedAdapters()
     {
+        foreach (var item in Outline) TryDispose(item);
     }
 
     private static void TryDispose(IDisposable? value)

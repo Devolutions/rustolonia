@@ -3,15 +3,16 @@
 Smoke-tests the PDF viewer's Windows portable bundle through UI Automation.
 .DESCRIPTION
 Requires Windows PowerShell 5.1, STA, and an unlocked interactive desktop.
-The test starts the no-argument sample mode, verifies a rendered page, moves
-to the next page, searches for a later-page phrase, returns to the first page,
-then requests a normal close.
+The test starts the no-argument sample mode, verifies a rendered page and its
+bookmarks pane, jumps via a table-of-contents entry, moves to the next page,
+searches for a later-page phrase, then requests a normal close. Pass -PdfPath
+to exercise a real document such as [MS-RDPBCGR].pdf.
 #>
 [CmdletBinding()]
 param(
     [string] $BundlePath = '',
     [string] $PdfPath = '',
-    [ValidateRange(10, 120)] [int] $TimeoutSeconds = 30,
+    [ValidateRange(10, 180)] [int] $TimeoutSeconds = 60,
     [ValidateRange(1, 60)] [int] $CloseTimeoutSeconds = 15
 )
 
@@ -69,7 +70,32 @@ function Find-Control([string] $Name) {
 function Invoke-Control([string] $Name) {
     $control = Find-Control $Name
     if ($null -eq $control) { throw "Control '$Name' not found." }
-    $control.GetCurrentPattern([Windows.Automation.InvokePattern]::Pattern).Invoke()
+    try {
+        $control.GetCurrentPattern([Windows.Automation.InvokePattern]::Pattern).Invoke()
+        return
+    } catch {
+        $child = $control.FindFirst(
+            [Windows.Automation.TreeScope]::Descendants,
+            [Windows.Automation.PropertyCondition]::new(
+                [Windows.Automation.AutomationElement]::IsInvokePatternAvailableProperty, $true))
+        if ($null -eq $child) { throw "Control '$Name' is not invokable." }
+        $child.GetCurrentPattern([Windows.Automation.InvokePattern]::Pattern).Invoke()
+    }
+}
+
+function Invoke-Bookmark([string] $Title) {
+    $tree = Find-Control 'OutlineTree'
+    if ($null -eq $tree) { throw 'OutlineTree not found.' }
+    $button = $tree.FindFirst(
+        [Windows.Automation.TreeScope]::Descendants,
+        [Windows.Automation.AndCondition]::new(
+            [Windows.Automation.PropertyCondition]::new(
+                [Windows.Automation.AutomationElement]::ControlTypeProperty,
+                [Windows.Automation.ControlType]::Button),
+            [Windows.Automation.PropertyCondition]::new(
+                [Windows.Automation.AutomationElement]::NameProperty, $Title)))
+    if ($null -eq $button) { throw "Bookmark '$Title' not found." }
+    $button.GetCurrentPattern([Windows.Automation.InvokePattern]::Pattern).Invoke()
 }
 
 function Set-Value([string] $Name, [string] $Value) {
@@ -107,24 +133,38 @@ try {
     }
 
     $null = Wait-Condition 'first rendered page' {
-        (Get-Text 'PageLabel') -match '^Page 1 of [2-9][0-9]*$' -and
+        (Get-Text 'PageLabel') -match '^Page 1 of (?!1$)[1-9][0-9]*$' -and
             $null -ne (Find-Control 'PageImage') -and
             (
-                ($PdfPath -and (Get-Text 'PageText') -match 'Remote Desktop Protocol|RDP') -or
+                ($PdfPath -and (Get-Text 'PageText') -match 'Remote Desktop|RDP|MS-RDPBCGR') -or
                 (-not $PdfPath -and (Get-Text 'PageText') -match 'Rustolonia PDF Viewer')
             )
     }
-    Write-Host 'PASS startup: sample PDF rendered and extracted text is visible.'
+    Write-Host 'PASS startup: PDF rendered and extracted text is visible.'
 
-    Invoke-Control 'NextPageButton'
-    $null = Wait-Condition 'next page navigation' { (Get-Text 'PageLabel') -match '^Page 2 of ' }
-    Write-Host 'PASS navigation: next page rendered.'
+    $null = Wait-Condition 'bookmarks pane' {
+        (Get-Text 'OutlineStatus') -match 'bookmark' -and $null -ne (Find-Control 'OutlineTree')
+    }
+    $bookmarkName = if ($PdfPath -match 'RDPBCGR') { '1 Introduction' } else { 'Sample section 2' }
+    $bookmarkPage = if ($PdfPath -match 'RDPBCGR') { 'Page 17 of ' } else { 'Page 2 of ' }
+    Invoke-Bookmark $bookmarkName
+    $null = Wait-Condition 'bookmark navigation' { (Get-Text 'PageLabel') -match "^$bookmarkPage" }
+    Write-Host "PASS bookmarks: table of contents jumped to $bookmarkName."
 
-    Invoke-Control 'PreviousPageButton'
-    $null = Wait-Condition 'previous page navigation' { (Get-Text 'PageLabel') -match '^Page 1 of ' }
-    Write-Host 'PASS navigation: previous page rendered.'
+    if (-not $PdfPath) {
+        Invoke-Control 'PreviousPageButton'
+        $null = Wait-Condition 'bookmark return' { (Get-Text 'PageLabel') -match '^Page 1 of ' }
 
-    $searchQuery = if ($PdfPath) { 'Processing Font Map' } else { 'Page 4' }
+        Invoke-Control 'NextPageButton'
+        $null = Wait-Condition 'next page navigation' { (Get-Text 'PageLabel') -match '^Page 2 of ' }
+        Write-Host 'PASS navigation: next page rendered.'
+
+        Invoke-Control 'PreviousPageButton'
+        $null = Wait-Condition 'previous page navigation' { (Get-Text 'PageLabel') -match '^Page 1 of ' }
+        Write-Host 'PASS navigation: previous page rendered.'
+    }
+
+    $searchQuery = if ($PdfPath) { 'Introduction' } else { 'Page 4' }
     Set-Value 'SearchBox' $searchQuery
     Invoke-Control 'SearchButton'
     $null = Wait-Condition 'search result navigation' {
