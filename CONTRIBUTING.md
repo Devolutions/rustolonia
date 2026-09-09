@@ -17,6 +17,10 @@ pwsh .\avalonia-patches\apply-avalonia-patches.ps1 -AvaloniaRoot .\avalonia-src
 pwsh .\rust\regenerate-and-build.ps1 -Configuration Release
 ```
 
+The Rust build entry points also initialize the in-repository producer at the
+revision recorded by the checkout, so a fresh or reused checkout cannot build
+against a different `avalonia-src` revision.
+
 Open `Rustolonia.slnx` to navigate the eleven Rustolonia-owned managed projects.
 Producer projects remain transitive project references, with their own build
 configuration. When adding a project to the solution, pass

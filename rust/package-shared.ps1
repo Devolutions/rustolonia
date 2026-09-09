@@ -421,6 +421,44 @@ function Resolve-CallerRelativePath {
     )
 }
 
+function Initialize-LocalProducerSubmodule {
+    param(
+        [Parameter(Mandatory)][string]$RustoloniaRoot,
+        [Parameter(Mandatory)][string]$ProducerRoot
+    )
+
+    $rootPath = Resolve-CallerRelativePath $RustoloniaRoot
+    $producerPath = Resolve-CallerRelativePath $ProducerRoot
+    $expectedProducerPath = [IO.Path]::GetFullPath((Join-Path $rootPath 'avalonia-src'))
+    if (-not [String]::Equals($producerPath, $expectedProducerPath, [StringComparison]::OrdinalIgnoreCase)) {
+        return
+    }
+
+    $expectedRevision = & git -C $rootPath rev-parse 'HEAD:avalonia-src' 2>$null
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($expectedRevision)) {
+        throw "Cannot determine the pinned avalonia-src revision from $rootPath."
+    }
+
+    $actualRevision = if (Test-Path -LiteralPath $producerPath -PathType Container) {
+        & git -C $producerPath rev-parse HEAD 2>$null
+    }
+    else {
+        ''
+    }
+    if ($LASTEXITCODE -ne 0 -or $actualRevision -ne $expectedRevision) {
+        Write-Host "==> Initializing avalonia-src at $expectedRevision"
+        & git -C $rootPath submodule update --init --recursive -- avalonia-src
+        if ($LASTEXITCODE -ne 0) {
+            throw 'Cannot initialize avalonia-src at the pinned producer revision.'
+        }
+    }
+
+    $actualRevision = & git -C $producerPath rev-parse HEAD 2>$null
+    if ($LASTEXITCODE -ne 0 -or $actualRevision -ne $expectedRevision) {
+        throw "avalonia-src must be at $expectedRevision; found '$actualRevision'."
+    }
+}
+
 function Invoke-ArtifactSigning {
     param(
         [Parameter(Mandatory)][string]$ArtifactDirectory,
