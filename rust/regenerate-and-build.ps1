@@ -14,6 +14,8 @@ $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $true
 # The Rustolonia repository root is the parent of rust/.
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
+. (Join-Path $PSScriptRoot 'package-shared.ps1')
+Initialize-LocalProducerSubmodule -RustoloniaRoot $repositoryRoot -ProducerRoot (Join-Path $repositoryRoot 'avalonia-src')
 
 Write-Host '==> [1/4] Regenerating object-model projection IR, C# COM sources, and native ABI header'
 dotnet run --project (Join-Path $repositoryRoot 'projection' 'Avalonia.Projection.Tool') -c $Configuration -- `

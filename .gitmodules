@@ -1,4 +1,3 @@
 [submodule "avalonia-src"]
 	path = avalonia-src
 	url = https://github.com/mamoreau-devolutions/Avalonia.git
-	branch = main

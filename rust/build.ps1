@@ -16,7 +16,9 @@ $PSNativeCommandUseErrorActionPreference = $true
 
 # The Rustolonia repository root is the parent of rust/.
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
+. (Join-Path $PSScriptRoot 'package-shared.ps1')
 $avaloniaRoot = Join-Path $repositoryRoot 'avalonia-src'
+Initialize-LocalProducerSubmodule -RustoloniaRoot $repositoryRoot -ProducerRoot $avaloniaRoot
 $nativeArchitecture = switch ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture) {
     'X64' { 'x64' }
     'Arm64' { 'arm64' }

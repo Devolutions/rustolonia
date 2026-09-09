@@ -257,6 +257,8 @@ function Invoke-ConsumerPackage {
     Write-Host "Package layout ready at $bundle"
 }
 
+$rustoloniaRootPath = (Resolve-Path -LiteralPath $RustoloniaRoot).Path
+Initialize-LocalProducerSubmodule -RustoloniaRoot $rustoloniaRootPath -ProducerRoot $ProducerRoot
 $producer = (Resolve-Path -LiteralPath $ProducerRoot).Path
 $manifestPath = (Resolve-Path -LiteralPath $Manifest).Path
 $document = Read-ConsumerManifest $manifestPath
