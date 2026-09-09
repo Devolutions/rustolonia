@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  shared-mime-info declaration for hash-calculator documents.
+
+  Install with (from a package post-install step):
+    xdg-mime install --mode user this-file.xml
+    update-mime-database "$HOME/.local/share/mime"
+    xdg-mime default hash-calculator.desktop application/x-hash-calculator
+
+  The glob pattern must match the extension used in the .desktop entry.
+-->
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-hash-calculator">
+    <comment>hash-calculator document</comment>
+    <glob pattern="*.myapp"/>
+    <icon name="hash-calculator"/>
+  </mime-type>
+</mime-info>

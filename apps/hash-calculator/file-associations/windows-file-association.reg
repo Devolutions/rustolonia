@@ -1,0 +1,27 @@
+Windows Registry Editor Version 5.00
+
+; File type association for hash-calculator.
+;
+; Replace ".myapp" with your extension and the install path with the real one.
+; "%1" is what makes the shell pass the selected file to the executable; the
+; Rust entry point forwards it to the managed desktop lifetime, so it arrives
+; through AppScope::activation_items().
+;
+; Written under HKEY_CURRENT_USER so it can be applied and undone without
+; elevation while developing. A real installer writes the same keys under
+; HKEY_LOCAL_MACHINE\Software\Classes and owns their removal on uninstall.
+
+[HKEY_CURRENT_USER\Software\Classes\.myapp]
+@="hash-calculator.Document"
+
+[HKEY_CURRENT_USER\Software\Classes\.myapp\OpenWithProgids]
+"hash-calculator.Document"=""
+
+[HKEY_CURRENT_USER\Software\Classes\hash-calculator.Document]
+@="hash-calculator document"
+
+[HKEY_CURRENT_USER\Software\Classes\hash-calculator.Document\DefaultIcon]
+@="C:\\Program Files\\hash-calculator\\hash-calculator.exe,0"
+
+[HKEY_CURRENT_USER\Software\Classes\hash-calculator.Document\shell\open\command]
+@="\"C:\\Program Files\\hash-calculator\\hash-calculator.exe\" \"%1\""
