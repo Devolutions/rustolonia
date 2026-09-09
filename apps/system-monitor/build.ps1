@@ -2,7 +2,8 @@
 #Requires -Version 7.0
 [CmdletBinding()]
 param(
-    [switch]$UpdateLockFile
+    [switch]$UpdateLockFile,
+    [switch]$DeveloperTools
 )
 
 Set-StrictMode -Version Latest
@@ -16,7 +17,8 @@ try {
         -ProducerRoot (Join-Path $repositoryRoot 'avalonia-src') `
         -RustoloniaRoot $repositoryRoot `
         -Manifest (Join-Path $PSScriptRoot 'avalonia-app.json') `
-        -UpdateLockFile:$UpdateLockFile
+        -UpdateLockFile:$UpdateLockFile `
+        -DeveloperTools:$DeveloperTools
 }
 finally {
     Pop-Location

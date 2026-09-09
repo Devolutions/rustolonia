@@ -108,7 +108,7 @@ public static class MainViewModelMetadata
             new(93, "StoragePercentLabel", RustViewModelValueKind.String, false, false, "-", null),
         ],
         [
-            new(1, "Processes", RustViewModelValueKind.Model, global::NeoHtop.Presentation.Generated.ProcessRowViewModelMetadata.Descriptor, CreateProcessesTable(), new(64, 8), null, false),
+            new(1, "Processes", RustViewModelValueKind.Model, global::NeoHtop.Presentation.Generated.ProcessRowViewModelMetadata.Descriptor, CreateProcessesTable(), null, null, false),
             new(2, "CpuCores", RustViewModelValueKind.Model, global::NeoHtop.Presentation.Generated.CpuCoreViewModelMetadata.Descriptor, null, null, null, false),
         ],
         [

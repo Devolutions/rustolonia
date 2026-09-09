@@ -47,8 +47,8 @@
     </ResourceDictionary>
   </ResourceDictionary.ThemeDictionaries>
   <CornerRadius x:Key="WinUiControlRadius">6</CornerRadius>
+  <Thickness x:Key="TableViewRowPadding">6,4</Thickness>
   <CornerRadius x:Key="WinUiCardRadius">6</CornerRadius>
   <FontFamily x:Key="WinUiFont">Segoe UI Variable, Segoe UI</FontFamily>
   <FontFamily x:Key="Mdl2Font">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
 </ResourceDictionary>
-

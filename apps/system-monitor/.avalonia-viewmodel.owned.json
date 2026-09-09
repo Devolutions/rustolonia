@@ -3,11 +3,11 @@
   "files": [
     {
       "path": "generated_view_models.rs",
-      "sha256": "289f02ebb57648ad7d12e50ea355eac7d0365b710b96c65703e7be47a07cf45e"
+      "sha256": "e89b37605370eef2114245fb6c59f04fe19cab320974d94afe2f225c689c54a3"
     },
     {
       "path": "view-model.contract.md",
-      "sha256": "3f7e5fe3d30761d8b32e319667673cc14ede1507e73dddd2dd34f7a26cb9e230"
+      "sha256": "af9fc463f555651093802264ac5e3fd000e4c53d96ffa07386239f5618cf6a81"
     }
   ]
 }

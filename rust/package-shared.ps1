@@ -169,6 +169,7 @@ function New-HostPublishProperties {
         [Parameter(Mandatory)][string]$RustoloniaRoot,
         [Parameter(Mandatory)][string]$Rid,
         [Parameter(Mandatory)][string]$HostPlatform,
+        [switch]$DeveloperTools,
         [string]$CurrentArchitecture = (Get-CurrentRuntimeArchitecture),
         [string]$ObjCopyName
     )
@@ -176,7 +177,8 @@ function New-HostPublishProperties {
     $properties = @(
         "-p:AvaloniaProducerRoot=$ProducerRoot",
         "-p:RustoloniaRoot=$RustoloniaRoot",
-        "-p:AvaloniaRustHostPlatform=$HostPlatform"
+        "-p:AvaloniaRustHostPlatform=$HostPlatform",
+        "-p:AvaloniaRustDeveloperTools=$($DeveloperTools.IsPresent.ToString().ToLowerInvariant())"
     )
 
     if (-not [string]::IsNullOrWhiteSpace($ObjCopyName)) {

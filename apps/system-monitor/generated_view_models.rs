@@ -99,9 +99,15 @@ impl MainViewModelSink {
     pub fn set_cpu_percent_label(&self, value: impl AsRef<str>) -> crate::Result<()> { self.0.set_string(91, value) }
     pub fn set_memory_percent_label(&self, value: impl AsRef<str>) -> crate::Result<()> { self.0.set_string(92, value) }
     pub fn set_storage_percent_label(&self, value: impl AsRef<str>) -> crate::Result<()> { self.0.set_string(93, value) }
+    pub fn add_processes(&self, value: impl ProcessRowViewModel) -> crate::Result<()> { self.0.add_model(1, ProcessRowViewModelDispatch { model: value }) }
+    pub fn insert_processes(&self, index: i32, value: impl ProcessRowViewModel) -> crate::Result<()> { self.0.insert_model(1, index, ProcessRowViewModelDispatch { model: value }) }
+    pub fn replace_processes(&self, index: i32, value: impl ProcessRowViewModel) -> crate::Result<()> { self.0.replace_model(1, index, ProcessRowViewModelDispatch { model: value }) }
     pub fn add_cpu_cores(&self, value: impl CpuCoreViewModel) -> crate::Result<()> { self.0.add_model(2, CpuCoreViewModelDispatch { model: value }) }
     pub fn insert_cpu_cores(&self, index: i32, value: impl CpuCoreViewModel) -> crate::Result<()> { self.0.insert_model(2, index, CpuCoreViewModelDispatch { model: value }) }
     pub fn replace_cpu_cores(&self, index: i32, value: impl CpuCoreViewModel) -> crate::Result<()> { self.0.replace_model(2, index, CpuCoreViewModelDispatch { model: value }) }
+    pub fn remove_processes(&self, index: i32) -> crate::Result<()> { self.0.remove_model_at(1, index) }
+    pub fn move_processes(&self, from_index: i32, to_index: i32) -> crate::Result<()> { self.0.move_model_item(1, from_index, to_index) }
+    pub fn clear_processes(&self) -> crate::Result<()> { self.0.clear_model_collection(1) }
     pub fn remove_cpu_cores(&self, index: i32) -> crate::Result<()> { self.0.remove_model_at(2, index) }
     pub fn move_cpu_cores(&self, from_index: i32, to_index: i32) -> crate::Result<()> { self.0.move_model_item(2, from_index, to_index) }
     pub fn clear_cpu_cores(&self) -> crate::Result<()> { self.0.clear_model_collection(2) }
@@ -220,17 +226,6 @@ impl MainViewModelSink {
     pub fn set_cpu_percent_label_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(91, message) }
     pub fn set_memory_percent_label_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(92, message) }
     pub fn set_storage_percent_label_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(93, message) }
-    /// True when the attached host implements the stage 30 sink capability.
-    /// The reflectable (dynamic-binding) adapter deliberately does not.
-    pub fn supports_richer_shapes(&self) -> bool { self.0.supports_richer_shapes() }
-    /// Republishes `Processes`'s dataset identity, invalidating every realized page.
-    pub fn reset_processes(&self, generation: i64, total_count: i64) -> crate::Result<()> { self.0.publish_range_reset(1, generation, total_count) }
-    /// Starts a page for `Processes` at the currently published generation.
-    pub fn processes_page(&self, offset: i64) -> Option<crate::RangeBatch> { self.0.range_batch(1, offset) }
-    pub fn push_processes_row(&self, page: &mut crate::RangeBatch, value: impl ProcessRowViewModel) { self.0.push_range_model(page, ProcessRowViewModelDispatch { model: value }); }
-    pub fn publish_processes_page(&self, page: crate::RangeBatch) -> crate::Result<crate::view_model::BatchCompletion> { self.0.publish_range(page) }
-    /// Re-requests realized `Processes` pages at the current generation (live values, no adapter churn).
-    pub fn refresh_processes(&self) -> crate::Result<()> { self.0.publish_range_invalidate(1) }
     /// Creates a worker-safe immutable update batch with a monotonic generation.
     pub fn batch(&self, generation: i64) -> MainViewModelSinkBatch { MainViewModelSinkBatch(crate::view_model::ViewModelBatch::new(generation)) }
     pub fn submit_batch(&self, batch: MainViewModelSinkBatch) -> crate::Result<crate::view_model::BatchCompletion> { self.0.submit_batch(batch.0) }
@@ -518,6 +513,13 @@ impl MainViewModelSinkBatch {
     pub fn set_storage_percent_label(&mut self, value: impl AsRef<str>) { self.0.push_string(1, 93, 0, value); }
     pub fn set_storage_percent_label_error(&mut self, message: impl AsRef<str>) { self.0.push_string(18, 93, 0, message); }
     pub fn clear_storage_percent_label_error(&mut self) { self.0.push_clear_error(93); }
+    pub fn add_processes(&mut self, value: impl ProcessRowViewModel) { self.0.push_model(8, 1, 0, ProcessRowViewModelDispatch { model: value }); }
+    pub fn insert_processes(&mut self, index: i32, value: impl ProcessRowViewModel) { self.0.push_model(10, 1, index, ProcessRowViewModelDispatch { model: value }); }
+    pub fn replace_processes(&mut self, index: i32, value: impl ProcessRowViewModel) { self.0.push_model(12, 1, index, ProcessRowViewModelDispatch { model: value }); }
+    pub fn replace_processes_snapshot<M: ProcessRowViewModel>(&mut self, values: impl IntoIterator<Item = M>) { self.0.push_model_snapshot(1, values.into_iter().map(|value| ProcessRowViewModelDispatch { model: value })); }
+    pub fn remove_processes(&mut self, index: i32) { self.0.push_model_indices(13, 1, index, 0); }
+    pub fn move_processes(&mut self, from_index: i32, to_index: i32) { self.0.push_model_indices(14, 1, from_index, to_index); }
+    pub fn clear_processes(&mut self) { self.0.push_model_clear(1); }
     pub fn add_cpu_cores(&mut self, value: impl CpuCoreViewModel) { self.0.push_model(8, 2, 0, CpuCoreViewModelDispatch { model: value }); }
     pub fn insert_cpu_cores(&mut self, index: i32, value: impl CpuCoreViewModel) { self.0.push_model(10, 2, index, CpuCoreViewModelDispatch { model: value }); }
     pub fn replace_cpu_cores(&mut self, index: i32, value: impl CpuCoreViewModel) { self.0.push_model(12, 2, index, CpuCoreViewModelDispatch { model: value }); }
@@ -608,9 +610,6 @@ pub trait MainViewModel: Send + 'static {
     fn toggle_search_help(&mut self) -> crate::Result<()>;
     fn cycle_refresh_rate(&mut self) -> crate::Result<()>;
     fn close_overlays(&mut self) -> crate::Result<()>;
-    /// Realizes one page of `Processes`. Called on the runtime's dedicated
-    /// range thread, never on the UI thread, so it may take as long as the dataset needs.
-    fn request_processes_range(&mut self, request: crate::RangeRequest) -> crate::Result<()>;
 }
 
 struct MainViewModelDispatch<T: MainViewModel> { model: T }
@@ -700,12 +699,6 @@ impl<T: MainViewModel> crate::view_model::DynamicViewModel for MainViewModelDisp
             2 => self.model.kill(parameter.unwrap_or_default()),
             12 => self.model.copy_selected_row(),
             _ => Err(crate::Error::InvalidViewModelMember { kind: "command", id: command_id }),
-        }
-    }
-    fn request_range(&mut self, request: crate::RangeRequest) -> crate::Result<()> {
-        match request.collection_id {
-            1 => self.model.request_processes_range(request),
-            _ => Err(crate::Error::InvalidViewModelMember { kind: "collection", id: request.collection_id }),
         }
     }
 }

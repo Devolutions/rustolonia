@@ -99,7 +99,7 @@ Schema version: `5`
 | Property | 91 | `CpuPercentLabel` | `String` | Rust to managed |
 | Property | 92 | `MemoryPercentLabel` | `String` | Rust to managed |
 | Property | 93 | `StoragePercentLabel` | `String` | Rust to managed |
-| Collection | 1 | `Processes` | Model `ProcessRowViewModel` (windowed: page 64, 8 live pages) | Rust to managed |
+| Collection | 1 | `Processes` | Model `ProcessRowViewModel` | Rust to managed |
 | Collection | 2 | `CpuCores` | Model `CpuCoreViewModel` | Rust to managed |
 | Command | 1 | `Refresh` | None | Managed to Rust |
 | Async command | 2 | `Kill` | `SelectedKey` | Managed to Rust |

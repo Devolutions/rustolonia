@@ -10,7 +10,8 @@ param(
     # The rustolonia repository root (defaults to the checkout this script lives in).
     [string]$RustoloniaRoot = (Split-Path -Parent $PSScriptRoot),
     [switch]$SkipGenerate,
-    [switch]$UpdateLockFile
+    [switch]$UpdateLockFile,
+    [switch]$DeveloperTools
 )
 
 Set-StrictMode -Version Latest
@@ -209,7 +210,7 @@ function Invoke-ConsumerPackage {
     $bundle = $paths.outputDirectory
     $staging = New-IsolatedPackageStagingRoot -OutputRoot (Split-Path -Parent $bundle) -Rid $rid
     try {
-        $publishProperties = New-HostPublishProperties -ProducerRoot $ProducerRootPath -RustoloniaRoot $rustoloniaRootPath -Rid $rid -HostPlatform $($target.Platform)
+        $publishProperties = New-HostPublishProperties -ProducerRoot $ProducerRootPath -RustoloniaRoot $rustoloniaRootPath -Rid $rid -HostPlatform $($target.Platform) -DeveloperTools:$DeveloperTools
         $publishProperties += @(
             "-p:AvaloniaRustPresentationProjects=$($paths.presentationProject)",
             "-p:AvaloniaRustViewRegistryFile=$($paths.generatedRegistryFile)",
@@ -262,4 +263,7 @@ Initialize-LocalProducerSubmodule -RustoloniaRoot $rustoloniaRootPath -ProducerR
 $producer = (Resolve-Path -LiteralPath $ProducerRoot).Path
 $manifestPath = (Resolve-Path -LiteralPath $Manifest).Path
 $document = Read-ConsumerManifest $manifestPath
+if ($DeveloperTools) {
+    $document._paths.outputDirectory += '-devtools'
+}
 Invoke-ConsumerPackage $producer $document
