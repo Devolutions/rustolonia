@@ -26,8 +26,8 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
     private readonly RustVmBatchCoordinator _batch;
     private readonly Dictionary<string, string> _errors = new(StringComparer.Ordinal);
     private readonly RustVmInboundWriteTracker _inboundWrites = new();
-    private string _title = "Archive Explorer";
-    private string _status = "Open an archive to get started.";
+    private string _title = "Archive";
+    private string _status = "Ready.";
     private string _archiveName = "";
     private string _archiveKind = "";
     private string _entryCountLabel = "No archive loaded";
@@ -44,6 +44,20 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
     private string _totalsLabel = "";
     private bool _openAfterExtract = true;
     private bool _canTest = false;
+    private string _leftPath = "";
+    private string _rightPath = "";
+    private string _leftKind = "Folder";
+    private string _rightKind = "Folder";
+    private bool _leftCanGoUp = false;
+    private bool _rightCanGoUp = false;
+    private bool _leftActive = true;
+    private bool _rightActive = false;
+    private long _leftSelectedIndex = -1L;
+    private string _leftSelectedKey = "";
+    private long _rightSelectedIndex = -1L;
+    private string _rightSelectedKey = "";
+    private bool _canDelete = false;
+    private bool _canCopyToOther = false;
 
     /// <summary>Creates an adapter that dispatches and posts through <see cref="Dispatcher.UIThread"/>.</summary>
     public MainViewModelAdapter(IAvnRustViewModel model) : this(model, null, null) { }
@@ -81,6 +95,13 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
         NewArchiveCommand = new DelegateCommand(parameter => Check(_model.BeginAsync(13, null)));
         InvertSelectionCommand = new DelegateCommand(parameter => Check(_model.Execute(14, null)));
         CopyPathCommand = new DelegateCommand(parameter => Check(_model.BeginAsync(15, null)));
+        OpenFolderCommand = new DelegateCommand(parameter => Check(_model.BeginAsync(16, null)));
+        ActivateLeftCommand = new DelegateCommand(parameter => Check(_model.Execute(17, null)));
+        ActivateRightCommand = new DelegateCommand(parameter => Check(_model.Execute(18, null)));
+        DeleteSelectedCommand = new DelegateCommand(parameter => Check(_model.BeginAsync(19, null)));
+        CopyToOtherCommand = new DelegateCommand(parameter => Check(_model.BeginAsync(20, null)));
+        OpenComputerCommand = new DelegateCommand(parameter => Check(_model.Execute(21, null)));
+        OpenHomeCommand = new DelegateCommand(parameter => Check(_model.Execute(22, null)));
         try
         {
             Check(_model.Attach(this));
@@ -295,8 +316,187 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
         get => _canTest;
     }
 
+    public string LeftPath
+    {
+        get => _leftPath;
+    }
+
+    public string RightPath
+    {
+        get => _rightPath;
+    }
+
+    public string LeftKind
+    {
+        get => _leftKind;
+    }
+
+    public string RightKind
+    {
+        get => _rightKind;
+    }
+
+    public bool LeftCanGoUp
+    {
+        get => _leftCanGoUp;
+    }
+
+    public bool RightCanGoUp
+    {
+        get => _rightCanGoUp;
+    }
+
+    public bool LeftActive
+    {
+        get => _leftActive;
+    }
+
+    public bool RightActive
+    {
+        get => _rightActive;
+    }
+
+    public long LeftSelectedIndex
+    {
+        get => _leftSelectedIndex;
+        set
+        {
+            var accepted = value;
+            if (Equals(_leftSelectedIndex, accepted))
+                return;
+            var previous = _leftSelectedIndex;
+            var inbound = _inboundWrites.Begin(27);
+            try
+            {
+                Check(_model.SetInteger(27, accepted));
+                if (!_inboundWrites.WasPublished(inbound))
+                {
+                    _inboundWrites.CommitLocal(27);
+                    SetField(ref _leftSelectedIndex, accepted, nameof(LeftSelectedIndex));
+                }
+            }
+            catch
+            {
+                if (_inboundWrites.ShouldRollback(inbound))
+                {
+                    _inboundWrites.CommitLocal(27);
+                    SetField(ref _leftSelectedIndex, previous, nameof(LeftSelectedIndex));
+                }
+                throw;
+            }
+            finally { _inboundWrites.End(inbound); }
+        }
+    }
+
+    public string LeftSelectedKey
+    {
+        get => _leftSelectedKey;
+        set
+        {
+            var accepted = value ?? "";
+            if (Equals(_leftSelectedKey, accepted))
+                return;
+            var previous = _leftSelectedKey;
+            var inbound = _inboundWrites.Begin(28);
+            try
+            {
+                Check(_model.SetString(28, accepted));
+                if (!_inboundWrites.WasPublished(inbound))
+                {
+                    _inboundWrites.CommitLocal(28);
+                    SetField(ref _leftSelectedKey, accepted, nameof(LeftSelectedKey));
+                }
+            }
+            catch
+            {
+                if (_inboundWrites.ShouldRollback(inbound))
+                {
+                    _inboundWrites.CommitLocal(28);
+                    SetField(ref _leftSelectedKey, previous, nameof(LeftSelectedKey));
+                }
+                throw;
+            }
+            finally { _inboundWrites.End(inbound); }
+        }
+    }
+
+    public long RightSelectedIndex
+    {
+        get => _rightSelectedIndex;
+        set
+        {
+            var accepted = value;
+            if (Equals(_rightSelectedIndex, accepted))
+                return;
+            var previous = _rightSelectedIndex;
+            var inbound = _inboundWrites.Begin(29);
+            try
+            {
+                Check(_model.SetInteger(29, accepted));
+                if (!_inboundWrites.WasPublished(inbound))
+                {
+                    _inboundWrites.CommitLocal(29);
+                    SetField(ref _rightSelectedIndex, accepted, nameof(RightSelectedIndex));
+                }
+            }
+            catch
+            {
+                if (_inboundWrites.ShouldRollback(inbound))
+                {
+                    _inboundWrites.CommitLocal(29);
+                    SetField(ref _rightSelectedIndex, previous, nameof(RightSelectedIndex));
+                }
+                throw;
+            }
+            finally { _inboundWrites.End(inbound); }
+        }
+    }
+
+    public string RightSelectedKey
+    {
+        get => _rightSelectedKey;
+        set
+        {
+            var accepted = value ?? "";
+            if (Equals(_rightSelectedKey, accepted))
+                return;
+            var previous = _rightSelectedKey;
+            var inbound = _inboundWrites.Begin(30);
+            try
+            {
+                Check(_model.SetString(30, accepted));
+                if (!_inboundWrites.WasPublished(inbound))
+                {
+                    _inboundWrites.CommitLocal(30);
+                    SetField(ref _rightSelectedKey, accepted, nameof(RightSelectedKey));
+                }
+            }
+            catch
+            {
+                if (_inboundWrites.ShouldRollback(inbound))
+                {
+                    _inboundWrites.CommitLocal(30);
+                    SetField(ref _rightSelectedKey, previous, nameof(RightSelectedKey));
+                }
+                throw;
+            }
+            finally { _inboundWrites.End(inbound); }
+        }
+    }
+
+    public bool CanDelete
+    {
+        get => _canDelete;
+    }
+
+    public bool CanCopyToOther
+    {
+        get => _canCopyToOther;
+    }
+
     public BatchObservableCollection<string> RecentFiles { get; } = [];
-    public BatchObservableCollection<global::ArchiveTool.Presentation.Generated.EntryRowViewModelAdapter> Entries { get; } = [];
+    public BatchObservableCollection<global::ArchiveTool.Presentation.Generated.EntryRowViewModelAdapter> LeftEntries { get; } = [];
+    public BatchObservableCollection<global::ArchiveTool.Presentation.Generated.EntryRowViewModelAdapter> RightEntries { get; } = [];
 
     public DelegateCommand OpenFileCommand { get; }
     public DelegateCommand ExtractSelectedCommand { get; }
@@ -313,6 +513,13 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
     public DelegateCommand NewArchiveCommand { get; }
     public DelegateCommand InvertSelectionCommand { get; }
     public DelegateCommand CopyPathCommand { get; }
+    public DelegateCommand OpenFolderCommand { get; }
+    public DelegateCommand ActivateLeftCommand { get; }
+    public DelegateCommand ActivateRightCommand { get; }
+    public DelegateCommand DeleteSelectedCommand { get; }
+    public DelegateCommand CopyToOtherCommand { get; }
+    public DelegateCommand OpenComputerCommand { get; }
+    public DelegateCommand OpenHomeCommand { get; }
 
     public bool HasErrors => _errors.Count > 0;
 
@@ -337,6 +544,12 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
             13 => Apply(() => { var converted = value ?? ""; _inboundWrites.CommitPublication(propertyId, inbound); if (!Equals(_selectedCountLabel, converted)) SetField(ref _selectedCountLabel, converted, nameof(SelectedCountLabel)); }),
             14 => Apply(() => { var converted = value ?? ""; _inboundWrites.CommitPublication(propertyId, inbound); if (!Equals(_currentPath, converted)) SetField(ref _currentPath, converted, nameof(CurrentPath)); }),
             16 => Apply(() => { var converted = value ?? ""; _inboundWrites.CommitPublication(propertyId, inbound); if (!Equals(_totalsLabel, converted)) SetField(ref _totalsLabel, converted, nameof(TotalsLabel)); }),
+            19 => Apply(() => { var converted = value ?? ""; _inboundWrites.CommitPublication(propertyId, inbound); if (!Equals(_leftPath, converted)) SetField(ref _leftPath, converted, nameof(LeftPath)); }),
+            20 => Apply(() => { var converted = value ?? ""; _inboundWrites.CommitPublication(propertyId, inbound); if (!Equals(_rightPath, converted)) SetField(ref _rightPath, converted, nameof(RightPath)); }),
+            21 => Apply(() => { var converted = value ?? ""; _inboundWrites.CommitPublication(propertyId, inbound); if (!Equals(_leftKind, converted)) SetField(ref _leftKind, converted, nameof(LeftKind)); }),
+            22 => Apply(() => { var converted = value ?? ""; _inboundWrites.CommitPublication(propertyId, inbound); if (!Equals(_rightKind, converted)) SetField(ref _rightKind, converted, nameof(RightKind)); }),
+            28 => Apply(() => { var converted = value ?? ""; _inboundWrites.CommitPublication(propertyId, inbound); if (!Equals(_leftSelectedKey, converted)) SetField(ref _leftSelectedKey, converted, nameof(LeftSelectedKey)); }),
+            30 => Apply(() => { var converted = value ?? ""; _inboundWrites.CommitPublication(propertyId, inbound); if (!Equals(_rightSelectedKey, converted)) SetField(ref _rightSelectedKey, converted, nameof(RightSelectedKey)); }),
             _ => unchecked((int)0x80070057),
         };
     }
@@ -347,6 +560,8 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
         return propertyId switch
         {
             7 => Apply(() => { var converted = value; _inboundWrites.CommitPublication(propertyId, inbound); if (!Equals(_selectedIndex, converted)) SetField(ref _selectedIndex, converted, nameof(SelectedIndex)); }),
+            27 => Apply(() => { var converted = value; _inboundWrites.CommitPublication(propertyId, inbound); if (!Equals(_leftSelectedIndex, converted)) SetField(ref _leftSelectedIndex, converted, nameof(LeftSelectedIndex)); }),
+            29 => Apply(() => { var converted = value; _inboundWrites.CommitPublication(propertyId, inbound); if (!Equals(_rightSelectedIndex, converted)) SetField(ref _rightSelectedIndex, converted, nameof(RightSelectedIndex)); }),
             _ => unchecked((int)0x80070057),
         };
     }
@@ -362,6 +577,12 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
             15 => Apply(() => { var converted = value != 0; _inboundWrites.CommitPublication(propertyId, inbound); if (!Equals(_canGoUp, converted)) SetField(ref _canGoUp, converted, nameof(CanGoUp)); }),
             17 => Apply(() => { var converted = value != 0; _inboundWrites.CommitPublication(propertyId, inbound); if (!Equals(_openAfterExtract, converted)) SetField(ref _openAfterExtract, converted, nameof(OpenAfterExtract)); }),
             18 => Apply(() => { var converted = value != 0; _inboundWrites.CommitPublication(propertyId, inbound); if (!Equals(_canTest, converted)) SetField(ref _canTest, converted, nameof(CanTest)); }),
+            23 => Apply(() => { var converted = value != 0; _inboundWrites.CommitPublication(propertyId, inbound); if (!Equals(_leftCanGoUp, converted)) SetField(ref _leftCanGoUp, converted, nameof(LeftCanGoUp)); }),
+            24 => Apply(() => { var converted = value != 0; _inboundWrites.CommitPublication(propertyId, inbound); if (!Equals(_rightCanGoUp, converted)) SetField(ref _rightCanGoUp, converted, nameof(RightCanGoUp)); }),
+            25 => Apply(() => { var converted = value != 0; _inboundWrites.CommitPublication(propertyId, inbound); if (!Equals(_leftActive, converted)) SetField(ref _leftActive, converted, nameof(LeftActive)); }),
+            26 => Apply(() => { var converted = value != 0; _inboundWrites.CommitPublication(propertyId, inbound); if (!Equals(_rightActive, converted)) SetField(ref _rightActive, converted, nameof(RightActive)); }),
+            31 => Apply(() => { var converted = value != 0; _inboundWrites.CommitPublication(propertyId, inbound); if (!Equals(_canDelete, converted)) SetField(ref _canDelete, converted, nameof(CanDelete)); }),
+            32 => Apply(() => { var converted = value != 0; _inboundWrites.CommitPublication(propertyId, inbound); if (!Equals(_canCopyToOther, converted)) SetField(ref _canCopyToOther, converted, nameof(CanCopyToOther)); }),
             _ => unchecked((int)0x80070057),
         };
     }
@@ -391,7 +612,8 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
 
     public int AddModel(int collectionId, IAvnRustViewModel? model) => collectionId switch
     {
-        2 => model is null ? unchecked((int)0x80070057) : Apply(() => Entries.Add(new global::ArchiveTool.Presentation.Generated.EntryRowViewModelAdapter(model, _dispatch, _post))),
+        2 => model is null ? unchecked((int)0x80070057) : Apply(() => LeftEntries.Add(new global::ArchiveTool.Presentation.Generated.EntryRowViewModelAdapter(model, _dispatch, _post))),
+        3 => model is null ? unchecked((int)0x80070057) : Apply(() => RightEntries.Add(new global::ArchiveTool.Presentation.Generated.EntryRowViewModelAdapter(model, _dispatch, _post))),
         _ => unchecked((int)0x80070057),
     };
 
@@ -403,7 +625,8 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
 
     public int InsertModel(int collectionId, int index, IAvnRustViewModel? model) => collectionId switch
     {
-        2 => model is null ? unchecked((int)0x80070057) : Apply(() => { if ((uint)index > (uint)Entries.Count) return unchecked((int)0x80070057); Entries.Insert(index, new global::ArchiveTool.Presentation.Generated.EntryRowViewModelAdapter(model, _dispatch, _post)); return 0; }),
+        2 => model is null ? unchecked((int)0x80070057) : Apply(() => { if ((uint)index > (uint)LeftEntries.Count) return unchecked((int)0x80070057); LeftEntries.Insert(index, new global::ArchiveTool.Presentation.Generated.EntryRowViewModelAdapter(model, _dispatch, _post)); return 0; }),
+        3 => model is null ? unchecked((int)0x80070057) : Apply(() => { if ((uint)index > (uint)RightEntries.Count) return unchecked((int)0x80070057); RightEntries.Insert(index, new global::ArchiveTool.Presentation.Generated.EntryRowViewModelAdapter(model, _dispatch, _post)); return 0; }),
         _ => unchecked((int)0x80070057),
     };
 
@@ -417,9 +640,17 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
     {
         2 => model is null ? unchecked((int)0x80070057) : Apply(() =>
         {
-            if ((uint)index >= (uint)Entries.Count) return unchecked((int)0x80070057);
-            var previous = Entries[index];
-            Entries[index] = new global::ArchiveTool.Presentation.Generated.EntryRowViewModelAdapter(model, _dispatch, _post);
+            if ((uint)index >= (uint)LeftEntries.Count) return unchecked((int)0x80070057);
+            var previous = LeftEntries[index];
+            LeftEntries[index] = new global::ArchiveTool.Presentation.Generated.EntryRowViewModelAdapter(model, _dispatch, _post);
+            previous.Dispose();
+            return 0;
+        }),
+        3 => model is null ? unchecked((int)0x80070057) : Apply(() =>
+        {
+            if ((uint)index >= (uint)RightEntries.Count) return unchecked((int)0x80070057);
+            var previous = RightEntries[index];
+            RightEntries[index] = new global::ArchiveTool.Presentation.Generated.EntryRowViewModelAdapter(model, _dispatch, _post);
             previous.Dispose();
             return 0;
         }),
@@ -431,9 +662,17 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
         1 => Apply(() => { if ((uint)index >= (uint)RecentFiles.Count) return unchecked((int)0x80070057); RecentFiles.RemoveAt(index); return 0; }),
         2 => Apply(() =>
         {
-            if ((uint)index >= (uint)Entries.Count) return unchecked((int)0x80070057);
-            var item = Entries[index];
-            Entries.RemoveAt(index);
+            if ((uint)index >= (uint)LeftEntries.Count) return unchecked((int)0x80070057);
+            var item = LeftEntries[index];
+            LeftEntries.RemoveAt(index);
+            item.Dispose();
+            return 0;
+        }),
+        3 => Apply(() =>
+        {
+            if ((uint)index >= (uint)RightEntries.Count) return unchecked((int)0x80070057);
+            var item = RightEntries[index];
+            RightEntries.RemoveAt(index);
             item.Dispose();
             return 0;
         }),
@@ -443,7 +682,8 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
     public int MoveItem(int collectionId, int fromIndex, int toIndex) => collectionId switch
     {
         1 => Apply(() => { if ((uint)fromIndex >= (uint)RecentFiles.Count || (uint)toIndex >= (uint)RecentFiles.Count) return unchecked((int)0x80070057); RecentFiles.Move(fromIndex, toIndex); return 0; }),
-        2 => Apply(() => { if ((uint)fromIndex >= (uint)Entries.Count || (uint)toIndex >= (uint)Entries.Count) return unchecked((int)0x80070057); Entries.Move(fromIndex, toIndex); return 0; }),
+        2 => Apply(() => { if ((uint)fromIndex >= (uint)LeftEntries.Count || (uint)toIndex >= (uint)LeftEntries.Count) return unchecked((int)0x80070057); LeftEntries.Move(fromIndex, toIndex); return 0; }),
+        3 => Apply(() => { if ((uint)fromIndex >= (uint)RightEntries.Count || (uint)toIndex >= (uint)RightEntries.Count) return unchecked((int)0x80070057); RightEntries.Move(fromIndex, toIndex); return 0; }),
         _ => unchecked((int)0x80070057),
     };
 
@@ -452,8 +692,13 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
         1 => Apply(RecentFiles.Clear),
         2 => Apply(() =>
         {
-            foreach (var item in Entries) item.Dispose();
-            Entries.Clear();
+            foreach (var item in LeftEntries) item.Dispose();
+            LeftEntries.Clear();
+        }),
+        3 => Apply(() =>
+        {
+            foreach (var item in RightEntries) item.Dispose();
+            RightEntries.Clear();
         }),
         _ => unchecked((int)0x80070057),
     };
@@ -475,6 +720,13 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
         13 => Apply(() => NewArchiveCommand.SetEnabled(enabled != 0)),
         14 => Apply(() => InvertSelectionCommand.SetEnabled(enabled != 0)),
         15 => Apply(() => CopyPathCommand.SetEnabled(enabled != 0)),
+        16 => Apply(() => OpenFolderCommand.SetEnabled(enabled != 0)),
+        17 => Apply(() => ActivateLeftCommand.SetEnabled(enabled != 0)),
+        18 => Apply(() => ActivateRightCommand.SetEnabled(enabled != 0)),
+        19 => Apply(() => DeleteSelectedCommand.SetEnabled(enabled != 0)),
+        20 => Apply(() => CopyToOtherCommand.SetEnabled(enabled != 0)),
+        21 => Apply(() => OpenComputerCommand.SetEnabled(enabled != 0)),
+        22 => Apply(() => OpenHomeCommand.SetEnabled(enabled != 0)),
         _ => unchecked((int)0x80070057),
     };
 
@@ -498,6 +750,20 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
         16 => Apply(() => SetError(nameof(TotalsLabel), message)),
         17 => Apply(() => SetError(nameof(OpenAfterExtract), message)),
         18 => Apply(() => SetError(nameof(CanTest), message)),
+        19 => Apply(() => SetError(nameof(LeftPath), message)),
+        20 => Apply(() => SetError(nameof(RightPath), message)),
+        21 => Apply(() => SetError(nameof(LeftKind), message)),
+        22 => Apply(() => SetError(nameof(RightKind), message)),
+        23 => Apply(() => SetError(nameof(LeftCanGoUp), message)),
+        24 => Apply(() => SetError(nameof(RightCanGoUp), message)),
+        25 => Apply(() => SetError(nameof(LeftActive), message)),
+        26 => Apply(() => SetError(nameof(RightActive), message)),
+        27 => Apply(() => SetError(nameof(LeftSelectedIndex), message)),
+        28 => Apply(() => SetError(nameof(LeftSelectedKey), message)),
+        29 => Apply(() => SetError(nameof(RightSelectedIndex), message)),
+        30 => Apply(() => SetError(nameof(RightSelectedKey), message)),
+        31 => Apply(() => SetError(nameof(CanDelete), message)),
+        32 => Apply(() => SetError(nameof(CanCopyToOther), message)),
         _ => unchecked((int)0x80070057),
     };
 
@@ -520,8 +786,17 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
             var staged = new List<global::ArchiveTool.Presentation.Generated.EntryRowViewModelAdapter>();
             try { foreach (var value in values) staged.Add(new global::ArchiveTool.Presentation.Generated.EntryRowViewModelAdapter(value, _dispatch, _post)); }
             catch { foreach (var value in staged) TryDispose(value); throw; }
-            var previous = Entries.ToArray();
-            Entries.ReplaceSnapshot(staged);
+            var previous = LeftEntries.ToArray();
+            LeftEntries.ReplaceSnapshot(staged);
+            foreach (var value in previous) TryDispose(value);
+        }),
+        3 => Apply(() =>
+        {
+            var staged = new List<global::ArchiveTool.Presentation.Generated.EntryRowViewModelAdapter>();
+            try { foreach (var value in values) staged.Add(new global::ArchiveTool.Presentation.Generated.EntryRowViewModelAdapter(value, _dispatch, _post)); }
+            catch { foreach (var value in staged) TryDispose(value); throw; }
+            var previous = RightEntries.ToArray();
+            RightEntries.ReplaceSnapshot(staged);
             foreach (var value in previous) TryDispose(value);
         }),
         _ => unchecked((int)0x80070057),
@@ -549,6 +824,20 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
             16 => new RustVmBatchProperty(nameof(TotalsLabel), RustVmValueWireKind.String, false, false),
             17 => new RustVmBatchProperty(nameof(OpenAfterExtract), RustVmValueWireKind.Boolean, false, false),
             18 => new RustVmBatchProperty(nameof(CanTest), RustVmValueWireKind.Boolean, false, false),
+            19 => new RustVmBatchProperty(nameof(LeftPath), RustVmValueWireKind.String, false, false),
+            20 => new RustVmBatchProperty(nameof(RightPath), RustVmValueWireKind.String, false, false),
+            21 => new RustVmBatchProperty(nameof(LeftKind), RustVmValueWireKind.String, false, false),
+            22 => new RustVmBatchProperty(nameof(RightKind), RustVmValueWireKind.String, false, false),
+            23 => new RustVmBatchProperty(nameof(LeftCanGoUp), RustVmValueWireKind.Boolean, false, false),
+            24 => new RustVmBatchProperty(nameof(RightCanGoUp), RustVmValueWireKind.Boolean, false, false),
+            25 => new RustVmBatchProperty(nameof(LeftActive), RustVmValueWireKind.Boolean, false, false),
+            26 => new RustVmBatchProperty(nameof(RightActive), RustVmValueWireKind.Boolean, false, false),
+            27 => new RustVmBatchProperty(nameof(LeftSelectedIndex), RustVmValueWireKind.Integer, false, false),
+            28 => new RustVmBatchProperty(nameof(LeftSelectedKey), RustVmValueWireKind.String, false, false),
+            29 => new RustVmBatchProperty(nameof(RightSelectedIndex), RustVmValueWireKind.Integer, false, false),
+            30 => new RustVmBatchProperty(nameof(RightSelectedKey), RustVmValueWireKind.String, false, false),
+            31 => new RustVmBatchProperty(nameof(CanDelete), RustVmValueWireKind.Boolean, false, false),
+            32 => new RustVmBatchProperty(nameof(CanCopyToOther), RustVmValueWireKind.Boolean, false, false),
             _ => default,
         };
         return property.Name is not null;
@@ -559,7 +848,8 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
         collection = collectionId switch
         {
             1 => new RustVmBatchCollectionInfo(nameof(RecentFiles), RustVmValueWireKind.String, RecentFiles),
-            2 => new RustVmBatchCollectionInfo(nameof(Entries), RustVmValueWireKind.Model, Entries),
+            2 => new RustVmBatchCollectionInfo(nameof(LeftEntries), RustVmValueWireKind.Model, LeftEntries),
+            3 => new RustVmBatchCollectionInfo(nameof(RightEntries), RustVmValueWireKind.Model, RightEntries),
             _ => default,
         };
         return collection.Items is not null;
@@ -584,6 +874,13 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
             13 => NewArchiveCommand,
             14 => InvertSelectionCommand,
             15 => CopyPathCommand,
+            16 => OpenFolderCommand,
+            17 => ActivateLeftCommand,
+            18 => ActivateRightCommand,
+            19 => DeleteSelectedCommand,
+            20 => CopyToOtherCommand,
+            21 => OpenComputerCommand,
+            22 => OpenHomeCommand,
             _ => null!,
         };
         return command is not null;
@@ -602,6 +899,7 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
     IDisposable IRustVmBatchTarget.CreateNestedElement(int collectionId, IAvnRustViewModel model) => collectionId switch
     {
         2 => new global::ArchiveTool.Presentation.Generated.EntryRowViewModelAdapter(model, _dispatch, _post),
+        3 => new global::ArchiveTool.Presentation.Generated.EntryRowViewModelAdapter(model, _dispatch, _post),
         _ => throw new ArgumentOutOfRangeException(nameof(collectionId)),
     };
 
@@ -736,6 +1034,104 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
                 _canTest = next;
                 return true;
             }
+            case 19:
+            {
+                var next = value.Text ?? "";
+                if (Equals(_leftPath, next)) return false;
+                _leftPath = next;
+                return true;
+            }
+            case 20:
+            {
+                var next = value.Text ?? "";
+                if (Equals(_rightPath, next)) return false;
+                _rightPath = next;
+                return true;
+            }
+            case 21:
+            {
+                var next = value.Text ?? "";
+                if (Equals(_leftKind, next)) return false;
+                _leftKind = next;
+                return true;
+            }
+            case 22:
+            {
+                var next = value.Text ?? "";
+                if (Equals(_rightKind, next)) return false;
+                _rightKind = next;
+                return true;
+            }
+            case 23:
+            {
+                var next = value.Boolean;
+                if (Equals(_leftCanGoUp, next)) return false;
+                _leftCanGoUp = next;
+                return true;
+            }
+            case 24:
+            {
+                var next = value.Boolean;
+                if (Equals(_rightCanGoUp, next)) return false;
+                _rightCanGoUp = next;
+                return true;
+            }
+            case 25:
+            {
+                var next = value.Boolean;
+                if (Equals(_leftActive, next)) return false;
+                _leftActive = next;
+                return true;
+            }
+            case 26:
+            {
+                var next = value.Boolean;
+                if (Equals(_rightActive, next)) return false;
+                _rightActive = next;
+                return true;
+            }
+            case 27:
+            {
+                var next = value.Integer;
+                if (Equals(_leftSelectedIndex, next)) return false;
+                _leftSelectedIndex = next;
+                return true;
+            }
+            case 28:
+            {
+                var next = value.Text ?? "";
+                if (Equals(_leftSelectedKey, next)) return false;
+                _leftSelectedKey = next;
+                return true;
+            }
+            case 29:
+            {
+                var next = value.Integer;
+                if (Equals(_rightSelectedIndex, next)) return false;
+                _rightSelectedIndex = next;
+                return true;
+            }
+            case 30:
+            {
+                var next = value.Text ?? "";
+                if (Equals(_rightSelectedKey, next)) return false;
+                _rightSelectedKey = next;
+                return true;
+            }
+            case 31:
+            {
+                var next = value.Boolean;
+                if (Equals(_canDelete, next)) return false;
+                _canDelete = next;
+                return true;
+            }
+            case 32:
+            {
+                var next = value.Boolean;
+                if (Equals(_canCopyToOther, next)) return false;
+                _canCopyToOther = next;
+                return true;
+            }
             default: return false;
         }
     }
@@ -745,8 +1141,10 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
 
     bool IRustVmTableSelectionBatchTarget.IsPostCollectionPropertyNotification(string propertyName, IReadOnlySet<string> changedCollections) => propertyName switch
     {
-        nameof(SelectedIndex) => changedCollections.Contains(nameof(Entries)),
-        nameof(SelectedKey) => changedCollections.Contains(nameof(Entries)),
+        nameof(LeftSelectedIndex) => changedCollections.Contains(nameof(LeftEntries)),
+        nameof(LeftSelectedKey) => changedCollections.Contains(nameof(LeftEntries)),
+        nameof(RightSelectedIndex) => changedCollections.Contains(nameof(RightEntries)),
+        nameof(RightSelectedKey) => changedCollections.Contains(nameof(RightEntries)),
         _ => false,
     };
 
@@ -783,7 +1181,8 @@ public sealed partial class MainViewModelAdapter : IAvnRustVmSink, IAvnRustVmSin
 
     private void DisposeNestedAdapters()
     {
-        foreach (var item in Entries) TryDispose(item);
+        foreach (var item in LeftEntries) TryDispose(item);
+        foreach (var item in RightEntries) TryDispose(item);
     }
 
     private static void TryDispose(IDisposable? value)

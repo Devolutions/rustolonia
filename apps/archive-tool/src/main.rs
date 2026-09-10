@@ -20,12 +20,14 @@ pub mod value_converter {
 #[path = "../generated/generated_view_models.rs"]
 mod generated_view_models;
 mod archive;
+mod fs_pane;
+mod panes;
 
 use archive::{
-    archive_totals, children_of, create_archive_from_folder, extract_entries, is_nested_archive,
-    list_entries, parent_dir, smart_extract_destination, ArchiveEntry, ArchiveKind,
-    ExtractReport,
+    archive_totals, create_archive_from_folder, extract_entries, is_nested_archive, list_entries,
+    smart_extract_destination, ArchiveEntry, ArchiveKind, ExtractReport,
 };
+use panes::{Pane, Side};
 use avalonia::{
     ActivationEvent, App, DragDropEffects, FileDropEvent, FileTypeFilter, FolderPickerOptions,
     OpenFilePickerOptions, PickerOutcome, SaveFilePickerOptions, Window,
@@ -34,8 +36,6 @@ use generated_view_models::{
     mount_main_window, EntryRowViewModel, EntryRowViewModelSink, MainViewModel, MainViewModelSink,
     MAIN_VIEW_MODEL_RECENT_FILES_CAPACITY,
 };
-use std::cmp::Ordering as CmpOrdering;
-use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::{
@@ -43,34 +43,25 @@ use std::sync::{
     Arc, Mutex,
 };
 
-const APP_TITLE: &str = "Archive Explorer";
+const APP_TITLE: &str = "Archive";
 static NEXT_LOAD_GENERATION: AtomicI64 = AtomicI64::new(0);
 static NEXT_EXTRACT_GENERATION: AtomicI64 = AtomicI64::new(0);
-
-struct ArchiveState {
-    path: PathBuf,
-    name: String,
-    kind: ArchiveKind,
-    entries: Vec<ArchiveEntry>,
-}
 
 struct Shared {
     sink: Option<MainViewModelSink>,
     scope: Option<AppScope>,
     window: Option<Window>,
-    archive: Option<ArchiveState>,
+    left: Pane,
+    right: Pane,
+    active: Side,
     status: String,
     loading: bool,
     recent: RecentFileList,
     load_generation: i64,
     extract_generation: i64,
     filter_text: String,
-    selected_paths: HashSet<String>,
     selected_index: i64,
     selected_key: String,
-    current_dir: String,
-    sort_column: String,
-    sort_descending: bool,
     open_after_extract: bool,
 }
 
@@ -80,27 +71,48 @@ impl Shared {
             sink: None,
             scope: None,
             window: None,
-            archive: None,
+            left: Pane::home(),
+            right: Pane::folder(fs_pane::downloads_dir()),
+            active: Side::Left,
             status,
             loading: false,
             recent,
             load_generation: 0,
             extract_generation: 0,
             filter_text: String::new(),
-            selected_paths: HashSet::new(),
             selected_index: -1,
             selected_key: String::new(),
-            current_dir: String::new(),
-            sort_column: "Name".to_string(),
-            sort_descending: false,
             open_after_extract: true,
         }
+    }
+
+    fn pane(&self, side: Side) -> &Pane {
+        match side {
+            Side::Left => &self.left,
+            Side::Right => &self.right,
+        }
+    }
+
+    fn pane_mut(&mut self, side: Side) -> &mut Pane {
+        match side {
+            Side::Left => &mut self.left,
+            Side::Right => &mut self.right,
+        }
+    }
+
+    fn active_pane(&self) -> &Pane {
+        self.pane(self.active)
+    }
+
+    fn active_pane_mut(&mut self) -> &mut Pane {
+        self.pane_mut(self.active)
     }
 }
 
 struct EntryRowModel {
     entry: ArchiveEntry,
     selected: bool,
+    side: Side,
     shared: Arc<Mutex<Shared>>,
 }
 
@@ -124,26 +136,34 @@ impl EntryRowViewModel for EntryRowModel {
     }
 
     fn open(&mut self) -> Result<()> {
-        open_entry(&self.shared, &self.entry)
+        open_entry(&self.shared, self.side, &self.entry)
     }
 
     fn set_is_selected(&mut self, value: bool) -> Result<()> {
         self.selected = value;
-        let (sink, label, can_extract) = {
+        let (sink, label, can_extract, can_delete, can_copy) = {
             let mut shared = self.shared.lock().expect("shared state lock poisoned");
+            shared.active = self.side;
+            let pane = shared.pane_mut(self.side);
             if value {
-                shared.selected_paths.insert(self.entry.path.clone());
+                pane.selected_paths.insert(self.entry.path.clone());
             } else {
-                shared.selected_paths.remove(&self.entry.path);
+                pane.selected_paths.remove(&self.entry.path);
             }
-            let label = selected_count_label(shared.selected_paths.len());
+            let label = selected_count_label(pane.selected_paths.len());
             let can_extract = can_extract_selected(&shared);
-            (shared.sink.clone(), label, can_extract)
+            let can_delete = can_delete_selected(&shared);
+            let can_copy = can_copy_to_other(&shared);
+            (shared.sink.clone(), label, can_extract, can_delete, can_copy)
         };
         if let Some(sink) = sink {
             sink.set_selected_count_label(label)?;
             sink.set_can_extract_selected(can_extract)?;
             sink.set_extract_selected_enabled(can_extract)?;
+            sink.set_can_delete(can_delete)?;
+            sink.set_can_copy_to_other(can_copy)?;
+            sink.set_left_active(self.side == Side::Left)?;
+            sink.set_right_active(self.side == Side::Right)?;
         }
         Ok(())
     }
@@ -247,14 +267,15 @@ impl MainViewModel for Model {
     fn select_all(&mut self) -> Result<()> {
         {
             let mut shared = self.shared();
-            let Some(archive) = shared.archive.as_ref() else {
-                return Ok(());
-            };
-            let paths: Vec<String> = visible_entries(&shared, archive)
+            let filter = shared.filter_text.clone();
+            let active = shared.active;
+            let paths: Vec<String> = shared
+                .pane(active)
+                .visible(&filter)
                 .into_iter()
-                .map(|entry| entry.path.clone())
+                .map(|entry| entry.path)
                 .collect();
-            shared.selected_paths = paths.into_iter().collect();
+            shared.pane_mut(active).selected_paths = paths.into_iter().collect();
         }
         publish_state(&self.shared)
     }
@@ -262,7 +283,7 @@ impl MainViewModel for Model {
     fn clear_selection(&mut self) -> Result<()> {
         {
             let mut shared = self.shared();
-            shared.selected_paths.clear();
+            shared.active_pane_mut().clear_selection();
         }
         publish_state(&self.shared)
     }
@@ -271,11 +292,12 @@ impl MainViewModel for Model {
         {
             let mut shared = self.shared();
             let column = value.split(':').next().unwrap_or(&value).to_string();
-            if shared.sort_column == column {
-                shared.sort_descending = !shared.sort_descending;
+            let pane = shared.active_pane_mut();
+            if pane.sort_column == column {
+                pane.sort_descending = !pane.sort_descending;
             } else {
-                shared.sort_column = column;
-                shared.sort_descending = false;
+                pane.sort_column = column;
+                pane.sort_descending = false;
             }
         }
         publish_state(&self.shared)
@@ -284,54 +306,46 @@ impl MainViewModel for Model {
     fn go_up(&mut self) -> Result<()> {
         {
             let mut shared = self.shared();
-            if shared.current_dir.is_empty() {
-                return Ok(());
-            }
-            shared.current_dir = parent_dir(&shared.current_dir);
-            shared.selected_paths.clear();
-            shared.selected_index = -1;
-            shared.selected_key.clear();
+            shared.active_pane_mut().go_up();
         }
         publish_state(&self.shared)
     }
 
     fn open_item(&mut self) -> Result<()> {
-        let entry = {
+        let (side, entry) = {
             let shared = self.shared();
-            let Some(archive) = shared.archive.as_ref() else {
-                return Ok(());
-            };
-            let key = if shared.selected_key.is_empty() {
+            let pane = shared.active_pane();
+            let key = if pane.selected_key.is_empty() {
                 return Ok(());
             } else {
-                shared.selected_key.clone()
+                pane.selected_key.clone()
             };
-            archive
-                .entries
-                .iter()
-                .find(|entry| entry.path == key)
-                .cloned()
+            let entry = pane
+                .visible(&shared.filter_text)
+                .into_iter()
+                .find(|entry| entry.path == key);
+            (shared.active, entry)
         };
         let Some(entry) = entry else {
             return Ok(());
         };
-        open_entry(&self.shared, &entry)
+        open_entry(&self.shared, side, &entry)
     }
 
     fn extract_here(&mut self) -> Result<()> {
         let (archive_path, dest, names) = {
             let shared = self.shared();
-            let Some(archive) = shared.archive.as_ref() else {
+            let Some(path) = shared.active_pane().archive_path().map(Path::to_path_buf) else {
                 return Ok(());
             };
-            let parent = archive
-                .path
+            let entries = shared.active_pane().archive_entries().unwrap_or(&[]).to_vec();
+            let parent = path
                 .parent()
                 .map(Path::to_path_buf)
                 .unwrap_or_else(|| PathBuf::from("."));
-            let dest = smart_extract_destination(&parent, &archive_stem(&archive.path), &archive.entries);
-            let names = extract_names(&shared, shared.selected_paths.is_empty());
-            (archive.path.clone(), dest, names)
+            let dest = smart_extract_destination(&parent, &archive_stem(&path), &entries);
+            let names = extract_names(&shared, shared.active_pane().selected_paths.is_empty());
+            (path, dest, names)
         };
         if names.is_empty() {
             return set_status(&self.shared, "Nothing to extract.");
@@ -342,10 +356,10 @@ impl MainViewModel for Model {
     fn test_archive(&mut self) -> Result<()> {
         let path = {
             let shared = self.shared();
-            let Some(archive) = shared.archive.as_ref() else {
+            let Some(path) = shared.active_pane().archive_path().map(Path::to_path_buf) else {
                 return Ok(());
             };
-            archive.path.clone()
+            path
         };
         let generation = {
             let mut shared = self.shared();
@@ -422,6 +436,11 @@ impl MainViewModel for Model {
                                     .with_extension("tgz")
                                     .with_pattern("*.tar.gz")
                                     .with_mime_type("application/gzip"),
+                            )
+                            .file_type(
+                                FileTypeFilter::new("7-Zip archive")
+                                    .with_extension("7z")
+                                    .with_mime_type("application/x-7z-compressed"),
                             ),
                     ),
                     _ => return,
@@ -452,16 +471,18 @@ impl MainViewModel for Model {
     fn invert_selection(&mut self) -> Result<()> {
         {
             let mut shared = self.shared();
-            let Some(archive) = shared.archive.as_ref() else {
-                return Ok(());
-            };
-            let visible: Vec<String> = visible_entries(&shared, archive)
+            let filter = shared.filter_text.clone();
+            let active = shared.active;
+            let visible: Vec<String> = shared
+                .pane(active)
+                .visible(&filter)
                 .into_iter()
-                .map(|entry| entry.path.clone())
+                .map(|entry| entry.path)
                 .collect();
+            let pane = shared.pane_mut(active);
             for path in visible {
-                if !shared.selected_paths.remove(&path) {
-                    shared.selected_paths.insert(path);
+                if !pane.selected_paths.remove(&path) {
+                    pane.selected_paths.insert(path);
                 }
             }
         }
@@ -474,12 +495,13 @@ impl MainViewModel for Model {
             let (Some(scope), Some(window)) = (shared.scope.clone(), shared.window.clone()) else {
                 return Ok(());
             };
-            let text = if !shared.selected_paths.is_empty() {
-                let mut names: Vec<_> = shared.selected_paths.iter().cloned().collect();
+            let pane = shared.active_pane();
+            let text = if !pane.selected_paths.is_empty() {
+                let mut names: Vec<_> = pane.selected_paths.iter().cloned().collect();
                 names.sort();
                 names.join("\n")
-            } else if !shared.selected_key.is_empty() {
-                shared.selected_key.clone()
+            } else if !pane.selected_key.is_empty() {
+                pane.selected_key.clone()
             } else {
                 return Ok(());
             };
@@ -494,6 +516,135 @@ impl MainViewModel for Model {
             };
             let _ = set_status(&shared, status);
         })
+    }
+
+    fn open_folder(&mut self) -> Result<()> {
+        let (scope, window, shared) = {
+            let shared = self.shared();
+            let (Some(scope), Some(window)) = (shared.scope.clone(), shared.window.clone()) else {
+                return Ok(());
+            };
+            (scope, window, self.shared.clone())
+        };
+        let operation = scope.open_folder_picker(
+            &window,
+            &FolderPickerOptions::new().title("Open folder"),
+        )?;
+        scope.spawn(async move {
+            match operation.await {
+                Ok(PickerOutcome::Selected(items)) => {
+                    let Some(path) = items.iter().find_map(|item| item.local_path()) else {
+                        return;
+                    };
+                    {
+                        let mut state = shared.lock().expect("shared state lock poisoned");
+                        state.active_pane_mut().open_folder(path.to_path_buf());
+                        state.status = format!("Opened {}", path.display());
+                    }
+                    let _ = publish_state(&shared);
+                }
+                Ok(PickerOutcome::Cancelled) => {}
+                Err(error) => {
+                    let _ = set_status(&shared, format!("Folder picker failed: {error}"));
+                }
+            }
+        })
+    }
+
+    fn activate_left(&mut self) -> Result<()> {
+        self.shared().active = Side::Left;
+        publish_state(&self.shared)
+    }
+
+    fn activate_right(&mut self) -> Result<()> {
+        self.shared().active = Side::Right;
+        publish_state(&self.shared)
+    }
+
+    fn delete_selected(&mut self) -> Result<()> {
+        let paths = {
+            let shared = self.shared();
+            if !matches!(shared.active_pane().location, panes::Location::Folder(_)) {
+                return set_status(&self.shared, "Delete is only available in folders.");
+            }
+            extract_names(&shared, false)
+        };
+        if paths.is_empty() {
+            return set_status(&self.shared, "Select files to delete.");
+        }
+        for path in &paths {
+            let target = PathBuf::from(path);
+            let result = if target.is_dir() {
+                std::fs::remove_dir_all(&target)
+            } else {
+                std::fs::remove_file(&target)
+            };
+            if let Err(error) = result {
+                return set_status(&self.shared, format!("Delete failed: {error}"));
+            }
+        }
+        {
+            let mut shared = self.shared();
+            shared.active_pane_mut().clear_selection();
+            shared.status = format!("Deleted {} item(s)", paths.len());
+        }
+        publish_state(&self.shared)
+    }
+
+    fn copy_to_other(&mut self) -> Result<()> {
+        let (from_archive, dest, names, folder_sources) = {
+            let shared = self.shared();
+            let dest = match shared.pane(shared.active.other()).copy_destination() {
+                Some(path) => path,
+                None => return set_status(&self.shared, "The other pane has nowhere to copy to."),
+            };
+            let names = extract_names(&shared, false);
+            if names.is_empty() {
+                return set_status(&self.shared, "Select items to copy.");
+            }
+            match shared.active_pane().archive_path() {
+                Some(path) => (Some(path.to_path_buf()), dest, names, Vec::new()),
+                None => (None, dest, Vec::new(), names),
+            }
+        };
+        if let Some(archive_path) = from_archive {
+            return start_extract(&self.shared, archive_path, dest, names, false);
+        }
+        for name in &folder_sources {
+            let source = PathBuf::from(name);
+            let file_name = source.file_name().unwrap_or_default();
+            let target = dest.join(file_name);
+            let result = if source.is_dir() {
+                copy_dir_all(&source, &target)
+            } else {
+                std::fs::copy(&source, &target).map(|_| ())
+            };
+            if let Err(error) = result {
+                return set_status(&self.shared, format!("Copy failed: {error}"));
+            }
+        }
+        set_status(
+            &self.shared,
+            format!("Copied {} item(s) to {}", folder_sources.len(), dest.display()),
+        )
+    }
+
+    fn open_computer(&mut self) -> Result<()> {
+        {
+            let mut shared = self.shared();
+            *shared.active_pane_mut() = Pane::computer();
+            shared.status = "Computer".to_string();
+        }
+        publish_state(&self.shared)
+    }
+
+    fn open_home(&mut self) -> Result<()> {
+        {
+            let mut shared = self.shared();
+            *shared.active_pane_mut() = Pane::home();
+            shared.status = format!("Opened {}", fs_pane::home_dir().display());
+        }
+        publish_state(&self.shared)
     }
 
     fn set_open_after_extract(&mut self, value: bool) -> Result<()> {
@@ -519,6 +670,34 @@ impl MainViewModel for Model {
         Ok(())
     }
 
+    fn set_left_selected_index(&mut self, value: i64) -> Result<()> {
+        let mut shared = self.shared();
+        shared.active = Side::Left;
+        shared.left.selected_index = value;
+        Ok(())
+    }
+
+    fn set_left_selected_key(&mut self, value: String) -> Result<()> {
+        let mut shared = self.shared();
+        shared.active = Side::Left;
+        shared.left.selected_key = value;
+        Ok(())
+    }
+
+    fn set_right_selected_index(&mut self, value: i64) -> Result<()> {
+        let mut shared = self.shared();
+        shared.active = Side::Right;
+        shared.right.selected_index = value;
+        Ok(())
+    }
+
+    fn set_right_selected_key(&mut self, value: String) -> Result<()> {
+        let mut shared = self.shared();
+        shared.active = Side::Right;
+        shared.right.selected_key = value;
+        Ok(())
+    }
+
     fn open_recent_file(&mut self, value: String) -> Result<()> {
         let path = PathBuf::from(value);
         let name = display_name(&path);
@@ -539,7 +718,17 @@ fn archive_filter() -> FileTypeFilter {
         .with_extension("zip")
         .with_extension("tar")
         .with_extension("tgz")
+        .with_extension("7z")
+        .with_extension("cab")
+        .with_extension("gz")
+        .with_extension("bz2")
+        .with_extension("xz")
+        .with_extension("zst")
+        .with_extension("lz4")
         .with_pattern("*.tar.gz")
+        .with_pattern("*.tar.bz2")
+        .with_pattern("*.tar.xz")
+        .with_pattern("*.tar.zst")
         .with_mime_type("application/zip")
         .with_mime_type("application/x-tar")
         .with_mime_type("application/gzip")
@@ -547,68 +736,11 @@ fn archive_filter() -> FileTypeFilter {
         .with_apple_uniform_type_identifier("public.tar-archive")
 }
 
-fn visible_entries<'a>(shared: &'a Shared, archive: &'a ArchiveState) -> Vec<&'a ArchiveEntry> {
-    let needle = shared.filter_text.trim().to_ascii_lowercase();
-    let mut entries = if needle.is_empty() {
-        children_of(&archive.entries, &shared.current_dir)
-    } else {
-        archive
-            .entries
-            .iter()
-            .filter(|entry| {
-                (shared.current_dir.is_empty()
-                    || entry.path == shared.current_dir
-                    || entry.path.starts_with(&format!("{}/", shared.current_dir)))
-                    && entry.path.to_ascii_lowercase().contains(&needle)
-            })
-            .collect()
-    };
-    entries.sort_by(|left, right| compare_entries(left, right, &shared.sort_column, shared.sort_descending));
-    entries
-}
-
-fn compare_entries(
-    left: &ArchiveEntry,
-    right: &ArchiveEntry,
-    column: &str,
-    descending: bool,
-) -> CmpOrdering {
-    let folder_order = right.is_dir.cmp(&left.is_dir);
-    if folder_order != CmpOrdering::Equal {
-        return folder_order;
-    }
-    let ordering = match column {
-        "Kind" => left.kind_label().cmp(right.kind_label()),
-        "Size" => left.size.cmp(&right.size),
-        "Packed" => left
-            .compressed_size
-            .unwrap_or(0)
-            .cmp(&right.compressed_size.unwrap_or(0)),
-        "Ratio" => left.ratio_label().cmp(&right.ratio_label()),
-        "Modified" => left.modified.cmp(&right.modified),
-        "Crc" => left.crc.cmp(&right.crc),
-        _ => left.name.to_ascii_lowercase().cmp(&right.name.to_ascii_lowercase()),
-    };
-    if descending {
-        ordering.reverse()
-    } else {
-        ordering
-    }
-}
-
-fn current_path_label(shared: &Shared) -> String {
-    match shared.archive.as_ref() {
-        None => String::new(),
-        Some(archive) if shared.current_dir.is_empty() => archive.name.clone(),
-        Some(archive) => format!("{} / {}", archive.name, shared.current_dir.replace('/', " / ")),
-    }
-}
-
-fn sort_label(shared: &Shared) -> String {
+fn sort_label(pane: &Pane) -> String {
     format!(
         "{} {}",
-        shared.sort_column,
-        if shared.sort_descending {
+        pane.sort_column,
+        if pane.sort_descending {
             "Descending"
         } else {
             "Ascending"
@@ -616,8 +748,8 @@ fn sort_label(shared: &Shared) -> String {
     )
 }
 
-fn totals_label(archive: &ArchiveState) -> String {
-    let (files, size, packed) = archive_totals(&archive.entries);
+fn totals_label(entries: &[ArchiveEntry]) -> String {
+    let (files, size, packed) = archive_totals(entries);
     match packed {
         Some(packed) => format!(
             "{files} files · {} → {}",
@@ -639,6 +771,8 @@ fn archive_stem(path: &Path) -> String {
         .trim_end_matches(".tar")
         .trim_end_matches(".zip")
         .trim_end_matches(".ZIP")
+        .trim_end_matches(".7z")
+        .trim_end_matches(".gz")
         .to_string()
 }
 
@@ -663,151 +797,196 @@ fn entry_count_label(visible: usize, total: usize) -> String {
 }
 
 fn can_extract_selected(shared: &Shared) -> bool {
-    if shared.loading || shared.archive.is_none() {
+    if shared.loading || !shared.active_pane().is_archive() {
         return false;
     }
-    if !shared.selected_paths.is_empty() {
-        return true;
+    let pane = shared.active_pane();
+    !pane.selected_paths.is_empty() || !pane.selected_key.is_empty()
+}
+
+fn can_delete_selected(shared: &Shared) -> bool {
+    !shared.loading
+        && matches!(shared.active_pane().location, panes::Location::Folder(_))
+        && (!shared.active_pane().selected_paths.is_empty()
+            || !shared.active_pane().selected_key.is_empty())
+}
+
+fn can_copy_to_other(shared: &Shared) -> bool {
+    if shared.loading {
+        return false;
     }
-    !shared.selected_key.is_empty()
+    shared.pane(shared.active.other()).copy_destination().is_some()
+        && (!shared.active_pane().selected_paths.is_empty()
+            || !shared.active_pane().selected_key.is_empty())
 }
 
 fn extract_names(shared: &Shared, all: bool) -> Vec<String> {
-    let Some(archive) = shared.archive.as_ref() else {
-        return Vec::new();
-    };
+    let pane = shared.active_pane();
     if all {
-        return archive
-            .entries
+        return pane
+            .archive_entries()
+            .unwrap_or(&[])
             .iter()
             .filter(|entry| !entry.is_dir)
             .map(|entry| entry.path.clone())
             .collect();
     }
-    if !shared.selected_paths.is_empty() {
-        return shared.selected_paths.iter().cloned().collect();
+    if !pane.selected_paths.is_empty() {
+        return pane.selected_paths.iter().cloned().collect();
     }
-    if shared.selected_key.is_empty() {
+    if pane.selected_key.is_empty() {
         Vec::new()
     } else {
-        vec![shared.selected_key.clone()]
+        vec![pane.selected_key.clone()]
     }
 }
 
-fn row_models(shared: &Arc<Mutex<Shared>>) -> Vec<EntryRowModel> {
+fn row_models(shared: &Arc<Mutex<Shared>>, side: Side) -> Vec<EntryRowModel> {
     let guard = shared.lock().expect("shared state lock poisoned");
-    let Some(archive) = guard.archive.as_ref() else {
-        return Vec::new();
-    };
-    visible_entries(&guard, archive)
+    let pane = guard.pane(side);
+    pane.visible(&guard.filter_text)
         .into_iter()
         .map(|entry| EntryRowModel {
-            selected: guard.selected_paths.contains(&entry.path),
-            entry: entry.clone(),
+            selected: pane.selected_paths.contains(&entry.path),
+            entry,
+            side,
             shared: shared.clone(),
         })
         .collect()
 }
 
 fn publish_state(shared: &Arc<Mutex<Shared>>) -> Result<()> {
-    let rows = row_models(shared);
-    let (
-        sink,
-        status,
-        loading,
-        archive_name,
-        archive_kind,
-        entry_count,
-        selected_count,
-        can_selected,
-        can_all,
-        can_test,
-        can_go_up,
-        selected_index,
-        selected_key,
-        recent,
-        generation,
-        current_path,
-        totals,
-        sort,
-        open_after,
-    ) = {
+    let left_rows = row_models(shared, Side::Left);
+    let right_rows = row_models(shared, Side::Right);
+    let snapshot = {
         let shared = shared.lock().expect("shared state lock poisoned");
-        let total = shared
-            .archive
-            .as_ref()
-            .map(|archive| archive.entries.len())
-            .unwrap_or(0);
-        let visible = rows.len();
-        (
-            shared.sink.clone(),
-            shared.status.clone(),
-            shared.loading,
-            shared
-                .archive
-                .as_ref()
-                .map(|archive| archive.name.clone())
-                .unwrap_or_default(),
-            shared
-                .archive
-                .as_ref()
-                .map(|archive| archive.kind.label().to_string())
-                .unwrap_or_default(),
-            if shared.archive.is_some() {
-                entry_count_label(visible, total)
-            } else {
-                "No archive loaded".to_string()
-            },
-            selected_count_label(shared.selected_paths.len()),
-            can_extract_selected(&shared),
-            shared.archive.is_some() && !shared.loading,
-            shared.archive.is_some() && !shared.loading,
-            !shared.current_dir.is_empty() && !shared.loading,
-            shared.selected_index,
-            shared.selected_key.clone(),
-            shared.recent.clone(),
-            shared.load_generation,
-            current_path_label(&shared),
-            shared
-                .archive
-                .as_ref()
+        let left_visible = left_rows.len();
+        let right_visible = right_rows.len();
+        let active = shared.active_pane();
+        let can_archive = active.is_archive() && !shared.loading;
+        PublishSnapshot {
+            sink: shared.sink.clone(),
+            status: shared.status.clone(),
+            loading: shared.loading,
+            archive_name: active.path_label(),
+            archive_kind: active.kind_label(),
+            entry_count: entry_count_label(left_visible + right_visible, left_visible + right_visible),
+            selected_count: selected_count_label(active.selected_paths.len()),
+            can_selected: can_extract_selected(&shared),
+            can_all: can_archive,
+            can_test: can_archive,
+            can_go_up: active.can_go_up() && !shared.loading,
+            can_delete: can_delete_selected(&shared),
+            can_copy: can_copy_to_other(&shared),
+            selected_index: shared.selected_index,
+            selected_key: shared.selected_key.clone(),
+            recent: shared.recent.clone(),
+            generation: shared.load_generation,
+            current_path: active.path_label(),
+            totals: active
+                .archive_entries()
                 .map(totals_label)
-                .unwrap_or_default(),
-            sort_label(&shared),
-            shared.open_after_extract,
-        )
+                .unwrap_or_else(|| format!("{left_visible} + {right_visible} items")),
+            sort: sort_label(active),
+            open_after: shared.open_after_extract,
+            left_path: shared.left.path_label(),
+            right_path: shared.right.path_label(),
+            left_kind: shared.left.kind_label(),
+            right_kind: shared.right.kind_label(),
+            left_can_go_up: shared.left.can_go_up() && !shared.loading,
+            right_can_go_up: shared.right.can_go_up() && !shared.loading,
+            left_active: shared.active == Side::Left,
+            right_active: shared.active == Side::Right,
+            left_selected_index: shared.left.selected_index,
+            left_selected_key: shared.left.selected_key.clone(),
+            right_selected_index: shared.right.selected_index,
+            right_selected_key: shared.right.selected_key.clone(),
+        }
     };
-    let Some(sink) = sink else {
+    let Some(sink) = snapshot.sink else {
         return Ok(());
     };
-    let mut batch = sink.batch(generation);
+    let mut batch = sink.batch(snapshot.generation);
     batch.set_title(APP_TITLE);
-    batch.set_status(status);
-    batch.set_archive_name(archive_name);
-    batch.set_archive_kind(archive_kind);
-    batch.set_entry_count_label(entry_count);
-    batch.set_selected_count_label(selected_count);
-    batch.set_is_loading(loading);
-    batch.set_can_extract_selected(can_selected);
-    batch.set_can_extract_all(can_all);
-    batch.set_can_test(can_test);
-    batch.set_can_go_up(can_go_up);
-    batch.set_extract_selected_enabled(can_selected);
-    batch.set_extract_all_enabled(can_all);
-    batch.set_extract_here_enabled(can_all);
-    batch.set_test_archive_enabled(can_test);
-    batch.set_go_up_enabled(can_go_up);
-    batch.set_open_item_enabled(can_all);
-    batch.set_current_path(current_path);
-    batch.set_totals_label(totals);
-    batch.set_sort_direction(sort);
-    batch.set_open_after_extract(open_after);
-    batch.set_recent_files(&recent);
-    batch.replace_entries_snapshot(rows);
-    batch.set_selected_index(selected_index);
-    batch.set_selected_key(selected_key);
+    batch.set_status(snapshot.status);
+    batch.set_archive_name(snapshot.archive_name);
+    batch.set_archive_kind(snapshot.archive_kind);
+    batch.set_entry_count_label(snapshot.entry_count);
+    batch.set_selected_count_label(snapshot.selected_count);
+    batch.set_is_loading(snapshot.loading);
+    batch.set_can_extract_selected(snapshot.can_selected);
+    batch.set_can_extract_all(snapshot.can_all);
+    batch.set_can_test(snapshot.can_test);
+    batch.set_can_go_up(snapshot.can_go_up);
+    batch.set_can_delete(snapshot.can_delete);
+    batch.set_can_copy_to_other(snapshot.can_copy);
+    batch.set_extract_selected_enabled(snapshot.can_selected);
+    batch.set_extract_all_enabled(snapshot.can_all);
+    batch.set_extract_here_enabled(snapshot.can_all);
+    batch.set_test_archive_enabled(snapshot.can_test);
+    batch.set_go_up_enabled(snapshot.can_go_up);
+    batch.set_open_item_enabled(!snapshot.loading);
+    batch.set_delete_selected_enabled(snapshot.can_delete);
+    batch.set_copy_to_other_enabled(snapshot.can_copy);
+    batch.set_current_path(snapshot.current_path);
+    batch.set_totals_label(snapshot.totals);
+    batch.set_sort_direction(snapshot.sort);
+    batch.set_open_after_extract(snapshot.open_after);
+    batch.set_recent_files(&snapshot.recent);
+    batch.set_left_path(snapshot.left_path);
+    batch.set_right_path(snapshot.right_path);
+    batch.set_left_kind(snapshot.left_kind);
+    batch.set_right_kind(snapshot.right_kind);
+    batch.set_left_can_go_up(snapshot.left_can_go_up);
+    batch.set_right_can_go_up(snapshot.right_can_go_up);
+    batch.set_left_active(snapshot.left_active);
+    batch.set_right_active(snapshot.right_active);
+    batch.replace_left_entries_snapshot(left_rows);
+    batch.replace_right_entries_snapshot(right_rows);
+    batch.set_selected_index(snapshot.selected_index);
+    batch.set_selected_key(snapshot.selected_key);
+    batch.set_left_selected_index(snapshot.left_selected_index);
+    batch.set_left_selected_key(snapshot.left_selected_key);
+    batch.set_right_selected_index(snapshot.right_selected_index);
+    batch.set_right_selected_key(snapshot.right_selected_key);
     sink.submit_batch(batch).map(|_| ())?;
     Ok(())
+}
+
+struct PublishSnapshot {
+    sink: Option<MainViewModelSink>,
+    status: String,
+    loading: bool,
+    archive_name: String,
+    archive_kind: String,
+    entry_count: String,
+    selected_count: String,
+    can_selected: bool,
+    can_all: bool,
+    can_test: bool,
+    can_go_up: bool,
+    can_delete: bool,
+    can_copy: bool,
+    selected_index: i64,
+    selected_key: String,
+    recent: RecentFileList,
+    generation: i64,
+    current_path: String,
+    totals: String,
+    sort: String,
+    open_after: bool,
+    left_path: String,
+    right_path: String,
+    left_kind: String,
+    right_kind: String,
+    left_can_go_up: bool,
+    right_can_go_up: bool,
+    left_active: bool,
+    right_active: bool,
+    left_selected_index: i64,
+    left_selected_key: String,
+    right_selected_index: i64,
+    right_selected_key: String,
 }
 
 fn set_status(shared: &Arc<Mutex<Shared>>, status: impl Into<String>) -> Result<()> {
@@ -828,14 +1007,13 @@ fn display_name(path: &Path) -> String {
 }
 
 fn start_loading(shared: &Arc<Mutex<Shared>>, path: PathBuf, status: String) -> Result<()> {
-    let generation = {
+    let (generation, sink) = {
         let mut shared = shared.lock().expect("shared state lock poisoned");
         shared.load_generation = NEXT_LOAD_GENERATION.fetch_add(1, Ordering::Relaxed) + 1;
         shared.status = status.clone();
         shared.loading = true;
-        shared.load_generation
+        (shared.load_generation, shared.sink.clone())
     };
-    let _ = publish_state(shared);
     let worker_shared = shared.clone();
     let worker_path = path;
     std::thread::Builder::new()
@@ -859,8 +1037,18 @@ fn start_loading(shared: &Arc<Mutex<Shared>>, path: PathBuf, status: String) -> 
                 }
             }
         })
-        .map(|_| ())
-        .map_err(|error| Error::Load(format!("Unable to start archive worker: {error}")))
+        .map_err(|error| Error::Load(format!("Unable to start archive worker: {error}")))?;
+    if let Some(sink) = sink {
+        sink.set_status(status)?;
+        sink.set_is_loading(true)?;
+        sink.set_can_extract_selected(false)?;
+        sink.set_can_extract_all(false)?;
+        sink.set_extract_selected_enabled(false)?;
+        sink.set_extract_all_enabled(false)?;
+        sink.set_extract_here_enabled(false)?;
+        sink.set_test_archive_enabled(false)?;
+    }
+    Ok(())
 }
 
 fn apply_archive(
@@ -883,19 +1071,12 @@ fn apply_archive(
         );
         shared.loading = false;
         shared.recent.push(path.to_string_lossy().to_string());
-        shared.selected_paths.clear();
-        shared.current_dir.clear();
         shared.selected_index = if entries.is_empty() { -1 } else { 0 };
-        shared.selected_key = children_of(&entries, "")
+        shared.selected_key = entries
             .first()
             .map(|entry| entry.path.clone())
             .unwrap_or_default();
-        shared.archive = Some(ArchiveState {
-            path,
-            name,
-            kind,
-            entries,
-        });
+        shared.active_pane_mut().open_archive(path, kind, entries);
     }
     publish_state(shared)
 }
@@ -913,8 +1094,7 @@ fn set_load_error(
         }
         shared.status = format!("Unable to open {}: {error}", display_name(path));
         shared.loading = false;
-        shared.archive = None;
-        shared.selected_paths.clear();
+        shared.active_pane_mut().clear_selection();
         shared.selected_index = -1;
         shared.selected_key.clear();
     }
@@ -931,14 +1111,14 @@ fn start_extract_picker(shared: &Arc<Mutex<Shared>>, all: bool) -> Result<()> {
     }
     let (scope, window, archive_path) = {
         let state = shared.lock().expect("shared state lock poisoned");
-        let (Some(scope), Some(window), Some(archive)) = (
+        let (Some(scope), Some(window), Some(archive_path)) = (
             state.scope.clone(),
             state.window.clone(),
-            state.archive.as_ref(),
+            state.active_pane().archive_path().map(Path::to_path_buf),
         ) else {
             return Ok(());
         };
-        (scope, window, archive.path.clone())
+        (scope, window, archive_path)
     };
     let operation = scope.open_folder_picker(
         &window,
@@ -957,11 +1137,11 @@ fn start_extract_picker(shared: &Arc<Mutex<Shared>>, all: bool) -> Result<()> {
                 };
                 let dest = {
                     let state = worker_shared.lock().expect("shared state lock poisoned");
-                    match state.archive.as_ref() {
-                        Some(archive) => smart_extract_destination(
+                    match state.active_pane().archive_path() {
+                        Some(archive_path) => smart_extract_destination(
                             path,
-                            &archive_stem(&archive.path),
-                            &archive.entries,
+                            &archive_stem(archive_path),
+                            state.active_pane().archive_entries().unwrap_or(&[]),
                         ),
                         None => path.to_path_buf(),
                     }
@@ -1056,31 +1236,50 @@ fn open_dropped_or_activated(shared: &Arc<Mutex<Shared>>, path: PathBuf) -> Resu
     start_loading(shared, path, format!("Opening {name}..."))
 }
 
-fn open_entry(shared: &Arc<Mutex<Shared>>, entry: &ArchiveEntry) -> Result<()> {
+fn open_entry(shared: &Arc<Mutex<Shared>>, side: Side, entry: &ArchiveEntry) -> Result<()> {
     if entry.is_dir {
         {
             let mut shared = shared.lock().expect("shared state lock poisoned");
-            shared.current_dir = entry.path.clone();
-            shared.selected_paths.clear();
-            shared.selected_index = -1;
-            shared.selected_key.clear();
+            shared.active = side;
+            shared.pane_mut(side).enter_dir(entry.path.clone());
         }
         return publish_state(shared);
     }
+    let folder_path = PathBuf::from(&entry.path);
+    let in_archive = {
+        let shared = shared.lock().expect("shared state lock poisoned");
+        shared.pane(side).is_archive()
+    };
+    if !in_archive {
+        if folder_path.is_dir() {
+            {
+                let mut shared = shared.lock().expect("shared state lock poisoned");
+                shared.active = side;
+                shared.pane_mut(side).open_folder(folder_path);
+            }
+            return publish_state(shared);
+        }
+        if archive::detect_kind(&folder_path).is_ok() {
+            return start_loading(shared, folder_path, format!("Opening {}...", entry.name));
+        }
+        return match open_in_shell(&folder_path) {
+            Ok(()) => set_status(shared, format!("Opened {}", entry.name)),
+            Err(error) => set_status(shared, error),
+        };
+    }
     let archive_path = {
         let shared = shared.lock().expect("shared state lock poisoned");
-        let Some(archive) = shared.archive.as_ref() else {
+        let Some(path) = shared.pane(side).archive_path().map(Path::to_path_buf) else {
             return Ok(());
         };
-        archive.path.clone()
+        path
     };
     let temp = std::env::temp_dir().join(format!(
         "rustolonia-archive-open-{}-{}",
         std::process::id(),
         NEXT_EXTRACT_GENERATION.fetch_add(1, Ordering::Relaxed)
     ));
-    extract_entries(&archive_path, &temp, &[entry.path.clone()])
-        .map_err(Error::Load)?;
+    extract_entries(&archive_path, &temp, &[entry.path.clone()]).map_err(Error::Load)?;
     let extracted = temp.join(entry.path.replace('/', std::path::MAIN_SEPARATOR_STR));
     if is_nested_archive(&entry.path) {
         return start_loading(shared, extracted, format!("Opening {}...", entry.name));
@@ -1133,6 +1332,20 @@ fn start_create(shared: &Arc<Mutex<Shared>>, folder: PathBuf, destination: PathB
         .map_err(|error| Error::Load(format!("Unable to start create worker: {error}")))
 }
 
+fn copy_dir_all(source: &Path, dest: &Path) -> std::io::Result<()> {
+    std::fs::create_dir_all(dest)?;
+    for entry in std::fs::read_dir(source)? {
+        let entry = entry?;
+        let target = dest.join(entry.file_name());
+        if entry.file_type()?.is_dir() {
+            copy_dir_all(&entry.path(), &target)?;
+        } else {
+            std::fs::copy(entry.path(), target)?;
+        }
+    }
+    Ok(())
+}
+
 fn open_in_shell(path: &Path) -> std::result::Result<(), String> {
     let result = {
         #[cfg(windows)]
@@ -1168,7 +1381,7 @@ fn main() -> avalonia::Result<()> {
             recent.push(path.to_string_lossy().to_string());
             format!("Opening {}...", display_name(path))
         } else {
-            "Open an archive to get started.".to_string()
+            "Ready.".to_string()
         };
         let shared = Arc::new(Mutex::new(Shared::new(status.clone(), recent)));
         mount_main_window(scope, Model::new(shared.clone()))?;

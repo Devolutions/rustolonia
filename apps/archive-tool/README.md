@@ -1,15 +1,16 @@
 # Rustolonia archive explorer
 
-This sample is a sibling external consumer under `apps/` that lists zip and tar
-archives and extracts selected entries. Rust owns format detection, listing,
-zip-slip path checks and extraction; the generated view-model bridge exposes
-that state to the compiled Avalonia presentation. Listing and extraction run on
-worker threads so the UI stays responsive.
+This sample is a sibling external consumer under `apps/` that is a dual-pane
+archive manager. Rust owns format detection, listing, zip-slip path checks and
+extraction; the generated view-model bridge exposes that state to the compiled
+Avalonia presentation. Listing and extraction run on worker threads so the UI
+stays responsive.
 
-Supported formats: `.zip`, `.tar`, `.tar.gz` / `.tgz` (no 7z/RAR codecs). With
-no arguments the app waits for **Open**, a dropped file, or an "open with"
-activation. Folder browsing, CRC, Test, Extract here, smart extract, New archive
-from a folder, and opening nested zip/tar entries stay on those crates.
+Supported formats: `.zip`, `.tar`, `.tar.gz` / `.tgz`, `.tar.bz2`, `.tar.xz`,
+`.tar.zst`, `.gz`, `.bz2`, `.xz`, `.zst`, `.lz4`, `.7z`, `.cab`. RAR is out of
+scope. The app opens on your home folder and Downloads. Open an archive in the
+active pane, copy selected items to the other pane, and delete only on the
+filesystem side.
 
 ## Build on Windows x64
 

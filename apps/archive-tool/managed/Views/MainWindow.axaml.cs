@@ -33,8 +33,47 @@ public partial class MainWindow : Window
 
     private void InitializeComponent() => AvaloniaXamlLoader.Load(this);
 
-    private void OnEntriesDoubleTapped(object? sender, TappedEventArgs e)
+    private void OnLeftActivate(object? sender, PointerPressedEventArgs e)
     {
+        if (_adapter is null) return;
+        if (_adapter.ActivateLeftCommand.CanExecute(null))
+            _adapter.ActivateLeftCommand.Execute(null);
+    }
+
+    private void OnRightActivate(object? sender, PointerPressedEventArgs e)
+    {
+        if (_adapter.ActivateRightCommand.CanExecute(null))
+            _adapter.ActivateRightCommand.Execute(null);
+    }
+
+    private void OnLeftGoUp(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (_adapter.ActivateLeftCommand.CanExecute(null))
+            _adapter.ActivateLeftCommand.Execute(null);
+        if (_adapter.GoUpCommand.CanExecute(null))
+            _adapter.GoUpCommand.Execute(null);
+    }
+
+    private void OnRightGoUp(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (_adapter.ActivateRightCommand.CanExecute(null))
+            _adapter.ActivateRightCommand.Execute(null);
+        if (_adapter.GoUpCommand.CanExecute(null))
+            _adapter.GoUpCommand.Execute(null);
+    }
+
+    private void OnLeftDoubleTapped(object? sender, TappedEventArgs e)
+    {
+        if (_adapter.ActivateLeftCommand.CanExecute(null))
+            _adapter.ActivateLeftCommand.Execute(null);
+        if (_adapter.OpenItemCommand.CanExecute(null))
+            _adapter.OpenItemCommand.Execute(null);
+    }
+
+    private void OnRightDoubleTapped(object? sender, TappedEventArgs e)
+    {
+        if (_adapter.ActivateRightCommand.CanExecute(null))
+            _adapter.ActivateRightCommand.Execute(null);
         if (_adapter.OpenItemCommand.CanExecute(null))
             _adapter.OpenItemCommand.Execute(null);
     }

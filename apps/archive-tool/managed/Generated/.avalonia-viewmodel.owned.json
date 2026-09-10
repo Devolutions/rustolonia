@@ -11,15 +11,15 @@
     },
     {
       "path": "MainViewModelAdapter.g.cs",
-      "sha256": "36bfbb71aa5f067289a9ba7f2b5f80d688de2d0069b4346492196a2e90ed723e"
+      "sha256": "00971bf7be1950b504329957189d5f990cf55e6bf57b6c3b9dca295484109e24"
     },
     {
       "path": "MainViewModelMenus.g.cs",
-      "sha256": "cc25583382a4a75a0714c30ea7058d2b065bb217b7a14de18e54a62f74259827"
+      "sha256": "fec3bbc62e7e1e59c0f1ebcc5302adc20d20bf2bf7d1a5448b26d7ff2cf139c5"
     },
     {
       "path": "MainViewModelMetadata.g.cs",
-      "sha256": "6cfb4664542a750f56108dcf5f39505022250c56a79e315e4019e2407a024408"
+      "sha256": "bd6f945ba1abda6b43e31ac0f7570470b539a0c281fbe38d743e2529baf5151a"
     }
   ]
 }

@@ -153,7 +153,6 @@
     <Border DockPanel.Dock="Top"
             Background="{StaticResource ChromeBrush}"
             Padding="20,0,20,12">
-      <Grid RowDefinitions="Auto,Auto" RowSpacing="10">
       <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
         <WrapPanel ItemSpacing="8" LineSpacing="8" VerticalAlignment="Center">
           <Button x:Name="OpenButton"
@@ -190,6 +189,24 @@
                   Command="{Binding TestArchiveCommand}"
                   IsEnabled="{Binding CanTest}"
                   AutomationProperties.Name="TestButton" />
+          <Button Classes="toolbar"
+                  Content="Folder"
+                  Command="{Binding OpenFolderCommand}"
+                  AutomationProperties.Name="OpenFolderButton" />
+          <Button Classes="toolbar"
+                  Content="Computer"
+                  Command="{Binding OpenComputerCommand}"
+                  AutomationProperties.Name="ComputerButton" />
+          <Button Classes="toolbar"
+                  Content="Copy"
+                  Command="{Binding CopyToOtherCommand}"
+                  IsEnabled="{Binding CanCopyToOther}"
+                  AutomationProperties.Name="CopyToOtherButton" />
+          <Button Classes="toolbar"
+                  Content="Delete"
+                  Command="{Binding DeleteSelectedCommand}"
+                  IsEnabled="{Binding CanDelete}"
+                  AutomationProperties.Name="DeleteButton" />
         </WrapPanel>
 
         <Border Grid.Column="1"
@@ -237,35 +254,6 @@
           </StackPanel>
         </StackPanel>
       </Grid>
-      <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
-        <Button x:Name="GoUpButton"
-                Classes="toolbar"
-                Content="Up"
-                Command="{Binding GoUpCommand}"
-                IsEnabled="{Binding CanGoUp}"
-                AutomationProperties.Name="GoUpButton" />
-        <Border Grid.Column="1"
-                Height="32"
-                VerticalAlignment="Center"
-                Background="{StaticResource ToolbarBrush}"
-                BorderBrush="{StaticResource DividerBrush}"
-                BorderThickness="1"
-                CornerRadius="6"
-                Padding="10,0">
-          <TextBlock x:Name="CurrentPath"
-                     VerticalAlignment="Center"
-                     Text="{Binding CurrentPath}"
-                     TextTrimming="CharacterEllipsis"
-                     AutomationProperties.Name="CurrentPath" />
-        </Border>
-        <Button Grid.Column="2"
-                Classes="toolbar"
-                Content="Open item"
-                Command="{Binding OpenItemCommand}"
-                IsEnabled="{Binding CanExtractAll}"
-                AutomationProperties.Name="OpenItemButton" />
-      </Grid>
-      </Grid>
     </Border>
 
     <Border DockPanel.Dock="Bottom"
@@ -284,97 +272,160 @@
       </Grid>
     </Border>
 
-    <Border Background="{StaticResource PanelBrush}" Padding="16">
-      <TableView x:Name="EntriesTable"
-                 ItemsSource="{Binding Entries}"
-                 SelectedIndex="{Binding SelectedIndex, Mode=TwoWay}"
-                 CanUserResizeColumns="True"
-                 DoubleTapped="OnEntriesDoubleTapped"
-                 AutomationProperties.Name="EntriesTable">
-        <TableView.ContextMenu>
-          <vm:MainViewModelEntriesContextMenu />
-        </TableView.ContextMenu>
-        <TableView.Columns>
-          <TableViewColumn Width="48" MinWidth="44" CanUserResize="False" HorizontalContentAlignment="Center">
-            <TableViewColumn.CellTemplate>
-              <DataTemplate x:DataType="vm:EntryRowViewModelAdapter">
-                <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}"
-                          AutomationProperties.Name="{Binding Path}" />
-              </DataTemplate>
-            </TableViewColumn.CellTemplate>
-          </TableViewColumn>
-          <TableViewColumn Width="*" MinWidth="160" CanUserResize="True">
-            <TableViewColumn.Header>
-              <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortEntriesCommand}" CommandParameter="Name" Content="Name" />
-            </TableViewColumn.Header>
-            <TableViewColumn.CellTemplate>
-              <DataTemplate x:DataType="vm:EntryRowViewModelAdapter">
-                <TextBlock Classes="cell" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
-              </DataTemplate>
-            </TableViewColumn.CellTemplate>
-          </TableViewColumn>
-          <TableViewColumn Width="80" MinWidth="64" CanUserResize="True">
-            <TableViewColumn.Header>
-              <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortEntriesCommand}" CommandParameter="Kind" Content="Kind" />
-            </TableViewColumn.Header>
-            <TableViewColumn.CellTemplate>
-              <DataTemplate x:DataType="vm:EntryRowViewModelAdapter">
-                <TextBlock Classes="cell" Text="{Binding Kind}" />
-              </DataTemplate>
-            </TableViewColumn.CellTemplate>
-          </TableViewColumn>
-          <TableViewColumn Width="90" MinWidth="72" CanUserResize="True" HorizontalContentAlignment="Right">
-            <TableViewColumn.Header>
-              <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortEntriesCommand}" CommandParameter="Size" Content="Size" />
-            </TableViewColumn.Header>
-            <TableViewColumn.CellTemplate>
-              <DataTemplate x:DataType="vm:EntryRowViewModelAdapter">
-                <TextBlock Classes="cell" HorizontalAlignment="Right" Text="{Binding SizeLabel}" />
-              </DataTemplate>
-            </TableViewColumn.CellTemplate>
-          </TableViewColumn>
-          <TableViewColumn Width="90" MinWidth="72" CanUserResize="True" HorizontalContentAlignment="Right">
-            <TableViewColumn.Header>
-              <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortEntriesCommand}" CommandParameter="Packed" Content="Packed" />
-            </TableViewColumn.Header>
-            <TableViewColumn.CellTemplate>
-              <DataTemplate x:DataType="vm:EntryRowViewModelAdapter">
-                <TextBlock Classes="cell" HorizontalAlignment="Right" Text="{Binding PackedLabel}" />
-              </DataTemplate>
-            </TableViewColumn.CellTemplate>
-          </TableViewColumn>
-          <TableViewColumn Width="70" MinWidth="56" CanUserResize="True" HorizontalContentAlignment="Right">
-            <TableViewColumn.Header>
-              <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortEntriesCommand}" CommandParameter="Ratio" Content="Ratio" />
-            </TableViewColumn.Header>
-            <TableViewColumn.CellTemplate>
-              <DataTemplate x:DataType="vm:EntryRowViewModelAdapter">
-                <TextBlock Classes="cell" HorizontalAlignment="Right" Text="{Binding RatioLabel}" />
-              </DataTemplate>
-            </TableViewColumn.CellTemplate>
-          </TableViewColumn>
-          <TableViewColumn Width="140" MinWidth="110" CanUserResize="True">
-            <TableViewColumn.Header>
-              <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortEntriesCommand}" CommandParameter="Modified" Content="Modified" />
-            </TableViewColumn.Header>
-            <TableViewColumn.CellTemplate>
-              <DataTemplate x:DataType="vm:EntryRowViewModelAdapter">
-                <TextBlock Classes="cell" Text="{Binding Modified}" />
-              </DataTemplate>
-            </TableViewColumn.CellTemplate>
-          </TableViewColumn>
-          <TableViewColumn Width="90" MinWidth="72" CanUserResize="True">
-            <TableViewColumn.Header>
-              <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortEntriesCommand}" CommandParameter="Crc" Content="CRC" />
-            </TableViewColumn.Header>
-            <TableViewColumn.CellTemplate>
-              <DataTemplate x:DataType="vm:EntryRowViewModelAdapter">
-                <TextBlock Classes="cell" FontFamily="Cascadia Mono, Consolas" Text="{Binding CrcLabel}" />
-              </DataTemplate>
-            </TableViewColumn.CellTemplate>
-          </TableViewColumn>
-        </TableView.Columns>
-      </TableView>
+    <Border Background="{StaticResource PanelBrush}" Padding="12">
+      <Grid ColumnDefinitions="*,8,*">
+        <DockPanel>
+          <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8" Margin="0,0,0,8">
+            <Button Classes="toolbar" Content="Up" Command="{Binding ActivateLeftCommand}" IsEnabled="{Binding LeftCanGoUp}"
+                    Click="OnLeftGoUp" AutomationProperties.Name="LeftGoUpButton" />
+            <Border Grid.Column="1" Height="32" Background="{StaticResource ToolbarBrush}" BorderBrush="{StaticResource DividerBrush}"
+                    BorderThickness="1" CornerRadius="6" Padding="10,0" PointerPressed="OnLeftActivate">
+              <TextBlock x:Name="CurrentPath" VerticalAlignment="Center" Text="{Binding LeftPath}" TextTrimming="CharacterEllipsis"
+                         AutomationProperties.Name="CurrentPath" />
+            </Border>
+            <Border Grid.Column="2" Background="{StaticResource AccentMutedBrush}" CornerRadius="8" Padding="8,4" VerticalAlignment="Center">
+              <TextBlock FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource AccentHoverBrush}" Text="{Binding LeftKind}" />
+            </Border>
+          </Grid>
+          <TableView x:Name="EntriesTable"
+                     ItemsSource="{Binding LeftEntries}"
+                     SelectedIndex="{Binding LeftSelectedIndex, Mode=TwoWay}"
+                     CanUserResizeColumns="True"
+                     DoubleTapped="OnLeftDoubleTapped"
+                     PointerPressed="OnLeftActivate"
+                     AutomationProperties.Name="EntriesTable">
+            <TableView.ContextMenu>
+              <vm:MainViewModelLeftEntriesContextMenu />
+            </TableView.ContextMenu>
+            <TableView.Columns>
+              <TableViewColumn Width="40" MinWidth="36" CanUserResize="False" HorizontalContentAlignment="Center">
+                <TableViewColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:EntryRowViewModelAdapter">
+                    <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" AutomationProperties.Name="{Binding Path}" />
+                  </DataTemplate>
+                </TableViewColumn.CellTemplate>
+              </TableViewColumn>
+              <TableViewColumn Width="*" MinWidth="140" CanUserResize="True">
+                <TableViewColumn.Header>
+                  <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortEntriesCommand}" CommandParameter="Name" Content="Name" />
+                </TableViewColumn.Header>
+                <TableViewColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:EntryRowViewModelAdapter">
+                    <TextBlock Classes="cell" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                  </DataTemplate>
+                </TableViewColumn.CellTemplate>
+              </TableViewColumn>
+              <TableViewColumn Width="72" MinWidth="56" CanUserResize="True">
+                <TableViewColumn.Header>
+                  <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortEntriesCommand}" CommandParameter="Kind" Content="Kind" />
+                </TableViewColumn.Header>
+                <TableViewColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:EntryRowViewModelAdapter">
+                    <TextBlock Classes="cell" Text="{Binding Kind}" />
+                  </DataTemplate>
+                </TableViewColumn.CellTemplate>
+              </TableViewColumn>
+              <TableViewColumn Width="84" MinWidth="64" CanUserResize="True" HorizontalContentAlignment="Right">
+                <TableViewColumn.Header>
+                  <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortEntriesCommand}" CommandParameter="Size" Content="Size" />
+                </TableViewColumn.Header>
+                <TableViewColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:EntryRowViewModelAdapter">
+                    <TextBlock Classes="cell" HorizontalAlignment="Right" Text="{Binding SizeLabel}" />
+                  </DataTemplate>
+                </TableViewColumn.CellTemplate>
+              </TableViewColumn>
+              <TableViewColumn Width="120" MinWidth="96" CanUserResize="True">
+                <TableViewColumn.Header>
+                  <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortEntriesCommand}" CommandParameter="Modified" Content="Modified" />
+                </TableViewColumn.Header>
+                <TableViewColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:EntryRowViewModelAdapter">
+                    <TextBlock Classes="cell" Text="{Binding Modified}" />
+                  </DataTemplate>
+                </TableViewColumn.CellTemplate>
+              </TableViewColumn>
+            </TableView.Columns>
+          </TableView>
+        </DockPanel>
+
+        <GridSplitter Grid.Column="1" Width="8" Background="{StaticResource DividerBrush}" ResizeDirection="Columns" />
+
+        <DockPanel Grid.Column="2">
+          <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8" Margin="0,0,0,8">
+            <Button Classes="toolbar" Content="Up" Command="{Binding ActivateRightCommand}" IsEnabled="{Binding RightCanGoUp}"
+                    Click="OnRightGoUp" AutomationProperties.Name="RightGoUpButton" />
+            <Border Grid.Column="1" Height="32" Background="{StaticResource ToolbarBrush}" BorderBrush="{StaticResource DividerBrush}"
+                    BorderThickness="1" CornerRadius="6" Padding="10,0" PointerPressed="OnRightActivate">
+              <TextBlock VerticalAlignment="Center" Text="{Binding RightPath}" TextTrimming="CharacterEllipsis"
+                         AutomationProperties.Name="RightPath" />
+            </Border>
+            <Border Grid.Column="2" Background="{StaticResource AccentMutedBrush}" CornerRadius="8" Padding="8,4" VerticalAlignment="Center">
+              <TextBlock FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource AccentHoverBrush}" Text="{Binding RightKind}" />
+            </Border>
+          </Grid>
+          <TableView x:Name="RightEntriesTable"
+                     ItemsSource="{Binding RightEntries}"
+                     SelectedIndex="{Binding RightSelectedIndex, Mode=TwoWay}"
+                     CanUserResizeColumns="True"
+                     DoubleTapped="OnRightDoubleTapped"
+                     PointerPressed="OnRightActivate"
+                     AutomationProperties.Name="RightEntriesTable">
+            <TableView.ContextMenu>
+              <vm:MainViewModelRightEntriesContextMenu />
+            </TableView.ContextMenu>
+            <TableView.Columns>
+              <TableViewColumn Width="40" MinWidth="36" CanUserResize="False" HorizontalContentAlignment="Center">
+                <TableViewColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:EntryRowViewModelAdapter">
+                    <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" AutomationProperties.Name="{Binding Path}" />
+                  </DataTemplate>
+                </TableViewColumn.CellTemplate>
+              </TableViewColumn>
+              <TableViewColumn Width="*" MinWidth="140" CanUserResize="True">
+                <TableViewColumn.Header>
+                  <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortEntriesCommand}" CommandParameter="Name" Content="Name" />
+                </TableViewColumn.Header>
+                <TableViewColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:EntryRowViewModelAdapter">
+                    <TextBlock Classes="cell" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                  </DataTemplate>
+                </TableViewColumn.CellTemplate>
+              </TableViewColumn>
+              <TableViewColumn Width="72" MinWidth="56" CanUserResize="True">
+                <TableViewColumn.Header>
+                  <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortEntriesCommand}" CommandParameter="Kind" Content="Kind" />
+                </TableViewColumn.Header>
+                <TableViewColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:EntryRowViewModelAdapter">
+                    <TextBlock Classes="cell" Text="{Binding Kind}" />
+                  </DataTemplate>
+                </TableViewColumn.CellTemplate>
+              </TableViewColumn>
+              <TableViewColumn Width="84" MinWidth="64" CanUserResize="True" HorizontalContentAlignment="Right">
+                <TableViewColumn.Header>
+                  <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortEntriesCommand}" CommandParameter="Size" Content="Size" />
+                </TableViewColumn.Header>
+                <TableViewColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:EntryRowViewModelAdapter">
+                    <TextBlock Classes="cell" HorizontalAlignment="Right" Text="{Binding SizeLabel}" />
+                  </DataTemplate>
+                </TableViewColumn.CellTemplate>
+              </TableViewColumn>
+              <TableViewColumn Width="120" MinWidth="96" CanUserResize="True">
+                <TableViewColumn.Header>
+                  <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortEntriesCommand}" CommandParameter="Modified" Content="Modified" />
+                </TableViewColumn.Header>
+                <TableViewColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:EntryRowViewModelAdapter">
+                    <TextBlock Classes="cell" Text="{Binding Modified}" />
+                  </DataTemplate>
+                </TableViewColumn.CellTemplate>
+              </TableViewColumn>
+            </TableView.Columns>
+          </TableView>
+        </DockPanel>
+      </Grid>
     </Border>
   </DockPanel>
 </Window>

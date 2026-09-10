@@ -27,18 +27,38 @@ impl MainViewModelSink {
     pub fn set_totals_label(&self, value: impl AsRef<str>) -> crate::Result<()> { self.0.set_string(16, value) }
     pub fn set_open_after_extract(&self, value: bool) -> crate::Result<()> { self.0.set_boolean(17, value) }
     pub fn set_can_test(&self, value: bool) -> crate::Result<()> { self.0.set_boolean(18, value) }
+    pub fn set_left_path(&self, value: impl AsRef<str>) -> crate::Result<()> { self.0.set_string(19, value) }
+    pub fn set_right_path(&self, value: impl AsRef<str>) -> crate::Result<()> { self.0.set_string(20, value) }
+    pub fn set_left_kind(&self, value: impl AsRef<str>) -> crate::Result<()> { self.0.set_string(21, value) }
+    pub fn set_right_kind(&self, value: impl AsRef<str>) -> crate::Result<()> { self.0.set_string(22, value) }
+    pub fn set_left_can_go_up(&self, value: bool) -> crate::Result<()> { self.0.set_boolean(23, value) }
+    pub fn set_right_can_go_up(&self, value: bool) -> crate::Result<()> { self.0.set_boolean(24, value) }
+    pub fn set_left_active(&self, value: bool) -> crate::Result<()> { self.0.set_boolean(25, value) }
+    pub fn set_right_active(&self, value: bool) -> crate::Result<()> { self.0.set_boolean(26, value) }
+    pub fn set_left_selected_index(&self, value: i64) -> crate::Result<()> { self.0.set_integer(27, value) }
+    pub fn set_left_selected_key(&self, value: impl AsRef<str>) -> crate::Result<()> { self.0.set_string(28, value) }
+    pub fn set_right_selected_index(&self, value: i64) -> crate::Result<()> { self.0.set_integer(29, value) }
+    pub fn set_right_selected_key(&self, value: impl AsRef<str>) -> crate::Result<()> { self.0.set_string(30, value) }
+    pub fn set_can_delete(&self, value: bool) -> crate::Result<()> { self.0.set_boolean(31, value) }
+    pub fn set_can_copy_to_other(&self, value: bool) -> crate::Result<()> { self.0.set_boolean(32, value) }
     pub fn add_recent_files(&self, value: impl AsRef<str>) -> crate::Result<()> { self.0.add_string(1, value) }
     pub fn insert_recent_files(&self, index: i32, value: impl AsRef<str>) -> crate::Result<()> { self.0.insert_string(1, index, value) }
     pub fn replace_recent_files(&self, index: i32, value: impl AsRef<str>) -> crate::Result<()> { self.0.replace_string(1, index, value) }
-    pub fn add_entries(&self, value: impl EntryRowViewModel) -> crate::Result<()> { self.0.add_model(2, EntryRowViewModelDispatch { model: value }) }
-    pub fn insert_entries(&self, index: i32, value: impl EntryRowViewModel) -> crate::Result<()> { self.0.insert_model(2, index, EntryRowViewModelDispatch { model: value }) }
-    pub fn replace_entries(&self, index: i32, value: impl EntryRowViewModel) -> crate::Result<()> { self.0.replace_model(2, index, EntryRowViewModelDispatch { model: value }) }
+    pub fn add_left_entries(&self, value: impl EntryRowViewModel) -> crate::Result<()> { self.0.add_model(2, EntryRowViewModelDispatch { model: value }) }
+    pub fn insert_left_entries(&self, index: i32, value: impl EntryRowViewModel) -> crate::Result<()> { self.0.insert_model(2, index, EntryRowViewModelDispatch { model: value }) }
+    pub fn replace_left_entries(&self, index: i32, value: impl EntryRowViewModel) -> crate::Result<()> { self.0.replace_model(2, index, EntryRowViewModelDispatch { model: value }) }
+    pub fn add_right_entries(&self, value: impl EntryRowViewModel) -> crate::Result<()> { self.0.add_model(3, EntryRowViewModelDispatch { model: value }) }
+    pub fn insert_right_entries(&self, index: i32, value: impl EntryRowViewModel) -> crate::Result<()> { self.0.insert_model(3, index, EntryRowViewModelDispatch { model: value }) }
+    pub fn replace_right_entries(&self, index: i32, value: impl EntryRowViewModel) -> crate::Result<()> { self.0.replace_model(3, index, EntryRowViewModelDispatch { model: value }) }
     pub fn remove_recent_files(&self, index: i32) -> crate::Result<()> { self.0.remove_string_at(1, index) }
     pub fn move_recent_files(&self, from_index: i32, to_index: i32) -> crate::Result<()> { self.0.move_string_item(1, from_index, to_index) }
     pub fn clear_recent_files(&self) -> crate::Result<()> { self.0.clear_string_collection(1) }
-    pub fn remove_entries(&self, index: i32) -> crate::Result<()> { self.0.remove_model_at(2, index) }
-    pub fn move_entries(&self, from_index: i32, to_index: i32) -> crate::Result<()> { self.0.move_model_item(2, from_index, to_index) }
-    pub fn clear_entries(&self) -> crate::Result<()> { self.0.clear_model_collection(2) }
+    pub fn remove_left_entries(&self, index: i32) -> crate::Result<()> { self.0.remove_model_at(2, index) }
+    pub fn move_left_entries(&self, from_index: i32, to_index: i32) -> crate::Result<()> { self.0.move_model_item(2, from_index, to_index) }
+    pub fn clear_left_entries(&self) -> crate::Result<()> { self.0.clear_model_collection(2) }
+    pub fn remove_right_entries(&self, index: i32) -> crate::Result<()> { self.0.remove_model_at(3, index) }
+    pub fn move_right_entries(&self, from_index: i32, to_index: i32) -> crate::Result<()> { self.0.move_model_item(3, from_index, to_index) }
+    pub fn clear_right_entries(&self) -> crate::Result<()> { self.0.clear_model_collection(3) }
     pub fn set_open_file_enabled(&self, enabled: bool) -> crate::Result<()> { self.0.set_command_enabled(1, enabled) }
     pub fn set_extract_selected_enabled(&self, enabled: bool) -> crate::Result<()> { self.0.set_command_enabled(2, enabled) }
     pub fn set_extract_all_enabled(&self, enabled: bool) -> crate::Result<()> { self.0.set_command_enabled(3, enabled) }
@@ -54,6 +74,13 @@ impl MainViewModelSink {
     pub fn set_new_archive_enabled(&self, enabled: bool) -> crate::Result<()> { self.0.set_command_enabled(13, enabled) }
     pub fn set_invert_selection_enabled(&self, enabled: bool) -> crate::Result<()> { self.0.set_command_enabled(14, enabled) }
     pub fn set_copy_path_enabled(&self, enabled: bool) -> crate::Result<()> { self.0.set_command_enabled(15, enabled) }
+    pub fn set_open_folder_enabled(&self, enabled: bool) -> crate::Result<()> { self.0.set_command_enabled(16, enabled) }
+    pub fn set_activate_left_enabled(&self, enabled: bool) -> crate::Result<()> { self.0.set_command_enabled(17, enabled) }
+    pub fn set_activate_right_enabled(&self, enabled: bool) -> crate::Result<()> { self.0.set_command_enabled(18, enabled) }
+    pub fn set_delete_selected_enabled(&self, enabled: bool) -> crate::Result<()> { self.0.set_command_enabled(19, enabled) }
+    pub fn set_copy_to_other_enabled(&self, enabled: bool) -> crate::Result<()> { self.0.set_command_enabled(20, enabled) }
+    pub fn set_open_computer_enabled(&self, enabled: bool) -> crate::Result<()> { self.0.set_command_enabled(21, enabled) }
+    pub fn set_open_home_enabled(&self, enabled: bool) -> crate::Result<()> { self.0.set_command_enabled(22, enabled) }
     /// Publishes the most-recently-used storage URIs into `RecentFiles`.
     ///
     /// The list is bounded by its own capacity (5), so this replaces a
@@ -82,6 +109,20 @@ impl MainViewModelSink {
     pub fn set_totals_label_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(16, message) }
     pub fn set_open_after_extract_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(17, message) }
     pub fn set_can_test_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(18, message) }
+    pub fn set_left_path_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(19, message) }
+    pub fn set_right_path_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(20, message) }
+    pub fn set_left_kind_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(21, message) }
+    pub fn set_right_kind_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(22, message) }
+    pub fn set_left_can_go_up_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(23, message) }
+    pub fn set_right_can_go_up_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(24, message) }
+    pub fn set_left_active_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(25, message) }
+    pub fn set_right_active_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(26, message) }
+    pub fn set_left_selected_index_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(27, message) }
+    pub fn set_left_selected_key_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(28, message) }
+    pub fn set_right_selected_index_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(29, message) }
+    pub fn set_right_selected_key_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(30, message) }
+    pub fn set_can_delete_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(31, message) }
+    pub fn set_can_copy_to_other_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(32, message) }
     /// Creates a worker-safe immutable update batch with a monotonic generation.
     pub fn batch(&self, generation: i64) -> MainViewModelSinkBatch { MainViewModelSinkBatch(crate::view_model::ViewModelBatch::new(generation)) }
     pub fn submit_batch(&self, batch: MainViewModelSinkBatch) -> crate::Result<crate::view_model::BatchCompletion> { self.0.submit_batch(batch.0) }
@@ -144,6 +185,48 @@ impl MainViewModelSinkBatch {
     pub fn set_can_test(&mut self, value: bool) { self.0.push_boolean(3, 18, value); }
     pub fn set_can_test_error(&mut self, message: impl AsRef<str>) { self.0.push_string(18, 18, 0, message); }
     pub fn clear_can_test_error(&mut self) { self.0.push_clear_error(18); }
+    pub fn set_left_path(&mut self, value: impl AsRef<str>) { self.0.push_string(1, 19, 0, value); }
+    pub fn set_left_path_error(&mut self, message: impl AsRef<str>) { self.0.push_string(18, 19, 0, message); }
+    pub fn clear_left_path_error(&mut self) { self.0.push_clear_error(19); }
+    pub fn set_right_path(&mut self, value: impl AsRef<str>) { self.0.push_string(1, 20, 0, value); }
+    pub fn set_right_path_error(&mut self, message: impl AsRef<str>) { self.0.push_string(18, 20, 0, message); }
+    pub fn clear_right_path_error(&mut self) { self.0.push_clear_error(20); }
+    pub fn set_left_kind(&mut self, value: impl AsRef<str>) { self.0.push_string(1, 21, 0, value); }
+    pub fn set_left_kind_error(&mut self, message: impl AsRef<str>) { self.0.push_string(18, 21, 0, message); }
+    pub fn clear_left_kind_error(&mut self) { self.0.push_clear_error(21); }
+    pub fn set_right_kind(&mut self, value: impl AsRef<str>) { self.0.push_string(1, 22, 0, value); }
+    pub fn set_right_kind_error(&mut self, message: impl AsRef<str>) { self.0.push_string(18, 22, 0, message); }
+    pub fn clear_right_kind_error(&mut self) { self.0.push_clear_error(22); }
+    pub fn set_left_can_go_up(&mut self, value: bool) { self.0.push_boolean(3, 23, value); }
+    pub fn set_left_can_go_up_error(&mut self, message: impl AsRef<str>) { self.0.push_string(18, 23, 0, message); }
+    pub fn clear_left_can_go_up_error(&mut self) { self.0.push_clear_error(23); }
+    pub fn set_right_can_go_up(&mut self, value: bool) { self.0.push_boolean(3, 24, value); }
+    pub fn set_right_can_go_up_error(&mut self, message: impl AsRef<str>) { self.0.push_string(18, 24, 0, message); }
+    pub fn clear_right_can_go_up_error(&mut self) { self.0.push_clear_error(24); }
+    pub fn set_left_active(&mut self, value: bool) { self.0.push_boolean(3, 25, value); }
+    pub fn set_left_active_error(&mut self, message: impl AsRef<str>) { self.0.push_string(18, 25, 0, message); }
+    pub fn clear_left_active_error(&mut self) { self.0.push_clear_error(25); }
+    pub fn set_right_active(&mut self, value: bool) { self.0.push_boolean(3, 26, value); }
+    pub fn set_right_active_error(&mut self, message: impl AsRef<str>) { self.0.push_string(18, 26, 0, message); }
+    pub fn clear_right_active_error(&mut self) { self.0.push_clear_error(26); }
+    pub fn set_left_selected_index(&mut self, value: i64) { self.0.push_integer(27, value); }
+    pub fn set_left_selected_index_error(&mut self, message: impl AsRef<str>) { self.0.push_string(18, 27, 0, message); }
+    pub fn clear_left_selected_index_error(&mut self) { self.0.push_clear_error(27); }
+    pub fn set_left_selected_key(&mut self, value: impl AsRef<str>) { self.0.push_string(1, 28, 0, value); }
+    pub fn set_left_selected_key_error(&mut self, message: impl AsRef<str>) { self.0.push_string(18, 28, 0, message); }
+    pub fn clear_left_selected_key_error(&mut self) { self.0.push_clear_error(28); }
+    pub fn set_right_selected_index(&mut self, value: i64) { self.0.push_integer(29, value); }
+    pub fn set_right_selected_index_error(&mut self, message: impl AsRef<str>) { self.0.push_string(18, 29, 0, message); }
+    pub fn clear_right_selected_index_error(&mut self) { self.0.push_clear_error(29); }
+    pub fn set_right_selected_key(&mut self, value: impl AsRef<str>) { self.0.push_string(1, 30, 0, value); }
+    pub fn set_right_selected_key_error(&mut self, message: impl AsRef<str>) { self.0.push_string(18, 30, 0, message); }
+    pub fn clear_right_selected_key_error(&mut self) { self.0.push_clear_error(30); }
+    pub fn set_can_delete(&mut self, value: bool) { self.0.push_boolean(3, 31, value); }
+    pub fn set_can_delete_error(&mut self, message: impl AsRef<str>) { self.0.push_string(18, 31, 0, message); }
+    pub fn clear_can_delete_error(&mut self) { self.0.push_clear_error(31); }
+    pub fn set_can_copy_to_other(&mut self, value: bool) { self.0.push_boolean(3, 32, value); }
+    pub fn set_can_copy_to_other_error(&mut self, message: impl AsRef<str>) { self.0.push_string(18, 32, 0, message); }
+    pub fn clear_can_copy_to_other_error(&mut self) { self.0.push_clear_error(32); }
     pub fn add_recent_files(&mut self, value: impl AsRef<str>) { self.0.push_string(7, 1, 0, value); }
     pub fn insert_recent_files(&mut self, index: i32, value: impl AsRef<str>) { self.0.push_string(9, 1, index, value); }
     pub fn replace_recent_files(&mut self, index: i32, value: impl AsRef<str>) { self.0.push_string(11, 1, index, value); }
@@ -151,13 +234,20 @@ impl MainViewModelSinkBatch {
     pub fn remove_recent_files(&mut self, index: i32) { self.0.push_indices(13, 1, index, 0); }
     pub fn move_recent_files(&mut self, from_index: i32, to_index: i32) { self.0.push_indices(14, 1, from_index, to_index); }
     pub fn clear_recent_files(&mut self) { self.0.push_indices(19, 1, 0, 0); }
-    pub fn add_entries(&mut self, value: impl EntryRowViewModel) { self.0.push_model(8, 2, 0, EntryRowViewModelDispatch { model: value }); }
-    pub fn insert_entries(&mut self, index: i32, value: impl EntryRowViewModel) { self.0.push_model(10, 2, index, EntryRowViewModelDispatch { model: value }); }
-    pub fn replace_entries(&mut self, index: i32, value: impl EntryRowViewModel) { self.0.push_model(12, 2, index, EntryRowViewModelDispatch { model: value }); }
-    pub fn replace_entries_snapshot<M: EntryRowViewModel>(&mut self, values: impl IntoIterator<Item = M>) { self.0.push_model_snapshot(2, values.into_iter().map(|value| EntryRowViewModelDispatch { model: value })); }
-    pub fn remove_entries(&mut self, index: i32) { self.0.push_model_indices(13, 2, index, 0); }
-    pub fn move_entries(&mut self, from_index: i32, to_index: i32) { self.0.push_model_indices(14, 2, from_index, to_index); }
-    pub fn clear_entries(&mut self) { self.0.push_model_clear(2); }
+    pub fn add_left_entries(&mut self, value: impl EntryRowViewModel) { self.0.push_model(8, 2, 0, EntryRowViewModelDispatch { model: value }); }
+    pub fn insert_left_entries(&mut self, index: i32, value: impl EntryRowViewModel) { self.0.push_model(10, 2, index, EntryRowViewModelDispatch { model: value }); }
+    pub fn replace_left_entries(&mut self, index: i32, value: impl EntryRowViewModel) { self.0.push_model(12, 2, index, EntryRowViewModelDispatch { model: value }); }
+    pub fn replace_left_entries_snapshot<M: EntryRowViewModel>(&mut self, values: impl IntoIterator<Item = M>) { self.0.push_model_snapshot(2, values.into_iter().map(|value| EntryRowViewModelDispatch { model: value })); }
+    pub fn remove_left_entries(&mut self, index: i32) { self.0.push_model_indices(13, 2, index, 0); }
+    pub fn move_left_entries(&mut self, from_index: i32, to_index: i32) { self.0.push_model_indices(14, 2, from_index, to_index); }
+    pub fn clear_left_entries(&mut self) { self.0.push_model_clear(2); }
+    pub fn add_right_entries(&mut self, value: impl EntryRowViewModel) { self.0.push_model(8, 3, 0, EntryRowViewModelDispatch { model: value }); }
+    pub fn insert_right_entries(&mut self, index: i32, value: impl EntryRowViewModel) { self.0.push_model(10, 3, index, EntryRowViewModelDispatch { model: value }); }
+    pub fn replace_right_entries(&mut self, index: i32, value: impl EntryRowViewModel) { self.0.push_model(12, 3, index, EntryRowViewModelDispatch { model: value }); }
+    pub fn replace_right_entries_snapshot<M: EntryRowViewModel>(&mut self, values: impl IntoIterator<Item = M>) { self.0.push_model_snapshot(3, values.into_iter().map(|value| EntryRowViewModelDispatch { model: value })); }
+    pub fn remove_right_entries(&mut self, index: i32) { self.0.push_model_indices(13, 3, index, 0); }
+    pub fn move_right_entries(&mut self, from_index: i32, to_index: i32) { self.0.push_model_indices(14, 3, from_index, to_index); }
+    pub fn clear_right_entries(&mut self) { self.0.push_model_clear(3); }
     pub fn set_open_file_enabled(&mut self, enabled: bool) { self.0.push_boolean(17, 1, enabled); }
     pub fn set_extract_selected_enabled(&mut self, enabled: bool) { self.0.push_boolean(17, 2, enabled); }
     pub fn set_extract_all_enabled(&mut self, enabled: bool) { self.0.push_boolean(17, 3, enabled); }
@@ -173,6 +263,13 @@ impl MainViewModelSinkBatch {
     pub fn set_new_archive_enabled(&mut self, enabled: bool) { self.0.push_boolean(17, 13, enabled); }
     pub fn set_invert_selection_enabled(&mut self, enabled: bool) { self.0.push_boolean(17, 14, enabled); }
     pub fn set_copy_path_enabled(&mut self, enabled: bool) { self.0.push_boolean(17, 15, enabled); }
+    pub fn set_open_folder_enabled(&mut self, enabled: bool) { self.0.push_boolean(17, 16, enabled); }
+    pub fn set_activate_left_enabled(&mut self, enabled: bool) { self.0.push_boolean(17, 17, enabled); }
+    pub fn set_activate_right_enabled(&mut self, enabled: bool) { self.0.push_boolean(17, 18, enabled); }
+    pub fn set_delete_selected_enabled(&mut self, enabled: bool) { self.0.push_boolean(17, 19, enabled); }
+    pub fn set_copy_to_other_enabled(&mut self, enabled: bool) { self.0.push_boolean(17, 20, enabled); }
+    pub fn set_open_computer_enabled(&mut self, enabled: bool) { self.0.push_boolean(17, 21, enabled); }
+    pub fn set_open_home_enabled(&mut self, enabled: bool) { self.0.push_boolean(17, 22, enabled); }
     /// Stages the most-recently-used storage URIs as one `RecentFiles` snapshot.
     pub fn set_recent_files(&mut self, recent: &crate::RecentFileList) { self.0.push_string_snapshot(1, recent.entries()); }
 }
@@ -184,6 +281,10 @@ pub trait MainViewModel: Send + 'static {
     fn set_selected_index(&mut self, value: i64) -> crate::Result<()>;
     fn set_selected_key(&mut self, value: String) -> crate::Result<()>;
     fn set_open_after_extract(&mut self, value: bool) -> crate::Result<()>;
+    fn set_left_selected_index(&mut self, value: i64) -> crate::Result<()>;
+    fn set_left_selected_key(&mut self, value: String) -> crate::Result<()>;
+    fn set_right_selected_index(&mut self, value: i64) -> crate::Result<()>;
+    fn set_right_selected_key(&mut self, value: String) -> crate::Result<()>;
     fn open_file(&mut self) -> crate::Result<()>;
     fn extract_selected(&mut self) -> crate::Result<()>;
     fn extract_all(&mut self) -> crate::Result<()>;
@@ -199,6 +300,13 @@ pub trait MainViewModel: Send + 'static {
     fn new_archive(&mut self) -> crate::Result<()>;
     fn invert_selection(&mut self) -> crate::Result<()>;
     fn copy_path(&mut self) -> crate::Result<()>;
+    fn open_folder(&mut self) -> crate::Result<()>;
+    fn activate_left(&mut self) -> crate::Result<()>;
+    fn activate_right(&mut self) -> crate::Result<()>;
+    fn delete_selected(&mut self) -> crate::Result<()>;
+    fn copy_to_other(&mut self) -> crate::Result<()>;
+    fn open_computer(&mut self) -> crate::Result<()>;
+    fn open_home(&mut self) -> crate::Result<()>;
 }
 
 struct MainViewModelDispatch<T: MainViewModel> { model: T }
@@ -210,12 +318,16 @@ impl<T: MainViewModel> crate::view_model::DynamicViewModel for MainViewModelDisp
         match property_id {
             6 => self.model.set_filter_text(value),
             8 => self.model.set_selected_key(value),
+            28 => self.model.set_left_selected_key(value),
+            30 => self.model.set_right_selected_key(value),
             _ => Err(crate::Error::InvalidViewModelMember { kind: "property", id: property_id }),
         }
     }
     fn set_integer(&mut self, property_id: i32, value: i64) -> crate::Result<()> {
         match property_id {
             7 => self.model.set_selected_index(value),
+            27 => self.model.set_left_selected_index(value),
+            29 => self.model.set_right_selected_index(value),
             _ => Err(crate::Error::InvalidViewModelMember { kind: "property", id: property_id }),
         }
     }
@@ -237,6 +349,10 @@ impl<T: MainViewModel> crate::view_model::DynamicViewModel for MainViewModelDisp
             8 => self.model.exit(),
             9 => self.model.go_up(),
             14 => self.model.invert_selection(),
+            17 => self.model.activate_left(),
+            18 => self.model.activate_right(),
+            21 => self.model.open_computer(),
+            22 => self.model.open_home(),
             _ => Err(crate::Error::InvalidViewModelMember { kind: "command", id: command_id }),
         }
     }
@@ -250,6 +366,9 @@ impl<T: MainViewModel> crate::view_model::DynamicViewModel for MainViewModelDisp
             12 => self.model.test_archive(),
             13 => self.model.new_archive(),
             15 => self.model.copy_path(),
+            16 => self.model.open_folder(),
+            19 => self.model.delete_selected(),
+            20 => self.model.copy_to_other(),
             _ => Err(crate::Error::InvalidViewModelMember { kind: "command", id: command_id }),
         }
     }

@@ -13,8 +13,8 @@ public static class MainViewModelMetadata
         1,
         "MainViewModel",
         [
-            new(1, "Title", RustViewModelValueKind.String, false, false, "Archive Explorer", null),
-            new(2, "Status", RustViewModelValueKind.String, false, false, "Open an archive to get started.", null),
+            new(1, "Title", RustViewModelValueKind.String, false, false, "Archive", null),
+            new(2, "Status", RustViewModelValueKind.String, false, false, "Ready.", null),
             new(3, "ArchiveName", RustViewModelValueKind.String, false, false, "", null),
             new(4, "ArchiveKind", RustViewModelValueKind.String, false, false, "", null),
             new(5, "EntryCountLabel", RustViewModelValueKind.String, false, false, "No archive loaded", null),
@@ -31,10 +31,25 @@ public static class MainViewModelMetadata
             new(16, "TotalsLabel", RustViewModelValueKind.String, false, false, "", null),
             new(17, "OpenAfterExtract", RustViewModelValueKind.Boolean, true, false, true, null),
             new(18, "CanTest", RustViewModelValueKind.Boolean, false, false, false, null),
+            new(19, "LeftPath", RustViewModelValueKind.String, false, false, "", null),
+            new(20, "RightPath", RustViewModelValueKind.String, false, false, "", null),
+            new(21, "LeftKind", RustViewModelValueKind.String, false, false, "Folder", null),
+            new(22, "RightKind", RustViewModelValueKind.String, false, false, "Folder", null),
+            new(23, "LeftCanGoUp", RustViewModelValueKind.Boolean, false, false, false, null),
+            new(24, "RightCanGoUp", RustViewModelValueKind.Boolean, false, false, false, null),
+            new(25, "LeftActive", RustViewModelValueKind.Boolean, false, false, true, null),
+            new(26, "RightActive", RustViewModelValueKind.Boolean, false, false, false, null),
+            new(27, "LeftSelectedIndex", RustViewModelValueKind.Integer, true, false, -1L, null),
+            new(28, "LeftSelectedKey", RustViewModelValueKind.String, true, false, "", null),
+            new(29, "RightSelectedIndex", RustViewModelValueKind.Integer, true, false, -1L, null),
+            new(30, "RightSelectedKey", RustViewModelValueKind.String, true, false, "", null),
+            new(31, "CanDelete", RustViewModelValueKind.Boolean, false, false, false, null),
+            new(32, "CanCopyToOther", RustViewModelValueKind.Boolean, false, false, false, null),
         ],
         [
             new(1, "RecentFiles", RustViewModelValueKind.String, null, null, null, null, false),
-            new(2, "Entries", RustViewModelValueKind.Model, global::ArchiveTool.Presentation.Generated.EntryRowViewModelMetadata.Descriptor, CreateEntriesTable(), null, null, false),
+            new(2, "LeftEntries", RustViewModelValueKind.Model, global::ArchiveTool.Presentation.Generated.EntryRowViewModelMetadata.Descriptor, CreateLeftEntriesTable(), null, null, false),
+            new(3, "RightEntries", RustViewModelValueKind.Model, global::ArchiveTool.Presentation.Generated.EntryRowViewModelMetadata.Descriptor, CreateRightEntriesTable(), null, null, false),
         ],
         [
             new(1, "OpenFileCommand", true, null, false, null, false, false),
@@ -52,13 +67,20 @@ public static class MainViewModelMetadata
             new(13, "NewArchiveCommand", true, null, false, null, false, false),
             new(14, "InvertSelectionCommand", false, null, false, null, false, false),
             new(15, "CopyPathCommand", true, null, false, null, false, false),
+            new(16, "OpenFolderCommand", true, null, false, null, false, false),
+            new(17, "ActivateLeftCommand", false, null, false, null, false, false),
+            new(18, "ActivateRightCommand", false, null, false, null, false, false),
+            new(19, "DeleteSelectedCommand", true, null, false, null, false, false),
+            new(20, "CopyToOtherCommand", true, null, false, null, false, false),
+            new(21, "OpenComputerCommand", false, null, false, null, false, false),
+            new(22, "OpenHomeCommand", false, null, false, null, false, false),
         ],
         [
         ]);
 
-    public static RustTableDescriptor EntriesTable { get; } = CreateEntriesTable();
+    public static RustTableDescriptor LeftEntriesTable { get; } = CreateLeftEntriesTable();
 
-    public static IReadOnlyList<TableViewColumn> CreateEntriesTableColumns() =>
+    public static IReadOnlyList<TableViewColumn> CreateLeftEntriesTableColumns() =>
     [
         new() { Header = "Name", Width = new global::Avalonia.Controls.GridLength(1D, global::Avalonia.Controls.GridUnitType.Star), MinWidth = 160D, CanUserResize = true, HorizontalContentAlignment = HorizontalAlignment.Left },
         new() { Header = "Kind", Width = new global::Avalonia.Controls.GridLength(80D, global::Avalonia.Controls.GridUnitType.Pixel), MinWidth = 64D, CanUserResize = true, HorizontalContentAlignment = HorizontalAlignment.Left },
@@ -69,7 +91,7 @@ public static class MainViewModelMetadata
         new() { Header = "CRC", Width = new global::Avalonia.Controls.GridLength(90D, global::Avalonia.Controls.GridUnitType.Pixel), MinWidth = 72D, CanUserResize = true, HorizontalContentAlignment = HorizontalAlignment.Left },
     ];
 
-    private static RustTableDescriptor CreateEntriesTable() => new(
+    private static RustTableDescriptor CreateLeftEntriesTable() => new(
         [
             new(1, "Name", "Name", "Name", null, true, false, 160D, null, true, true, RustTableHorizontalAlignment.Left),
             new(2, "Kind", "Kind", "Kind", 80D, false, false, 64D, null, true, true, RustTableHorizontalAlignment.Left),
@@ -79,6 +101,28 @@ public static class MainViewModelMetadata
             new(6, "Modified", "Modified", "Modified", 140D, false, false, 110D, null, true, true, RustTableHorizontalAlignment.Left),
             new(7, "Crc", "CRC", "CrcLabel", 90D, false, false, 72D, null, true, true, RustTableHorizontalAlignment.Left),
         ],
-        new("SelectedIndex", "SelectedKey", "Key"),
+        new("LeftSelectedIndex", "LeftSelectedKey", "Key"),
+        new("SortEntriesCommand", "Name", "SortDirection"));
+
+    public static RustTableDescriptor RightEntriesTable { get; } = CreateRightEntriesTable();
+
+    public static IReadOnlyList<TableViewColumn> CreateRightEntriesTableColumns() =>
+    [
+        new() { Header = "Name", Width = new global::Avalonia.Controls.GridLength(1D, global::Avalonia.Controls.GridUnitType.Star), MinWidth = 160D, CanUserResize = true, HorizontalContentAlignment = HorizontalAlignment.Left },
+        new() { Header = "Kind", Width = new global::Avalonia.Controls.GridLength(80D, global::Avalonia.Controls.GridUnitType.Pixel), MinWidth = 64D, CanUserResize = true, HorizontalContentAlignment = HorizontalAlignment.Left },
+        new() { Header = "Size", Width = new global::Avalonia.Controls.GridLength(90D, global::Avalonia.Controls.GridUnitType.Pixel), MinWidth = 72D, CanUserResize = true, HorizontalContentAlignment = HorizontalAlignment.Right },
+        new() { Header = "Packed", Width = new global::Avalonia.Controls.GridLength(90D, global::Avalonia.Controls.GridUnitType.Pixel), MinWidth = 72D, CanUserResize = true, HorizontalContentAlignment = HorizontalAlignment.Right },
+        new() { Header = "Modified", Width = new global::Avalonia.Controls.GridLength(140D, global::Avalonia.Controls.GridUnitType.Pixel), MinWidth = 110D, CanUserResize = true, HorizontalContentAlignment = HorizontalAlignment.Left },
+    ];
+
+    private static RustTableDescriptor CreateRightEntriesTable() => new(
+        [
+            new(1, "Name", "Name", "Name", null, true, false, 160D, null, true, true, RustTableHorizontalAlignment.Left),
+            new(2, "Kind", "Kind", "Kind", 80D, false, false, 64D, null, true, true, RustTableHorizontalAlignment.Left),
+            new(3, "Size", "Size", "SizeLabel", 90D, false, false, 72D, null, true, true, RustTableHorizontalAlignment.Right),
+            new(4, "Packed", "Packed", "PackedLabel", 90D, false, false, 72D, null, true, true, RustTableHorizontalAlignment.Right),
+            new(5, "Modified", "Modified", "Modified", 140D, false, false, 110D, null, true, true, RustTableHorizontalAlignment.Left),
+        ],
+        new("RightSelectedIndex", "RightSelectedKey", "Key"),
         new("SortEntriesCommand", "Name", "SortDirection"));
 }

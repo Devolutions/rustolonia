@@ -37,6 +37,12 @@ public static class MainViewModelMenus
         openFileItem.Gesture = RustMenu.ParseGesture("Ctrl+O");
         fileMenu.Items.Add(openFileItem);
         keyBindings?.Add(new KeyBinding { Gesture = RustMenu.ParseGesture("Ctrl+O")!, Command = openFileCommand });
+        var openFolderCommand = new RustMenuCommand(parameter => { model.OpenFolderCommand.Execute(parameter); }, () => model.OpenFolderCommand.CanExecute(null));
+        openFolderCommand.TrackSource(model.OpenFolderCommand, scope);
+        var openFolderItem = new NativeMenuItem("Open _folder...") { Command = openFolderCommand };
+        openFolderItem.Gesture = RustMenu.ParseGesture("Ctrl+Shift+O");
+        fileMenu.Items.Add(openFolderItem);
+        keyBindings?.Add(new KeyBinding { Gesture = RustMenu.ParseGesture("Ctrl+Shift+O")!, Command = openFolderCommand });
         var newArchiveCommand = new RustMenuCommand(parameter => { model.NewArchiveCommand.Execute(parameter); }, () => model.NewArchiveCommand.CanExecute(null));
         newArchiveCommand.TrackSource(model.NewArchiveCommand, scope);
         var newArchiveItem = new NativeMenuItem("_New archive...") { Command = newArchiveCommand };
@@ -119,6 +125,18 @@ public static class MainViewModelMenus
         copyPathItem.Gesture = RustMenu.ParseGesture("Ctrl+C");
         editMenu.Items.Add(copyPathItem);
         keyBindings?.Add(new KeyBinding { Gesture = RustMenu.ParseGesture("Ctrl+C")!, Command = copyPathCommand });
+        var copyToOtherCommand = new RustMenuCommand(parameter => { model.CopyToOtherCommand.Execute(parameter); }, () => model.CopyToOtherCommand.CanExecute(null));
+        copyToOtherCommand.TrackSource(model.CopyToOtherCommand, scope);
+        var copyToOtherItem = new NativeMenuItem("Copy to other pane") { Command = copyToOtherCommand };
+        copyToOtherItem.Gesture = RustMenu.ParseGesture("F5");
+        editMenu.Items.Add(copyToOtherItem);
+        keyBindings?.Add(new KeyBinding { Gesture = RustMenu.ParseGesture("F5")!, Command = copyToOtherCommand });
+        var deleteSelectedCommand = new RustMenuCommand(parameter => { model.DeleteSelectedCommand.Execute(parameter); }, () => model.DeleteSelectedCommand.CanExecute(null));
+        deleteSelectedCommand.TrackSource(model.DeleteSelectedCommand, scope);
+        var deleteSelectedItem = new NativeMenuItem("_Delete") { Command = deleteSelectedCommand };
+        deleteSelectedItem.Gesture = RustMenu.ParseGesture("Delete");
+        editMenu.Items.Add(deleteSelectedItem);
+        keyBindings?.Add(new KeyBinding { Gesture = RustMenu.ParseGesture("Delete")!, Command = deleteSelectedCommand });
         menu.Items.Add(editItem);
         var viewItem = new NativeMenuItem("_View");
         var viewMenu = new NativeMenu();
@@ -128,6 +146,14 @@ public static class MainViewModelMenus
         openAfterExtractItem.ToggleType = MenuItemToggleType.CheckBox;
         scope.Observe("OpenAfterExtract", () => openAfterExtractItem.IsChecked = model.OpenAfterExtract);
         viewMenu.Items.Add(openAfterExtractItem);
+        var openComputerCommand = new RustMenuCommand(parameter => { model.OpenComputerCommand.Execute(parameter); }, () => model.OpenComputerCommand.CanExecute(null));
+        openComputerCommand.TrackSource(model.OpenComputerCommand, scope);
+        var openComputerItem = new NativeMenuItem("_Computer") { Command = openComputerCommand };
+        viewMenu.Items.Add(openComputerItem);
+        var openHomeCommand = new RustMenuCommand(parameter => { model.OpenHomeCommand.Execute(parameter); }, () => model.OpenHomeCommand.CanExecute(null));
+        openHomeCommand.TrackSource(model.OpenHomeCommand, scope);
+        var openHomeItem = new NativeMenuItem("_Home") { Command = openHomeCommand };
+        viewMenu.Items.Add(openHomeItem);
         menu.Items.Add(viewItem);
         return menu;
     }
@@ -161,9 +187,9 @@ public static class MainViewModelMenus
     }
 
     /// <summary>
-    /// Builds the items of the <c>Entries</c> context menu.
+    /// Builds the items of the <c>LeftEntries</c> context menu.
     /// </summary>
-    public static IReadOnlyList<Control> CreateEntriesItems(MainViewModelAdapter model, RustMenuScope scope)
+    public static IReadOnlyList<Control> CreateLeftEntriesItems(MainViewModelAdapter model, RustMenuScope scope)
     {
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(scope);
@@ -188,18 +214,46 @@ public static class MainViewModelMenus
         return items;
     }
 
+    /// <summary>
+    /// Builds the items of the <c>RightEntries</c> context menu.
+    /// </summary>
+    public static IReadOnlyList<Control> CreateRightEntriesItems(MainViewModelAdapter model, RustMenuScope scope)
+    {
+        ArgumentNullException.ThrowIfNull(model);
+        ArgumentNullException.ThrowIfNull(scope);
+        var items = new List<Control>();
+        var openRowCommand = new RustMenuCommand(parameter => { model.OpenItemCommand.Execute(parameter); }, () => model.OpenItemCommand.CanExecute(null));
+        openRowCommand.TrackSource(model.OpenItemCommand, scope);
+        var openRowItem = new MenuItem { Header = "Open", Command = openRowCommand };
+        items.Add(openRowItem);
+        var extractRowCommand = new RustMenuCommand(parameter => { model.ExtractSelectedCommand.Execute(parameter); }, () => model.ExtractSelectedCommand.CanExecute(null));
+        extractRowCommand.TrackSource(model.ExtractSelectedCommand, scope);
+        var extractRowItem = new MenuItem { Header = "Extract...", Command = extractRowCommand };
+        items.Add(extractRowItem);
+        var copyToOtherRowCommand = new RustMenuCommand(parameter => { model.CopyToOtherCommand.Execute(parameter); }, () => model.CopyToOtherCommand.CanExecute(null));
+        copyToOtherRowCommand.TrackSource(model.CopyToOtherCommand, scope);
+        var copyToOtherRowItem = new MenuItem { Header = "Copy to other pane", Command = copyToOtherRowCommand };
+        items.Add(copyToOtherRowItem);
+        items.Add(new Separator());
+        var copyRowCommand = new RustMenuCommand(parameter => { model.CopyPathCommand.Execute(parameter); }, () => model.CopyPathCommand.CanExecute(null));
+        copyRowCommand.TrackSource(model.CopyPathCommand, scope);
+        var copyRowItem = new MenuItem { Header = "Copy path", Command = copyRowCommand };
+        items.Add(copyRowItem);
+        return items;
+    }
+
 }
 
 /// <summary>
-/// Generated context menu <c>Entries</c> for <c>MainViewModel</c>.
+/// Generated context menu <c>LeftEntries</c> for <c>MainViewModel</c>.
 /// </summary>
 /// <remarks>
 /// Declared directly in compiled AXAML - for example
-/// <c>&lt;TableView.ContextMenu&gt;&lt;vm:MainViewModelEntriesContextMenu /&gt;&lt;/TableView.ContextMenu&gt;</c>.
+/// <c>&lt;TableView.ContextMenu&gt;&lt;vm:MainViewModelLeftEntriesContextMenu /&gt;&lt;/TableView.ContextMenu&gt;</c>.
 /// A context menu is parented to the control it is attached to, so it inherits
 /// that control's data context and binds itself when the data context arrives.
 /// </remarks>
-public sealed class MainViewModelEntriesContextMenu : ContextMenu
+public sealed class MainViewModelLeftEntriesContextMenu : ContextMenu
 {
     private RustMenuScope? _scope;
 
@@ -212,7 +266,38 @@ public sealed class MainViewModelEntriesContextMenu : ContextMenu
         {
             var scope = new RustMenuScope(model);
             _scope = scope;
-            ItemsSource = MainViewModelMenus.CreateEntriesItems(model, scope);
+            ItemsSource = MainViewModelMenus.CreateLeftEntriesItems(model, scope);
+        }
+        else
+        {
+            ItemsSource = null;
+        }
+    }
+}
+
+/// <summary>
+/// Generated context menu <c>RightEntries</c> for <c>MainViewModel</c>.
+/// </summary>
+/// <remarks>
+/// Declared directly in compiled AXAML - for example
+/// <c>&lt;TableView.ContextMenu&gt;&lt;vm:MainViewModelRightEntriesContextMenu /&gt;&lt;/TableView.ContextMenu&gt;</c>.
+/// A context menu is parented to the control it is attached to, so it inherits
+/// that control's data context and binds itself when the data context arrives.
+/// </remarks>
+public sealed class MainViewModelRightEntriesContextMenu : ContextMenu
+{
+    private RustMenuScope? _scope;
+
+    protected override void OnDataContextChanged(EventArgs e)
+    {
+        base.OnDataContextChanged(e);
+        _scope?.Dispose();
+        _scope = null;
+        if (DataContext is MainViewModelAdapter model)
+        {
+            var scope = new RustMenuScope(model);
+            _scope = scope;
+            ItemsSource = MainViewModelMenus.CreateRightEntriesItems(model, scope);
         }
         else
         {

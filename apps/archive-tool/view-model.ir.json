@@ -13,7 +13,7 @@
           "kind": "String",
           "writable": false,
           "nullable": false,
-          "initialString": "Archive Explorer"
+          "initialString": "Archive"
         },
         {
           "id": 2,
@@ -21,7 +21,7 @@
           "kind": "String",
           "writable": false,
           "nullable": false,
-          "initialString": "Open an archive to get started."
+          "initialString": "Ready."
         },
         {
           "id": 3,
@@ -150,6 +150,118 @@
           "writable": false,
           "nullable": false,
           "initialBoolean": false
+        },
+        {
+          "id": 19,
+          "name": "LeftPath",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 20,
+          "name": "RightPath",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 21,
+          "name": "LeftKind",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "Folder"
+        },
+        {
+          "id": 22,
+          "name": "RightKind",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "Folder"
+        },
+        {
+          "id": 23,
+          "name": "LeftCanGoUp",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 24,
+          "name": "RightCanGoUp",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 25,
+          "name": "LeftActive",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": true
+        },
+        {
+          "id": 26,
+          "name": "RightActive",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 27,
+          "name": "LeftSelectedIndex",
+          "kind": "Integer",
+          "writable": true,
+          "nullable": false,
+          "initialInteger": -1
+        },
+        {
+          "id": 28,
+          "name": "LeftSelectedKey",
+          "kind": "String",
+          "writable": true,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 29,
+          "name": "RightSelectedIndex",
+          "kind": "Integer",
+          "writable": true,
+          "nullable": false,
+          "initialInteger": -1
+        },
+        {
+          "id": 30,
+          "name": "RightSelectedKey",
+          "kind": "String",
+          "writable": true,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 31,
+          "name": "CanDelete",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 32,
+          "name": "CanCopyToOther",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
         }
       ],
       "collections": [
@@ -161,7 +273,7 @@
         },
         {
           "id": 2,
-          "name": "Entries",
+          "name": "LeftEntries",
           "elementKind": "Model",
           "elementModelName": "EntryRowViewModel",
           "table": {
@@ -258,8 +370,93 @@
               }
             ],
             "selection": {
-              "selectedIndexProperty": "SelectedIndex",
-              "selectedKeyProperty": "SelectedKey",
+              "selectedIndexProperty": "LeftSelectedIndex",
+              "selectedKeyProperty": "LeftSelectedKey",
+              "rowKeyPath": "Key"
+            },
+            "sort": {
+              "command": "SortEntries",
+              "column": "Name",
+              "directionProperty": "SortDirection"
+            }
+          },
+          "recursive": false
+        },
+        {
+          "id": 3,
+          "name": "RightEntries",
+          "elementKind": "Model",
+          "elementModelName": "EntryRowViewModel",
+          "table": {
+            "columns": [
+              {
+                "id": 1,
+                "name": "Name",
+                "header": "Name",
+                "path": "Name",
+                "star": true,
+                "auto": false,
+                "minWidth": 160,
+                "resizable": true,
+                "sortable": true,
+                "horizontalAlignment": "Left"
+              },
+              {
+                "id": 2,
+                "name": "Kind",
+                "header": "Kind",
+                "path": "Kind",
+                "width": 80,
+                "star": false,
+                "auto": false,
+                "minWidth": 64,
+                "resizable": true,
+                "sortable": true,
+                "horizontalAlignment": "Left"
+              },
+              {
+                "id": 3,
+                "name": "Size",
+                "header": "Size",
+                "path": "SizeLabel",
+                "width": 90,
+                "star": false,
+                "auto": false,
+                "minWidth": 72,
+                "resizable": true,
+                "sortable": true,
+                "horizontalAlignment": "Right"
+              },
+              {
+                "id": 4,
+                "name": "Packed",
+                "header": "Packed",
+                "path": "PackedLabel",
+                "width": 90,
+                "star": false,
+                "auto": false,
+                "minWidth": 72,
+                "resizable": true,
+                "sortable": true,
+                "horizontalAlignment": "Right"
+              },
+              {
+                "id": 5,
+                "name": "Modified",
+                "header": "Modified",
+                "path": "Modified",
+                "width": 140,
+                "star": false,
+                "auto": false,
+                "minWidth": 110,
+                "resizable": true,
+                "sortable": true,
+                "horizontalAlignment": "Left"
+              }
+            ],
+            "selection": {
+              "selectedIndexProperty": "RightSelectedIndex",
+              "selectedKeyProperty": "RightSelectedKey",
               "rowKeyPath": "Key"
             },
             "sort": {
@@ -377,6 +574,55 @@
           "isAsync": true,
           "supportsProgress": false,
           "supportsCancellation": false
+        },
+        {
+          "id": 16,
+          "name": "OpenFolder",
+          "isAsync": true,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 17,
+          "name": "ActivateLeft",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 18,
+          "name": "ActivateRight",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 19,
+          "name": "DeleteSelected",
+          "isAsync": true,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 20,
+          "name": "CopyToOther",
+          "isAsync": true,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 21,
+          "name": "OpenComputer",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 22,
+          "name": "OpenHome",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
         }
       ],
       "menus": [
@@ -398,6 +644,15 @@
                   "header": "_Open archive...",
                   "command": "OpenFile",
                   "gesture": "Ctrl\u002BO",
+                  "items": []
+                },
+                {
+                  "id": 23,
+                  "name": "OpenFolder",
+                  "kind": "Command",
+                  "header": "Open _folder...",
+                  "command": "OpenFolder",
+                  "gesture": "Ctrl\u002BShift\u002BO",
                   "items": []
                 },
                 {
@@ -538,6 +793,24 @@
                   "command": "CopyPath",
                   "gesture": "Ctrl\u002BC",
                   "items": []
+                },
+                {
+                  "id": 24,
+                  "name": "CopyToOther",
+                  "kind": "Command",
+                  "header": "Copy to other pane",
+                  "command": "CopyToOther",
+                  "gesture": "F5",
+                  "items": []
+                },
+                {
+                  "id": 25,
+                  "name": "DeleteSelected",
+                  "kind": "Command",
+                  "header": "_Delete",
+                  "command": "DeleteSelected",
+                  "gesture": "Delete",
+                  "items": []
                 }
               ]
             },
@@ -554,6 +827,22 @@
                   "header": "Open folder after e_xtract",
                   "toggleProperty": "OpenAfterExtract",
                   "items": []
+                },
+                {
+                  "id": 26,
+                  "name": "OpenComputer",
+                  "kind": "Command",
+                  "header": "_Computer",
+                  "command": "OpenComputer",
+                  "items": []
+                },
+                {
+                  "id": 27,
+                  "name": "OpenHome",
+                  "kind": "Command",
+                  "header": "_Home",
+                  "command": "OpenHome",
+                  "items": []
                 }
               ]
             }
@@ -561,7 +850,7 @@
         },
         {
           "id": 2,
-          "name": "Entries",
+          "name": "LeftEntries",
           "kind": "Context",
           "items": [
             {
@@ -586,6 +875,51 @@
               "kind": "Command",
               "header": "Extract here",
               "command": "ExtractHere",
+              "items": []
+            },
+            {
+              "id": 4,
+              "name": "ContextSeparator",
+              "kind": "Separator",
+              "items": []
+            },
+            {
+              "id": 5,
+              "name": "CopyRow",
+              "kind": "Command",
+              "header": "Copy path",
+              "command": "CopyPath",
+              "items": []
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "name": "RightEntries",
+          "kind": "Context",
+          "items": [
+            {
+              "id": 1,
+              "name": "OpenRow",
+              "kind": "Command",
+              "header": "Open",
+              "command": "OpenItem",
+              "items": []
+            },
+            {
+              "id": 2,
+              "name": "ExtractRow",
+              "kind": "Command",
+              "header": "Extract...",
+              "command": "ExtractSelected",
+              "items": []
+            },
+            {
+              "id": 3,
+              "name": "CopyToOtherRow",
+              "kind": "Command",
+              "header": "Copy to other pane",
+              "command": "CopyToOther",
               "items": []
             },
             {

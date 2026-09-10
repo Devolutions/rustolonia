@@ -3,7 +3,7 @@
   "files": [
     {
       "path": "generated_view_models.rs",
-      "sha256": "1659194e3c38535cea684366c29db4451d97c7da59c3f9a19a00286b7f32c8d5"
+      "sha256": "8bb21d23ecc3e8e2e29c2b70dd773ba9d04dcbc36b96232c5a1e501154fce65a"
     },
     {
       "path": "RustViewRegistry.g.cs",
@@ -11,7 +11,7 @@
     },
     {
       "path": "view-model.contract.md",
-      "sha256": "5c37d40185adc79c562d8d96ede9fc383941daa54e935d1fb4f6565becc0ce53"
+      "sha256": "0233d04e1a2fa4ac63b85011bd8e2dd91d839304bdc085ba5d080cf0ab7bae70"
     }
   ]
 }
