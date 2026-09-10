@@ -2404,6 +2404,116 @@ unsafe extern "system" fn i_avn_control_size_changed_handler_invoke(this: *mut I
     hr
 }
 
+pub const I_AVN_CONTROL_GOT_FOCUS_HANDLER_IID: Guid = Guid { data1: 0x6621A073, data2: 0x4D3B, data3: 0x54C6, data4: [0xA3, 0x2E, 0x57, 0x01, 0xCD, 0xB7, 0x45, 0xAD] };
+
+#[derive(Debug)]
+pub struct ControlGotFocusEventArgs {
+    pub navigation_method: i32,
+    pub key_modifiers: i32,
+}
+
+#[repr(C)]
+struct IAvnControlGotFocusHandlerVtbl {
+    query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
+    add_ref: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    release: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    invoke: unsafe extern "system" fn(*mut IAvnControlGotFocusHandler, navigation_method: i32, key_modifiers: i32) -> i32,
+}
+
+#[repr(C)]
+pub struct IAvnControlGotFocusHandler { vtbl: *const IAvnControlGotFocusHandlerVtbl }
+
+unsafe impl ComInterface for IAvnControlGotFocusHandler { const IID: Guid = I_AVN_CONTROL_GOT_FOCUS_HANDLER_IID; }
+
+static I_AVN_CONTROL_GOT_FOCUS_HANDLER_VTBL: IAvnControlGotFocusHandlerVtbl = IAvnControlGotFocusHandlerVtbl {
+    query_interface: i_avn_control_got_focus_handler_query_interface,
+    add_ref: i_avn_control_got_focus_handler_add_ref,
+    release: i_avn_control_got_focus_handler_release,
+    invoke: i_avn_control_got_focus_handler_invoke,
+};
+
+pub fn control_got_focus_handler(callback: impl FnMut(&mut ControlGotFocusEventArgs) -> Result<()> + Send + 'static) -> ComPtr<IAvnControlGotFocusHandler> {
+    crate::event_callback::create(IAvnControlGotFocusHandler { vtbl: &I_AVN_CONTROL_GOT_FOCUS_HANDLER_VTBL }, callback)
+}
+
+unsafe extern "system" fn i_avn_control_got_focus_handler_query_interface(this: *mut IUnknown, iid: *const Guid, result: *mut *mut c_void) -> i32 {
+    crate::event_callback::query_interface::<IAvnControlGotFocusHandler, ControlGotFocusEventArgs>(this, iid, result)
+}
+
+unsafe extern "system" fn i_avn_control_got_focus_handler_add_ref(this: *mut IUnknown) -> u32 {
+    crate::event_callback::add_ref::<IAvnControlGotFocusHandler, ControlGotFocusEventArgs>(this)
+}
+
+unsafe extern "system" fn i_avn_control_got_focus_handler_release(this: *mut IUnknown) -> u32 {
+    crate::event_callback::release::<IAvnControlGotFocusHandler, ControlGotFocusEventArgs>(this)
+}
+
+unsafe extern "system" fn i_avn_control_got_focus_handler_invoke(this: *mut IAvnControlGotFocusHandler, navigation_method: i32, key_modifiers: i32) -> i32 {
+    let mut arguments = ControlGotFocusEventArgs {
+        navigation_method,
+        key_modifiers,
+    };
+    let hr = crate::event_callback::invoke::<IAvnControlGotFocusHandler, ControlGotFocusEventArgs>(this, &mut arguments);
+    if hr >= 0 {
+    }
+    hr
+}
+
+pub const I_AVN_CONTROL_LOST_FOCUS_HANDLER_IID: Guid = Guid { data1: 0xBB0FBAD2, data2: 0xDB37, data3: 0x56AE, data4: [0xA3, 0xC2, 0x73, 0xBC, 0x20, 0x30, 0xBD, 0x06] };
+
+#[repr(C)]
+struct IAvnControlLostFocusHandlerVtbl {
+    query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
+    add_ref: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    release: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    invoke: unsafe extern "system" fn(*mut IAvnControlLostFocusHandler) -> i32,
+}
+
+#[repr(C)]
+pub struct IAvnControlLostFocusHandler {
+    vtbl: *const IAvnControlLostFocusHandlerVtbl,
+}
+
+unsafe impl ComInterface for IAvnControlLostFocusHandler {
+    const IID: Guid = I_AVN_CONTROL_LOST_FOCUS_HANDLER_IID;
+}
+
+impl ComPtr<IAvnControlLostFocusHandler> {
+    pub fn invoke(&self) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().invoke)(self.as_raw());
+            hresult::check(hr)
+        }
+    }
+}
+
+static I_AVN_CONTROL_LOST_FOCUS_HANDLER_VTBL: IAvnControlLostFocusHandlerVtbl = IAvnControlLostFocusHandlerVtbl {
+    query_interface: i_avn_control_lost_focus_handler_query_interface,
+    add_ref: i_avn_control_lost_focus_handler_add_ref,
+    release: i_avn_control_lost_focus_handler_release,
+    invoke: i_avn_control_lost_focus_handler_invoke,
+};
+
+pub fn control_lost_focus_handler(mut callback: impl FnMut() -> Result<()> + Send + 'static) -> ComPtr<IAvnControlLostFocusHandler> {
+    crate::event_callback::create::<IAvnControlLostFocusHandler, ()>(IAvnControlLostFocusHandler { vtbl: &I_AVN_CONTROL_LOST_FOCUS_HANDLER_VTBL }, move |_| callback())
+}
+
+unsafe extern "system" fn i_avn_control_lost_focus_handler_query_interface(this: *mut IUnknown, iid: *const Guid, result: *mut *mut c_void) -> i32 {
+    crate::event_callback::query_interface::<IAvnControlLostFocusHandler, ()>(this, iid, result)
+}
+
+unsafe extern "system" fn i_avn_control_lost_focus_handler_add_ref(this: *mut IUnknown) -> u32 {
+    crate::event_callback::add_ref::<IAvnControlLostFocusHandler, ()>(this)
+}
+
+unsafe extern "system" fn i_avn_control_lost_focus_handler_release(this: *mut IUnknown) -> u32 {
+    crate::event_callback::release::<IAvnControlLostFocusHandler, ()>(this)
+}
+
+unsafe extern "system" fn i_avn_control_lost_focus_handler_invoke(this: *mut IAvnControlLostFocusHandler) -> i32 {
+    crate::event_callback::invoke::<IAvnControlLostFocusHandler, ()>(this, &mut ())
+}
+
 pub const I_AVN_CONTROL_KEY_DOWN_HANDLER_IID: Guid = Guid { data1: 0x9232F26F, data2: 0x2F3B, data3: 0x5BA2, data4: [0xB0, 0x98, 0xE4, 0xCB, 0x6B, 0x26, 0xBD, 0xA3] };
 
 #[derive(Debug)]
@@ -2461,6 +2571,69 @@ unsafe extern "system" fn i_avn_control_key_down_handler_invoke(this: *mut IAvnC
         handled: *handled != 0,
     };
     let hr = crate::event_callback::invoke::<IAvnControlKeyDownHandler, ControlKeyDownEventArgs>(this, &mut arguments);
+    if hr >= 0 {
+        *handled = i32::from(arguments.handled);
+    }
+    hr
+}
+
+pub const I_AVN_CONTROL_KEY_UP_HANDLER_IID: Guid = Guid { data1: 0xB4FC3B9A, data2: 0xCF71, data3: 0x5EBB, data4: [0x98, 0x52, 0xA4, 0x6A, 0xEC, 0x80, 0xC6, 0xFE] };
+
+#[derive(Debug)]
+pub struct ControlKeyUpEventArgs {
+    pub key: i32,
+    pub physical_key: i32,
+    pub key_modifiers: i32,
+    pub key_symbol: Option<String>,
+    pub handled: bool,
+}
+
+#[repr(C)]
+struct IAvnControlKeyUpHandlerVtbl {
+    query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
+    add_ref: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    release: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    invoke: unsafe extern "system" fn(*mut IAvnControlKeyUpHandler, key: i32, physical_key: i32, key_modifiers: i32, key_symbol: *mut u16, handled: *mut i32) -> i32,
+}
+
+#[repr(C)]
+pub struct IAvnControlKeyUpHandler { vtbl: *const IAvnControlKeyUpHandlerVtbl }
+
+unsafe impl ComInterface for IAvnControlKeyUpHandler { const IID: Guid = I_AVN_CONTROL_KEY_UP_HANDLER_IID; }
+
+static I_AVN_CONTROL_KEY_UP_HANDLER_VTBL: IAvnControlKeyUpHandlerVtbl = IAvnControlKeyUpHandlerVtbl {
+    query_interface: i_avn_control_key_up_handler_query_interface,
+    add_ref: i_avn_control_key_up_handler_add_ref,
+    release: i_avn_control_key_up_handler_release,
+    invoke: i_avn_control_key_up_handler_invoke,
+};
+
+pub fn control_key_up_handler(callback: impl FnMut(&mut ControlKeyUpEventArgs) -> Result<()> + Send + 'static) -> ComPtr<IAvnControlKeyUpHandler> {
+    crate::event_callback::create(IAvnControlKeyUpHandler { vtbl: &I_AVN_CONTROL_KEY_UP_HANDLER_VTBL }, callback)
+}
+
+unsafe extern "system" fn i_avn_control_key_up_handler_query_interface(this: *mut IUnknown, iid: *const Guid, result: *mut *mut c_void) -> i32 {
+    crate::event_callback::query_interface::<IAvnControlKeyUpHandler, ControlKeyUpEventArgs>(this, iid, result)
+}
+
+unsafe extern "system" fn i_avn_control_key_up_handler_add_ref(this: *mut IUnknown) -> u32 {
+    crate::event_callback::add_ref::<IAvnControlKeyUpHandler, ControlKeyUpEventArgs>(this)
+}
+
+unsafe extern "system" fn i_avn_control_key_up_handler_release(this: *mut IUnknown) -> u32 {
+    crate::event_callback::release::<IAvnControlKeyUpHandler, ControlKeyUpEventArgs>(this)
+}
+
+unsafe extern "system" fn i_avn_control_key_up_handler_invoke(this: *mut IAvnControlKeyUpHandler, key: i32, physical_key: i32, key_modifiers: i32, key_symbol: *mut u16, handled: *mut i32) -> i32 {
+    if handled.is_null() { return hresult::E_POINTER; }
+    let mut arguments = ControlKeyUpEventArgs {
+        key,
+        physical_key,
+        key_modifiers,
+        key_symbol: crate::clone_utf16(key_symbol),
+        handled: *handled != 0,
+    };
+    let hr = crate::event_callback::invoke::<IAvnControlKeyUpHandler, ControlKeyUpEventArgs>(this, &mut arguments);
     if hr >= 0 {
         *handled = i32::from(arguments.handled);
     }
@@ -3622,33 +3795,26 @@ unsafe extern "system" fn i_avn_popup_flyout_base_opening_handler_invoke(this: *
     crate::event_callback::invoke::<IAvnPopupFlyoutBaseOpeningHandler, ()>(this, &mut ())
 }
 
-pub const I_AVN_RANGE_BASE_VALUE_CHANGED_HANDLER_IID: Guid = Guid { data1: 0xDAEDA8F7, data2: 0xD1F6, data3: 0x54B6, data4: [0x90, 0x0D, 0x4A, 0xAB, 0x0B, 0x0C, 0x72, 0xBA] };
+pub const I_AVN_RANGE_BASE_VALUE_CHANGED_HANDLER_IID: Guid = Guid { data1: 0xD71E5403, data2: 0x7A7E, data3: 0x5C5A, data4: [0x8A, 0x48, 0x4C, 0x89, 0x34, 0x6F, 0x01, 0x79] };
+
+#[derive(Debug)]
+pub struct RangeBaseValueChangedEventArgs {
+    pub old_value: f64,
+    pub new_value: f64,
+}
 
 #[repr(C)]
 struct IAvnRangeBaseValueChangedHandlerVtbl {
     query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
     add_ref: unsafe extern "system" fn(*mut IUnknown) -> u32,
     release: unsafe extern "system" fn(*mut IUnknown) -> u32,
-    invoke: unsafe extern "system" fn(*mut IAvnRangeBaseValueChangedHandler) -> i32,
+    invoke: unsafe extern "system" fn(*mut IAvnRangeBaseValueChangedHandler, old_value: f64, new_value: f64) -> i32,
 }
 
 #[repr(C)]
-pub struct IAvnRangeBaseValueChangedHandler {
-    vtbl: *const IAvnRangeBaseValueChangedHandlerVtbl,
-}
+pub struct IAvnRangeBaseValueChangedHandler { vtbl: *const IAvnRangeBaseValueChangedHandlerVtbl }
 
-unsafe impl ComInterface for IAvnRangeBaseValueChangedHandler {
-    const IID: Guid = I_AVN_RANGE_BASE_VALUE_CHANGED_HANDLER_IID;
-}
-
-impl ComPtr<IAvnRangeBaseValueChangedHandler> {
-    pub fn invoke(&self) -> Result<()> {
-        unsafe {
-            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().invoke)(self.as_raw());
-            hresult::check(hr)
-        }
-    }
-}
+unsafe impl ComInterface for IAvnRangeBaseValueChangedHandler { const IID: Guid = I_AVN_RANGE_BASE_VALUE_CHANGED_HANDLER_IID; }
 
 static I_AVN_RANGE_BASE_VALUE_CHANGED_HANDLER_VTBL: IAvnRangeBaseValueChangedHandlerVtbl = IAvnRangeBaseValueChangedHandlerVtbl {
     query_interface: i_avn_range_base_value_changed_handler_query_interface,
@@ -3657,53 +3823,96 @@ static I_AVN_RANGE_BASE_VALUE_CHANGED_HANDLER_VTBL: IAvnRangeBaseValueChangedHan
     invoke: i_avn_range_base_value_changed_handler_invoke,
 };
 
-pub fn range_base_value_changed_handler(mut callback: impl FnMut() -> Result<()> + Send + 'static) -> ComPtr<IAvnRangeBaseValueChangedHandler> {
-    crate::event_callback::create::<IAvnRangeBaseValueChangedHandler, ()>(IAvnRangeBaseValueChangedHandler { vtbl: &I_AVN_RANGE_BASE_VALUE_CHANGED_HANDLER_VTBL }, move |_| callback())
+pub fn range_base_value_changed_handler(callback: impl FnMut(&mut RangeBaseValueChangedEventArgs) -> Result<()> + Send + 'static) -> ComPtr<IAvnRangeBaseValueChangedHandler> {
+    crate::event_callback::create(IAvnRangeBaseValueChangedHandler { vtbl: &I_AVN_RANGE_BASE_VALUE_CHANGED_HANDLER_VTBL }, callback)
 }
 
 unsafe extern "system" fn i_avn_range_base_value_changed_handler_query_interface(this: *mut IUnknown, iid: *const Guid, result: *mut *mut c_void) -> i32 {
-    crate::event_callback::query_interface::<IAvnRangeBaseValueChangedHandler, ()>(this, iid, result)
+    crate::event_callback::query_interface::<IAvnRangeBaseValueChangedHandler, RangeBaseValueChangedEventArgs>(this, iid, result)
 }
 
 unsafe extern "system" fn i_avn_range_base_value_changed_handler_add_ref(this: *mut IUnknown) -> u32 {
-    crate::event_callback::add_ref::<IAvnRangeBaseValueChangedHandler, ()>(this)
+    crate::event_callback::add_ref::<IAvnRangeBaseValueChangedHandler, RangeBaseValueChangedEventArgs>(this)
 }
 
 unsafe extern "system" fn i_avn_range_base_value_changed_handler_release(this: *mut IUnknown) -> u32 {
-    crate::event_callback::release::<IAvnRangeBaseValueChangedHandler, ()>(this)
+    crate::event_callback::release::<IAvnRangeBaseValueChangedHandler, RangeBaseValueChangedEventArgs>(this)
 }
 
-unsafe extern "system" fn i_avn_range_base_value_changed_handler_invoke(this: *mut IAvnRangeBaseValueChangedHandler) -> i32 {
-    crate::event_callback::invoke::<IAvnRangeBaseValueChangedHandler, ()>(this, &mut ())
+unsafe extern "system" fn i_avn_range_base_value_changed_handler_invoke(this: *mut IAvnRangeBaseValueChangedHandler, old_value: f64, new_value: f64) -> i32 {
+    let mut arguments = RangeBaseValueChangedEventArgs {
+        old_value,
+        new_value,
+    };
+    let hr = crate::event_callback::invoke::<IAvnRangeBaseValueChangedHandler, RangeBaseValueChangedEventArgs>(this, &mut arguments);
+    if hr >= 0 {
+    }
+    hr
 }
 
-pub const I_AVN_SELECTING_ITEMS_CONTROL_SELECTION_CHANGED_HANDLER_IID: Guid = Guid { data1: 0x80E817ED, data2: 0x8F0E, data3: 0x5208, data4: [0x9E, 0xFD, 0xEC, 0xBD, 0xEB, 0xC5, 0x6A, 0x46] };
+pub const I_AVN_SELECTING_ITEMS_CONTROL_SELECTION_CHANGED_ARGS_IID: Guid = Guid { data1: 0xA5A998E3, data2: 0x805F, data3: 0x5BB9, data4: [0xBE, 0x35, 0x4A, 0xCC, 0xDA, 0x82, 0xBD, 0x37] };
+
+#[repr(C)]
+struct IAvnSelectingItemsControlSelectionChangedArgsVtbl {
+    query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
+    add_ref: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    release: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    get_added_items_count: unsafe extern "system" fn(*mut IAvnSelectingItemsControlSelectionChangedArgs, *mut i32) -> i32,
+    get_added_items_at: unsafe extern "system" fn(*mut IAvnSelectingItemsControlSelectionChangedArgs, i32, *mut AvnVariant) -> i32,
+    get_removed_items_count: unsafe extern "system" fn(*mut IAvnSelectingItemsControlSelectionChangedArgs, *mut i32) -> i32,
+    get_removed_items_at: unsafe extern "system" fn(*mut IAvnSelectingItemsControlSelectionChangedArgs, i32, *mut AvnVariant) -> i32,
+}
+
+#[repr(C)]
+pub struct IAvnSelectingItemsControlSelectionChangedArgs { vtbl: *const IAvnSelectingItemsControlSelectionChangedArgsVtbl }
+
+unsafe impl ComInterface for IAvnSelectingItemsControlSelectionChangedArgs { const IID: Guid = I_AVN_SELECTING_ITEMS_CONTROL_SELECTION_CHANGED_ARGS_IID; }
+
+impl ComPtr<IAvnSelectingItemsControlSelectionChangedArgs> {
+    pub fn added_items_count(&self) -> Result<i32> {
+        unsafe {
+            let mut value = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_added_items_count)(self.as_raw(), &mut value);
+            hresult::check(hr).map(|_| value)
+        }
+    }
+    pub fn added_items_at(&self, index: i32) -> Result<AvnVariant> {
+        unsafe {
+            let mut value = AvnVariant::default();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_added_items_at)(self.as_raw(), index, &mut value);
+            hresult::check(hr).map(|_| value)
+        }
+    }
+    pub fn removed_items_count(&self) -> Result<i32> {
+        unsafe {
+            let mut value = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_removed_items_count)(self.as_raw(), &mut value);
+            hresult::check(hr).map(|_| value)
+        }
+    }
+    pub fn removed_items_at(&self, index: i32) -> Result<AvnVariant> {
+        unsafe {
+            let mut value = AvnVariant::default();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_removed_items_at)(self.as_raw(), index, &mut value);
+            hresult::check(hr).map(|_| value)
+        }
+    }
+}
+
+pub const I_AVN_SELECTING_ITEMS_CONTROL_SELECTION_CHANGED_HANDLER_IID: Guid = Guid { data1: 0xD9AAACF6, data2: 0xE516, data3: 0x52AC, data4: [0xAB, 0xBE, 0x3E, 0x02, 0x10, 0x37, 0x91, 0x61] };
 
 #[repr(C)]
 struct IAvnSelectingItemsControlSelectionChangedHandlerVtbl {
     query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
     add_ref: unsafe extern "system" fn(*mut IUnknown) -> u32,
     release: unsafe extern "system" fn(*mut IUnknown) -> u32,
-    invoke: unsafe extern "system" fn(*mut IAvnSelectingItemsControlSelectionChangedHandler) -> i32,
+    invoke: unsafe extern "system" fn(*mut IAvnSelectingItemsControlSelectionChangedHandler, *mut IAvnSelectingItemsControlSelectionChangedArgs) -> i32,
 }
 
 #[repr(C)]
-pub struct IAvnSelectingItemsControlSelectionChangedHandler {
-    vtbl: *const IAvnSelectingItemsControlSelectionChangedHandlerVtbl,
-}
+pub struct IAvnSelectingItemsControlSelectionChangedHandler { vtbl: *const IAvnSelectingItemsControlSelectionChangedHandlerVtbl }
 
-unsafe impl ComInterface for IAvnSelectingItemsControlSelectionChangedHandler {
-    const IID: Guid = I_AVN_SELECTING_ITEMS_CONTROL_SELECTION_CHANGED_HANDLER_IID;
-}
-
-impl ComPtr<IAvnSelectingItemsControlSelectionChangedHandler> {
-    pub fn invoke(&self) -> Result<()> {
-        unsafe {
-            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().invoke)(self.as_raw());
-            hresult::check(hr)
-        }
-    }
-}
+unsafe impl ComInterface for IAvnSelectingItemsControlSelectionChangedHandler { const IID: Guid = I_AVN_SELECTING_ITEMS_CONTROL_SELECTION_CHANGED_HANDLER_IID; }
 
 static I_AVN_SELECTING_ITEMS_CONTROL_SELECTION_CHANGED_HANDLER_VTBL: IAvnSelectingItemsControlSelectionChangedHandlerVtbl = IAvnSelectingItemsControlSelectionChangedHandlerVtbl {
     query_interface: i_avn_selecting_items_control_selection_changed_handler_query_interface,
@@ -3712,24 +3921,29 @@ static I_AVN_SELECTING_ITEMS_CONTROL_SELECTION_CHANGED_HANDLER_VTBL: IAvnSelecti
     invoke: i_avn_selecting_items_control_selection_changed_handler_invoke,
 };
 
-pub fn selecting_items_control_selection_changed_handler(mut callback: impl FnMut() -> Result<()> + Send + 'static) -> ComPtr<IAvnSelectingItemsControlSelectionChangedHandler> {
-    crate::event_callback::create::<IAvnSelectingItemsControlSelectionChangedHandler, ()>(IAvnSelectingItemsControlSelectionChangedHandler { vtbl: &I_AVN_SELECTING_ITEMS_CONTROL_SELECTION_CHANGED_HANDLER_VTBL }, move |_| callback())
+pub fn selecting_items_control_selection_changed_handler(callback: impl FnMut(&mut ComPtr<IAvnSelectingItemsControlSelectionChangedArgs>) -> Result<()> + Send + 'static) -> ComPtr<IAvnSelectingItemsControlSelectionChangedHandler> {
+    crate::event_callback::create(IAvnSelectingItemsControlSelectionChangedHandler { vtbl: &I_AVN_SELECTING_ITEMS_CONTROL_SELECTION_CHANGED_HANDLER_VTBL }, callback)
 }
 
 unsafe extern "system" fn i_avn_selecting_items_control_selection_changed_handler_query_interface(this: *mut IUnknown, iid: *const Guid, result: *mut *mut c_void) -> i32 {
-    crate::event_callback::query_interface::<IAvnSelectingItemsControlSelectionChangedHandler, ()>(this, iid, result)
+    crate::event_callback::query_interface::<IAvnSelectingItemsControlSelectionChangedHandler, ComPtr<IAvnSelectingItemsControlSelectionChangedArgs>>(this, iid, result)
 }
 
 unsafe extern "system" fn i_avn_selecting_items_control_selection_changed_handler_add_ref(this: *mut IUnknown) -> u32 {
-    crate::event_callback::add_ref::<IAvnSelectingItemsControlSelectionChangedHandler, ()>(this)
+    crate::event_callback::add_ref::<IAvnSelectingItemsControlSelectionChangedHandler, ComPtr<IAvnSelectingItemsControlSelectionChangedArgs>>(this)
 }
 
 unsafe extern "system" fn i_avn_selecting_items_control_selection_changed_handler_release(this: *mut IUnknown) -> u32 {
-    crate::event_callback::release::<IAvnSelectingItemsControlSelectionChangedHandler, ()>(this)
+    crate::event_callback::release::<IAvnSelectingItemsControlSelectionChangedHandler, ComPtr<IAvnSelectingItemsControlSelectionChangedArgs>>(this)
 }
 
-unsafe extern "system" fn i_avn_selecting_items_control_selection_changed_handler_invoke(this: *mut IAvnSelectingItemsControlSelectionChangedHandler) -> i32 {
-    crate::event_callback::invoke::<IAvnSelectingItemsControlSelectionChangedHandler, ()>(this, &mut ())
+unsafe extern "system" fn i_avn_selecting_items_control_selection_changed_handler_invoke(this: *mut IAvnSelectingItemsControlSelectionChangedHandler, args: *mut IAvnSelectingItemsControlSelectionChangedArgs) -> i32 {
+    let mut arguments = match unsafe { ComPtr::from_raw(args) } {
+        Some(arguments) => arguments,
+        None => return hresult::E_POINTER,
+    };
+    let hr = crate::event_callback::invoke::<IAvnSelectingItemsControlSelectionChangedHandler, ComPtr<IAvnSelectingItemsControlSelectionChangedArgs>>(this, &mut arguments);
+    hr
 }
 
 pub const I_AVN_THUMB_DRAG_STARTED_HANDLER_IID: Guid = Guid { data1: 0xBCA61CC5, data2: 0x8334, data3: 0x5A1E, data4: [0xA6, 0xF1, 0xD9, 0xA3, 0x1D, 0x1E, 0xE5, 0x02] };
@@ -4938,33 +5152,69 @@ unsafe extern "system" fn i_avn_tray_icon_clicked_handler_invoke(this: *mut IAvn
     crate::event_callback::invoke::<IAvnTrayIconClickedHandler, ()>(this, &mut ())
 }
 
-pub const I_AVN_TREE_VIEW_SELECTION_CHANGED_HANDLER_IID: Guid = Guid { data1: 0xED72A060, data2: 0x42CB, data3: 0x5648, data4: [0x80, 0x4F, 0xC5, 0xDC, 0xAB, 0x3C, 0xD8, 0x7A] };
+pub const I_AVN_TREE_VIEW_SELECTION_CHANGED_ARGS_IID: Guid = Guid { data1: 0xA29EDF0E, data2: 0xEBE4, data3: 0x5118, data4: [0x99, 0xEB, 0x61, 0x5A, 0xE0, 0x0A, 0x6B, 0xD5] };
+
+#[repr(C)]
+struct IAvnTreeViewSelectionChangedArgsVtbl {
+    query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
+    add_ref: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    release: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    get_added_items_count: unsafe extern "system" fn(*mut IAvnTreeViewSelectionChangedArgs, *mut i32) -> i32,
+    get_added_items_at: unsafe extern "system" fn(*mut IAvnTreeViewSelectionChangedArgs, i32, *mut AvnVariant) -> i32,
+    get_removed_items_count: unsafe extern "system" fn(*mut IAvnTreeViewSelectionChangedArgs, *mut i32) -> i32,
+    get_removed_items_at: unsafe extern "system" fn(*mut IAvnTreeViewSelectionChangedArgs, i32, *mut AvnVariant) -> i32,
+}
+
+#[repr(C)]
+pub struct IAvnTreeViewSelectionChangedArgs { vtbl: *const IAvnTreeViewSelectionChangedArgsVtbl }
+
+unsafe impl ComInterface for IAvnTreeViewSelectionChangedArgs { const IID: Guid = I_AVN_TREE_VIEW_SELECTION_CHANGED_ARGS_IID; }
+
+impl ComPtr<IAvnTreeViewSelectionChangedArgs> {
+    pub fn added_items_count(&self) -> Result<i32> {
+        unsafe {
+            let mut value = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_added_items_count)(self.as_raw(), &mut value);
+            hresult::check(hr).map(|_| value)
+        }
+    }
+    pub fn added_items_at(&self, index: i32) -> Result<AvnVariant> {
+        unsafe {
+            let mut value = AvnVariant::default();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_added_items_at)(self.as_raw(), index, &mut value);
+            hresult::check(hr).map(|_| value)
+        }
+    }
+    pub fn removed_items_count(&self) -> Result<i32> {
+        unsafe {
+            let mut value = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_removed_items_count)(self.as_raw(), &mut value);
+            hresult::check(hr).map(|_| value)
+        }
+    }
+    pub fn removed_items_at(&self, index: i32) -> Result<AvnVariant> {
+        unsafe {
+            let mut value = AvnVariant::default();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_removed_items_at)(self.as_raw(), index, &mut value);
+            hresult::check(hr).map(|_| value)
+        }
+    }
+}
+
+pub const I_AVN_TREE_VIEW_SELECTION_CHANGED_HANDLER_IID: Guid = Guid { data1: 0x9F8E36AD, data2: 0x6E33, data3: 0x5211, data4: [0xB5, 0x70, 0xEB, 0x8B, 0x0C, 0x94, 0x95, 0x11] };
 
 #[repr(C)]
 struct IAvnTreeViewSelectionChangedHandlerVtbl {
     query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
     add_ref: unsafe extern "system" fn(*mut IUnknown) -> u32,
     release: unsafe extern "system" fn(*mut IUnknown) -> u32,
-    invoke: unsafe extern "system" fn(*mut IAvnTreeViewSelectionChangedHandler) -> i32,
+    invoke: unsafe extern "system" fn(*mut IAvnTreeViewSelectionChangedHandler, *mut IAvnTreeViewSelectionChangedArgs) -> i32,
 }
 
 #[repr(C)]
-pub struct IAvnTreeViewSelectionChangedHandler {
-    vtbl: *const IAvnTreeViewSelectionChangedHandlerVtbl,
-}
+pub struct IAvnTreeViewSelectionChangedHandler { vtbl: *const IAvnTreeViewSelectionChangedHandlerVtbl }
 
-unsafe impl ComInterface for IAvnTreeViewSelectionChangedHandler {
-    const IID: Guid = I_AVN_TREE_VIEW_SELECTION_CHANGED_HANDLER_IID;
-}
-
-impl ComPtr<IAvnTreeViewSelectionChangedHandler> {
-    pub fn invoke(&self) -> Result<()> {
-        unsafe {
-            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().invoke)(self.as_raw());
-            hresult::check(hr)
-        }
-    }
-}
+unsafe impl ComInterface for IAvnTreeViewSelectionChangedHandler { const IID: Guid = I_AVN_TREE_VIEW_SELECTION_CHANGED_HANDLER_IID; }
 
 static I_AVN_TREE_VIEW_SELECTION_CHANGED_HANDLER_VTBL: IAvnTreeViewSelectionChangedHandlerVtbl = IAvnTreeViewSelectionChangedHandlerVtbl {
     query_interface: i_avn_tree_view_selection_changed_handler_query_interface,
@@ -4973,24 +5223,29 @@ static I_AVN_TREE_VIEW_SELECTION_CHANGED_HANDLER_VTBL: IAvnTreeViewSelectionChan
     invoke: i_avn_tree_view_selection_changed_handler_invoke,
 };
 
-pub fn tree_view_selection_changed_handler(mut callback: impl FnMut() -> Result<()> + Send + 'static) -> ComPtr<IAvnTreeViewSelectionChangedHandler> {
-    crate::event_callback::create::<IAvnTreeViewSelectionChangedHandler, ()>(IAvnTreeViewSelectionChangedHandler { vtbl: &I_AVN_TREE_VIEW_SELECTION_CHANGED_HANDLER_VTBL }, move |_| callback())
+pub fn tree_view_selection_changed_handler(callback: impl FnMut(&mut ComPtr<IAvnTreeViewSelectionChangedArgs>) -> Result<()> + Send + 'static) -> ComPtr<IAvnTreeViewSelectionChangedHandler> {
+    crate::event_callback::create(IAvnTreeViewSelectionChangedHandler { vtbl: &I_AVN_TREE_VIEW_SELECTION_CHANGED_HANDLER_VTBL }, callback)
 }
 
 unsafe extern "system" fn i_avn_tree_view_selection_changed_handler_query_interface(this: *mut IUnknown, iid: *const Guid, result: *mut *mut c_void) -> i32 {
-    crate::event_callback::query_interface::<IAvnTreeViewSelectionChangedHandler, ()>(this, iid, result)
+    crate::event_callback::query_interface::<IAvnTreeViewSelectionChangedHandler, ComPtr<IAvnTreeViewSelectionChangedArgs>>(this, iid, result)
 }
 
 unsafe extern "system" fn i_avn_tree_view_selection_changed_handler_add_ref(this: *mut IUnknown) -> u32 {
-    crate::event_callback::add_ref::<IAvnTreeViewSelectionChangedHandler, ()>(this)
+    crate::event_callback::add_ref::<IAvnTreeViewSelectionChangedHandler, ComPtr<IAvnTreeViewSelectionChangedArgs>>(this)
 }
 
 unsafe extern "system" fn i_avn_tree_view_selection_changed_handler_release(this: *mut IUnknown) -> u32 {
-    crate::event_callback::release::<IAvnTreeViewSelectionChangedHandler, ()>(this)
+    crate::event_callback::release::<IAvnTreeViewSelectionChangedHandler, ComPtr<IAvnTreeViewSelectionChangedArgs>>(this)
 }
 
-unsafe extern "system" fn i_avn_tree_view_selection_changed_handler_invoke(this: *mut IAvnTreeViewSelectionChangedHandler) -> i32 {
-    crate::event_callback::invoke::<IAvnTreeViewSelectionChangedHandler, ()>(this, &mut ())
+unsafe extern "system" fn i_avn_tree_view_selection_changed_handler_invoke(this: *mut IAvnTreeViewSelectionChangedHandler, args: *mut IAvnTreeViewSelectionChangedArgs) -> i32 {
+    let mut arguments = match unsafe { ComPtr::from_raw(args) } {
+        Some(arguments) => arguments,
+        None => return hresult::E_POINTER,
+    };
+    let hr = crate::event_callback::invoke::<IAvnTreeViewSelectionChangedHandler, ComPtr<IAvnTreeViewSelectionChangedArgs>>(this, &mut arguments);
+    hr
 }
 
 pub const I_AVN_TREE_VIEW_ITEM_EXPANDED_HANDLER_IID: Guid = Guid { data1: 0xDA50A65B, data2: 0xD90A, data3: 0x5CA4, data4: [0xBB, 0xC6, 0xE3, 0xAD, 0x26, 0xF4, 0x12, 0x3F] };
@@ -5893,7 +6148,7 @@ impl ComPtr<IAvnAvaloniaObject> {
     }
 }
 
-pub const I_AVN_AUTO_COMPLETE_BOX_IID: Guid = Guid { data1: 0x92CEFC39, data2: 0x4E40, data3: 0x5193, data4: [0x89, 0x3F, 0xF3, 0xE2, 0xC7, 0x7E, 0xD2, 0x4C] };
+pub const I_AVN_AUTO_COMPLETE_BOX_IID: Guid = Guid { data1: 0x86643B56, data2: 0xB59D, data3: 0x5EE3, data4: [0x8A, 0x9B, 0xD4, 0x4F, 0x7D, 0xA9, 0x09, 0xE7] };
 
 #[repr(C)]
 struct IAvnAutoCompleteBoxVtbl {
@@ -5960,8 +6215,14 @@ struct IAvnAutoCompleteBoxVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -6486,6 +6747,32 @@ impl ComPtr<IAvnAutoCompleteBox> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -6496,6 +6783,19 @@ impl ComPtr<IAvnAutoCompleteBox> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -7153,7 +7453,7 @@ impl ComPtr<IAvnAutoCompleteBox> {
     }
 }
 
-pub const I_AVN_BORDER_IID: Guid = Guid { data1: 0x80C1079E, data2: 0xAFDF, data3: 0x5483, data4: [0xA5, 0x60, 0x2D, 0xDB, 0x47, 0x5C, 0xF8, 0x94] };
+pub const I_AVN_BORDER_IID: Guid = Guid { data1: 0xDFE5487A, data2: 0xB7C3, data3: 0x5DD1, data4: [0xA6, 0xEF, 0x0C, 0xC9, 0xB9, 0xE6, 0xFC, 0x9C] };
 
 #[repr(C)]
 struct IAvnBorderVtbl {
@@ -7220,8 +7520,14 @@ struct IAvnBorderVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnBorder, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnBorder, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnBorder, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnBorder, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnBorder, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnBorder, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnBorder, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnBorder, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnBorder, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnBorder, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnBorder, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnBorder, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnBorder, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnBorder, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -7673,6 +7979,32 @@ impl ComPtr<IAvnBorder> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -7683,6 +8015,19 @@ impl ComPtr<IAvnBorder> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -7835,7 +8180,7 @@ impl ComPtr<IAvnBorder> {
     }
 }
 
-pub const I_AVN_BUTTON_IID: Guid = Guid { data1: 0x62D66949, data2: 0x2173, data3: 0x5007, data4: [0x96, 0x13, 0x1F, 0x4B, 0x3E, 0x7C, 0x14, 0x4E] };
+pub const I_AVN_BUTTON_IID: Guid = Guid { data1: 0x39E10286, data2: 0x7BB7, data3: 0x511B, data4: [0x88, 0x85, 0x73, 0x3B, 0x3A, 0xB3, 0x80, 0xF6] };
 
 #[repr(C)]
 struct IAvnButtonVtbl {
@@ -7902,8 +8247,14 @@ struct IAvnButtonVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnButton, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnButton, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnButton, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnButton, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnButton, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnButton, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnButton, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnButton, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnButton, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnButton, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnButton, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnButton, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnButton, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnButton, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -8391,6 +8742,32 @@ impl ComPtr<IAvnButton> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -8401,6 +8778,19 @@ impl ComPtr<IAvnButton> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -8806,7 +9196,7 @@ impl ComPtr<IAvnButton> {
     }
 }
 
-pub const I_AVN_BUTTON_SPINNER_IID: Guid = Guid { data1: 0x046C4736, data2: 0xCECE, data3: 0x5455, data4: [0x98, 0xA8, 0xF2, 0xDD, 0x3C, 0x84, 0xC8, 0x46] };
+pub const I_AVN_BUTTON_SPINNER_IID: Guid = Guid { data1: 0x121045E2, data2: 0x0F99, data3: 0x5036, data4: [0xA5, 0xF8, 0x37, 0x3B, 0x15, 0xBC, 0x64, 0x49] };
 
 #[repr(C)]
 struct IAvnButtonSpinnerVtbl {
@@ -8873,8 +9263,14 @@ struct IAvnButtonSpinnerVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnButtonSpinner, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnButtonSpinner, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnButtonSpinner, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnButtonSpinner, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnButtonSpinner, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnButtonSpinner, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnButtonSpinner, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnButtonSpinner, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnButtonSpinner, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnButtonSpinner, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnButtonSpinner, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnButtonSpinner, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnButtonSpinner, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnButtonSpinner, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -9355,6 +9751,32 @@ impl ComPtr<IAvnButtonSpinner> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -9365,6 +9787,19 @@ impl ComPtr<IAvnButtonSpinner> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -9719,7 +10154,7 @@ impl ComPtr<IAvnButtonSpinner> {
     }
 }
 
-pub const I_AVN_CALENDAR_IID: Guid = Guid { data1: 0xF1D659B7, data2: 0x93E5, data3: 0x5093, data4: [0x9D, 0x16, 0xC4, 0x80, 0xF7, 0x52, 0x0E, 0x14] };
+pub const I_AVN_CALENDAR_IID: Guid = Guid { data1: 0xD1959E20, data2: 0xE08E, data3: 0x5A66, data4: [0xA6, 0x3B, 0x4B, 0xD7, 0x14, 0xE6, 0x09, 0xD7] };
 
 #[repr(C)]
 struct IAvnCalendarVtbl {
@@ -9786,8 +10221,14 @@ struct IAvnCalendarVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnCalendar, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnCalendar, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnCalendar, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnCalendar, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnCalendar, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnCalendar, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnCalendar, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnCalendar, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnCalendar, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnCalendar, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnCalendar, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnCalendar, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnCalendar, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnCalendar, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -10282,6 +10723,32 @@ impl ComPtr<IAvnCalendar> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -10292,6 +10759,19 @@ impl ComPtr<IAvnCalendar> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -10748,7 +11228,7 @@ impl ComPtr<IAvnCalendar> {
     }
 }
 
-pub const I_AVN_CALENDAR_DATE_PICKER_IID: Guid = Guid { data1: 0xDC5958DB, data2: 0xF3AD, data3: 0x5B9F, data4: [0x9C, 0x86, 0x7B, 0x66, 0xDD, 0x3D, 0x24, 0x29] };
+pub const I_AVN_CALENDAR_DATE_PICKER_IID: Guid = Guid { data1: 0x52B3592A, data2: 0xD20D, data3: 0x5C93, data4: [0x8D, 0x31, 0xE0, 0x55, 0x2A, 0x74, 0x45, 0xFE] };
 
 #[repr(C)]
 struct IAvnCalendarDatePickerVtbl {
@@ -10815,8 +11295,14 @@ struct IAvnCalendarDatePickerVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -11323,6 +11809,32 @@ impl ComPtr<IAvnCalendarDatePicker> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -11333,6 +11845,19 @@ impl ComPtr<IAvnCalendarDatePicker> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -11873,7 +12398,7 @@ impl ComPtr<IAvnCalendarDatePicker> {
     }
 }
 
-pub const I_AVN_CANVAS_IID: Guid = Guid { data1: 0xD9F89602, data2: 0xBD30, data3: 0x55F3, data4: [0x84, 0xC5, 0x69, 0xEF, 0x65, 0xA6, 0xD0, 0xDA] };
+pub const I_AVN_CANVAS_IID: Guid = Guid { data1: 0xCE4E710B, data2: 0xD3A5, data3: 0x5021, data4: [0xA3, 0x43, 0x75, 0x8F, 0xA0, 0x78, 0xE7, 0x91] };
 
 #[repr(C)]
 struct IAvnCanvasVtbl {
@@ -11940,8 +12465,14 @@ struct IAvnCanvasVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnCanvas, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnCanvas, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnCanvas, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnCanvas, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnCanvas, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnCanvas, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnCanvas, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnCanvas, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnCanvas, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnCanvas, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnCanvas, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnCanvas, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnCanvas, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnCanvas, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -12379,6 +12910,32 @@ impl ComPtr<IAvnCanvas> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -12389,6 +12946,19 @@ impl ComPtr<IAvnCanvas> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -12442,7 +13012,7 @@ impl ComPtr<IAvnCanvas> {
     }
 }
 
-pub const I_AVN_CAROUSEL_IID: Guid = Guid { data1: 0x14D0DA2B, data2: 0xD8DF, data3: 0x5816, data4: [0x8B, 0x51, 0x45, 0x5D, 0xCF, 0x73, 0x8D, 0xF0] };
+pub const I_AVN_CAROUSEL_IID: Guid = Guid { data1: 0xB496C390, data2: 0x157D, data3: 0x54E1, data4: [0x84, 0x15, 0xE4, 0x87, 0xE9, 0x3D, 0xAF, 0x7D] };
 
 #[repr(C)]
 struct IAvnCarouselVtbl {
@@ -12509,8 +13079,14 @@ struct IAvnCarouselVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnCarousel, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnCarousel, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnCarousel, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnCarousel, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnCarousel, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnCarousel, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnCarousel, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnCarousel, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnCarousel, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnCarousel, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnCarousel, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnCarousel, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnCarousel, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnCarousel, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -13006,6 +13582,32 @@ impl ComPtr<IAvnCarousel> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -13016,6 +13618,19 @@ impl ComPtr<IAvnCarousel> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -13474,7 +14089,7 @@ impl ComPtr<IAvnCarousel> {
     }
 }
 
-pub const I_AVN_CHECK_BOX_IID: Guid = Guid { data1: 0x2D002AFC, data2: 0xAAFB, data3: 0x5C2D, data4: [0xB7, 0x47, 0xD0, 0x8D, 0xF7, 0x8A, 0xC8, 0x52] };
+pub const I_AVN_CHECK_BOX_IID: Guid = Guid { data1: 0xAACDB973, data2: 0xAF3D, data3: 0x5BA5, data4: [0xA0, 0x94, 0x63, 0x51, 0x78, 0xEF, 0x2C, 0x2E] };
 
 #[repr(C)]
 struct IAvnCheckBoxVtbl {
@@ -13541,8 +14156,14 @@ struct IAvnCheckBoxVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnCheckBox, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnCheckBox, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnCheckBox, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnCheckBox, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnCheckBox, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnCheckBox, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnCheckBox, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnCheckBox, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnCheckBox, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnCheckBox, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnCheckBox, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnCheckBox, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnCheckBox, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnCheckBox, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -14036,6 +14657,32 @@ impl ComPtr<IAvnCheckBox> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -14046,6 +14693,19 @@ impl ComPtr<IAvnCheckBox> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -14492,7 +15152,7 @@ impl ComPtr<IAvnCheckBox> {
     }
 }
 
-pub const I_AVN_COMBO_BOX_IID: Guid = Guid { data1: 0x86CA773B, data2: 0x56AB, data3: 0x521C, data4: [0xBA, 0x29, 0xD2, 0x57, 0x9C, 0x59, 0xF7, 0xF3] };
+pub const I_AVN_COMBO_BOX_IID: Guid = Guid { data1: 0xC05FA67D, data2: 0x1BEE, data3: 0x51A8, data4: [0x93, 0x67, 0x03, 0x00, 0xAA, 0x1C, 0xAE, 0x23] };
 
 #[repr(C)]
 struct IAvnComboBoxVtbl {
@@ -14559,8 +15219,14 @@ struct IAvnComboBoxVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnComboBox, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnComboBox, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnComboBox, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnComboBox, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnComboBox, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnComboBox, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnComboBox, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnComboBox, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnComboBox, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnComboBox, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnComboBox, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnComboBox, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnComboBox, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnComboBox, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -15069,6 +15735,32 @@ impl ComPtr<IAvnComboBox> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -15079,6 +15771,19 @@ impl ComPtr<IAvnComboBox> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -15629,7 +16334,7 @@ impl ComPtr<IAvnComboBox> {
     }
 }
 
-pub const I_AVN_COMBO_BOX_ITEM_IID: Guid = Guid { data1: 0x2B9D2E17, data2: 0x500A, data3: 0x56F0, data4: [0xA0, 0xDB, 0x14, 0xB9, 0x2F, 0xF2, 0x8C, 0xCB] };
+pub const I_AVN_COMBO_BOX_ITEM_IID: Guid = Guid { data1: 0x4AF5334E, data2: 0x4FEC, data3: 0x5F97, data4: [0x84, 0xF0, 0xCD, 0x61, 0xFD, 0x0C, 0x6B, 0x88] };
 
 #[repr(C)]
 struct IAvnComboBoxItemVtbl {
@@ -15696,8 +16401,14 @@ struct IAvnComboBoxItemVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnComboBoxItem, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnComboBoxItem, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnComboBoxItem, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnComboBoxItem, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnComboBoxItem, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnComboBoxItem, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnComboBoxItem, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnComboBoxItem, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnComboBoxItem, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnComboBoxItem, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnComboBoxItem, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnComboBoxItem, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnComboBoxItem, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnComboBoxItem, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -16170,6 +16881,32 @@ impl ComPtr<IAvnComboBoxItem> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -16180,6 +16917,19 @@ impl ComPtr<IAvnComboBoxItem> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -16479,7 +17229,7 @@ impl ComPtr<IAvnComboBoxItem> {
     }
 }
 
-pub const I_AVN_COMMAND_BAR_IID: Guid = Guid { data1: 0x1A9B7C3D, data2: 0x4D24, data3: 0x5330, data4: [0x9F, 0x8F, 0xD9, 0xD0, 0xBC, 0x71, 0x26, 0x95] };
+pub const I_AVN_COMMAND_BAR_IID: Guid = Guid { data1: 0x355E12ED, data2: 0x4932, data3: 0x5C4C, data4: [0x8A, 0xC1, 0xAA, 0x74, 0xB6, 0x66, 0xB5, 0x84] };
 
 #[repr(C)]
 struct IAvnCommandBarVtbl {
@@ -16546,8 +17296,14 @@ struct IAvnCommandBarVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnCommandBar, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnCommandBar, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnCommandBar, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnCommandBar, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnCommandBar, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnCommandBar, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnCommandBar, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnCommandBar, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnCommandBar, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnCommandBar, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnCommandBar, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnCommandBar, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnCommandBar, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnCommandBar, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -17044,6 +17800,32 @@ impl ComPtr<IAvnCommandBar> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -17054,6 +17836,19 @@ impl ComPtr<IAvnCommandBar> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -17521,7 +18316,7 @@ impl ComPtr<IAvnCommandBar> {
     }
 }
 
-pub const I_AVN_COMMAND_BAR_BUTTON_IID: Guid = Guid { data1: 0x427EE3EA, data2: 0x2EA0, data3: 0x5FF8, data4: [0xB4, 0x13, 0x7D, 0x98, 0x9D, 0x89, 0x26, 0x04] };
+pub const I_AVN_COMMAND_BAR_BUTTON_IID: Guid = Guid { data1: 0x3A7F177E, data2: 0xFB8E, data3: 0x5893, data4: [0xB5, 0x74, 0x99, 0xAC, 0xD4, 0xCB, 0xC8, 0xB5] };
 
 #[repr(C)]
 struct IAvnCommandBarButtonVtbl {
@@ -17588,8 +18383,14 @@ struct IAvnCommandBarButtonVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnCommandBarButton, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnCommandBarButton, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnCommandBarButton, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnCommandBarButton, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnCommandBarButton, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnCommandBarButton, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnCommandBarButton, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnCommandBarButton, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnCommandBarButton, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnCommandBarButton, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnCommandBarButton, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnCommandBarButton, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnCommandBarButton, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnCommandBarButton, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -18089,6 +18890,32 @@ impl ComPtr<IAvnCommandBarButton> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -18099,6 +18926,19 @@ impl ComPtr<IAvnCommandBarButton> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -18589,7 +19429,7 @@ impl ComPtr<IAvnCommandBarButton> {
     }
 }
 
-pub const I_AVN_COMMAND_BAR_SEPARATOR_IID: Guid = Guid { data1: 0x3D86A39E, data2: 0x0EC3, data3: 0x58FA, data4: [0xBE, 0x17, 0x2F, 0x3C, 0xE4, 0xE9, 0x50, 0x21] };
+pub const I_AVN_COMMAND_BAR_SEPARATOR_IID: Guid = Guid { data1: 0x21D4AA3D, data2: 0xADFF, data3: 0x5CC6, data4: [0x9E, 0x76, 0xEA, 0x1F, 0xBB, 0xD1, 0x1C, 0x33] };
 
 #[repr(C)]
 struct IAvnCommandBarSeparatorVtbl {
@@ -18656,8 +19496,14 @@ struct IAvnCommandBarSeparatorVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -19124,6 +19970,32 @@ impl ComPtr<IAvnCommandBarSeparator> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -19134,6 +20006,19 @@ impl ComPtr<IAvnCommandBarSeparator> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -19391,7 +20276,7 @@ impl ComPtr<IAvnCommandBarSeparator> {
     }
 }
 
-pub const I_AVN_COMMAND_BAR_TOGGLE_BUTTON_IID: Guid = Guid { data1: 0x7E7CC18B, data2: 0x4E66, data3: 0x5650, data4: [0x8F, 0xE4, 0x1A, 0xCA, 0x44, 0x5F, 0xA9, 0x07] };
+pub const I_AVN_COMMAND_BAR_TOGGLE_BUTTON_IID: Guid = Guid { data1: 0x28AA86DE, data2: 0x6253, data3: 0x5D07, data4: [0x96, 0x4D, 0x23, 0x78, 0x55, 0x52, 0xFB, 0x86] };
 
 #[repr(C)]
 struct IAvnCommandBarToggleButtonVtbl {
@@ -19458,8 +20343,14 @@ struct IAvnCommandBarToggleButtonVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -19965,6 +20856,32 @@ impl ComPtr<IAvnCommandBarToggleButton> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -19975,6 +20892,19 @@ impl ComPtr<IAvnCommandBarToggleButton> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -20506,7 +21436,7 @@ impl ComPtr<IAvnCommandBarToggleButton> {
     }
 }
 
-pub const I_AVN_CONTENT_CONTROL_IID: Guid = Guid { data1: 0xF3CE3FB2, data2: 0xCD2D, data3: 0x5839, data4: [0x81, 0xC7, 0x3D, 0xF7, 0x0C, 0x3A, 0xD2, 0xF5] };
+pub const I_AVN_CONTENT_CONTROL_IID: Guid = Guid { data1: 0x71FA5ADD, data2: 0x9F62, data3: 0x5918, data4: [0x84, 0xD4, 0x4B, 0x30, 0x0B, 0x8E, 0xA1, 0x92] };
 
 #[repr(C)]
 struct IAvnContentControlVtbl {
@@ -20573,8 +21503,14 @@ struct IAvnContentControlVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnContentControl, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnContentControl, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnContentControl, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnContentControl, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnContentControl, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnContentControl, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnContentControl, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnContentControl, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnContentControl, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnContentControl, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnContentControl, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnContentControl, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnContentControl, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnContentControl, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -21045,6 +21981,32 @@ impl ComPtr<IAvnContentControl> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -21055,6 +22017,19 @@ impl ComPtr<IAvnContentControl> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -21340,7 +22315,7 @@ impl ComPtr<IAvnContentControl> {
     }
 }
 
-pub const I_AVN_CONTEXT_MENU_IID: Guid = Guid { data1: 0xA5BAC0B5, data2: 0x5163, data3: 0x5500, data4: [0x8C, 0x58, 0x62, 0x9B, 0xE7, 0xDE, 0x30, 0x37] };
+pub const I_AVN_CONTEXT_MENU_IID: Guid = Guid { data1: 0x770B19A7, data2: 0xFB74, data3: 0x5BCA, data4: [0xB1, 0xDD, 0x9E, 0x0E, 0xF1, 0x24, 0xEF, 0xEE] };
 
 #[repr(C)]
 struct IAvnContextMenuVtbl {
@@ -21407,8 +22382,14 @@ struct IAvnContextMenuVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnContextMenu, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnContextMenu, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnContextMenu, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnContextMenu, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnContextMenu, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnContextMenu, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnContextMenu, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnContextMenu, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnContextMenu, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnContextMenu, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnContextMenu, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnContextMenu, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnContextMenu, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnContextMenu, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -21929,6 +22910,32 @@ impl ComPtr<IAvnContextMenu> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -21939,6 +22946,19 @@ impl ComPtr<IAvnContextMenu> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -22567,7 +23587,7 @@ impl ComPtr<IAvnContextMenu> {
     }
 }
 
-pub const I_AVN_CONTROL_IID: Guid = Guid { data1: 0x06D79016, data2: 0x63D8, data3: 0x5035, data4: [0xB2, 0x93, 0x19, 0x96, 0x9F, 0x0B, 0xB3, 0xC6] };
+pub const I_AVN_CONTROL_IID: Guid = Guid { data1: 0xABDFF81D, data2: 0xDB26, data3: 0x5BB7, data4: [0x9A, 0xCA, 0x18, 0x35, 0x3E, 0x6D, 0xB4, 0xD4] };
 
 #[repr(C)]
 struct IAvnControlVtbl {
@@ -22634,8 +23654,14 @@ struct IAvnControlVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnControl, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnControl, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnControl, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnControl, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnControl, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnControl, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnControl, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnControl, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnControl, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnControl, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnControl, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnControl, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnControl, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnControl, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -23070,6 +24096,32 @@ impl ComPtr<IAvnControl> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -23080,6 +24132,19 @@ impl ComPtr<IAvnControl> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -23111,7 +24176,7 @@ impl ComPtr<IAvnControl> {
     }
 }
 
-pub const I_AVN_DATE_PICKER_IID: Guid = Guid { data1: 0x5C7D5B90, data2: 0xEC20, data3: 0x5621, data4: [0xBE, 0x13, 0xEA, 0xDA, 0xB8, 0xA0, 0x70, 0x1B] };
+pub const I_AVN_DATE_PICKER_IID: Guid = Guid { data1: 0x1441AD02, data2: 0x88FD, data3: 0x5BCE, data4: [0x9A, 0x23, 0x18, 0x60, 0x76, 0x67, 0xFA, 0xA3] };
 
 #[repr(C)]
 struct IAvnDatePickerVtbl {
@@ -23178,8 +24243,14 @@ struct IAvnDatePickerVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnDatePicker, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnDatePicker, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnDatePicker, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnDatePicker, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnDatePicker, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnDatePicker, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnDatePicker, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnDatePicker, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnDatePicker, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnDatePicker, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnDatePicker, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnDatePicker, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnDatePicker, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnDatePicker, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -23665,6 +24736,32 @@ impl ComPtr<IAvnDatePicker> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -23675,6 +24772,19 @@ impl ComPtr<IAvnDatePicker> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -24069,7 +25179,7 @@ impl ComPtr<IAvnDatePicker> {
     }
 }
 
-pub const I_AVN_DECORATOR_IID: Guid = Guid { data1: 0x57E09C6B, data2: 0xA22C, data3: 0x5F01, data4: [0xB6, 0x5C, 0xE5, 0x4C, 0x3D, 0xD5, 0x5E, 0x6C] };
+pub const I_AVN_DECORATOR_IID: Guid = Guid { data1: 0x73D7A8D4, data2: 0x2B75, data3: 0x5F19, data4: [0x95, 0x8F, 0xDE, 0x0D, 0x15, 0xAC, 0x30, 0x79] };
 
 #[repr(C)]
 struct IAvnDecoratorVtbl {
@@ -24136,8 +25246,14 @@ struct IAvnDecoratorVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnDecorator, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnDecorator, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnDecorator, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnDecorator, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnDecorator, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnDecorator, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnDecorator, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnDecorator, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnDecorator, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnDecorator, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnDecorator, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnDecorator, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnDecorator, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnDecorator, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -24576,6 +25692,32 @@ impl ComPtr<IAvnDecorator> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -24586,6 +25728,19 @@ impl ComPtr<IAvnDecorator> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -24645,7 +25800,7 @@ impl ComPtr<IAvnDecorator> {
     }
 }
 
-pub const I_AVN_DOCK_PANEL_IID: Guid = Guid { data1: 0xF0C3E239, data2: 0x81CB, data3: 0x544D, data4: [0x9C, 0xEF, 0x73, 0xB1, 0xD0, 0x4C, 0x1F, 0xB3] };
+pub const I_AVN_DOCK_PANEL_IID: Guid = Guid { data1: 0x36376ACD, data2: 0x9F74, data3: 0x59B8, data4: [0xAD, 0xCA, 0xCA, 0xE9, 0x6F, 0x5E, 0x70, 0xB9] };
 
 #[repr(C)]
 struct IAvnDockPanelVtbl {
@@ -24712,8 +25867,14 @@ struct IAvnDockPanelVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnDockPanel, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnDockPanel, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnDockPanel, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnDockPanel, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnDockPanel, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnDockPanel, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnDockPanel, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnDockPanel, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnDockPanel, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnDockPanel, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnDockPanel, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnDockPanel, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnDockPanel, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnDockPanel, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -25157,6 +26318,32 @@ impl ComPtr<IAvnDockPanel> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -25167,6 +26354,19 @@ impl ComPtr<IAvnDockPanel> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -25262,7 +26462,7 @@ impl ComPtr<IAvnDockPanel> {
     }
 }
 
-pub const I_AVN_DROP_DOWN_BUTTON_IID: Guid = Guid { data1: 0x7CDEF76D, data2: 0x7FD4, data3: 0x5552, data4: [0xB5, 0x91, 0x2D, 0x98, 0x14, 0x0A, 0x7A, 0x63] };
+pub const I_AVN_DROP_DOWN_BUTTON_IID: Guid = Guid { data1: 0x85F27971, data2: 0xCEB0, data3: 0x528D, data4: [0x8D, 0x3B, 0xC0, 0xAB, 0x62, 0xE1, 0x1F, 0xDA] };
 
 #[repr(C)]
 struct IAvnDropDownButtonVtbl {
@@ -25329,8 +26529,14 @@ struct IAvnDropDownButtonVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnDropDownButton, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnDropDownButton, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnDropDownButton, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnDropDownButton, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnDropDownButton, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnDropDownButton, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnDropDownButton, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnDropDownButton, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnDropDownButton, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnDropDownButton, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnDropDownButton, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnDropDownButton, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnDropDownButton, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnDropDownButton, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -25818,6 +27024,32 @@ impl ComPtr<IAvnDropDownButton> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -25828,6 +27060,19 @@ impl ComPtr<IAvnDropDownButton> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -26233,7 +27478,7 @@ impl ComPtr<IAvnDropDownButton> {
     }
 }
 
-pub const I_AVN_EXPANDER_IID: Guid = Guid { data1: 0x24CFAB36, data2: 0x1C9D, data3: 0x5E25, data4: [0xAE, 0x07, 0xE9, 0x1D, 0xA6, 0xB3, 0xA2, 0x1C] };
+pub const I_AVN_EXPANDER_IID: Guid = Guid { data1: 0x5655BDB3, data2: 0xEF10, data3: 0x56D0, data4: [0xBE, 0x24, 0x59, 0xFC, 0x88, 0x35, 0x09, 0x39] };
 
 #[repr(C)]
 struct IAvnExpanderVtbl {
@@ -26300,8 +27545,14 @@ struct IAvnExpanderVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnExpander, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnExpander, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnExpander, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnExpander, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnExpander, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnExpander, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnExpander, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnExpander, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnExpander, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnExpander, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnExpander, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnExpander, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnExpander, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnExpander, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -26788,6 +28039,32 @@ impl ComPtr<IAvnExpander> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -26798,6 +28075,19 @@ impl ComPtr<IAvnExpander> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -27191,7 +28481,7 @@ impl ComPtr<IAvnExpander> {
     }
 }
 
-pub const I_AVN_FLEX_PANEL_IID: Guid = Guid { data1: 0x299F0D1D, data2: 0x2C19, data3: 0x5531, data4: [0xA4, 0xC9, 0x32, 0x7C, 0x78, 0x4B, 0x29, 0x7D] };
+pub const I_AVN_FLEX_PANEL_IID: Guid = Guid { data1: 0x5E186F8A, data2: 0xD1FB, data3: 0x5989, data4: [0xA4, 0x96, 0x63, 0x98, 0x2A, 0x99, 0x97, 0x52] };
 
 #[repr(C)]
 struct IAvnFlexPanelVtbl {
@@ -27258,8 +28548,14 @@ struct IAvnFlexPanelVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnFlexPanel, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnFlexPanel, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnFlexPanel, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnFlexPanel, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnFlexPanel, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnFlexPanel, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnFlexPanel, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -27711,6 +29007,32 @@ impl ComPtr<IAvnFlexPanel> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -27721,6 +29043,19 @@ impl ComPtr<IAvnFlexPanel> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -28216,7 +29551,7 @@ impl ComPtr<IAvnFlyout> {
     }
 }
 
-pub const I_AVN_GRID_IID: Guid = Guid { data1: 0x55E75D4C, data2: 0xFC75, data3: 0x51A9, data4: [0xBA, 0x87, 0x6D, 0x28, 0x70, 0x4E, 0xAF, 0xC8] };
+pub const I_AVN_GRID_IID: Guid = Guid { data1: 0x63034BE5, data2: 0x179A, data3: 0x5196, data4: [0x83, 0x38, 0xF1, 0x07, 0x85, 0xC6, 0xDD, 0xDD] };
 
 #[repr(C)]
 struct IAvnGridVtbl {
@@ -28283,8 +29618,14 @@ struct IAvnGridVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnGrid, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnGrid, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnGrid, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnGrid, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnGrid, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnGrid, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnGrid, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnGrid, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnGrid, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnGrid, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnGrid, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnGrid, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnGrid, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnGrid, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -28732,6 +30073,32 @@ impl ComPtr<IAvnGrid> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -28742,6 +30109,19 @@ impl ComPtr<IAvnGrid> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -28867,7 +30247,7 @@ impl ComPtr<IAvnGrid> {
     }
 }
 
-pub const I_AVN_GRID_SPLITTER_IID: Guid = Guid { data1: 0xDBCA4F68, data2: 0xAFEE, data3: 0x5885, data4: [0x93, 0x8A, 0x19, 0x4E, 0x7D, 0xE5, 0xC5, 0x51] };
+pub const I_AVN_GRID_SPLITTER_IID: Guid = Guid { data1: 0x93629BF6, data2: 0xE409, data3: 0x5BF3, data4: [0xBB, 0x49, 0x45, 0x4A, 0x88, 0x45, 0x50, 0xE3] };
 
 #[repr(C)]
 struct IAvnGridSplitterVtbl {
@@ -28934,8 +30314,14 @@ struct IAvnGridSplitterVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnGridSplitter, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnGridSplitter, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnGridSplitter, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnGridSplitter, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnGridSplitter, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnGridSplitter, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnGridSplitter, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnGridSplitter, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnGridSplitter, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnGridSplitter, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnGridSplitter, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnGridSplitter, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnGridSplitter, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnGridSplitter, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -29414,6 +30800,32 @@ impl ComPtr<IAvnGridSplitter> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -29424,6 +30836,19 @@ impl ComPtr<IAvnGridSplitter> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -29762,7 +31187,7 @@ impl ComPtr<IAvnGridSplitter> {
     }
 }
 
-pub const I_AVN_GROUP_BOX_IID: Guid = Guid { data1: 0x48EE658E, data2: 0x57F1, data3: 0x5550, data4: [0xAE, 0xB5, 0x76, 0x64, 0x77, 0xC6, 0x16, 0xBD] };
+pub const I_AVN_GROUP_BOX_IID: Guid = Guid { data1: 0xB2A2A0DC, data2: 0x533F, data3: 0x50D6, data4: [0xB4, 0x86, 0x8A, 0xFB, 0x44, 0xB0, 0xE8, 0x2D] };
 
 #[repr(C)]
 struct IAvnGroupBoxVtbl {
@@ -29829,8 +31254,14 @@ struct IAvnGroupBoxVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnGroupBox, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnGroupBox, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnGroupBox, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnGroupBox, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnGroupBox, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnGroupBox, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnGroupBox, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnGroupBox, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnGroupBox, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnGroupBox, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnGroupBox, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnGroupBox, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnGroupBox, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnGroupBox, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -30305,6 +31736,32 @@ impl ComPtr<IAvnGroupBox> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -30315,6 +31772,19 @@ impl ComPtr<IAvnGroupBox> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -30628,7 +32098,7 @@ impl ComPtr<IAvnGroupBox> {
     }
 }
 
-pub const I_AVN_HYPERLINK_BUTTON_IID: Guid = Guid { data1: 0xBA5D6CE2, data2: 0xB42B, data3: 0x5ED0, data4: [0xB2, 0x88, 0x97, 0x75, 0x60, 0x6E, 0x18, 0x02] };
+pub const I_AVN_HYPERLINK_BUTTON_IID: Guid = Guid { data1: 0xCCCE2078, data2: 0xE616, data3: 0x51A8, data4: [0xA5, 0x5F, 0x77, 0xD3, 0x16, 0xF2, 0xC9, 0xAB] };
 
 #[repr(C)]
 struct IAvnHyperlinkButtonVtbl {
@@ -30695,8 +32165,14 @@ struct IAvnHyperlinkButtonVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnHyperlinkButton, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnHyperlinkButton, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnHyperlinkButton, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnHyperlinkButton, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnHyperlinkButton, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnHyperlinkButton, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnHyperlinkButton, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnHyperlinkButton, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnHyperlinkButton, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnHyperlinkButton, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnHyperlinkButton, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnHyperlinkButton, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnHyperlinkButton, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnHyperlinkButton, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -31188,6 +32664,32 @@ impl ComPtr<IAvnHyperlinkButton> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -31198,6 +32700,19 @@ impl ComPtr<IAvnHyperlinkButton> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -31632,7 +33147,7 @@ impl ComPtr<IAvnHyperlinkButton> {
     }
 }
 
-pub const I_AVN_ICON_ELEMENT_IID: Guid = Guid { data1: 0x27129D51, data2: 0x9086, data3: 0x5E87, data4: [0x97, 0xF2, 0xA7, 0xB3, 0x0B, 0x2F, 0x7A, 0x32] };
+pub const I_AVN_ICON_ELEMENT_IID: Guid = Guid { data1: 0x0A1BCD24, data2: 0x9DC9, data3: 0x55DB, data4: [0xB2, 0xAA, 0x93, 0x00, 0x41, 0x18, 0x5E, 0x3B] };
 
 #[repr(C)]
 struct IAvnIconElementVtbl {
@@ -31699,8 +33214,14 @@ struct IAvnIconElementVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnIconElement, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnIconElement, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnIconElement, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnIconElement, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnIconElement, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnIconElement, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnIconElement, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnIconElement, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnIconElement, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnIconElement, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnIconElement, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnIconElement, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnIconElement, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnIconElement, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -32163,6 +33684,32 @@ impl ComPtr<IAvnIconElement> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -32173,6 +33720,19 @@ impl ComPtr<IAvnIconElement> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -32402,7 +33962,7 @@ impl ComPtr<IAvnIconElement> {
     }
 }
 
-pub const I_AVN_IMAGE_IID: Guid = Guid { data1: 0xACC338F6, data2: 0x8C35, data3: 0x57F4, data4: [0xBB, 0x82, 0x4A, 0x3F, 0x39, 0x7B, 0x13, 0x0F] };
+pub const I_AVN_IMAGE_IID: Guid = Guid { data1: 0x4A556F2B, data2: 0x827F, data3: 0x5748, data4: [0xB7, 0xCD, 0xC4, 0x84, 0x52, 0x72, 0x7A, 0x29] };
 
 #[repr(C)]
 struct IAvnImageVtbl {
@@ -32469,8 +34029,14 @@ struct IAvnImageVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnImage, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnImage, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnImage, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnImage, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnImage, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnImage, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnImage, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnImage, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnImage, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnImage, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnImage, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnImage, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnImage, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnImage, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -32913,6 +34479,32 @@ impl ComPtr<IAvnImage> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -32923,6 +34515,19 @@ impl ComPtr<IAvnImage> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -33011,7 +34616,7 @@ impl ComPtr<IAvnImage> {
     }
 }
 
-pub const I_AVN_ITEMS_CONTROL_IID: Guid = Guid { data1: 0xD985D274, data2: 0x6EFC, data3: 0x5423, data4: [0xB7, 0x4F, 0x7A, 0x73, 0x13, 0x39, 0x92, 0xFC] };
+pub const I_AVN_ITEMS_CONTROL_IID: Guid = Guid { data1: 0xB656735C, data2: 0xEECA, data3: 0x50CC, data4: [0xA8, 0x7D, 0xB4, 0x36, 0x2F, 0x7E, 0x04, 0x5A] };
 
 #[repr(C)]
 struct IAvnItemsControlVtbl {
@@ -33078,8 +34683,14 @@ struct IAvnItemsControlVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnItemsControl, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnItemsControl, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnItemsControl, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnItemsControl, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnItemsControl, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnItemsControl, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnItemsControl, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnItemsControl, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnItemsControl, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnItemsControl, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnItemsControl, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnItemsControl, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnItemsControl, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnItemsControl, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -33554,6 +35165,32 @@ impl ComPtr<IAvnItemsControl> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -33564,6 +35201,19 @@ impl ComPtr<IAvnItemsControl> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -33877,7 +35527,7 @@ impl ComPtr<IAvnItemsControl> {
     }
 }
 
-pub const I_AVN_LABEL_IID: Guid = Guid { data1: 0x621B0405, data2: 0x7E33, data3: 0x56EE, data4: [0x8F, 0xF0, 0xE1, 0xCA, 0x60, 0x42, 0x09, 0xBD] };
+pub const I_AVN_LABEL_IID: Guid = Guid { data1: 0xA1ACC10D, data2: 0x5788, data3: 0x5CFF, data4: [0x9D, 0x99, 0x79, 0x87, 0x70, 0x89, 0x8E, 0x14] };
 
 #[repr(C)]
 struct IAvnLabelVtbl {
@@ -33944,8 +35594,14 @@ struct IAvnLabelVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnLabel, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnLabel, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnLabel, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnLabel, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnLabel, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnLabel, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnLabel, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnLabel, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnLabel, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnLabel, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnLabel, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnLabel, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnLabel, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnLabel, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -34418,6 +36074,32 @@ impl ComPtr<IAvnLabel> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -34428,6 +36110,19 @@ impl ComPtr<IAvnLabel> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -34727,7 +36422,7 @@ impl ComPtr<IAvnLabel> {
     }
 }
 
-pub const I_AVN_LAYOUT_TRANSFORM_CONTROL_IID: Guid = Guid { data1: 0x39D82382, data2: 0x98B4, data3: 0x510A, data4: [0xAE, 0x62, 0x19, 0xE9, 0xBB, 0xA1, 0x36, 0x98] };
+pub const I_AVN_LAYOUT_TRANSFORM_CONTROL_IID: Guid = Guid { data1: 0x5295C33E, data2: 0x5E49, data3: 0x5425, data4: [0xB0, 0x6D, 0xD0, 0xA3, 0x7D, 0x4A, 0xAE, 0x68] };
 
 #[repr(C)]
 struct IAvnLayoutTransformControlVtbl {
@@ -34794,8 +36489,14 @@ struct IAvnLayoutTransformControlVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -35236,6 +36937,32 @@ impl ComPtr<IAvnLayoutTransformControl> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -35246,6 +36973,19 @@ impl ComPtr<IAvnLayoutTransformControl> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -35319,7 +37059,7 @@ impl ComPtr<IAvnLayoutTransformControl> {
     }
 }
 
-pub const I_AVN_LIST_BOX_IID: Guid = Guid { data1: 0xB5B6A7D1, data2: 0xB302, data3: 0x56BB, data4: [0x93, 0xA9, 0xD5, 0x32, 0x37, 0x70, 0x86, 0x32] };
+pub const I_AVN_LIST_BOX_IID: Guid = Guid { data1: 0x6D07BC84, data2: 0xD7C4, data3: 0x5226, data4: [0xA6, 0x9E, 0xAA, 0xF3, 0xEE, 0x16, 0x63, 0xA9] };
 
 #[repr(C)]
 struct IAvnListBoxVtbl {
@@ -35386,8 +37126,14 @@ struct IAvnListBoxVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnListBox, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnListBox, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnListBox, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnListBox, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnListBox, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnListBox, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnListBox, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnListBox, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnListBox, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnListBox, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnListBox, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnListBox, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnListBox, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnListBox, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -35880,6 +37626,32 @@ impl ComPtr<IAvnListBox> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -35890,6 +37662,19 @@ impl ComPtr<IAvnListBox> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -36326,7 +38111,7 @@ impl ComPtr<IAvnListBox> {
     }
 }
 
-pub const I_AVN_LIST_BOX_ITEM_IID: Guid = Guid { data1: 0x19A8B0AF, data2: 0x1926, data3: 0x5DE4, data4: [0xB6, 0xEC, 0x5E, 0x2F, 0x02, 0x68, 0x31, 0xB6] };
+pub const I_AVN_LIST_BOX_ITEM_IID: Guid = Guid { data1: 0x4BB2FF76, data2: 0xE252, data3: 0x53F1, data4: [0x8A, 0xE0, 0xE3, 0x2A, 0x2C, 0x1B, 0xBE, 0x76] };
 
 #[repr(C)]
 struct IAvnListBoxItemVtbl {
@@ -36393,8 +38178,14 @@ struct IAvnListBoxItemVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnListBoxItem, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnListBoxItem, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnListBoxItem, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnListBoxItem, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnListBoxItem, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnListBoxItem, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnListBoxItem, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnListBoxItem, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnListBoxItem, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnListBoxItem, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnListBoxItem, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnListBoxItem, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnListBoxItem, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnListBoxItem, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -36867,6 +38658,32 @@ impl ComPtr<IAvnListBoxItem> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -36877,6 +38694,19 @@ impl ComPtr<IAvnListBoxItem> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -37176,7 +39006,7 @@ impl ComPtr<IAvnListBoxItem> {
     }
 }
 
-pub const I_AVN_MASKED_TEXT_BOX_IID: Guid = Guid { data1: 0xC7B40FDD, data2: 0x3EBA, data3: 0x55CF, data4: [0x84, 0xBF, 0x5F, 0xAD, 0x22, 0x22, 0x99, 0x08] };
+pub const I_AVN_MASKED_TEXT_BOX_IID: Guid = Guid { data1: 0xE621C745, data2: 0xA587, data3: 0x5BDD, data4: [0xA1, 0xC5, 0x8F, 0x49, 0x8B, 0x86, 0x36, 0xC5] };
 
 #[repr(C)]
 struct IAvnMaskedTextBoxVtbl {
@@ -37243,8 +39073,14 @@ struct IAvnMaskedTextBoxVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnMaskedTextBox, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnMaskedTextBox, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnMaskedTextBox, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnMaskedTextBox, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnMaskedTextBox, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnMaskedTextBox, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnMaskedTextBox, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnMaskedTextBox, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnMaskedTextBox, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnMaskedTextBox, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnMaskedTextBox, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnMaskedTextBox, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnMaskedTextBox, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnMaskedTextBox, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -37810,6 +39646,32 @@ impl ComPtr<IAvnMaskedTextBox> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -37820,6 +39682,19 @@ impl ComPtr<IAvnMaskedTextBox> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -38768,7 +40643,7 @@ impl ComPtr<IAvnMaskedTextBox> {
     }
 }
 
-pub const I_AVN_MENU_IID: Guid = Guid { data1: 0xE97435D8, data2: 0x8BC7, data3: 0x5A16, data4: [0xB1, 0xD1, 0x4B, 0x97, 0x60, 0x08, 0xF3, 0x41] };
+pub const I_AVN_MENU_IID: Guid = Guid { data1: 0x0220FC0F, data2: 0xFA60, data3: 0x5173, data4: [0x9E, 0x8B, 0xAD, 0x96, 0x35, 0x1B, 0x3C, 0x6D] };
 
 #[repr(C)]
 struct IAvnMenuVtbl {
@@ -38835,8 +40710,14 @@ struct IAvnMenuVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnMenu, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnMenu, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnMenu, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnMenu, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnMenu, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnMenu, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnMenu, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnMenu, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnMenu, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnMenu, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnMenu, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnMenu, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnMenu, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnMenu, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -39332,6 +41213,32 @@ impl ComPtr<IAvnMenu> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -39342,6 +41249,19 @@ impl ComPtr<IAvnMenu> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -39798,7 +41718,7 @@ impl ComPtr<IAvnMenu> {
     }
 }
 
-pub const I_AVN_MENU_BASE_IID: Guid = Guid { data1: 0xBAB46325, data2: 0x4D7E, data3: 0x54C4, data4: [0xB8, 0xE0, 0x69, 0xA6, 0x47, 0xE2, 0xBF, 0xC6] };
+pub const I_AVN_MENU_BASE_IID: Guid = Guid { data1: 0x3B780634, data2: 0x1A42, data3: 0x576F, data4: [0xA5, 0x87, 0xEE, 0x11, 0xF0, 0xB5, 0xC8, 0xE8] };
 
 #[repr(C)]
 struct IAvnMenuBaseVtbl {
@@ -39865,8 +41785,14 @@ struct IAvnMenuBaseVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnMenuBase, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnMenuBase, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnMenuBase, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnMenuBase, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnMenuBase, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnMenuBase, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnMenuBase, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnMenuBase, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnMenuBase, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnMenuBase, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnMenuBase, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnMenuBase, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnMenuBase, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnMenuBase, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -40362,6 +42288,32 @@ impl ComPtr<IAvnMenuBase> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -40372,6 +42324,19 @@ impl ComPtr<IAvnMenuBase> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -41181,7 +43146,7 @@ impl ComPtr<IAvnMenuFlyout> {
     }
 }
 
-pub const I_AVN_MENU_ITEM_IID: Guid = Guid { data1: 0x1A9E2536, data2: 0x7437, data3: 0x553C, data4: [0xAF, 0xB6, 0x68, 0x1C, 0xF1, 0x50, 0x21, 0xFF] };
+pub const I_AVN_MENU_ITEM_IID: Guid = Guid { data1: 0xB08CE5EB, data2: 0xF84F, data3: 0x5466, data4: [0xBB, 0x66, 0x98, 0x6E, 0x09, 0x71, 0x33, 0x3B] };
 
 #[repr(C)]
 struct IAvnMenuItemVtbl {
@@ -41248,8 +43213,14 @@ struct IAvnMenuItemVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnMenuItem, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnMenuItem, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnMenuItem, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnMenuItem, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnMenuItem, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnMenuItem, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnMenuItem, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnMenuItem, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnMenuItem, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnMenuItem, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnMenuItem, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnMenuItem, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnMenuItem, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnMenuItem, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -41772,6 +43743,32 @@ impl ComPtr<IAvnMenuItem> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -41782,6 +43779,19 @@ impl ComPtr<IAvnMenuItem> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -42431,7 +44441,7 @@ impl ComPtr<IAvnMenuItem> {
     }
 }
 
-pub const I_AVN_NOTIFICATION_CARD_IID: Guid = Guid { data1: 0xDF540B6A, data2: 0x58F6, data3: 0x59F6, data4: [0xB3, 0xDB, 0xF8, 0xFD, 0x04, 0x66, 0x54, 0x02] };
+pub const I_AVN_NOTIFICATION_CARD_IID: Guid = Guid { data1: 0x9E575724, data2: 0x617A, data3: 0x54E5, data4: [0xBF, 0x78, 0xB6, 0xC6, 0x8E, 0x5F, 0x43, 0x43] };
 
 #[repr(C)]
 struct IAvnNotificationCardVtbl {
@@ -42498,8 +44508,14 @@ struct IAvnNotificationCardVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnNotificationCard, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnNotificationCard, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnNotificationCard, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnNotificationCard, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnNotificationCard, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnNotificationCard, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnNotificationCard, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnNotificationCard, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnNotificationCard, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnNotificationCard, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnNotificationCard, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnNotificationCard, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnNotificationCard, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnNotificationCard, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -42978,6 +44994,32 @@ impl ComPtr<IAvnNotificationCard> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -42988,6 +45030,19 @@ impl ComPtr<IAvnNotificationCard> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -43328,7 +45383,7 @@ impl ComPtr<IAvnNotificationCard> {
     }
 }
 
-pub const I_AVN_WINDOW_NOTIFICATION_MANAGER_IID: Guid = Guid { data1: 0xD4C37646, data2: 0xAAD1, data3: 0x5B56, data4: [0xA2, 0x60, 0xD0, 0xAB, 0x8C, 0xFE, 0x09, 0x36] };
+pub const I_AVN_WINDOW_NOTIFICATION_MANAGER_IID: Guid = Guid { data1: 0x7C085288, data2: 0x6201, data3: 0x58A3, data4: [0xBD, 0x39, 0x14, 0xF2, 0x36, 0x96, 0x50, 0x4B] };
 
 #[repr(C)]
 struct IAvnWindowNotificationManagerVtbl {
@@ -43395,8 +45450,14 @@ struct IAvnWindowNotificationManagerVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -43868,6 +45929,32 @@ impl ComPtr<IAvnWindowNotificationManager> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -43878,6 +45965,19 @@ impl ComPtr<IAvnWindowNotificationManager> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -44165,7 +46265,7 @@ impl ComPtr<IAvnWindowNotificationManager> {
     }
 }
 
-pub const I_AVN_NUMERIC_UP_DOWN_IID: Guid = Guid { data1: 0x5F487A30, data2: 0x39D1, data3: 0x524A, data4: [0x9A, 0x6E, 0x01, 0xE5, 0x84, 0x45, 0x2E, 0x03] };
+pub const I_AVN_NUMERIC_UP_DOWN_IID: Guid = Guid { data1: 0x63426B0F, data2: 0x1A76, data3: 0x51A9, data4: [0x9E, 0x98, 0x34, 0x3D, 0x2E, 0x69, 0xC1, 0x56] };
 
 #[repr(C)]
 struct IAvnNumericUpDownVtbl {
@@ -44232,8 +46332,14 @@ struct IAvnNumericUpDownVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnNumericUpDown, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnNumericUpDown, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnNumericUpDown, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnNumericUpDown, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnNumericUpDown, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnNumericUpDown, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnNumericUpDown, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnNumericUpDown, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnNumericUpDown, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnNumericUpDown, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnNumericUpDown, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnNumericUpDown, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnNumericUpDown, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnNumericUpDown, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -44736,6 +46842,32 @@ impl ComPtr<IAvnNumericUpDown> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -44746,6 +46878,19 @@ impl ComPtr<IAvnNumericUpDown> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -45260,7 +47405,7 @@ impl ComPtr<IAvnNumericUpDown> {
     }
 }
 
-pub const I_AVN_PANEL_IID: Guid = Guid { data1: 0x79DAA937, data2: 0xB232, data3: 0x5B99, data4: [0x84, 0xFB, 0xE3, 0xD6, 0x41, 0x24, 0xED, 0xA5] };
+pub const I_AVN_PANEL_IID: Guid = Guid { data1: 0x96AD03DD, data2: 0xF271, data3: 0x537E, data4: [0xA9, 0x33, 0xB7, 0xC7, 0x5D, 0x63, 0xAC, 0x0C] };
 
 #[repr(C)]
 struct IAvnPanelVtbl {
@@ -45327,8 +47472,14 @@ struct IAvnPanelVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnPanel, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnPanel, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnPanel, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnPanel, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnPanel, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnPanel, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnPanel, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnPanel, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnPanel, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnPanel, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnPanel, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnPanel, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnPanel, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnPanel, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -45766,6 +47917,32 @@ impl ComPtr<IAvnPanel> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -45776,6 +47953,19 @@ impl ComPtr<IAvnPanel> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -45829,7 +48019,7 @@ impl ComPtr<IAvnPanel> {
     }
 }
 
-pub const I_AVN_PATH_ICON_IID: Guid = Guid { data1: 0xF220C58A, data2: 0x4D65, data3: 0x5882, data4: [0x8D, 0x9D, 0xEB, 0xE5, 0xF0, 0xA1, 0xD9, 0xA4] };
+pub const I_AVN_PATH_ICON_IID: Guid = Guid { data1: 0x885577A3, data2: 0xAC29, data3: 0x51D9, data4: [0xAC, 0xB5, 0xD3, 0x0A, 0xBB, 0xB4, 0x84, 0xFC] };
 
 #[repr(C)]
 struct IAvnPathIconVtbl {
@@ -45896,8 +48086,14 @@ struct IAvnPathIconVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnPathIcon, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnPathIcon, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnPathIcon, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnPathIcon, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnPathIcon, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnPathIcon, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnPathIcon, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnPathIcon, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnPathIcon, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnPathIcon, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnPathIcon, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnPathIcon, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnPathIcon, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnPathIcon, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -46362,6 +48558,32 @@ impl ComPtr<IAvnPathIcon> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -46372,6 +48594,19 @@ impl ComPtr<IAvnPathIcon> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -46616,7 +48851,7 @@ impl ComPtr<IAvnPathIcon> {
     }
 }
 
-pub const I_AVN_PIPS_PAGER_IID: Guid = Guid { data1: 0x03DEC932, data2: 0x3B73, data3: 0x5A8C, data4: [0x9C, 0xE7, 0x9E, 0x82, 0xF4, 0xFA, 0xDE, 0x70] };
+pub const I_AVN_PIPS_PAGER_IID: Guid = Guid { data1: 0x6C3C0A8B, data2: 0x3237, data3: 0x50C1, data4: [0x8D, 0xF3, 0x51, 0x71, 0xED, 0xF2, 0xA1, 0xB8] };
 
 #[repr(C)]
 struct IAvnPipsPagerVtbl {
@@ -46683,8 +48918,14 @@ struct IAvnPipsPagerVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnPipsPager, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnPipsPager, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnPipsPager, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnPipsPager, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnPipsPager, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnPipsPager, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnPipsPager, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnPipsPager, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnPipsPager, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnPipsPager, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnPipsPager, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnPipsPager, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnPipsPager, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnPipsPager, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -47161,6 +49402,32 @@ impl ComPtr<IAvnPipsPager> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -47171,6 +49438,19 @@ impl ComPtr<IAvnPipsPager> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -47603,7 +49883,7 @@ impl ComPtr<IAvnFlyoutBase> {
     }
 }
 
-pub const I_AVN_HEADERED_CONTENT_CONTROL_IID: Guid = Guid { data1: 0x326C8A38, data2: 0xFA42, data3: 0x51F4, data4: [0x90, 0x41, 0xE7, 0xFD, 0x0F, 0xFF, 0xB6, 0x96] };
+pub const I_AVN_HEADERED_CONTENT_CONTROL_IID: Guid = Guid { data1: 0xC1825F55, data2: 0xDE82, data3: 0x5447, data4: [0x93, 0xA8, 0x4A, 0x55, 0xF6, 0x3B, 0xA6, 0x52] };
 
 #[repr(C)]
 struct IAvnHeaderedContentControlVtbl {
@@ -47670,8 +49950,14 @@ struct IAvnHeaderedContentControlVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -48146,6 +50432,32 @@ impl ComPtr<IAvnHeaderedContentControl> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -48156,6 +50468,19 @@ impl ComPtr<IAvnHeaderedContentControl> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -48469,7 +50794,7 @@ impl ComPtr<IAvnHeaderedContentControl> {
     }
 }
 
-pub const I_AVN_HEADERED_ITEMS_CONTROL_IID: Guid = Guid { data1: 0xE4AB3702, data2: 0x5F01, data3: 0x59CF, data4: [0x9F, 0x5E, 0x3C, 0x3D, 0xD2, 0x81, 0x53, 0x3F] };
+pub const I_AVN_HEADERED_ITEMS_CONTROL_IID: Guid = Guid { data1: 0xB6281359, data2: 0x24AB, data3: 0x5280, data4: [0x8B, 0x2C, 0x76, 0x2A, 0x53, 0x52, 0x9C, 0x27] };
 
 #[repr(C)]
 struct IAvnHeaderedItemsControlVtbl {
@@ -48536,8 +50861,14 @@ struct IAvnHeaderedItemsControlVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -49016,6 +51347,32 @@ impl ComPtr<IAvnHeaderedItemsControl> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -49026,6 +51383,19 @@ impl ComPtr<IAvnHeaderedItemsControl> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -49367,7 +51737,7 @@ impl ComPtr<IAvnHeaderedItemsControl> {
     }
 }
 
-pub const I_AVN_HEADERED_SELECTING_ITEMS_CONTROL_IID: Guid = Guid { data1: 0xE0CB1C51, data2: 0x192B, data3: 0x5B9B, data4: [0x8A, 0x19, 0x72, 0xEE, 0x4C, 0x68, 0xC2, 0x7D] };
+pub const I_AVN_HEADERED_SELECTING_ITEMS_CONTROL_IID: Guid = Guid { data1: 0x8640C1BF, data2: 0x2502, data3: 0x5E21, data4: [0xB8, 0x61, 0x1E, 0xCB, 0xD1, 0x91, 0x8F, 0xD1] };
 
 #[repr(C)]
 struct IAvnHeaderedSelectingItemsControlVtbl {
@@ -49434,8 +51804,14 @@ struct IAvnHeaderedSelectingItemsControlVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -49928,6 +52304,32 @@ impl ComPtr<IAvnHeaderedSelectingItemsControl> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -49938,6 +52340,19 @@ impl ComPtr<IAvnHeaderedSelectingItemsControl> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -50376,7 +52791,7 @@ impl ComPtr<IAvnHeaderedSelectingItemsControl> {
     }
 }
 
-pub const I_AVN_POPUP_IID: Guid = Guid { data1: 0x4F10A2E5, data2: 0xD393, data3: 0x52F5, data4: [0x97, 0xCB, 0x0D, 0xDA, 0x94, 0x11, 0xF6, 0xE4] };
+pub const I_AVN_POPUP_IID: Guid = Guid { data1: 0x6CCB1B6A, data2: 0xEC3B, data3: 0x5625, data4: [0xA6, 0x04, 0x97, 0xB5, 0x6F, 0xF5, 0xB8, 0x6F] };
 
 #[repr(C)]
 struct IAvnPopupVtbl {
@@ -50443,8 +52858,14 @@ struct IAvnPopupVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnPopup, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnPopup, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnPopup, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnPopup, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnPopup, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnPopup, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnPopup, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnPopup, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnPopup, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnPopup, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnPopup, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnPopup, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnPopup, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnPopup, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -50925,6 +53346,32 @@ impl ComPtr<IAvnPopup> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -50935,6 +53382,19 @@ impl ComPtr<IAvnPopup> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -51598,7 +54058,7 @@ impl ComPtr<IAvnPopupFlyoutBase> {
     }
 }
 
-pub const I_AVN_RANGE_BASE_IID: Guid = Guid { data1: 0xC2C5CCBC, data2: 0xF621, data3: 0x560A, data4: [0xB6, 0xF6, 0x87, 0xA2, 0x86, 0xDA, 0xB5, 0x0B] };
+pub const I_AVN_RANGE_BASE_IID: Guid = Guid { data1: 0xF1231250, data2: 0xDB6B, data3: 0x52E4, data4: [0xA4, 0x2E, 0x3C, 0x57, 0xE7, 0x3C, 0x70, 0x23] };
 
 #[repr(C)]
 struct IAvnRangeBaseVtbl {
@@ -51665,8 +54125,14 @@ struct IAvnRangeBaseVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnRangeBase, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnRangeBase, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnRangeBase, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnRangeBase, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnRangeBase, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnRangeBase, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnRangeBase, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnRangeBase, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnRangeBase, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnRangeBase, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnRangeBase, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnRangeBase, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnRangeBase, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnRangeBase, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -52141,6 +54607,32 @@ impl ComPtr<IAvnRangeBase> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -52151,6 +54643,19 @@ impl ComPtr<IAvnRangeBase> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -52463,7 +54968,7 @@ impl ComPtr<IAvnRangeBase> {
     }
 }
 
-pub const I_AVN_SELECTING_ITEMS_CONTROL_IID: Guid = Guid { data1: 0xB2D5F624, data2: 0xDE4C, data3: 0x5278, data4: [0x97, 0x7F, 0x9E, 0xB7, 0x64, 0xDD, 0x6B, 0x2F] };
+pub const I_AVN_SELECTING_ITEMS_CONTROL_IID: Guid = Guid { data1: 0x56020FA9, data2: 0xD4A4, data3: 0x52B6, data4: [0xB5, 0xFC, 0xEA, 0xEB, 0x6F, 0xD5, 0x63, 0xC2] };
 
 #[repr(C)]
 struct IAvnSelectingItemsControlVtbl {
@@ -52530,8 +55035,14 @@ struct IAvnSelectingItemsControlVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -53020,6 +55531,32 @@ impl ComPtr<IAvnSelectingItemsControl> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -53030,6 +55567,19 @@ impl ComPtr<IAvnSelectingItemsControl> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -53440,7 +55990,7 @@ impl ComPtr<IAvnSelectingItemsControl> {
     }
 }
 
-pub const I_AVN_TEMPLATED_CONTROL_IID: Guid = Guid { data1: 0xD71DF481, data2: 0xE9FE, data3: 0x5463, data4: [0xBD, 0xA3, 0x7C, 0x05, 0x46, 0xC5, 0x71, 0x6A] };
+pub const I_AVN_TEMPLATED_CONTROL_IID: Guid = Guid { data1: 0xE2867468, data2: 0x09D4, data3: 0x5D05, data4: [0xA9, 0x56, 0xF6, 0x87, 0xA7, 0x8D, 0xF5, 0x1A] };
 
 #[repr(C)]
 struct IAvnTemplatedControlVtbl {
@@ -53507,8 +56057,14 @@ struct IAvnTemplatedControlVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnTemplatedControl, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnTemplatedControl, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnTemplatedControl, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnTemplatedControl, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnTemplatedControl, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnTemplatedControl, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnTemplatedControl, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnTemplatedControl, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnTemplatedControl, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnTemplatedControl, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnTemplatedControl, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnTemplatedControl, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnTemplatedControl, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnTemplatedControl, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -53971,6 +56527,32 @@ impl ComPtr<IAvnTemplatedControl> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -53981,6 +56563,19 @@ impl ComPtr<IAvnTemplatedControl> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -54210,7 +56805,7 @@ impl ComPtr<IAvnTemplatedControl> {
     }
 }
 
-pub const I_AVN_THUMB_IID: Guid = Guid { data1: 0xD4BA0A24, data2: 0xA5D3, data3: 0x56FE, data4: [0xB4, 0x86, 0x86, 0x8C, 0x8C, 0x5A, 0x52, 0xB6] };
+pub const I_AVN_THUMB_IID: Guid = Guid { data1: 0xB62C6C73, data2: 0x14C3, data3: 0x5E0D, data4: [0xA7, 0x25, 0xF5, 0x60, 0x61, 0x07, 0xB4, 0x54] };
 
 #[repr(C)]
 struct IAvnThumbVtbl {
@@ -54277,8 +56872,14 @@ struct IAvnThumbVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnThumb, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnThumb, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnThumb, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnThumb, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnThumb, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnThumb, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnThumb, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnThumb, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnThumb, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnThumb, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnThumb, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnThumb, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnThumb, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnThumb, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -54747,6 +57348,32 @@ impl ComPtr<IAvnThumb> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -54757,6 +57384,19 @@ impl ComPtr<IAvnThumb> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -55025,7 +57665,7 @@ impl ComPtr<IAvnThumb> {
     }
 }
 
-pub const I_AVN_TOGGLE_BUTTON_IID: Guid = Guid { data1: 0x978AD791, data2: 0x8ABE, data3: 0x5494, data4: [0xB9, 0xAB, 0xB2, 0x99, 0x37, 0x06, 0x28, 0x70] };
+pub const I_AVN_TOGGLE_BUTTON_IID: Guid = Guid { data1: 0xF9840045, data2: 0x23B2, data3: 0x5318, data4: [0xA7, 0xDA, 0xEB, 0x7F, 0x32, 0x87, 0xFB, 0xD8] };
 
 #[repr(C)]
 struct IAvnToggleButtonVtbl {
@@ -55092,8 +57732,14 @@ struct IAvnToggleButtonVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnToggleButton, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnToggleButton, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnToggleButton, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnToggleButton, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnToggleButton, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnToggleButton, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnToggleButton, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnToggleButton, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnToggleButton, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnToggleButton, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnToggleButton, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnToggleButton, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnToggleButton, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnToggleButton, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -55587,6 +58233,32 @@ impl ComPtr<IAvnToggleButton> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -55597,6 +58269,19 @@ impl ComPtr<IAvnToggleButton> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -56043,7 +58728,7 @@ impl ComPtr<IAvnToggleButton> {
     }
 }
 
-pub const I_AVN_UNIFORM_GRID_IID: Guid = Guid { data1: 0xB6DABE9A, data2: 0x7AED, data3: 0x5BCF, data4: [0xB8, 0x89, 0xA7, 0x15, 0xEC, 0x08, 0xD5, 0xE4] };
+pub const I_AVN_UNIFORM_GRID_IID: Guid = Guid { data1: 0x600B20CC, data2: 0x7AA7, data3: 0x5EC9, data4: [0xB7, 0x73, 0xA8, 0x93, 0xB4, 0x37, 0x6F, 0x95] };
 
 #[repr(C)]
 struct IAvnUniformGridVtbl {
@@ -56110,8 +58795,14 @@ struct IAvnUniformGridVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnUniformGrid, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnUniformGrid, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnUniformGrid, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnUniformGrid, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnUniformGrid, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnUniformGrid, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnUniformGrid, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnUniformGrid, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnUniformGrid, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnUniformGrid, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnUniformGrid, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnUniformGrid, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnUniformGrid, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnUniformGrid, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -56559,6 +59250,32 @@ impl ComPtr<IAvnUniformGrid> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -56569,6 +59286,19 @@ impl ComPtr<IAvnUniformGrid> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -56692,7 +59422,7 @@ impl ComPtr<IAvnUniformGrid> {
     }
 }
 
-pub const I_AVN_PROGRESS_BAR_IID: Guid = Guid { data1: 0x54861122, data2: 0xE527, data3: 0x532B, data4: [0xA4, 0x44, 0x76, 0xCB, 0x50, 0x2B, 0x04, 0x1E] };
+pub const I_AVN_PROGRESS_BAR_IID: Guid = Guid { data1: 0xA87F44AD, data2: 0x6E9D, data3: 0x5059, data4: [0xA3, 0x55, 0xCB, 0xC9, 0x07, 0xAD, 0x0F, 0x45] };
 
 #[repr(C)]
 struct IAvnProgressBarVtbl {
@@ -56759,8 +59489,14 @@ struct IAvnProgressBarVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnProgressBar, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnProgressBar, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnProgressBar, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnProgressBar, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnProgressBar, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnProgressBar, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnProgressBar, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnProgressBar, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnProgressBar, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnProgressBar, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnProgressBar, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnProgressBar, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnProgressBar, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnProgressBar, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -57244,6 +59980,32 @@ impl ComPtr<IAvnProgressBar> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -57254,6 +60016,19 @@ impl ComPtr<IAvnProgressBar> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -57631,7 +60406,7 @@ impl ComPtr<IAvnProgressBar> {
     }
 }
 
-pub const I_AVN_RADIO_BUTTON_IID: Guid = Guid { data1: 0x45D712D8, data2: 0xA144, data3: 0x589A, data4: [0x90, 0x53, 0x43, 0x33, 0xB6, 0x14, 0x28, 0xBF] };
+pub const I_AVN_RADIO_BUTTON_IID: Guid = Guid { data1: 0x1D9D9433, data2: 0xE351, data3: 0x59FA, data4: [0xA6, 0x5E, 0xF7, 0x8D, 0xF4, 0x22, 0x3F, 0x1C] };
 
 #[repr(C)]
 struct IAvnRadioButtonVtbl {
@@ -57698,8 +60473,14 @@ struct IAvnRadioButtonVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnRadioButton, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnRadioButton, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnRadioButton, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnRadioButton, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnRadioButton, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnRadioButton, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnRadioButton, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnRadioButton, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnRadioButton, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnRadioButton, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnRadioButton, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnRadioButton, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnRadioButton, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnRadioButton, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -58195,6 +60976,32 @@ impl ComPtr<IAvnRadioButton> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -58205,6 +61012,19 @@ impl ComPtr<IAvnRadioButton> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -58666,7 +61486,7 @@ impl ComPtr<IAvnRadioButton> {
     }
 }
 
-pub const I_AVN_REFRESH_CONTAINER_IID: Guid = Guid { data1: 0xC83268B7, data2: 0xA9D2, data3: 0x51FA, data4: [0xB7, 0xC7, 0xE9, 0x89, 0x1E, 0x41, 0x2A, 0x9B] };
+pub const I_AVN_REFRESH_CONTAINER_IID: Guid = Guid { data1: 0x3693CF05, data2: 0xF784, data3: 0x5394, data4: [0xB7, 0xD2, 0x6D, 0xF5, 0x11, 0xF8, 0x6F, 0x97] };
 
 #[repr(C)]
 struct IAvnRefreshContainerVtbl {
@@ -58733,8 +61553,14 @@ struct IAvnRefreshContainerVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnRefreshContainer, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnRefreshContainer, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnRefreshContainer, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnRefreshContainer, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnRefreshContainer, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnRefreshContainer, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnRefreshContainer, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnRefreshContainer, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnRefreshContainer, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnRefreshContainer, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnRefreshContainer, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnRefreshContainer, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnRefreshContainer, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnRefreshContainer, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -59212,6 +62038,32 @@ impl ComPtr<IAvnRefreshContainer> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -59222,6 +62074,19 @@ impl ComPtr<IAvnRefreshContainer> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -59554,7 +62419,7 @@ impl ComPtr<IAvnRefreshContainer> {
     }
 }
 
-pub const I_AVN_RELATIVE_PANEL_IID: Guid = Guid { data1: 0x4A52A408, data2: 0x9843, data3: 0x5FFA, data4: [0xB1, 0xCC, 0x45, 0x75, 0xFA, 0x75, 0xB2, 0xD5] };
+pub const I_AVN_RELATIVE_PANEL_IID: Guid = Guid { data1: 0x0E550183, data2: 0x4D72, data3: 0x5357, data4: [0x8C, 0x3F, 0x9F, 0x15, 0xE4, 0x1B, 0xC9, 0x76] };
 
 #[repr(C)]
 struct IAvnRelativePanelVtbl {
@@ -59621,8 +62486,14 @@ struct IAvnRelativePanelVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnRelativePanel, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnRelativePanel, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnRelativePanel, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnRelativePanel, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnRelativePanel, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnRelativePanel, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnRelativePanel, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnRelativePanel, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnRelativePanel, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnRelativePanel, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnRelativePanel, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnRelativePanel, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnRelativePanel, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnRelativePanel, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -60060,6 +62931,32 @@ impl ComPtr<IAvnRelativePanel> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -60070,6 +62967,19 @@ impl ComPtr<IAvnRelativePanel> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -60123,7 +63033,7 @@ impl ComPtr<IAvnRelativePanel> {
     }
 }
 
-pub const I_AVN_REPEAT_BUTTON_IID: Guid = Guid { data1: 0xA0647C03, data2: 0x65F2, data3: 0x5FE4, data4: [0xA3, 0x8E, 0xB4, 0xA6, 0x10, 0xF7, 0x40, 0xA0] };
+pub const I_AVN_REPEAT_BUTTON_IID: Guid = Guid { data1: 0xE1023A87, data2: 0x3E17, data3: 0x5F1D, data4: [0x86, 0x71, 0x36, 0xC4, 0xFD, 0x0D, 0x1C, 0xC3] };
 
 #[repr(C)]
 struct IAvnRepeatButtonVtbl {
@@ -60190,8 +63100,14 @@ struct IAvnRepeatButtonVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnRepeatButton, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnRepeatButton, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnRepeatButton, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnRepeatButton, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnRepeatButton, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnRepeatButton, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnRepeatButton, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnRepeatButton, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnRepeatButton, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnRepeatButton, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnRepeatButton, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnRepeatButton, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnRepeatButton, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnRepeatButton, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -60683,6 +63599,32 @@ impl ComPtr<IAvnRepeatButton> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -60693,6 +63635,19 @@ impl ComPtr<IAvnRepeatButton> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -61126,7 +64081,7 @@ impl ComPtr<IAvnRepeatButton> {
     }
 }
 
-pub const I_AVN_SCROLL_VIEWER_IID: Guid = Guid { data1: 0x597E4640, data2: 0x680B, data3: 0x5499, data4: [0xA4, 0xF0, 0xD9, 0x0B, 0x8F, 0x05, 0x39, 0xC7] };
+pub const I_AVN_SCROLL_VIEWER_IID: Guid = Guid { data1: 0x74E7350C, data2: 0x320E, data3: 0x5E2A, data4: [0xA8, 0xB9, 0xCD, 0xD9, 0x29, 0xB6, 0xB8, 0x26] };
 
 #[repr(C)]
 struct IAvnScrollViewerVtbl {
@@ -61193,8 +64148,14 @@ struct IAvnScrollViewerVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnScrollViewer, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnScrollViewer, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnScrollViewer, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnScrollViewer, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnScrollViewer, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnScrollViewer, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnScrollViewer, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnScrollViewer, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnScrollViewer, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnScrollViewer, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnScrollViewer, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnScrollViewer, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnScrollViewer, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnScrollViewer, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -61710,6 +64671,32 @@ impl ComPtr<IAvnScrollViewer> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -61720,6 +64707,19 @@ impl ComPtr<IAvnScrollViewer> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -62314,7 +65314,7 @@ impl ComPtr<IAvnScrollViewer> {
     }
 }
 
-pub const I_AVN_SELECTABLE_TEXT_BLOCK_IID: Guid = Guid { data1: 0x4C1CFF48, data2: 0x0D3A, data3: 0x5934, data4: [0xA1, 0xDA, 0x69, 0x39, 0xE7, 0x5C, 0x56, 0x78] };
+pub const I_AVN_SELECTABLE_TEXT_BLOCK_IID: Guid = Guid { data1: 0x843AC2A4, data2: 0x7FEF, data3: 0x5858, data4: [0x8A, 0x9A, 0xF1, 0x99, 0xBB, 0xA5, 0x26, 0x38] };
 
 #[repr(C)]
 struct IAvnSelectableTextBlockVtbl {
@@ -62381,8 +65381,14 @@ struct IAvnSelectableTextBlockVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -62868,6 +65874,32 @@ impl ComPtr<IAvnSelectableTextBlock> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -62878,6 +65910,19 @@ impl ComPtr<IAvnSelectableTextBlock> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -63268,7 +66313,7 @@ impl ComPtr<IAvnSelectableTextBlock> {
     }
 }
 
-pub const I_AVN_SEPARATOR_IID: Guid = Guid { data1: 0xFD4ADF2C, data2: 0x46AF, data3: 0x58ED, data4: [0xB8, 0xD1, 0x2B, 0x81, 0x3D, 0x56, 0xA4, 0xC0] };
+pub const I_AVN_SEPARATOR_IID: Guid = Guid { data1: 0x87BD59B4, data2: 0xCB85, data3: 0x5216, data4: [0xB7, 0x57, 0x72, 0xF9, 0x5F, 0xCB, 0x49, 0xE3] };
 
 #[repr(C)]
 struct IAvnSeparatorVtbl {
@@ -63335,8 +66380,14 @@ struct IAvnSeparatorVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnSeparator, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnSeparator, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnSeparator, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnSeparator, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnSeparator, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnSeparator, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnSeparator, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnSeparator, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnSeparator, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnSeparator, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnSeparator, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnSeparator, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnSeparator, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnSeparator, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -63799,6 +66850,32 @@ impl ComPtr<IAvnSeparator> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -63809,6 +66886,19 @@ impl ComPtr<IAvnSeparator> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -64038,7 +67128,7 @@ impl ComPtr<IAvnSeparator> {
     }
 }
 
-pub const I_AVN_ARC_IID: Guid = Guid { data1: 0x80597080, data2: 0xEEDD, data3: 0x5CAA, data4: [0xB4, 0xF1, 0x88, 0xD7, 0x8C, 0xA2, 0x3B, 0x79] };
+pub const I_AVN_ARC_IID: Guid = Guid { data1: 0x394ACB52, data2: 0x3BF3, data3: 0x52D6, data4: [0x97, 0xE8, 0x4B, 0xF0, 0xC1, 0x02, 0xF4, 0xBE] };
 
 #[repr(C)]
 struct IAvnArcVtbl {
@@ -64105,8 +67195,14 @@ struct IAvnArcVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnArc, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnArc, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnArc, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnArc, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnArc, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnArc, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnArc, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnArc, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnArc, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnArc, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnArc, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnArc, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnArc, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnArc, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -64563,6 +67659,32 @@ impl ComPtr<IAvnArc> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -64573,6 +67695,19 @@ impl ComPtr<IAvnArc> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -64759,7 +67894,7 @@ impl ComPtr<IAvnArc> {
     }
 }
 
-pub const I_AVN_ELLIPSE_IID: Guid = Guid { data1: 0x613206FF, data2: 0x5917, data3: 0x53D8, data4: [0xA9, 0x28, 0x1B, 0xDE, 0x30, 0x9F, 0xB7, 0xF1] };
+pub const I_AVN_ELLIPSE_IID: Guid = Guid { data1: 0x2AA5065D, data2: 0x5B4C, data3: 0x542B, data4: [0xB6, 0xCC, 0xA2, 0x30, 0xA5, 0x76, 0xE4, 0xF1] };
 
 #[repr(C)]
 struct IAvnEllipseVtbl {
@@ -64826,8 +67961,14 @@ struct IAvnEllipseVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnEllipse, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnEllipse, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnEllipse, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnEllipse, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnEllipse, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnEllipse, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnEllipse, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnEllipse, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnEllipse, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnEllipse, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnEllipse, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnEllipse, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnEllipse, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnEllipse, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -65280,6 +68421,32 @@ impl ComPtr<IAvnEllipse> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -65290,6 +68457,19 @@ impl ComPtr<IAvnEllipse> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -65448,7 +68628,7 @@ impl ComPtr<IAvnEllipse> {
     }
 }
 
-pub const I_AVN_LINE_IID: Guid = Guid { data1: 0xF302A345, data2: 0x5295, data3: 0x5A86, data4: [0xB5, 0x20, 0x22, 0x42, 0x78, 0xB6, 0x8E, 0xAB] };
+pub const I_AVN_LINE_IID: Guid = Guid { data1: 0x12A0F43A, data2: 0x9EAB, data3: 0x5F5B, data4: [0x96, 0xEF, 0xD9, 0x1E, 0x25, 0xF3, 0x1B, 0x78] };
 
 #[repr(C)]
 struct IAvnLineVtbl {
@@ -65515,8 +68695,14 @@ struct IAvnLineVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnLine, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnLine, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnLine, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnLine, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnLine, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnLine, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnLine, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnLine, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnLine, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnLine, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnLine, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnLine, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnLine, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnLine, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -65973,6 +69159,32 @@ impl ComPtr<IAvnLine> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -65983,6 +69195,19 @@ impl ComPtr<IAvnLine> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -66169,7 +69394,7 @@ impl ComPtr<IAvnLine> {
     }
 }
 
-pub const I_AVN_PATH_IID: Guid = Guid { data1: 0x4EC11C5B, data2: 0x9EAE, data3: 0x57CB, data4: [0xAC, 0xC2, 0xEB, 0x2E, 0x60, 0x94, 0x90, 0xAC] };
+pub const I_AVN_PATH_IID: Guid = Guid { data1: 0xE5A71060, data2: 0x50E1, data3: 0x5554, data4: [0x81, 0xB4, 0x03, 0x08, 0x98, 0xF2, 0x93, 0xCF] };
 
 #[repr(C)]
 struct IAvnPathVtbl {
@@ -66236,8 +69461,14 @@ struct IAvnPathVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnPath, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnPath, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnPath, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnPath, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnPath, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnPath, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnPath, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnPath, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnPath, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnPath, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnPath, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnPath, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnPath, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnPath, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -66692,6 +69923,32 @@ impl ComPtr<IAvnPath> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -66702,6 +69959,19 @@ impl ComPtr<IAvnPath> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -66875,7 +70145,7 @@ impl ComPtr<IAvnPath> {
     }
 }
 
-pub const I_AVN_POLYGON_IID: Guid = Guid { data1: 0x48E18C96, data2: 0x9363, data3: 0x5066, data4: [0x9A, 0x67, 0x12, 0x3E, 0x15, 0x3A, 0x09, 0x19] };
+pub const I_AVN_POLYGON_IID: Guid = Guid { data1: 0xE706EC48, data2: 0x3CA1, data3: 0x5BEA, data4: [0x90, 0x7E, 0x46, 0x0C, 0xA5, 0x3B, 0x06, 0xBE] };
 
 #[repr(C)]
 struct IAvnPolygonVtbl {
@@ -66942,8 +70212,14 @@ struct IAvnPolygonVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnPolygon, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnPolygon, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnPolygon, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnPolygon, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnPolygon, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnPolygon, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnPolygon, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnPolygon, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnPolygon, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnPolygon, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnPolygon, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnPolygon, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnPolygon, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnPolygon, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -67400,6 +70676,32 @@ impl ComPtr<IAvnPolygon> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -67410,6 +70712,19 @@ impl ComPtr<IAvnPolygon> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -67597,7 +70912,7 @@ impl ComPtr<IAvnPolygon> {
     }
 }
 
-pub const I_AVN_POLYLINE_IID: Guid = Guid { data1: 0x9BACEFB3, data2: 0xB663, data3: 0x55EB, data4: [0xAF, 0x28, 0x46, 0x00, 0x1B, 0xA3, 0xA3, 0x2B] };
+pub const I_AVN_POLYLINE_IID: Guid = Guid { data1: 0x035DBEE9, data2: 0xDC4D, data3: 0x57B6, data4: [0x91, 0x40, 0xDD, 0x59, 0xB2, 0x08, 0xA9, 0xDC] };
 
 #[repr(C)]
 struct IAvnPolylineVtbl {
@@ -67664,8 +70979,14 @@ struct IAvnPolylineVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnPolyline, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnPolyline, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnPolyline, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnPolyline, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnPolyline, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnPolyline, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnPolyline, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnPolyline, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnPolyline, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnPolyline, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnPolyline, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnPolyline, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnPolyline, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnPolyline, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -68122,6 +71443,32 @@ impl ComPtr<IAvnPolyline> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -68132,6 +71479,19 @@ impl ComPtr<IAvnPolyline> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -68319,7 +71679,7 @@ impl ComPtr<IAvnPolyline> {
     }
 }
 
-pub const I_AVN_RECTANGLE_IID: Guid = Guid { data1: 0x4C789DD6, data2: 0x03C9, data3: 0x5FC7, data4: [0xA3, 0x8E, 0x05, 0x00, 0x60, 0xC2, 0x89, 0x08] };
+pub const I_AVN_RECTANGLE_IID: Guid = Guid { data1: 0xE87D8C84, data2: 0x1090, data3: 0x5B7D, data4: [0x9D, 0xBA, 0x9F, 0x12, 0x2E, 0x19, 0xE3, 0x33] };
 
 #[repr(C)]
 struct IAvnRectangleVtbl {
@@ -68386,8 +71746,14 @@ struct IAvnRectangleVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnRectangle, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnRectangle, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnRectangle, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnRectangle, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnRectangle, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnRectangle, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnRectangle, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnRectangle, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnRectangle, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnRectangle, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnRectangle, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnRectangle, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnRectangle, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnRectangle, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -68844,6 +72210,32 @@ impl ComPtr<IAvnRectangle> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -68854,6 +72246,19 @@ impl ComPtr<IAvnRectangle> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -69040,7 +72445,7 @@ impl ComPtr<IAvnRectangle> {
     }
 }
 
-pub const I_AVN_SECTOR_IID: Guid = Guid { data1: 0xBEB2012E, data2: 0xDE97, data3: 0x5F61, data4: [0xB0, 0x66, 0x1E, 0x1D, 0x92, 0x4A, 0x19, 0x2A] };
+pub const I_AVN_SECTOR_IID: Guid = Guid { data1: 0x5716DA45, data2: 0x6417, data3: 0x5758, data4: [0x89, 0xE7, 0x30, 0x34, 0x27, 0x80, 0x83, 0x53] };
 
 #[repr(C)]
 struct IAvnSectorVtbl {
@@ -69107,8 +72512,14 @@ struct IAvnSectorVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnSector, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnSector, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnSector, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnSector, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnSector, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnSector, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnSector, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnSector, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnSector, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnSector, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnSector, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnSector, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnSector, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnSector, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -69565,6 +72976,32 @@ impl ComPtr<IAvnSector> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -69575,6 +73012,19 @@ impl ComPtr<IAvnSector> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -69761,7 +73211,7 @@ impl ComPtr<IAvnSector> {
     }
 }
 
-pub const I_AVN_SHAPE_IID: Guid = Guid { data1: 0x68C7A91F, data2: 0xDBEE, data3: 0x56E2, data4: [0x9A, 0x87, 0x24, 0xB2, 0xB6, 0x6D, 0x30, 0xAC] };
+pub const I_AVN_SHAPE_IID: Guid = Guid { data1: 0x5CB7105C, data2: 0xDAF9, data3: 0x5211, data4: [0x96, 0x59, 0x62, 0xEA, 0xB0, 0x32, 0x08, 0xFF] };
 
 #[repr(C)]
 struct IAvnShapeVtbl {
@@ -69828,8 +73278,14 @@ struct IAvnShapeVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnShape, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnShape, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnShape, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnShape, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnShape, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnShape, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnShape, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnShape, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnShape, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnShape, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnShape, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnShape, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnShape, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnShape, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -70282,6 +73738,32 @@ impl ComPtr<IAvnShape> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -70292,6 +73774,19 @@ impl ComPtr<IAvnShape> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -70450,7 +73945,7 @@ impl ComPtr<IAvnShape> {
     }
 }
 
-pub const I_AVN_SLIDER_IID: Guid = Guid { data1: 0x704B6BAF, data2: 0x7A44, data3: 0x5CFE, data4: [0xA1, 0x4B, 0x44, 0x0A, 0x84, 0x71, 0xD0, 0xB9] };
+pub const I_AVN_SLIDER_IID: Guid = Guid { data1: 0xBF042391, data2: 0xAF5A, data3: 0x5DD4, data4: [0xB3, 0x21, 0x05, 0x5C, 0xA9, 0xF7, 0x0D, 0x23] };
 
 #[repr(C)]
 struct IAvnSliderVtbl {
@@ -70517,8 +74012,14 @@ struct IAvnSliderVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnSlider, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnSlider, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnSlider, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnSlider, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnSlider, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnSlider, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnSlider, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnSlider, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnSlider, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnSlider, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnSlider, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnSlider, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnSlider, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnSlider, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -71005,6 +74506,32 @@ impl ComPtr<IAvnSlider> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -71015,6 +74542,19 @@ impl ComPtr<IAvnSlider> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -71412,7 +74952,7 @@ impl ComPtr<IAvnSlider> {
     }
 }
 
-pub const I_AVN_SPINNER_IID: Guid = Guid { data1: 0x6AAEEDDC, data2: 0x0307, data3: 0x57B2, data4: [0x9F, 0xA5, 0x30, 0xA2, 0x7D, 0xC1, 0x95, 0x8E] };
+pub const I_AVN_SPINNER_IID: Guid = Guid { data1: 0x4A63E264, data2: 0xF914, data3: 0x5256, data4: [0x93, 0xAB, 0x12, 0x68, 0x89, 0x5B, 0x90, 0x73] };
 
 #[repr(C)]
 struct IAvnSpinnerVtbl {
@@ -71479,8 +75019,14 @@ struct IAvnSpinnerVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnSpinner, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnSpinner, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnSpinner, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnSpinner, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnSpinner, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnSpinner, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnSpinner, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnSpinner, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnSpinner, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnSpinner, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnSpinner, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnSpinner, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnSpinner, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnSpinner, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -71955,6 +75501,32 @@ impl ComPtr<IAvnSpinner> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -71965,6 +75537,19 @@ impl ComPtr<IAvnSpinner> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -72277,7 +75862,7 @@ impl ComPtr<IAvnSpinner> {
     }
 }
 
-pub const I_AVN_SPLIT_BUTTON_IID: Guid = Guid { data1: 0x1937A395, data2: 0xDF68, data3: 0x5F9F, data4: [0x94, 0xC1, 0x07, 0x24, 0x63, 0x80, 0x57, 0x3C] };
+pub const I_AVN_SPLIT_BUTTON_IID: Guid = Guid { data1: 0x11D77809, data2: 0x48B6, data3: 0x5A29, data4: [0xB8, 0xD9, 0x5D, 0x41, 0x3B, 0xC9, 0x6A, 0x85] };
 
 #[repr(C)]
 struct IAvnSplitButtonVtbl {
@@ -72344,8 +75929,14 @@ struct IAvnSplitButtonVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnSplitButton, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnSplitButton, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnSplitButton, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnSplitButton, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnSplitButton, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnSplitButton, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnSplitButton, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnSplitButton, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnSplitButton, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnSplitButton, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnSplitButton, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnSplitButton, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnSplitButton, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnSplitButton, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -72826,6 +76417,32 @@ impl ComPtr<IAvnSplitButton> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -72836,6 +76453,19 @@ impl ComPtr<IAvnSplitButton> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -73191,7 +76821,7 @@ impl ComPtr<IAvnSplitButton> {
     }
 }
 
-pub const I_AVN_SPLIT_VIEW_IID: Guid = Guid { data1: 0x51ED3B0D, data2: 0x0AAB, data3: 0x5AA3, data4: [0x9C, 0x4E, 0x50, 0x1C, 0x60, 0x27, 0xE7, 0x74] };
+pub const I_AVN_SPLIT_VIEW_IID: Guid = Guid { data1: 0x048A7E1E, data2: 0x0539, data3: 0x5D4A, data4: [0x95, 0xD8, 0x5C, 0x2E, 0x6D, 0x42, 0x92, 0x02] };
 
 #[repr(C)]
 struct IAvnSplitViewVtbl {
@@ -73258,8 +76888,14 @@ struct IAvnSplitViewVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnSplitView, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnSplitView, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnSplitView, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnSplitView, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnSplitView, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnSplitView, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnSplitView, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnSplitView, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnSplitView, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnSplitView, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnSplitView, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnSplitView, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnSplitView, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnSplitView, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -73756,6 +77392,32 @@ impl ComPtr<IAvnSplitView> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -73766,6 +77428,19 @@ impl ComPtr<IAvnSplitView> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -74229,7 +77904,7 @@ impl ComPtr<IAvnSplitView> {
     }
 }
 
-pub const I_AVN_STACK_PANEL_IID: Guid = Guid { data1: 0x2104EA3B, data2: 0x6DCB, data3: 0x5691, data4: [0xAE, 0x36, 0xAB, 0x75, 0xB8, 0x19, 0xF2, 0x83] };
+pub const I_AVN_STACK_PANEL_IID: Guid = Guid { data1: 0x17521479, data2: 0xDA81, data3: 0x5A88, data4: [0x99, 0x84, 0x55, 0x7E, 0xE0, 0x8F, 0xF8, 0x97] };
 
 #[repr(C)]
 struct IAvnStackPanelVtbl {
@@ -74296,8 +77971,14 @@ struct IAvnStackPanelVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnStackPanel, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnStackPanel, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnStackPanel, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnStackPanel, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnStackPanel, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnStackPanel, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnStackPanel, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnStackPanel, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnStackPanel, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnStackPanel, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnStackPanel, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnStackPanel, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnStackPanel, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnStackPanel, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -74743,6 +78424,32 @@ impl ComPtr<IAvnStackPanel> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -74753,6 +78460,19 @@ impl ComPtr<IAvnStackPanel> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -74862,7 +78582,7 @@ impl ComPtr<IAvnStackPanel> {
     }
 }
 
-pub const I_AVN_TAB_CONTROL_IID: Guid = Guid { data1: 0xC4664936, data2: 0x3D85, data3: 0x52A7, data4: [0xB4, 0x8C, 0x4C, 0xC3, 0x2C, 0xA9, 0xB3, 0xA1] };
+pub const I_AVN_TAB_CONTROL_IID: Guid = Guid { data1: 0x8F087347, data2: 0x637D, data3: 0x5F69, data4: [0xBA, 0xBE, 0x6D, 0x6E, 0xD3, 0x04, 0x40, 0xC1] };
 
 #[repr(C)]
 struct IAvnTabControlVtbl {
@@ -74929,8 +78649,14 @@ struct IAvnTabControlVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnTabControl, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnTabControl, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnTabControl, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnTabControl, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnTabControl, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnTabControl, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnTabControl, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnTabControl, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnTabControl, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnTabControl, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnTabControl, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnTabControl, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnTabControl, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnTabControl, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -75431,6 +79157,32 @@ impl ComPtr<IAvnTabControl> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -75441,6 +79193,19 @@ impl ComPtr<IAvnTabControl> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -75937,7 +79702,7 @@ impl ComPtr<IAvnTabControl> {
     }
 }
 
-pub const I_AVN_TAB_ITEM_IID: Guid = Guid { data1: 0xF2FF8148, data2: 0x506B, data3: 0x5823, data4: [0xB9, 0x9B, 0xF1, 0x0D, 0xD0, 0x6A, 0xC7, 0xDE] };
+pub const I_AVN_TAB_ITEM_IID: Guid = Guid { data1: 0x406B7990, data2: 0x01A7, data3: 0x533E, data4: [0x9A, 0x2A, 0x7B, 0x70, 0xDD, 0xFC, 0xE8, 0xEC] };
 
 #[repr(C)]
 struct IAvnTabItemVtbl {
@@ -76004,8 +79769,14 @@ struct IAvnTabItemVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnTabItem, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnTabItem, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnTabItem, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnTabItem, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnTabItem, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnTabItem, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnTabItem, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnTabItem, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnTabItem, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnTabItem, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnTabItem, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnTabItem, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnTabItem, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnTabItem, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -76489,6 +80260,32 @@ impl ComPtr<IAvnTabItem> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -76499,6 +80296,19 @@ impl ComPtr<IAvnTabItem> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -76876,7 +80686,7 @@ impl ComPtr<IAvnTabItem> {
     }
 }
 
-pub const I_AVN_TABLE_VIEW_IID: Guid = Guid { data1: 0xB0C8BD3E, data2: 0xD92C, data3: 0x542C, data4: [0x8E, 0x78, 0x90, 0x20, 0xF9, 0xF5, 0xD0, 0xD8] };
+pub const I_AVN_TABLE_VIEW_IID: Guid = Guid { data1: 0xD4BE6E5C, data2: 0xB5DD, data3: 0x5BB0, data4: [0xA3, 0x0F, 0x3C, 0xC8, 0x33, 0x76, 0x7F, 0x7C] };
 
 #[repr(C)]
 struct IAvnTableViewVtbl {
@@ -76943,8 +80753,14 @@ struct IAvnTableViewVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnTableView, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnTableView, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnTableView, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnTableView, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnTableView, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnTableView, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnTableView, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnTableView, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnTableView, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnTableView, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnTableView, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnTableView, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnTableView, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnTableView, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -77441,6 +81257,32 @@ impl ComPtr<IAvnTableView> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -77451,6 +81293,19 @@ impl ComPtr<IAvnTableView> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -77915,7 +81770,7 @@ impl ComPtr<IAvnTableView> {
     }
 }
 
-pub const I_AVN_TABLE_VIEW_CELL_IID: Guid = Guid { data1: 0x5FFBD394, data2: 0x21E2, data3: 0x5FA0, data4: [0xA7, 0x38, 0xF8, 0x1C, 0xA2, 0x4C, 0xA1, 0x98] };
+pub const I_AVN_TABLE_VIEW_CELL_IID: Guid = Guid { data1: 0x7B4DC408, data2: 0x8142, data3: 0x5915, data4: [0xB1, 0xA7, 0x15, 0xCE, 0x22, 0x06, 0x25, 0x12] };
 
 #[repr(C)]
 struct IAvnTableViewCellVtbl {
@@ -77982,8 +81837,14 @@ struct IAvnTableViewCellVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnTableViewCell, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnTableViewCell, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnTableViewCell, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnTableViewCell, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnTableViewCell, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnTableViewCell, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnTableViewCell, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnTableViewCell, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnTableViewCell, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnTableViewCell, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnTableViewCell, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnTableViewCell, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnTableViewCell, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnTableViewCell, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -78454,6 +82315,32 @@ impl ComPtr<IAvnTableViewCell> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -78464,6 +82351,19 @@ impl ComPtr<IAvnTableViewCell> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -79101,7 +83001,7 @@ impl ComPtr<IAvnTableViewColumn> {
     }
 }
 
-pub const I_AVN_TABLE_VIEW_ROW_IID: Guid = Guid { data1: 0x785207CE, data2: 0x7A58, data3: 0x5074, data4: [0x9C, 0xCD, 0x5D, 0xFA, 0x07, 0x71, 0xDF, 0x61] };
+pub const I_AVN_TABLE_VIEW_ROW_IID: Guid = Guid { data1: 0x1A492B55, data2: 0x9FB8, data3: 0x5F66, data4: [0x98, 0x6E, 0xEF, 0x1D, 0xED, 0x34, 0xA3, 0x8D] };
 
 #[repr(C)]
 struct IAvnTableViewRowVtbl {
@@ -79168,8 +83068,14 @@ struct IAvnTableViewRowVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnTableViewRow, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnTableViewRow, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnTableViewRow, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnTableViewRow, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnTableViewRow, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnTableViewRow, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnTableViewRow, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnTableViewRow, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnTableViewRow, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnTableViewRow, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnTableViewRow, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnTableViewRow, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnTableViewRow, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnTableViewRow, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -79642,6 +83548,32 @@ impl ComPtr<IAvnTableViewRow> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -79652,6 +83584,19 @@ impl ComPtr<IAvnTableViewRow> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -79951,7 +83896,7 @@ impl ComPtr<IAvnTableViewRow> {
     }
 }
 
-pub const I_AVN_TEXT_BLOCK_IID: Guid = Guid { data1: 0x70059000, data2: 0x39BE, data3: 0x58FA, data4: [0x96, 0x21, 0x50, 0xCB, 0x7B, 0xBF, 0x46, 0xB1] };
+pub const I_AVN_TEXT_BLOCK_IID: Guid = Guid { data1: 0x06129468, data2: 0xB036, data3: 0x5F97, data4: [0xAC, 0xA3, 0x6C, 0x51, 0xB8, 0x45, 0x74, 0x6D] };
 
 #[repr(C)]
 struct IAvnTextBlockVtbl {
@@ -80018,8 +83963,14 @@ struct IAvnTextBlockVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnTextBlock, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnTextBlock, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnTextBlock, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnTextBlock, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnTextBlock, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnTextBlock, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnTextBlock, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnTextBlock, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnTextBlock, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnTextBlock, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnTextBlock, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnTextBlock, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnTextBlock, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnTextBlock, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -80490,6 +84441,32 @@ impl ComPtr<IAvnTextBlock> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -80500,6 +84477,19 @@ impl ComPtr<IAvnTextBlock> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -80787,7 +84777,7 @@ impl ComPtr<IAvnTextBlock> {
     }
 }
 
-pub const I_AVN_TEXT_BOX_IID: Guid = Guid { data1: 0xB1615F3B, data2: 0xC31D, data3: 0x56CC, data4: [0xA9, 0x99, 0x06, 0x4F, 0xAC, 0x4E, 0xFD, 0xF8] };
+pub const I_AVN_TEXT_BOX_IID: Guid = Guid { data1: 0xBCD740F5, data2: 0x7423, data3: 0x5B2D, data4: [0xAD, 0x5E, 0xCB, 0x40, 0x07, 0x22, 0x26, 0xF8] };
 
 #[repr(C)]
 struct IAvnTextBoxVtbl {
@@ -80854,8 +84844,14 @@ struct IAvnTextBoxVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnTextBox, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnTextBox, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnTextBox, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnTextBox, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnTextBox, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnTextBox, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnTextBox, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnTextBox, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnTextBox, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnTextBox, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnTextBox, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnTextBox, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnTextBox, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnTextBox, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -81407,6 +85403,32 @@ impl ComPtr<IAvnTextBox> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -81417,6 +85439,19 @@ impl ComPtr<IAvnTextBox> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -82264,7 +86299,7 @@ impl ComPtr<IAvnTextBox> {
     }
 }
 
-pub const I_AVN_THEME_VARIANT_SCOPE_IID: Guid = Guid { data1: 0xF8DF5A10, data2: 0x5406, data3: 0x5E10, data4: [0xA6, 0x14, 0xF5, 0x0B, 0x8A, 0x8B, 0xE5, 0xA6] };
+pub const I_AVN_THEME_VARIANT_SCOPE_IID: Guid = Guid { data1: 0x2E35671F, data2: 0xC418, data3: 0x50E8, data4: [0x86, 0xC1, 0xED, 0x85, 0x8C, 0x03, 0x6A, 0x8D] };
 
 #[repr(C)]
 struct IAvnThemeVariantScopeVtbl {
@@ -82331,8 +86366,14 @@ struct IAvnThemeVariantScopeVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnThemeVariantScope, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnThemeVariantScope, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnThemeVariantScope, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnThemeVariantScope, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnThemeVariantScope, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnThemeVariantScope, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnThemeVariantScope, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnThemeVariantScope, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnThemeVariantScope, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnThemeVariantScope, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnThemeVariantScope, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnThemeVariantScope, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnThemeVariantScope, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnThemeVariantScope, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -82773,6 +86814,32 @@ impl ComPtr<IAvnThemeVariantScope> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -82783,6 +86850,19 @@ impl ComPtr<IAvnThemeVariantScope> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -82857,7 +86937,7 @@ impl ComPtr<IAvnThemeVariantScope> {
     }
 }
 
-pub const I_AVN_TIME_PICKER_IID: Guid = Guid { data1: 0x512BDA86, data2: 0x7718, data3: 0x5F1E, data4: [0xB2, 0xDE, 0x8B, 0xCC, 0x75, 0x34, 0xAA, 0x46] };
+pub const I_AVN_TIME_PICKER_IID: Guid = Guid { data1: 0x9F3B7D7A, data2: 0xE290, data3: 0x5ADC, data4: [0x99, 0x7C, 0x21, 0x3A, 0x25, 0xF2, 0x0D, 0x3B] };
 
 #[repr(C)]
 struct IAvnTimePickerVtbl {
@@ -82924,8 +87004,14 @@ struct IAvnTimePickerVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnTimePicker, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnTimePicker, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnTimePicker, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnTimePicker, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnTimePicker, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnTimePicker, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnTimePicker, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnTimePicker, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnTimePicker, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnTimePicker, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnTimePicker, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnTimePicker, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnTimePicker, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnTimePicker, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -83403,6 +87489,32 @@ impl ComPtr<IAvnTimePicker> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -83413,6 +87525,19 @@ impl ComPtr<IAvnTimePicker> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -83747,7 +87872,7 @@ impl ComPtr<IAvnTimePicker> {
     }
 }
 
-pub const I_AVN_TOGGLE_SPLIT_BUTTON_IID: Guid = Guid { data1: 0xDD4F3760, data2: 0xD88D, data3: 0x5551, data4: [0xBD, 0x80, 0xCA, 0x87, 0x21, 0xDE, 0xA1, 0xE9] };
+pub const I_AVN_TOGGLE_SPLIT_BUTTON_IID: Guid = Guid { data1: 0x4FD7A582, data2: 0x1766, data3: 0x5CC7, data4: [0xB1, 0x73, 0x72, 0xF4, 0x7F, 0xDF, 0x6B, 0xFF] };
 
 #[repr(C)]
 struct IAvnToggleSplitButtonVtbl {
@@ -83814,8 +87939,14 @@ struct IAvnToggleSplitButtonVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnToggleSplitButton, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnToggleSplitButton, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnToggleSplitButton, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnToggleSplitButton, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnToggleSplitButton, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnToggleSplitButton, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnToggleSplitButton, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnToggleSplitButton, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnToggleSplitButton, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnToggleSplitButton, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnToggleSplitButton, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnToggleSplitButton, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnToggleSplitButton, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnToggleSplitButton, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -84300,6 +88431,32 @@ impl ComPtr<IAvnToggleSplitButton> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -84310,6 +88467,19 @@ impl ComPtr<IAvnToggleSplitButton> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -84692,7 +88862,7 @@ impl ComPtr<IAvnToggleSplitButton> {
     }
 }
 
-pub const I_AVN_TOGGLE_SWITCH_IID: Guid = Guid { data1: 0xD36D16B3, data2: 0x4A9B, data3: 0x5BD6, data4: [0x92, 0x58, 0x71, 0x25, 0xED, 0x95, 0xB4, 0x33] };
+pub const I_AVN_TOGGLE_SWITCH_IID: Guid = Guid { data1: 0x96F69492, data2: 0x4FBE, data3: 0x565F, data4: [0x85, 0x72, 0xD7, 0xAE, 0xA4, 0x09, 0x97, 0xE9] };
 
 #[repr(C)]
 struct IAvnToggleSwitchVtbl {
@@ -84759,8 +88929,14 @@ struct IAvnToggleSwitchVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnToggleSwitch, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnToggleSwitch, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnToggleSwitch, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnToggleSwitch, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnToggleSwitch, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnToggleSwitch, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnToggleSwitch, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnToggleSwitch, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnToggleSwitch, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnToggleSwitch, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnToggleSwitch, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnToggleSwitch, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnToggleSwitch, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnToggleSwitch, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -85262,6 +89438,32 @@ impl ComPtr<IAvnToggleSwitch> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -85272,6 +89474,19 @@ impl ComPtr<IAvnToggleSwitch> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -85774,7 +89989,7 @@ impl ComPtr<IAvnToggleSwitch> {
     }
 }
 
-pub const I_AVN_TOOL_TIP_IID: Guid = Guid { data1: 0x25BC085F, data2: 0x0BDB, data3: 0x59F4, data4: [0xB6, 0x89, 0xA1, 0xF0, 0xA8, 0x48, 0x9B, 0x19] };
+pub const I_AVN_TOOL_TIP_IID: Guid = Guid { data1: 0x8158AEAF, data2: 0xB85C, data3: 0x59C4, data4: [0xBF, 0xCE, 0x98, 0xDF, 0x20, 0xF4, 0xC2, 0xC9] };
 
 #[repr(C)]
 struct IAvnToolTipVtbl {
@@ -85841,8 +90056,14 @@ struct IAvnToolTipVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnToolTip, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnToolTip, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnToolTip, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnToolTip, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnToolTip, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnToolTip, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnToolTip, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnToolTip, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnToolTip, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnToolTip, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnToolTip, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnToolTip, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnToolTip, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnToolTip, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -86313,6 +90534,32 @@ impl ComPtr<IAvnToolTip> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -86323,6 +90570,19 @@ impl ComPtr<IAvnToolTip> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -86608,7 +90868,7 @@ impl ComPtr<IAvnToolTip> {
     }
 }
 
-pub const I_AVN_TRANSITIONING_CONTENT_CONTROL_IID: Guid = Guid { data1: 0x6A3336CC, data2: 0xB09A, data3: 0x5484, data4: [0xBB, 0x6B, 0x3E, 0x74, 0xC7, 0x62, 0xE5, 0x77] };
+pub const I_AVN_TRANSITIONING_CONTENT_CONTROL_IID: Guid = Guid { data1: 0x643AACDC, data2: 0xAB53, data3: 0x56DF, data4: [0xA1, 0x97, 0x28, 0x04, 0x2B, 0xF4, 0xD6, 0x9F] };
 
 #[repr(C)]
 struct IAvnTransitioningContentControlVtbl {
@@ -86675,8 +90935,14 @@ struct IAvnTransitioningContentControlVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -87151,6 +91417,32 @@ impl ComPtr<IAvnTransitioningContentControl> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -87161,6 +91453,19 @@ impl ComPtr<IAvnTransitioningContentControl> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -87607,7 +91912,7 @@ impl ComPtr<IAvnTrayIcon> {
     }
 }
 
-pub const I_AVN_TREE_VIEW_IID: Guid = Guid { data1: 0xAD4500EF, data2: 0xD3C0, data3: 0x5798, data4: [0xBF, 0x90, 0x5E, 0x75, 0x15, 0xE8, 0x5B, 0xEE] };
+pub const I_AVN_TREE_VIEW_IID: Guid = Guid { data1: 0xE8A54D8B, data2: 0x7903, data3: 0x57AE, data4: [0x9B, 0xF8, 0xF5, 0xA8, 0x05, 0x50, 0x28, 0xFC] };
 
 #[repr(C)]
 struct IAvnTreeViewVtbl {
@@ -87674,8 +91979,14 @@ struct IAvnTreeViewVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnTreeView, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnTreeView, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnTreeView, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnTreeView, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnTreeView, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnTreeView, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnTreeView, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnTreeView, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnTreeView, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnTreeView, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnTreeView, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnTreeView, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnTreeView, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnTreeView, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -88166,6 +92477,32 @@ impl ComPtr<IAvnTreeView> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -88176,6 +92513,19 @@ impl ComPtr<IAvnTreeView> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -88596,7 +92946,7 @@ impl ComPtr<IAvnTreeView> {
     }
 }
 
-pub const I_AVN_TREE_VIEW_ITEM_IID: Guid = Guid { data1: 0xB4B4B178, data2: 0xBF7A, data3: 0x52CD, data4: [0x8B, 0x27, 0xEF, 0xED, 0xBE, 0xA8, 0xC6, 0x0E] };
+pub const I_AVN_TREE_VIEW_ITEM_IID: Guid = Guid { data1: 0xCDD644B1, data2: 0x7E5B, data3: 0x5C32, data4: [0x92, 0x71, 0x5A, 0x69, 0xCE, 0xE6, 0x50, 0x05] };
 
 #[repr(C)]
 struct IAvnTreeViewItemVtbl {
@@ -88663,8 +93013,14 @@ struct IAvnTreeViewItemVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnTreeViewItem, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnTreeViewItem, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnTreeViewItem, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnTreeViewItem, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnTreeViewItem, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnTreeViewItem, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnTreeViewItem, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnTreeViewItem, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnTreeViewItem, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnTreeViewItem, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnTreeViewItem, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnTreeViewItem, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnTreeViewItem, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnTreeViewItem, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -89152,6 +93508,32 @@ impl ComPtr<IAvnTreeViewItem> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -89162,6 +93544,19 @@ impl ComPtr<IAvnTreeViewItem> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -89565,7 +93960,7 @@ impl ComPtr<IAvnTreeViewItem> {
     }
 }
 
-pub const I_AVN_USER_CONTROL_IID: Guid = Guid { data1: 0x61A53A49, data2: 0xAD6E, data3: 0x58C8, data4: [0x88, 0xDF, 0xDC, 0x3B, 0x76, 0x9C, 0xF0, 0x13] };
+pub const I_AVN_USER_CONTROL_IID: Guid = Guid { data1: 0xE3ABA05B, data2: 0xDFF9, data3: 0x53C3, data4: [0x88, 0x85, 0xCE, 0x2D, 0x78, 0xFE, 0xFF, 0xFC] };
 
 #[repr(C)]
 struct IAvnUserControlVtbl {
@@ -89632,8 +94027,14 @@ struct IAvnUserControlVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnUserControl, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnUserControl, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnUserControl, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnUserControl, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnUserControl, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnUserControl, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnUserControl, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnUserControl, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnUserControl, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnUserControl, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnUserControl, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnUserControl, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnUserControl, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnUserControl, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -90104,6 +94505,32 @@ impl ComPtr<IAvnUserControl> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -90114,6 +94541,19 @@ impl ComPtr<IAvnUserControl> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -90399,7 +94839,7 @@ impl ComPtr<IAvnUserControl> {
     }
 }
 
-pub const I_AVN_VIEWBOX_IID: Guid = Guid { data1: 0x4F61E1E8, data2: 0xF773, data3: 0x5195, data4: [0xB8, 0xBF, 0x89, 0xEF, 0x6E, 0x8F, 0x6C, 0x44] };
+pub const I_AVN_VIEWBOX_IID: Guid = Guid { data1: 0x3140444B, data2: 0x2172, data3: 0x5105, data4: [0xB7, 0xAD, 0xD8, 0x10, 0xD5, 0x79, 0x4C, 0x13] };
 
 #[repr(C)]
 struct IAvnViewboxVtbl {
@@ -90466,8 +94906,14 @@ struct IAvnViewboxVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnViewbox, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnViewbox, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnViewbox, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnViewbox, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnViewbox, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnViewbox, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnViewbox, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnViewbox, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnViewbox, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnViewbox, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnViewbox, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnViewbox, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnViewbox, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnViewbox, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -90908,6 +95354,32 @@ impl ComPtr<IAvnViewbox> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -90918,6 +95390,19 @@ impl ComPtr<IAvnViewbox> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -90991,7 +95476,7 @@ impl ComPtr<IAvnViewbox> {
     }
 }
 
-pub const I_AVN_WINDOW_IID: Guid = Guid { data1: 0xBEAAC3C0, data2: 0x855F, data3: 0x5FC1, data4: [0x97, 0x50, 0x80, 0xC5, 0x38, 0xF7, 0xEE, 0x87] };
+pub const I_AVN_WINDOW_IID: Guid = Guid { data1: 0x29E3362E, data2: 0xB16E, data3: 0x5163, data4: [0xAE, 0xD3, 0xCF, 0x14, 0xD6, 0xB1, 0x27, 0x84] };
 
 #[repr(C)]
 struct IAvnWindowVtbl {
@@ -91058,8 +95543,14 @@ struct IAvnWindowVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnWindow, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnWindow, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnWindow, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnWindow, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnWindow, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnWindow, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnWindow, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnWindow, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnWindow, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnWindow, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnWindow, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnWindow, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnWindow, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnWindow, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -91571,6 +96062,32 @@ impl ComPtr<IAvnWindow> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -91581,6 +96098,19 @@ impl ComPtr<IAvnWindow> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -92153,7 +96683,7 @@ impl ComPtr<IAvnWindow> {
     }
 }
 
-pub const I_AVN_WRAP_PANEL_IID: Guid = Guid { data1: 0x92500527, data2: 0x364F, data3: 0x542C, data4: [0x8D, 0xF0, 0x37, 0xF0, 0x80, 0x36, 0xD8, 0x3F] };
+pub const I_AVN_WRAP_PANEL_IID: Guid = Guid { data1: 0x802A39C5, data2: 0x57F6, data3: 0x5E1A, data4: [0x9D, 0xA8, 0x02, 0x63, 0x45, 0x71, 0xCF, 0x6D] };
 
 #[repr(C)]
 struct IAvnWrapPanelVtbl {
@@ -92220,8 +96750,14 @@ struct IAvnWrapPanelVtbl {
     unadvise_unloaded: unsafe extern "system" fn(*mut IAvnWrapPanel, i64) -> i32,
     advise_size_changed: unsafe extern "system" fn(*mut IAvnWrapPanel, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
     unadvise_size_changed: unsafe extern "system" fn(*mut IAvnWrapPanel, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnWrapPanel, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnWrapPanel, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnWrapPanel, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnWrapPanel, i64) -> i32,
     advise_key_down: unsafe extern "system" fn(*mut IAvnWrapPanel, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
     unadvise_key_down: unsafe extern "system" fn(*mut IAvnWrapPanel, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnWrapPanel, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnWrapPanel, i64) -> i32,
     advise_pointer_entered: unsafe extern "system" fn(*mut IAvnWrapPanel, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnWrapPanel, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnWrapPanel, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
@@ -92671,6 +97207,32 @@ impl ComPtr<IAvnWrapPanel> {
             hresult::check(hr)
         }
     }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
@@ -92681,6 +97243,19 @@ impl ComPtr<IAvnWrapPanel> {
     pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }

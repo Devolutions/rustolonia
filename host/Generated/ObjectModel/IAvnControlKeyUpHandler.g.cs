@@ -6,9 +6,9 @@ using System.Runtime.InteropServices.Marshalling;
 namespace Avalonia.Host.Com;
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("D71E5403-7A7E-5C5A-8A48-4C89346F0179")]
-public partial interface IAvnRangeBaseValueChangedHandler
+[Guid("B4FC3B9A-CF71-5EBB-9852-A46AEC80C6FE")]
+public partial interface IAvnControlKeyUpHandler
 {
     [PreserveSig]
-    int Invoke(double OldValue, double NewValue);
+    int Invoke(int Key, int PhysicalKey, int KeyModifiers, string? KeySymbol, ref int Handled);
 }

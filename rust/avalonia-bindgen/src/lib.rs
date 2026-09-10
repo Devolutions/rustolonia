@@ -1,4 +1,3 @@
-#[cfg(test)]
 mod abi_contract;
 mod emit;
 mod emit_safe;
@@ -8,7 +7,7 @@ mod ir;
 mod owned;
 mod validate;
 mod variant;
-
+pub use abi_contract::regenerate_baseline;
 pub use error::GenerationError;
 pub use ir::ProjectionIr;
 pub use owned::{check_outputs, write_outputs, BINDGEN_GENERATOR_ID};

@@ -76,6 +76,22 @@ with a host from another.
 
 The overlay-chrome pass widens the leaf `IAvnWindow` ABI from 7 to 8 to expose only the safe, non-nullable window work-area and dialog members. This stays local to the window leaf: `IAvnContentControl` remains at 6 and the factory remains at 13, while blockers such as `Icon`, `Position`, nullable geometry, and cancelable `Closing` payloads stay out of scope.
 
+The wave P event-payload pass grows `IAvnControl` with `KeyUp`, `GotFocus`
+and `LostFocus`, so `IAvnControl` and every interface below it republish on
+fresh IIDs. Three previously payload-less handlers change their `Invoke`
+shape and therefore mint new identities at version 2:
+`IAvnSelectingItemsControlSelectionChangedHandler` and
+`IAvnTreeViewSelectionChangedHandler` now receive a host-implemented
+`*SelectionChangedArgs` interface exposing the added/removed items as Variant
+count/getter slots, and `IAvnRangeBaseValueChangedHandler` now carries the
+old/new value pair as fields. The advise/unadvise slots on the control
+interfaces keep their signatures throughout; only the handler identities move.
+Consumers compiled against the version 1 handlers fail `QueryInterface`
+loudly (`E_NOINTERFACE`) rather than being called through a stale vtable.
+After an intentional ABI wave, regenerate the frozen snapshot with
+`pwsh ./rust/regenerate-and-build.ps1 -UpdateAbiBaseline` in the same change
+so `abi-baseline.json` stays the reviewed record of what is released.
+
 Published interface IIDs, vtable slot order, method signatures, calling
 conventions, ownership rules, and error semantics are immutable. Never reuse an
 IID for a changed interface and never insert a slot into an existing vtable.

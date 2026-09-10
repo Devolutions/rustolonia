@@ -18,98 +18,98 @@ public static class AvaloniaProjectionProfiles
             // Loaded/Unloaded, so Control and every descendant republish.
             // StyledElement gains ActualThemeVariant in U27, so it and every descendant republish.
             ["Avalonia.Host.Com.IAvnStyledElement"] = 6,
-            ["Avalonia.Host.Com.IAvnControl"] = 8,
-            ["Avalonia.Host.Com.IAvnDecorator"] = 10,
+            ["Avalonia.Host.Com.IAvnControl"] = 9,
+            ["Avalonia.Host.Com.IAvnDecorator"] = 11,
             // Everything the completeness wave left alone. None of these sits below
             // ContentControl, Button, ToggleButton, ListBox, ComboBox or Grid, so their
             // flattened vtables are byte-identical to version 4.
-            ["Avalonia.Host.Com.IAvnBorder"] = 12,
+            ["Avalonia.Host.Com.IAvnBorder"] = 13,
             ["Avalonia.Host.Com.IAvnTableViewColumn"] = 7,
-            ["Avalonia.Host.Com.IAvnPanel"] = 11,
-            ["Avalonia.Host.Com.IAvnCanvas"] = 11,
-            ["Avalonia.Host.Com.IAvnDockPanel"] = 11,
-            ["Avalonia.Host.Com.IAvnStackPanel"] = 12,
+            ["Avalonia.Host.Com.IAvnPanel"] = 12,
+            ["Avalonia.Host.Com.IAvnCanvas"] = 12,
+            ["Avalonia.Host.Com.IAvnDockPanel"] = 12,
+            ["Avalonia.Host.Com.IAvnStackPanel"] = 13,
             // Wave M grew TemplatedControl (fonts/padding) and TextBlock (fonts/wrapping).
             // Nano-COM vtables are flattened, so every interface below TemplatedControl
             // republishes. TextBlock is not under TemplatedControl; SelectableTextBlock is.
-            ["Avalonia.Host.Com.IAvnTextBlock"] = 14,
-            ["Avalonia.Host.Com.IAvnSelectableTextBlock"] = 11,
-            ["Avalonia.Host.Com.IAvnTemplatedControl"] = 12,
-            ["Avalonia.Host.Com.IAvnItemsControl"] = 15,
-            ["Avalonia.Host.Com.IAvnSelectingItemsControl"] = 15,
-            ["Avalonia.Host.Com.IAvnTextBox"] = 18,
-            ["Avalonia.Host.Com.IAvnRangeBase"] = 12,
-            ["Avalonia.Host.Com.IAvnSlider"] = 12,
-            ["Avalonia.Host.Com.IAvnProgressBar"] = 13,
-            ["Avalonia.Host.Com.IAvnContentControl"] = 13,
-            ["Avalonia.Host.Com.IAvnHeaderedContentControl"] = 13,
-            ["Avalonia.Host.Com.IAvnExpander"] = 13,
-            ["Avalonia.Host.Com.IAvnButton"] = 16,
-            ["Avalonia.Host.Com.IAvnToggleButton"] = 16,
-            ["Avalonia.Host.Com.IAvnCheckBox"] = 16,
-            ["Avalonia.Host.Com.IAvnRadioButton"] = 16,
-            ["Avalonia.Host.Com.IAvnToggleSwitch"] = 16,
-            ["Avalonia.Host.Com.IAvnListBox"] = 16,
-            ["Avalonia.Host.Com.IAvnComboBox"] = 17,
-            ["Avalonia.Host.Com.IAvnListBoxItem"] = 15,
-            ["Avalonia.Host.Com.IAvnComboBoxItem"] = 15,
-            ["Avalonia.Host.Com.IAvnScrollViewer"] = 15,
-            ["Avalonia.Host.Com.IAvnWindow"] = 18,
-            ["Avalonia.Host.Com.IAvnGrid"] = 12,
+            ["Avalonia.Host.Com.IAvnTextBlock"] = 15,
+            ["Avalonia.Host.Com.IAvnSelectableTextBlock"] = 12,
+            ["Avalonia.Host.Com.IAvnTemplatedControl"] = 13,
+            ["Avalonia.Host.Com.IAvnItemsControl"] = 16,
+            ["Avalonia.Host.Com.IAvnSelectingItemsControl"] = 16,
+            ["Avalonia.Host.Com.IAvnTextBox"] = 19,
+            ["Avalonia.Host.Com.IAvnRangeBase"] = 13,
+            ["Avalonia.Host.Com.IAvnSlider"] = 13,
+            ["Avalonia.Host.Com.IAvnProgressBar"] = 14,
+            ["Avalonia.Host.Com.IAvnContentControl"] = 14,
+            ["Avalonia.Host.Com.IAvnHeaderedContentControl"] = 14,
+            ["Avalonia.Host.Com.IAvnExpander"] = 14,
+            ["Avalonia.Host.Com.IAvnButton"] = 17,
+            ["Avalonia.Host.Com.IAvnToggleButton"] = 17,
+            ["Avalonia.Host.Com.IAvnCheckBox"] = 17,
+            ["Avalonia.Host.Com.IAvnRadioButton"] = 17,
+            ["Avalonia.Host.Com.IAvnToggleSwitch"] = 17,
+            ["Avalonia.Host.Com.IAvnListBox"] = 17,
+            ["Avalonia.Host.Com.IAvnComboBox"] = 18,
+            ["Avalonia.Host.Com.IAvnListBoxItem"] = 16,
+            ["Avalonia.Host.Com.IAvnComboBoxItem"] = 16,
+            ["Avalonia.Host.Com.IAvnScrollViewer"] = 16,
+            ["Avalonia.Host.Com.IAvnWindow"] = 19,
+            ["Avalonia.Host.Com.IAvnGrid"] = 13,
             // Previously version-1 templated types inherit the TemplatedControl bump.
-            ["Avalonia.Host.Com.IAvnAutoCompleteBox"] = 16,
-            ["Avalonia.Host.Com.IAvnButtonSpinner"] = 9,
-            ["Avalonia.Host.Com.IAvnCalendar"] = 12,
-            ["Avalonia.Host.Com.IAvnCalendarDatePicker"] = 11,
-            ["Avalonia.Host.Com.IAvnCarousel"] = 13,
-            ["Avalonia.Host.Com.IAvnCommandBar"] = 12,
+            ["Avalonia.Host.Com.IAvnAutoCompleteBox"] = 17,
+            ["Avalonia.Host.Com.IAvnButtonSpinner"] = 10,
+            ["Avalonia.Host.Com.IAvnCalendar"] = 13,
+            ["Avalonia.Host.Com.IAvnCalendarDatePicker"] = 12,
+            ["Avalonia.Host.Com.IAvnCarousel"] = 14,
+            ["Avalonia.Host.Com.IAvnCommandBar"] = 13,
             ["Avalonia.Host.Com.IAvnCommand"] = 2,
-            ["Avalonia.Host.Com.IAvnCommandBarButton"] = 11,
-            ["Avalonia.Host.Com.IAvnCommandBarSeparator"] = 9,
-            ["Avalonia.Host.Com.IAvnCommandBarToggleButton"] = 11,
-            ["Avalonia.Host.Com.IAvnContextMenu"] = 15,
-            ["Avalonia.Host.Com.IAvnPopup"] = 8,
+            ["Avalonia.Host.Com.IAvnCommandBarButton"] = 12,
+            ["Avalonia.Host.Com.IAvnCommandBarSeparator"] = 10,
+            ["Avalonia.Host.Com.IAvnCommandBarToggleButton"] = 12,
+            ["Avalonia.Host.Com.IAvnContextMenu"] = 16,
+            ["Avalonia.Host.Com.IAvnPopup"] = 9,
             ["Avalonia.Host.Com.IAvnTrayIcon"] = 3,
             ["Avalonia.Host.Com.IAvnPopupFlyoutBase"] = 6,
             ["Avalonia.Host.Com.IAvnFlyout"] = 4,
             ["Avalonia.Host.Com.IAvnMenuFlyout"] = 5,
-            ["Avalonia.Host.Com.IAvnDatePicker"] = 11,
-            ["Avalonia.Host.Com.IAvnDropDownButton"] = 11,
-            ["Avalonia.Host.Com.IAvnGridSplitter"] = 10,
-            ["Avalonia.Host.Com.IAvnGroupBox"] = 9,
-            ["Avalonia.Host.Com.IAvnHeaderedItemsControl"] = 12,
-            ["Avalonia.Host.Com.IAvnHeaderedSelectingItemsControl"] = 12,
-            ["Avalonia.Host.Com.IAvnHyperlinkButton"] = 11,
-            ["Avalonia.Host.Com.IAvnIconElement"] = 9,
-            ["Avalonia.Host.Com.IAvnLabel"] = 10,
-            ["Avalonia.Host.Com.IAvnMaskedTextBox"] = 15,
-            ["Avalonia.Host.Com.IAvnMenu"] = 12,
-            ["Avalonia.Host.Com.IAvnMenuBase"] = 12,
-            ["Avalonia.Host.Com.IAvnMenuItem"] = 15,
-            ["Avalonia.Host.Com.IAvnNotificationCard"] = 10,
-            ["Avalonia.Host.Com.IAvnNumericUpDown"] = 10,
-            ["Avalonia.Host.Com.IAvnPathIcon"] = 9,
-            ["Avalonia.Host.Com.IAvnPipsPager"] = 10,
-            ["Avalonia.Host.Com.IAvnRefreshContainer"] = 10,
-            ["Avalonia.Host.Com.IAvnRepeatButton"] = 11,
-            ["Avalonia.Host.Com.IAvnSeparator"] = 9,
-            ["Avalonia.Host.Com.IAvnSpinner"] = 9,
-            ["Avalonia.Host.Com.IAvnSplitButton"] = 12,
-            ["Avalonia.Host.Com.IAvnSplitView"] = 9,
-            ["Avalonia.Host.Com.IAvnTabControl"] = 12,
-            ["Avalonia.Host.Com.IAvnTabItem"] = 11,
-            ["Avalonia.Host.Com.IAvnTableView"] = 13,
-            ["Avalonia.Host.Com.IAvnTableViewCell"] = 11,
-            ["Avalonia.Host.Com.IAvnTableViewRow"] = 9,
-            ["Avalonia.Host.Com.IAvnThumb"] = 10,
-            ["Avalonia.Host.Com.IAvnTimePicker"] = 11,
-            ["Avalonia.Host.Com.IAvnToggleSplitButton"] = 12,
-            ["Avalonia.Host.Com.IAvnToolTip"] = 9,
-            ["Avalonia.Host.Com.IAvnTransitioningContentControl"] = 10,
-            ["Avalonia.Host.Com.IAvnTreeView"] = 12,
-            ["Avalonia.Host.Com.IAvnTreeViewItem"] = 12,
-            ["Avalonia.Host.Com.IAvnUserControl"] = 9,
-            ["Avalonia.Host.Com.IAvnWindowNotificationManager"] = 10,
+            ["Avalonia.Host.Com.IAvnDatePicker"] = 12,
+            ["Avalonia.Host.Com.IAvnDropDownButton"] = 12,
+            ["Avalonia.Host.Com.IAvnGridSplitter"] = 11,
+            ["Avalonia.Host.Com.IAvnGroupBox"] = 10,
+            ["Avalonia.Host.Com.IAvnHeaderedItemsControl"] = 13,
+            ["Avalonia.Host.Com.IAvnHeaderedSelectingItemsControl"] = 13,
+            ["Avalonia.Host.Com.IAvnHyperlinkButton"] = 12,
+            ["Avalonia.Host.Com.IAvnIconElement"] = 10,
+            ["Avalonia.Host.Com.IAvnLabel"] = 11,
+            ["Avalonia.Host.Com.IAvnMaskedTextBox"] = 16,
+            ["Avalonia.Host.Com.IAvnMenu"] = 13,
+            ["Avalonia.Host.Com.IAvnMenuBase"] = 13,
+            ["Avalonia.Host.Com.IAvnMenuItem"] = 16,
+            ["Avalonia.Host.Com.IAvnNotificationCard"] = 11,
+            ["Avalonia.Host.Com.IAvnNumericUpDown"] = 11,
+            ["Avalonia.Host.Com.IAvnPathIcon"] = 10,
+            ["Avalonia.Host.Com.IAvnPipsPager"] = 11,
+            ["Avalonia.Host.Com.IAvnRefreshContainer"] = 11,
+            ["Avalonia.Host.Com.IAvnRepeatButton"] = 12,
+            ["Avalonia.Host.Com.IAvnSeparator"] = 10,
+            ["Avalonia.Host.Com.IAvnSpinner"] = 10,
+            ["Avalonia.Host.Com.IAvnSplitButton"] = 13,
+            ["Avalonia.Host.Com.IAvnSplitView"] = 10,
+            ["Avalonia.Host.Com.IAvnTabControl"] = 13,
+            ["Avalonia.Host.Com.IAvnTabItem"] = 12,
+            ["Avalonia.Host.Com.IAvnTableView"] = 14,
+            ["Avalonia.Host.Com.IAvnTableViewCell"] = 12,
+            ["Avalonia.Host.Com.IAvnTableViewRow"] = 10,
+            ["Avalonia.Host.Com.IAvnThumb"] = 11,
+            ["Avalonia.Host.Com.IAvnTimePicker"] = 12,
+            ["Avalonia.Host.Com.IAvnToggleSplitButton"] = 13,
+            ["Avalonia.Host.Com.IAvnToolTip"] = 10,
+            ["Avalonia.Host.Com.IAvnTransitioningContentControl"] = 11,
+            ["Avalonia.Host.Com.IAvnTreeView"] = 13,
+            ["Avalonia.Host.Com.IAvnTreeViewItem"] = 13,
+            ["Avalonia.Host.Com.IAvnUserControl"] = 10,
+            ["Avalonia.Host.Com.IAvnWindowNotificationManager"] = 11,
             // Wave A's seven new interfaces publish at the default version 1 and nothing they
             // sit under moved, so they need no entry here. Waves B, C and D do the same.
             // The factory is the only interface these waves move: wave A gave it a creator per
@@ -120,24 +120,32 @@ public static class AvaloniaProjectionProfiles
             // (Calendar, CalendarDatePicker) so 8, wave G seven more so 9, and wave H
             // eight constructible shapes (Shape is abstract) so 10, wave I five more so 11,
             // and wave J six more so 12, and wave K five constructible (IconElement abstract) so 13.
-            ["Avalonia.Host.Com.IAvnImage"] = 8,
-            ["Avalonia.Host.Com.IAvnWrapPanel"] = 8,
-            ["Avalonia.Host.Com.IAvnUniformGrid"] = 8,
-            ["Avalonia.Host.Com.IAvnRelativePanel"] = 8,
-            ["Avalonia.Host.Com.IAvnViewbox"] = 8,
-            ["Avalonia.Host.Com.IAvnFlexPanel"] = 8,
-            ["Avalonia.Host.Com.IAvnShape"] = 8,
-            ["Avalonia.Host.Com.IAvnRectangle"] = 8,
-            ["Avalonia.Host.Com.IAvnEllipse"] = 8,
-            ["Avalonia.Host.Com.IAvnLine"] = 8,
-            ["Avalonia.Host.Com.IAvnPath"] = 8,
-            ["Avalonia.Host.Com.IAvnPolygon"] = 8,
-            ["Avalonia.Host.Com.IAvnPolyline"] = 8,
-            ["Avalonia.Host.Com.IAvnArc"] = 8,
-            ["Avalonia.Host.Com.IAvnSector"] = 8,
-            ["Avalonia.Host.Com.IAvnLayoutTransformControl"] = 8,
-            ["Avalonia.Host.Com.IAvnThemeVariantScope"] = 8,
+            ["Avalonia.Host.Com.IAvnImage"] = 9,
+            ["Avalonia.Host.Com.IAvnWrapPanel"] = 9,
+            ["Avalonia.Host.Com.IAvnUniformGrid"] = 9,
+            ["Avalonia.Host.Com.IAvnRelativePanel"] = 9,
+            ["Avalonia.Host.Com.IAvnViewbox"] = 9,
+            ["Avalonia.Host.Com.IAvnFlexPanel"] = 9,
+            ["Avalonia.Host.Com.IAvnShape"] = 9,
+            ["Avalonia.Host.Com.IAvnRectangle"] = 9,
+            ["Avalonia.Host.Com.IAvnEllipse"] = 9,
+            ["Avalonia.Host.Com.IAvnLine"] = 9,
+            ["Avalonia.Host.Com.IAvnPath"] = 9,
+            ["Avalonia.Host.Com.IAvnPolygon"] = 9,
+            ["Avalonia.Host.Com.IAvnPolyline"] = 9,
+            ["Avalonia.Host.Com.IAvnArc"] = 9,
+            ["Avalonia.Host.Com.IAvnSector"] = 9,
+            ["Avalonia.Host.Com.IAvnLayoutTransformControl"] = 9,
+            ["Avalonia.Host.Com.IAvnThemeVariantScope"] = 9,
             ["Avalonia.Host.Com.IAvnControlFactory"] = 13,
+            // Wave P. Payload-carrying replacements for the previously payload-less
+            // handlers: the handler Invoke slots change shape, so each handler mints a
+            // new IID at version 2. The advise/unadvise slots on the control interfaces
+            // keep their signatures; the controls themselves republish only because
+            // Control gained KeyUp/GotFocus/LostFocus.
+            ["Avalonia.Host.Com.IAvnSelectingItemsControlSelectionChangedHandler"] = 2,
+            ["Avalonia.Host.Com.IAvnTreeViewSelectionChangedHandler"] = 2,
+            ["Avalonia.Host.Com.IAvnRangeBaseValueChangedHandler"] = 2,
         },
         IncludeTypeNames =
         [
@@ -283,7 +291,8 @@ public static class AvaloniaProjectionProfiles
             [
                 "Width", "Height", "MinWidth", "MinHeight", "MaxWidth", "MaxHeight",
                 "Margin", "HorizontalAlignment", "VerticalAlignment", "IsVisible",
-                "Opacity", "IsEnabled", "KeyDown", "PointerEntered", "PointerExited",
+                "Opacity", "IsEnabled", "KeyDown", "KeyUp", "GotFocus", "LostFocus",
+                "PointerEntered", "PointerExited",
                 "ContextMenu", "ContextFlyout", "IsLoaded", "Loaded", "Unloaded",
                 "SizeChanged", "Tag",
             ],
@@ -1449,9 +1458,11 @@ public static class AvaloniaProjectionProfiles
             {
                 PayloadKind = EventPayloadKind.None,
             },
+            // Wave P: RangeBaseValueChangedEventArgs carries the old/new double pair.
             ["Avalonia.Controls.Primitives.RangeBase.ValueChanged"] = new()
             {
-                PayloadKind = EventPayloadKind.None,
+                PayloadKind = EventPayloadKind.Fields,
+                Parameters = [new() { Name = "OldValue" }, new() { Name = "NewValue" }],
             },
             ["Avalonia.Controls.Expander.Expanded"] = new()
             {
@@ -1477,15 +1488,27 @@ public static class AvaloniaProjectionProfiles
             {
                 PayloadKind = EventPayloadKind.None,
             },
+            // Wave P: SelectionChangedEventArgs carries the added/removed item lists,
+            // which cross as Variant slots on the host-implemented args interface.
             ["Avalonia.Controls.Primitives.SelectingItemsControl.SelectionChanged"] = new()
             {
-                PayloadKind = EventPayloadKind.None,
+                PayloadKind = EventPayloadKind.Args,
+                Parameters =
+                [
+                    new() { Name = "AddedItems" },
+                    new() { Name = "RemovedItems" },
+                ],
             },
             // TreeView derives from ItemsControl, so its SelectionChanged is its own event
-            // rather than the SelectingItemsControl one.
+            // rather than the SelectingItemsControl one. Same SelectionChangedEventArgs shape.
             ["Avalonia.Controls.TreeView.SelectionChanged"] = new()
             {
-                PayloadKind = EventPayloadKind.None,
+                PayloadKind = EventPayloadKind.Args,
+                Parameters =
+                [
+                    new() { Name = "AddedItems" },
+                    new() { Name = "RemovedItems" },
+                ],
             },
             ["Avalonia.Controls.TreeViewItem.Expanded"] = new()
             {
@@ -1777,6 +1800,33 @@ public static class AvaloniaProjectionProfiles
                     new() { Name = "KeySymbol" },
                     new() { Name = "Handled", Direction = ParameterDirection.InOut },
                 ],
+            },
+            // Wave P: KeyUp mirrors KeyDown; GotFocus carries the navigation context;
+            // LostFocusEventArgs has no payload members, so it crosses as a notification.
+            ["Avalonia.Controls.Control.KeyUp"] = new()
+            {
+                PayloadKind = EventPayloadKind.Fields,
+                Parameters =
+                [
+                    new() { Name = "Key" },
+                    new() { Name = "PhysicalKey" },
+                    new() { Name = "KeyModifiers" },
+                    new() { Name = "KeySymbol" },
+                    new() { Name = "Handled", Direction = ParameterDirection.InOut },
+                ],
+            },
+            ["Avalonia.Controls.Control.GotFocus"] = new()
+            {
+                PayloadKind = EventPayloadKind.Fields,
+                Parameters =
+                [
+                    new() { Name = "NavigationMethod" },
+                    new() { Name = "KeyModifiers" },
+                ],
+            },
+            ["Avalonia.Controls.Control.LostFocus"] = new()
+            {
+                PayloadKind = EventPayloadKind.None,
             },
             ["Avalonia.Controls.Control.PointerEntered"] = new()
             {

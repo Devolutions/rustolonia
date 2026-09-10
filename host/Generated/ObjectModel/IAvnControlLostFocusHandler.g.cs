@@ -6,9 +6,9 @@ using System.Runtime.InteropServices.Marshalling;
 namespace Avalonia.Host.Com;
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("D71E5403-7A7E-5C5A-8A48-4C89346F0179")]
-public partial interface IAvnRangeBaseValueChangedHandler
+[Guid("BB0FBAD2-DB37-56AE-A3C2-73BC2030BD06")]
+public partial interface IAvnControlLostFocusHandler
 {
     [PreserveSig]
-    int Invoke(double OldValue, double NewValue);
+    int Invoke();
 }
