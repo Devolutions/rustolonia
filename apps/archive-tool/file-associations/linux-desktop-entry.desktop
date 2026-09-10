@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=archive-tool
+Comment=Rustolonia zip/tar explorer
+Exec=/opt/archive-tool/archive-tool %F
+Icon=archive-tool
+Terminal=false
+Categories=Utility;
+MimeType=application/zip;application/x-tar;application/x-gtar;application/gzip;

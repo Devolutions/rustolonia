@@ -1,0 +1,1060 @@
+{
+  "version": 5,
+  "enums": [],
+  "models": [
+    {
+      "id": 1,
+      "name": "MainViewModel",
+      "managedNamespace": "ArchiveTool.Presentation.Generated",
+      "properties": [
+        {
+          "id": 1,
+          "name": "Title",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "Archive"
+        },
+        {
+          "id": 2,
+          "name": "Status",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "Ready."
+        },
+        {
+          "id": 3,
+          "name": "ArchiveName",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 4,
+          "name": "ArchiveKind",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 5,
+          "name": "EntryCountLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "No archive loaded"
+        },
+        {
+          "id": 6,
+          "name": "FilterText",
+          "kind": "String",
+          "writable": true,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 7,
+          "name": "SelectedIndex",
+          "kind": "Integer",
+          "writable": true,
+          "nullable": false,
+          "initialInteger": -1
+        },
+        {
+          "id": 8,
+          "name": "SelectedKey",
+          "kind": "String",
+          "writable": true,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 9,
+          "name": "SortDirection",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "Name Ascending"
+        },
+        {
+          "id": 10,
+          "name": "IsLoading",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 11,
+          "name": "CanExtractSelected",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 12,
+          "name": "CanExtractAll",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 13,
+          "name": "SelectedCountLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "0 selected"
+        },
+        {
+          "id": 14,
+          "name": "CurrentPath",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 15,
+          "name": "CanGoUp",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 16,
+          "name": "TotalsLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 17,
+          "name": "OpenAfterExtract",
+          "kind": "Boolean",
+          "writable": true,
+          "nullable": false,
+          "initialBoolean": true
+        },
+        {
+          "id": 18,
+          "name": "CanTest",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 19,
+          "name": "LeftPath",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 20,
+          "name": "RightPath",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 21,
+          "name": "LeftKind",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "Folder"
+        },
+        {
+          "id": 22,
+          "name": "RightKind",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": "Folder"
+        },
+        {
+          "id": 23,
+          "name": "LeftCanGoUp",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 24,
+          "name": "RightCanGoUp",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 25,
+          "name": "LeftActive",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": true
+        },
+        {
+          "id": 26,
+          "name": "RightActive",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 27,
+          "name": "LeftSelectedIndex",
+          "kind": "Integer",
+          "writable": true,
+          "nullable": false,
+          "initialInteger": -1
+        },
+        {
+          "id": 28,
+          "name": "LeftSelectedKey",
+          "kind": "String",
+          "writable": true,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 29,
+          "name": "RightSelectedIndex",
+          "kind": "Integer",
+          "writable": true,
+          "nullable": false,
+          "initialInteger": -1
+        },
+        {
+          "id": 30,
+          "name": "RightSelectedKey",
+          "kind": "String",
+          "writable": true,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 31,
+          "name": "CanDelete",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 32,
+          "name": "CanCopyToOther",
+          "kind": "Boolean",
+          "writable": false,
+          "nullable": false,
+          "initialBoolean": false
+        }
+      ],
+      "collections": [
+        {
+          "id": 1,
+          "name": "RecentFiles",
+          "elementKind": "String",
+          "recursive": false
+        },
+        {
+          "id": 2,
+          "name": "LeftEntries",
+          "elementKind": "Model",
+          "elementModelName": "EntryRowViewModel",
+          "table": {
+            "columns": [
+              {
+                "id": 1,
+                "name": "Name",
+                "header": "Name",
+                "path": "Name",
+                "star": true,
+                "auto": false,
+                "minWidth": 160,
+                "resizable": true,
+                "sortable": true,
+                "horizontalAlignment": "Left"
+              },
+              {
+                "id": 2,
+                "name": "Kind",
+                "header": "Kind",
+                "path": "Kind",
+                "width": 80,
+                "star": false,
+                "auto": false,
+                "minWidth": 64,
+                "resizable": true,
+                "sortable": true,
+                "horizontalAlignment": "Left"
+              },
+              {
+                "id": 3,
+                "name": "Size",
+                "header": "Size",
+                "path": "SizeLabel",
+                "width": 90,
+                "star": false,
+                "auto": false,
+                "minWidth": 72,
+                "resizable": true,
+                "sortable": true,
+                "horizontalAlignment": "Right"
+              },
+              {
+                "id": 4,
+                "name": "Packed",
+                "header": "Packed",
+                "path": "PackedLabel",
+                "width": 90,
+                "star": false,
+                "auto": false,
+                "minWidth": 72,
+                "resizable": true,
+                "sortable": true,
+                "horizontalAlignment": "Right"
+              },
+              {
+                "id": 5,
+                "name": "Ratio",
+                "header": "Ratio",
+                "path": "RatioLabel",
+                "width": 70,
+                "star": false,
+                "auto": false,
+                "minWidth": 56,
+                "resizable": true,
+                "sortable": true,
+                "horizontalAlignment": "Right"
+              },
+              {
+                "id": 6,
+                "name": "Modified",
+                "header": "Modified",
+                "path": "Modified",
+                "width": 140,
+                "star": false,
+                "auto": false,
+                "minWidth": 110,
+                "resizable": true,
+                "sortable": true,
+                "horizontalAlignment": "Left"
+              },
+              {
+                "id": 7,
+                "name": "Crc",
+                "header": "CRC",
+                "path": "CrcLabel",
+                "width": 90,
+                "star": false,
+                "auto": false,
+                "minWidth": 72,
+                "resizable": true,
+                "sortable": true,
+                "horizontalAlignment": "Left"
+              }
+            ],
+            "selection": {
+              "selectedIndexProperty": "LeftSelectedIndex",
+              "selectedKeyProperty": "LeftSelectedKey",
+              "rowKeyPath": "Key"
+            },
+            "sort": {
+              "command": "SortEntries",
+              "column": "Name",
+              "directionProperty": "SortDirection"
+            }
+          },
+          "recursive": false
+        },
+        {
+          "id": 3,
+          "name": "RightEntries",
+          "elementKind": "Model",
+          "elementModelName": "EntryRowViewModel",
+          "table": {
+            "columns": [
+              {
+                "id": 1,
+                "name": "Name",
+                "header": "Name",
+                "path": "Name",
+                "star": true,
+                "auto": false,
+                "minWidth": 160,
+                "resizable": true,
+                "sortable": true,
+                "horizontalAlignment": "Left"
+              },
+              {
+                "id": 2,
+                "name": "Kind",
+                "header": "Kind",
+                "path": "Kind",
+                "width": 80,
+                "star": false,
+                "auto": false,
+                "minWidth": 64,
+                "resizable": true,
+                "sortable": true,
+                "horizontalAlignment": "Left"
+              },
+              {
+                "id": 3,
+                "name": "Size",
+                "header": "Size",
+                "path": "SizeLabel",
+                "width": 90,
+                "star": false,
+                "auto": false,
+                "minWidth": 72,
+                "resizable": true,
+                "sortable": true,
+                "horizontalAlignment": "Right"
+              },
+              {
+                "id": 4,
+                "name": "Packed",
+                "header": "Packed",
+                "path": "PackedLabel",
+                "width": 90,
+                "star": false,
+                "auto": false,
+                "minWidth": 72,
+                "resizable": true,
+                "sortable": true,
+                "horizontalAlignment": "Right"
+              },
+              {
+                "id": 5,
+                "name": "Modified",
+                "header": "Modified",
+                "path": "Modified",
+                "width": 140,
+                "star": false,
+                "auto": false,
+                "minWidth": 110,
+                "resizable": true,
+                "sortable": true,
+                "horizontalAlignment": "Left"
+              }
+            ],
+            "selection": {
+              "selectedIndexProperty": "RightSelectedIndex",
+              "selectedKeyProperty": "RightSelectedKey",
+              "rowKeyPath": "Key"
+            },
+            "sort": {
+              "command": "SortEntries",
+              "column": "Name",
+              "directionProperty": "SortDirection"
+            }
+          },
+          "recursive": false
+        }
+      ],
+      "maps": [],
+      "commands": [
+        {
+          "id": 1,
+          "name": "OpenFile",
+          "isAsync": true,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 2,
+          "name": "ExtractSelected",
+          "isAsync": true,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 3,
+          "name": "ExtractAll",
+          "isAsync": true,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 4,
+          "name": "SelectAll",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 5,
+          "name": "ClearSelection",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 6,
+          "name": "SortEntries",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 7,
+          "name": "OpenRecentFile",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 8,
+          "name": "Exit",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 9,
+          "name": "GoUp",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 10,
+          "name": "OpenItem",
+          "isAsync": true,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 11,
+          "name": "ExtractHere",
+          "isAsync": true,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 12,
+          "name": "TestArchive",
+          "isAsync": true,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 13,
+          "name": "NewArchive",
+          "isAsync": true,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 14,
+          "name": "InvertSelection",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 15,
+          "name": "CopyPath",
+          "isAsync": true,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 16,
+          "name": "OpenFolder",
+          "isAsync": true,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 17,
+          "name": "ActivateLeft",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 18,
+          "name": "ActivateRight",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 19,
+          "name": "DeleteSelected",
+          "isAsync": true,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 20,
+          "name": "CopyToOther",
+          "isAsync": true,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 21,
+          "name": "OpenComputer",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        },
+        {
+          "id": 22,
+          "name": "OpenHome",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        }
+      ],
+      "menus": [
+        {
+          "id": 1,
+          "name": "Main",
+          "kind": "Application",
+          "items": [
+            {
+              "id": 1,
+              "name": "File",
+              "kind": "Submenu",
+              "header": "_File",
+              "items": [
+                {
+                  "id": 2,
+                  "name": "OpenFile",
+                  "kind": "Command",
+                  "header": "_Open archive...",
+                  "command": "OpenFile",
+                  "gesture": "Ctrl\u002BO",
+                  "items": []
+                },
+                {
+                  "id": 23,
+                  "name": "OpenFolder",
+                  "kind": "Command",
+                  "header": "Open _folder...",
+                  "command": "OpenFolder",
+                  "gesture": "Ctrl\u002BShift\u002BO",
+                  "items": []
+                },
+                {
+                  "id": 3,
+                  "name": "NewArchive",
+                  "kind": "Command",
+                  "header": "_New archive...",
+                  "command": "NewArchive",
+                  "gesture": "Ctrl\u002BN",
+                  "items": []
+                },
+                {
+                  "id": 4,
+                  "name": "Recent",
+                  "kind": "RecentFiles",
+                  "header": "Recent _files",
+                  "items": []
+                },
+                {
+                  "id": 5,
+                  "name": "FileSeparator",
+                  "kind": "Separator",
+                  "items": []
+                },
+                {
+                  "id": 6,
+                  "name": "ExtractSelected",
+                  "kind": "Command",
+                  "header": "_Extract selected...",
+                  "command": "ExtractSelected",
+                  "gesture": "Ctrl\u002BE",
+                  "items": []
+                },
+                {
+                  "id": 7,
+                  "name": "ExtractHere",
+                  "kind": "Command",
+                  "header": "Extract _here",
+                  "command": "ExtractHere",
+                  "gesture": "Ctrl\u002BShift\u002BH",
+                  "items": []
+                },
+                {
+                  "id": 8,
+                  "name": "ExtractAll",
+                  "kind": "Command",
+                  "header": "Extract _all...",
+                  "command": "ExtractAll",
+                  "gesture": "Ctrl\u002BShift\u002BE",
+                  "items": []
+                },
+                {
+                  "id": 9,
+                  "name": "TestArchive",
+                  "kind": "Command",
+                  "header": "_Test archive",
+                  "command": "TestArchive",
+                  "gesture": "Ctrl\u002BT",
+                  "items": []
+                },
+                {
+                  "id": 10,
+                  "name": "FileSeparator2",
+                  "kind": "Separator",
+                  "items": []
+                },
+                {
+                  "id": 11,
+                  "name": "Exit",
+                  "kind": "Command",
+                  "header": "E_xit",
+                  "command": "Exit",
+                  "gesture": "Ctrl\u002BQ",
+                  "items": []
+                }
+              ]
+            },
+            {
+              "id": 12,
+              "name": "Edit",
+              "kind": "Submenu",
+              "header": "_Edit",
+              "items": [
+                {
+                  "id": 13,
+                  "name": "OpenItem",
+                  "kind": "Command",
+                  "header": "O_pen",
+                  "command": "OpenItem",
+                  "gesture": "Enter",
+                  "items": []
+                },
+                {
+                  "id": 14,
+                  "name": "GoUp",
+                  "kind": "Command",
+                  "header": "Go _up",
+                  "command": "GoUp",
+                  "gesture": "Alt\u002BUp",
+                  "items": []
+                },
+                {
+                  "id": 15,
+                  "name": "EditSeparator",
+                  "kind": "Separator",
+                  "items": []
+                },
+                {
+                  "id": 16,
+                  "name": "SelectAll",
+                  "kind": "Command",
+                  "header": "Select _all",
+                  "command": "SelectAll",
+                  "gesture": "Ctrl\u002BA",
+                  "items": []
+                },
+                {
+                  "id": 17,
+                  "name": "InvertSelection",
+                  "kind": "Command",
+                  "header": "_Invert selection",
+                  "command": "InvertSelection",
+                  "items": []
+                },
+                {
+                  "id": 18,
+                  "name": "ClearSelection",
+                  "kind": "Command",
+                  "header": "_Clear selection",
+                  "command": "ClearSelection",
+                  "items": []
+                },
+                {
+                  "id": 19,
+                  "name": "CopyPath",
+                  "kind": "Command",
+                  "header": "Copy _path",
+                  "command": "CopyPath",
+                  "gesture": "Ctrl\u002BC",
+                  "items": []
+                },
+                {
+                  "id": 24,
+                  "name": "CopyToOther",
+                  "kind": "Command",
+                  "header": "Copy to other pane",
+                  "command": "CopyToOther",
+                  "gesture": "F5",
+                  "items": []
+                },
+                {
+                  "id": 25,
+                  "name": "DeleteSelected",
+                  "kind": "Command",
+                  "header": "_Delete",
+                  "command": "DeleteSelected",
+                  "gesture": "Delete",
+                  "items": []
+                }
+              ]
+            },
+            {
+              "id": 20,
+              "name": "View",
+              "kind": "Submenu",
+              "header": "_View",
+              "items": [
+                {
+                  "id": 21,
+                  "name": "OpenAfterExtract",
+                  "kind": "Toggle",
+                  "header": "Open folder after e_xtract",
+                  "toggleProperty": "OpenAfterExtract",
+                  "items": []
+                },
+                {
+                  "id": 26,
+                  "name": "OpenComputer",
+                  "kind": "Command",
+                  "header": "_Computer",
+                  "command": "OpenComputer",
+                  "items": []
+                },
+                {
+                  "id": 27,
+                  "name": "OpenHome",
+                  "kind": "Command",
+                  "header": "_Home",
+                  "command": "OpenHome",
+                  "items": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "name": "LeftEntries",
+          "kind": "Context",
+          "items": [
+            {
+              "id": 1,
+              "name": "OpenRow",
+              "kind": "Command",
+              "header": "Open",
+              "command": "OpenItem",
+              "items": []
+            },
+            {
+              "id": 2,
+              "name": "ExtractRow",
+              "kind": "Command",
+              "header": "Extract...",
+              "command": "ExtractSelected",
+              "items": []
+            },
+            {
+              "id": 3,
+              "name": "ExtractHereRow",
+              "kind": "Command",
+              "header": "Extract here",
+              "command": "ExtractHere",
+              "items": []
+            },
+            {
+              "id": 4,
+              "name": "ContextSeparator",
+              "kind": "Separator",
+              "items": []
+            },
+            {
+              "id": 5,
+              "name": "CopyRow",
+              "kind": "Command",
+              "header": "Copy path",
+              "command": "CopyPath",
+              "items": []
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "name": "RightEntries",
+          "kind": "Context",
+          "items": [
+            {
+              "id": 1,
+              "name": "OpenRow",
+              "kind": "Command",
+              "header": "Open",
+              "command": "OpenItem",
+              "items": []
+            },
+            {
+              "id": 2,
+              "name": "ExtractRow",
+              "kind": "Command",
+              "header": "Extract...",
+              "command": "ExtractSelected",
+              "items": []
+            },
+            {
+              "id": 3,
+              "name": "CopyToOtherRow",
+              "kind": "Command",
+              "header": "Copy to other pane",
+              "command": "CopyToOther",
+              "items": []
+            },
+            {
+              "id": 4,
+              "name": "ContextSeparator",
+              "kind": "Separator",
+              "items": []
+            },
+            {
+              "id": 5,
+              "name": "CopyRow",
+              "kind": "Command",
+              "header": "Copy path",
+              "command": "CopyPath",
+              "items": []
+            }
+          ]
+        }
+      ],
+      "recentFiles": {
+        "id": 1,
+        "collection": "RecentFiles",
+        "activateCommand": "OpenRecentFile",
+        "capacity": 5
+      }
+    },
+    {
+      "id": 2,
+      "name": "EntryRowViewModel",
+      "managedNamespace": "ArchiveTool.Presentation.Generated",
+      "properties": [
+        {
+          "id": 1,
+          "name": "Key",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 2,
+          "name": "Path",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 3,
+          "name": "Name",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 4,
+          "name": "Kind",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 5,
+          "name": "SizeLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 6,
+          "name": "PackedLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 7,
+          "name": "Modified",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 8,
+          "name": "IsSelected",
+          "kind": "Boolean",
+          "writable": true,
+          "nullable": false,
+          "initialBoolean": false
+        },
+        {
+          "id": 9,
+          "name": "CrcLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        },
+        {
+          "id": 10,
+          "name": "RatioLabel",
+          "kind": "String",
+          "writable": false,
+          "nullable": false,
+          "initialString": ""
+        }
+      ],
+      "collections": [],
+      "maps": [],
+      "commands": [
+        {
+          "id": 1,
+          "name": "Open",
+          "isAsync": false,
+          "supportsProgress": false,
+          "supportsCancellation": false
+        }
+      ],
+      "menus": []
+    }
+  ],
+  "views": [
+    {
+      "id": 1,
+      "name": "MainWindow",
+      "model": "MainViewModel",
+      "managedTypeName": "ArchiveTool.Presentation.Views.MainWindow",
+      "dynamicBindings": false,
+      "converters": []
+    }
+  ],
+  "converters": []
+}

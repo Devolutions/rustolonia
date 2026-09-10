@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/zip">
+    <comment>ZIP archive</comment>
+    <glob pattern="*.zip"/>
+    <icon name="archive-tool"/>
+  </mime-type>
+  <mime-type type="application/x-tar">
+    <comment>TAR archive</comment>
+    <glob pattern="*.tar"/>
+    <icon name="archive-tool"/>
+  </mime-type>
+  <mime-type type="application/gzip">
+    <comment>Gzip TAR archive</comment>
+    <glob pattern="*.tgz"/>
+    <glob pattern="*.tar.gz"/>
+    <icon name="archive-tool"/>
+  </mime-type>
+</mime-info>

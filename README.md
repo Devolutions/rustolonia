@@ -19,6 +19,7 @@ pinned `avalonia-src` producer submodule at commit
 | `apps/system-monitor/` | NeoHtop, a real Rust-owned system monitor with compiled AXAML presentation and a packaged NativeAOT host |
 | `apps/pdf-viewer/` | A PDF Oxide-powered sample viewer with rendered page navigation and extracted text |
 | `apps/hash-calculator/` | A streaming checksum utility (MD5, SHA-1, SHA-256, SHA-512, BLAKE3) with compare and copy |
+| `apps/archive-tool/` | A dual-pane archive manager (zip/tar/7z/cab and compressed tars) |
 | `tests/` | Host, IR, and generator test suites |
 | `samples/` | `RustViewModelSample.Managed` - the sample presentation project the host consumes |
 | `build/` | Vendored MSBuild configuration (versioning, signing, analyzers, xunit) |

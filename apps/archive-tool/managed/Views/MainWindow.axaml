@@ -1,0 +1,431 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ArchiveTool.Presentation.Generated"
+        x:Class="ArchiveTool.Presentation.Views.MainWindow"
+        x:DataType="vm:MainViewModelAdapter"
+        Width="1280"
+        Height="760"
+        MinWidth="880"
+        MinHeight="520"
+        Title="{Binding Title}"
+        RequestedThemeVariant="Dark"
+        Background="{StaticResource WindowBrush}"
+        Foreground="{StaticResource PrimaryTextBrush}"
+        FontFamily="Segoe UI"
+        FontSize="13">
+  <Window.Resources>
+    <ResourceDictionary>
+      <SolidColorBrush x:Key="WindowBrush" Color="#11151F" />
+      <SolidColorBrush x:Key="ChromeBrush" Color="#1A2030" />
+      <SolidColorBrush x:Key="ToolbarBrush" Color="#20283A" />
+      <SolidColorBrush x:Key="PanelBrush" Color="#161C28" />
+      <SolidColorBrush x:Key="TableBrush" Color="#0F141D" />
+      <SolidColorBrush x:Key="PrimaryTextBrush" Color="#F5F7FB" />
+      <SolidColorBrush x:Key="SecondaryTextBrush" Color="#AAB4C7" />
+      <SolidColorBrush x:Key="MutedTextBrush" Color="#7E8AA1" />
+      <SolidColorBrush x:Key="DividerBrush" Color="#2B3549" />
+      <SolidColorBrush x:Key="AccentBrush" Color="#5B8CFF" />
+      <SolidColorBrush x:Key="AccentHoverBrush" Color="#75A0FF" />
+      <SolidColorBrush x:Key="AccentMutedBrush" Color="#253A70" />
+    </ResourceDictionary>
+  </Window.Resources>
+  <Window.Styles>
+    <Style Selector="TextBlock.appTitle">
+      <Setter Property="FontSize" Value="20" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+    </Style>
+    <Style Selector="TextBlock.muted">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}" />
+    </Style>
+    <Style Selector="TextBox.searchInput">
+      <Setter Property="MinHeight" Value="32" />
+      <Setter Property="Height" Value="32" />
+      <Setter Property="Padding" Value="10,0" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.toolbar">
+      <Setter Property="MinHeight" Value="32" />
+      <Setter Property="Height" Value="32" />
+      <Setter Property="Padding" Value="12,0" />
+      <Setter Property="Background" Value="{StaticResource ToolbarBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.toolbar:pointerover">
+      <Setter Property="Background" Value="#2A3348" />
+      <Setter Property="BorderBrush" Value="#42516D" />
+    </Style>
+    <Style Selector="Button.toolbar.primary">
+      <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+      <Setter Property="Foreground" Value="#FFFFFF" />
+    </Style>
+    <Style Selector="Button.toolbar.primary:pointerover">
+      <Setter Property="Background" Value="{StaticResource AccentHoverBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource AccentHoverBrush}" />
+    </Style>
+    <Style Selector="Button.toolbar:disabled">
+      <Setter Property="Opacity" Value="0.45" />
+    </Style>
+    <Style Selector="TableView">
+      <Setter Property="Background" Value="{StaticResource TableBrush}" />
+      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="8" />
+    </Style>
+    <Style Selector="TableViewRow">
+      <Setter Property="MinHeight" Value="32" />
+      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+    </Style>
+    <Style Selector="TableViewRow:selected">
+      <Setter Property="Background" Value="{StaticResource AccentMutedBrush}" />
+    </Style>
+    <Style Selector="TableViewRow:pointerover">
+      <Setter Property="Background" Value="#1C2536" />
+    </Style>
+    <Style Selector="Button.columnHeader">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="8,6" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{StaticResource SecondaryTextBrush}" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+    </Style>
+    <Style Selector="TextBlock.cell">
+      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Margin" Value="8,0" />
+    </Style>
+    <Style Selector="CheckBox">
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+  </Window.Styles>
+  <DockPanel Background="{StaticResource WindowBrush}">
+    <NativeMenuBar DockPanel.Dock="Top" />
+
+    <Border DockPanel.Dock="Top"
+            Background="{StaticResource ChromeBrush}"
+            BorderBrush="{StaticResource DividerBrush}"
+            BorderThickness="0,0,0,1"
+            Padding="20,14,20,12">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
+        <TextBlock Classes="appTitle"
+                   VerticalAlignment="Center"
+                   Text="{Binding Title}"
+                   TextTrimming="CharacterEllipsis" />
+        <StackPanel Grid.Column="1"
+                    MaxWidth="420"
+                    Spacing="2"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center">
+          <TextBlock x:Name="ArchiveName"
+                     HorizontalAlignment="Right"
+                     FontWeight="SemiBold"
+                     Foreground="{StaticResource PrimaryTextBrush}"
+                     Text="{Binding ArchiveName}"
+                     TextTrimming="CharacterEllipsis"
+                     AutomationProperties.Name="ArchiveName" />
+          <TextBlock x:Name="Status"
+                     Classes="muted"
+                     HorizontalAlignment="Right"
+                     Text="{Binding Status}"
+                     TextTrimming="CharacterEllipsis"
+                     AutomationProperties.Name="Status" />
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <Border DockPanel.Dock="Top"
+            Background="{StaticResource ChromeBrush}"
+            Padding="20,0,20,12">
+      <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+        <WrapPanel ItemSpacing="8" LineSpacing="8" VerticalAlignment="Center">
+          <Button x:Name="OpenButton"
+                  Classes="toolbar primary"
+                  Content="Open"
+                  Command="{Binding OpenFileCommand}"
+                  AutomationProperties.Name="OpenButton" />
+          <Button x:Name="NewArchiveButton"
+                  Classes="toolbar"
+                  Content="New"
+                  Command="{Binding NewArchiveCommand}"
+                  AutomationProperties.Name="NewArchiveButton" />
+          <Button x:Name="ExtractSelectedButton"
+                  Classes="toolbar"
+                  Content="Extract"
+                  Command="{Binding ExtractSelectedCommand}"
+                  IsEnabled="{Binding CanExtractSelected}"
+                  AutomationProperties.Name="ExtractSelectedButton" />
+          <Button x:Name="ExtractHereButton"
+                  Classes="toolbar"
+                  Content="Extract here"
+                  Command="{Binding ExtractHereCommand}"
+                  IsEnabled="{Binding CanExtractAll}"
+                  AutomationProperties.Name="ExtractHereButton" />
+          <Button x:Name="ExtractAllButton"
+                  Classes="toolbar"
+                  Content="Extract all"
+                  Command="{Binding ExtractAllCommand}"
+                  IsEnabled="{Binding CanExtractAll}"
+                  AutomationProperties.Name="ExtractAllButton" />
+          <Button x:Name="TestButton"
+                  Classes="toolbar"
+                  Content="Test"
+                  Command="{Binding TestArchiveCommand}"
+                  IsEnabled="{Binding CanTest}"
+                  AutomationProperties.Name="TestButton" />
+          <Button Classes="toolbar"
+                  Content="Folder"
+                  Command="{Binding OpenFolderCommand}"
+                  AutomationProperties.Name="OpenFolderButton" />
+          <Button Classes="toolbar"
+                  Content="Computer"
+                  Command="{Binding OpenComputerCommand}"
+                  AutomationProperties.Name="ComputerButton" />
+          <Button Classes="toolbar"
+                  Content="Copy"
+                  Command="{Binding CopyToOtherCommand}"
+                  IsEnabled="{Binding CanCopyToOther}"
+                  AutomationProperties.Name="CopyToOtherButton" />
+          <Button Classes="toolbar"
+                  Content="Delete"
+                  Command="{Binding DeleteSelectedCommand}"
+                  IsEnabled="{Binding CanDelete}"
+                  AutomationProperties.Name="DeleteButton" />
+        </WrapPanel>
+
+        <Border Grid.Column="1"
+                MinWidth="180"
+                MaxWidth="360"
+                Height="32"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Center"
+                Background="{StaticResource ToolbarBrush}"
+                BorderBrush="{StaticResource DividerBrush}"
+                BorderThickness="1"
+                CornerRadius="6">
+          <TextBox x:Name="FilterBox"
+                   Classes="searchInput"
+                   PlaceholderText="Filter entries"
+                   Text="{Binding FilterText, Mode=TwoWay}"
+                   AutomationProperties.Name="FilterBox" />
+        </Border>
+
+        <StackPanel Grid.Column="2"
+                    Orientation="Horizontal"
+                    Spacing="10"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Right">
+          <Border Background="{StaticResource AccentMutedBrush}"
+                  CornerRadius="8"
+                  Padding="8,4"
+                  VerticalAlignment="Center">
+            <TextBlock FontSize="11"
+                       FontWeight="SemiBold"
+                       Foreground="{StaticResource AccentHoverBrush}"
+                       Text="{Binding ArchiveKind}" />
+          </Border>
+          <StackPanel Spacing="0" VerticalAlignment="Center">
+            <TextBlock x:Name="EntryCountLabel"
+                       HorizontalAlignment="Right"
+                       FontSize="12"
+                       Text="{Binding EntryCountLabel}"
+                       AutomationProperties.Name="EntryCountLabel" />
+            <TextBlock x:Name="SelectedCountLabel"
+                       Classes="muted"
+                       HorizontalAlignment="Right"
+                       Text="{Binding SelectedCountLabel}"
+                       AutomationProperties.Name="SelectedCountLabel" />
+          </StackPanel>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <Border DockPanel.Dock="Bottom"
+            Background="{StaticResource ChromeBrush}"
+            BorderBrush="{StaticResource DividerBrush}"
+            BorderThickness="0,1,0,0"
+            Padding="20,8">
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock x:Name="TotalsLabel"
+                   Classes="muted"
+                   Text="{Binding TotalsLabel}"
+                   AutomationProperties.Name="TotalsLabel" />
+        <TextBlock Grid.Column="1"
+                   Classes="muted"
+                   Text="{Binding SortDirection}" />
+      </Grid>
+    </Border>
+
+    <Border Background="{StaticResource PanelBrush}" Padding="12">
+      <Grid ColumnDefinitions="*,8,*">
+        <DockPanel>
+          <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8" Margin="0,0,0,8">
+            <Button Classes="toolbar" Content="Up" Command="{Binding ActivateLeftCommand}" IsEnabled="{Binding LeftCanGoUp}"
+                    Click="OnLeftGoUp" AutomationProperties.Name="LeftGoUpButton" />
+            <Border Grid.Column="1" Height="32" Background="{StaticResource ToolbarBrush}" BorderBrush="{StaticResource DividerBrush}"
+                    BorderThickness="1" CornerRadius="6" Padding="10,0" PointerPressed="OnLeftActivate">
+              <TextBlock x:Name="CurrentPath" VerticalAlignment="Center" Text="{Binding LeftPath}" TextTrimming="CharacterEllipsis"
+                         AutomationProperties.Name="CurrentPath" />
+            </Border>
+            <Border Grid.Column="2" Background="{StaticResource AccentMutedBrush}" CornerRadius="8" Padding="8,4" VerticalAlignment="Center">
+              <TextBlock FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource AccentHoverBrush}" Text="{Binding LeftKind}" />
+            </Border>
+          </Grid>
+          <TableView x:Name="EntriesTable"
+                     ItemsSource="{Binding LeftEntries}"
+                     SelectedIndex="{Binding LeftSelectedIndex, Mode=TwoWay}"
+                     CanUserResizeColumns="True"
+                     DoubleTapped="OnLeftDoubleTapped"
+                     PointerPressed="OnLeftActivate"
+                     AutomationProperties.Name="EntriesTable">
+            <TableView.ContextMenu>
+              <vm:MainViewModelLeftEntriesContextMenu />
+            </TableView.ContextMenu>
+            <TableView.Columns>
+              <TableViewColumn Width="40" MinWidth="36" CanUserResize="False" HorizontalContentAlignment="Center">
+                <TableViewColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:EntryRowViewModelAdapter">
+                    <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" AutomationProperties.Name="{Binding Path}" />
+                  </DataTemplate>
+                </TableViewColumn.CellTemplate>
+              </TableViewColumn>
+              <TableViewColumn Width="*" MinWidth="140" CanUserResize="True">
+                <TableViewColumn.Header>
+                  <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortEntriesCommand}" CommandParameter="Name" Content="Name" />
+                </TableViewColumn.Header>
+                <TableViewColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:EntryRowViewModelAdapter">
+                    <TextBlock Classes="cell" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                  </DataTemplate>
+                </TableViewColumn.CellTemplate>
+              </TableViewColumn>
+              <TableViewColumn Width="72" MinWidth="56" CanUserResize="True">
+                <TableViewColumn.Header>
+                  <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortEntriesCommand}" CommandParameter="Kind" Content="Kind" />
+                </TableViewColumn.Header>
+                <TableViewColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:EntryRowViewModelAdapter">
+                    <TextBlock Classes="cell" Text="{Binding Kind}" />
+                  </DataTemplate>
+                </TableViewColumn.CellTemplate>
+              </TableViewColumn>
+              <TableViewColumn Width="84" MinWidth="64" CanUserResize="True" HorizontalContentAlignment="Right">
+                <TableViewColumn.Header>
+                  <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortEntriesCommand}" CommandParameter="Size" Content="Size" />
+                </TableViewColumn.Header>
+                <TableViewColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:EntryRowViewModelAdapter">
+                    <TextBlock Classes="cell" HorizontalAlignment="Right" Text="{Binding SizeLabel}" />
+                  </DataTemplate>
+                </TableViewColumn.CellTemplate>
+              </TableViewColumn>
+              <TableViewColumn Width="120" MinWidth="96" CanUserResize="True">
+                <TableViewColumn.Header>
+                  <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortEntriesCommand}" CommandParameter="Modified" Content="Modified" />
+                </TableViewColumn.Header>
+                <TableViewColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:EntryRowViewModelAdapter">
+                    <TextBlock Classes="cell" Text="{Binding Modified}" />
+                  </DataTemplate>
+                </TableViewColumn.CellTemplate>
+              </TableViewColumn>
+            </TableView.Columns>
+          </TableView>
+        </DockPanel>
+
+        <GridSplitter Grid.Column="1" Width="8" Background="{StaticResource DividerBrush}" ResizeDirection="Columns" />
+
+        <DockPanel Grid.Column="2">
+          <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8" Margin="0,0,0,8">
+            <Button Classes="toolbar" Content="Up" Command="{Binding ActivateRightCommand}" IsEnabled="{Binding RightCanGoUp}"
+                    Click="OnRightGoUp" AutomationProperties.Name="RightGoUpButton" />
+            <Border Grid.Column="1" Height="32" Background="{StaticResource ToolbarBrush}" BorderBrush="{StaticResource DividerBrush}"
+                    BorderThickness="1" CornerRadius="6" Padding="10,0" PointerPressed="OnRightActivate">
+              <TextBlock VerticalAlignment="Center" Text="{Binding RightPath}" TextTrimming="CharacterEllipsis"
+                         AutomationProperties.Name="RightPath" />
+            </Border>
+            <Border Grid.Column="2" Background="{StaticResource AccentMutedBrush}" CornerRadius="8" Padding="8,4" VerticalAlignment="Center">
+              <TextBlock FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource AccentHoverBrush}" Text="{Binding RightKind}" />
+            </Border>
+          </Grid>
+          <TableView x:Name="RightEntriesTable"
+                     ItemsSource="{Binding RightEntries}"
+                     SelectedIndex="{Binding RightSelectedIndex, Mode=TwoWay}"
+                     CanUserResizeColumns="True"
+                     DoubleTapped="OnRightDoubleTapped"
+                     PointerPressed="OnRightActivate"
+                     AutomationProperties.Name="RightEntriesTable">
+            <TableView.ContextMenu>
+              <vm:MainViewModelRightEntriesContextMenu />
+            </TableView.ContextMenu>
+            <TableView.Columns>
+              <TableViewColumn Width="40" MinWidth="36" CanUserResize="False" HorizontalContentAlignment="Center">
+                <TableViewColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:EntryRowViewModelAdapter">
+                    <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" AutomationProperties.Name="{Binding Path}" />
+                  </DataTemplate>
+                </TableViewColumn.CellTemplate>
+              </TableViewColumn>
+              <TableViewColumn Width="*" MinWidth="140" CanUserResize="True">
+                <TableViewColumn.Header>
+                  <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortEntriesCommand}" CommandParameter="Name" Content="Name" />
+                </TableViewColumn.Header>
+                <TableViewColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:EntryRowViewModelAdapter">
+                    <TextBlock Classes="cell" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                  </DataTemplate>
+                </TableViewColumn.CellTemplate>
+              </TableViewColumn>
+              <TableViewColumn Width="72" MinWidth="56" CanUserResize="True">
+                <TableViewColumn.Header>
+                  <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortEntriesCommand}" CommandParameter="Kind" Content="Kind" />
+                </TableViewColumn.Header>
+                <TableViewColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:EntryRowViewModelAdapter">
+                    <TextBlock Classes="cell" Text="{Binding Kind}" />
+                  </DataTemplate>
+                </TableViewColumn.CellTemplate>
+              </TableViewColumn>
+              <TableViewColumn Width="84" MinWidth="64" CanUserResize="True" HorizontalContentAlignment="Right">
+                <TableViewColumn.Header>
+                  <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortEntriesCommand}" CommandParameter="Size" Content="Size" />
+                </TableViewColumn.Header>
+                <TableViewColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:EntryRowViewModelAdapter">
+                    <TextBlock Classes="cell" HorizontalAlignment="Right" Text="{Binding SizeLabel}" />
+                  </DataTemplate>
+                </TableViewColumn.CellTemplate>
+              </TableViewColumn>
+              <TableViewColumn Width="120" MinWidth="96" CanUserResize="True">
+                <TableViewColumn.Header>
+                  <Button x:DataType="vm:MainViewModelAdapter" Classes="columnHeader" Command="{Binding SortEntriesCommand}" CommandParameter="Modified" Content="Modified" />
+                </TableViewColumn.Header>
+                <TableViewColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:EntryRowViewModelAdapter">
+                    <TextBlock Classes="cell" Text="{Binding Modified}" />
+                  </DataTemplate>
+                </TableViewColumn.CellTemplate>
+              </TableViewColumn>
+            </TableView.Columns>
+          </TableView>
+        </DockPanel>
+      </Grid>
+    </Border>
+  </DockPanel>
+</Window>
