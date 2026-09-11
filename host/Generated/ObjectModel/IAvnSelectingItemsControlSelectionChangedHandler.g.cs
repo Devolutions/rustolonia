@@ -2,13 +2,103 @@
 #nullable enable
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
+using System.Linq;
 
 namespace Avalonia.Host.Com;
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("80E817ED-8F0E-5208-9EFD-ECBDEBC56A46")]
+[Guid("A5A998E3-805F-5BB9-BE35-4ACCDA82BD37")]
+public partial interface IAvnSelectingItemsControlSelectionChangedArgs
+{
+    [PreserveSig]
+    int GetAddedItemsCount(out int value);
+
+    [PreserveSig]
+    int GetAddedItemsAt(int index, out AvnVariant value);
+
+    [PreserveSig]
+    int GetRemovedItemsCount(out int value);
+
+    [PreserveSig]
+    int GetRemovedItemsAt(int index, out AvnVariant value);
+
+}
+
+[GeneratedComClass]
+public sealed partial class AvnSelectingItemsControlSelectionChangedArgs : IAvnSelectingItemsControlSelectionChangedArgs
+{
+    private readonly global::System.Collections.IEnumerable?[] _collections = new global::System.Collections.IEnumerable?[2];
+
+    internal AvnSelectingItemsControlSelectionChangedArgs(global::System.Collections.IEnumerable?[] collections) => _collections = collections;
+
+    public int GetAddedItemsCount(out int value)
+    {
+        value = 0;
+        try
+        {
+            value = _collections[0]?.Cast<object?>().Count() ?? 0;
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int GetAddedItemsAt(int index, out AvnVariant value)
+    {
+        value = default;
+        try
+        {
+            var item = _collections[0]?.Cast<object?>().ElementAtOrDefault(index);
+            if (index < 0 || item is null)
+                return global::Avalonia.Host.HResults.E_INVALIDARG;
+            value = AvnVariant.FromObject(item);
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int GetRemovedItemsCount(out int value)
+    {
+        value = 0;
+        try
+        {
+            value = _collections[1]?.Cast<object?>().Count() ?? 0;
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int GetRemovedItemsAt(int index, out AvnVariant value)
+    {
+        value = default;
+        try
+        {
+            var item = _collections[1]?.Cast<object?>().ElementAtOrDefault(index);
+            if (index < 0 || item is null)
+                return global::Avalonia.Host.HResults.E_INVALIDARG;
+            value = AvnVariant.FromObject(item);
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+}
+
+[GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
+[Guid("D9AAACF6-E516-52AC-ABBE-3E0210379161")]
 public partial interface IAvnSelectingItemsControlSelectionChangedHandler
 {
     [PreserveSig]
-    int Invoke();
+    int Invoke(IAvnSelectingItemsControlSelectionChangedArgs args);
 }

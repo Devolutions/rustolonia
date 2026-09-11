@@ -7,7 +7,7 @@ using System.Runtime.InteropServices.Marshalling;
 namespace Avalonia.Host.Com;
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("5C7D5B90-EC20-5621-BE13-EADAB8A0701B")]
+[Guid("2AAFC151-688F-5326-B651-D022BD55487D")]
 public partial interface IAvnDatePicker : IAvnTemplatedControl
 {
     [PreserveSig]
@@ -104,12 +104,24 @@ public sealed partial class AvnDatePicker : IAvnDatePicker
     private long _nextUnloadedSubscriptionId;
     private readonly global::System.Collections.Generic.Dictionary<long, (IAvnControlSizeChangedHandler Handler, global::System.Action Unsubscribe)> _sizeChangedSubscriptions = new();
     private long _nextSizeChangedSubscriptionId;
+    private readonly global::System.Collections.Generic.Dictionary<long, (IAvnControlGotFocusHandler Handler, global::System.Action Unsubscribe)> _gotFocusSubscriptions = new();
+    private long _nextGotFocusSubscriptionId;
+    private readonly global::System.Collections.Generic.Dictionary<long, (IAvnControlLostFocusHandler Handler, global::System.Action Unsubscribe)> _lostFocusSubscriptions = new();
+    private long _nextLostFocusSubscriptionId;
     private readonly global::System.Collections.Generic.Dictionary<long, (IAvnControlKeyDownHandler Handler, global::System.Action Unsubscribe)> _keyDownSubscriptions = new();
     private long _nextKeyDownSubscriptionId;
+    private readonly global::System.Collections.Generic.Dictionary<long, (IAvnControlKeyUpHandler Handler, global::System.Action Unsubscribe)> _keyUpSubscriptions = new();
+    private long _nextKeyUpSubscriptionId;
     private readonly global::System.Collections.Generic.Dictionary<long, (IAvnControlPointerEnteredHandler Handler, global::System.Action Unsubscribe)> _pointerEnteredSubscriptions = new();
     private long _nextPointerEnteredSubscriptionId;
     private readonly global::System.Collections.Generic.Dictionary<long, (IAvnControlPointerExitedHandler Handler, global::System.Action Unsubscribe)> _pointerExitedSubscriptions = new();
     private long _nextPointerExitedSubscriptionId;
+    private readonly global::System.Collections.Generic.Dictionary<long, (IAvnControlPointerWheelChangedHandler Handler, global::System.Action Unsubscribe)> _pointerWheelChangedSubscriptions = new();
+    private long _nextPointerWheelChangedSubscriptionId;
+    private readonly global::System.Collections.Generic.Dictionary<long, (IAvnControlTappedHandler Handler, global::System.Action Unsubscribe)> _tappedSubscriptions = new();
+    private long _nextTappedSubscriptionId;
+    private readonly global::System.Collections.Generic.Dictionary<long, (IAvnControlDoubleTappedHandler Handler, global::System.Action Unsubscribe)> _doubleTappedSubscriptions = new();
+    private long _nextDoubleTappedSubscriptionId;
     private readonly global::System.Collections.Generic.Dictionary<long, (IAvnDatePickerSelectedDateChangedHandler Handler, global::System.Action Unsubscribe)> _selectedDateChangedSubscriptions = new();
     private long _nextSelectedDateChangedSubscriptionId;
 
@@ -1018,6 +1030,37 @@ public sealed partial class AvnDatePicker : IAvnDatePicker
         }
     }
 
+    public int GetFocusable(out int value)
+    {
+        value = default;
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            value = _value.Focusable ? 1 : 0;
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int SetFocusable(int value)
+    {
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            _value.Focusable = value != 0;
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
     public int GetIsEnabled(out int value)
     {
         value = default;
@@ -1041,6 +1084,22 @@ public sealed partial class AvnDatePicker : IAvnDatePicker
             using var call = _state.EnterCall();
             _value.VerifyAccess();
             _value.IsEnabled = value != 0;
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int FocusWithNavigationMethodAndKeyModifiers(int method, int keyModifiers, out int value)
+    {
+        value = default;
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            value = _value.Focus((global::Avalonia.Input.NavigationMethod)method, (global::Avalonia.Input.KeyModifiers)keyModifiers) ? 1 : 0;
             return global::Avalonia.Host.HResults.S_OK;
         }
         catch (global::System.Exception e)
@@ -1187,6 +1246,98 @@ public sealed partial class AvnDatePicker : IAvnDatePicker
         }
     }
 
+    public int AdviseGotFocus(IAvnControlGotFocusHandler? handler, out long subscriptionId)
+    {
+        subscriptionId = 0;
+        if (handler is null)
+            return global::Avalonia.Host.HResults.E_POINTER;
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            var eventSource = _value;
+            var callback = new global::System.EventHandler<Avalonia.Input.FocusChangedEventArgs>((_, eventArgs) =>
+            {
+                var hr = handler.Invoke((int)eventArgs.NavigationMethod, (int)eventArgs.KeyModifiers);
+                if (hr < 0)
+                    global::System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(hr);
+            });
+            eventSource.GotFocus += callback;
+            subscriptionId = global::System.Threading.Interlocked.Increment(ref _nextGotFocusSubscriptionId);
+            _gotFocusSubscriptions.Add(subscriptionId, (handler, () => eventSource.GotFocus -= callback));
+            global::Avalonia.Host.ProjectionDiagnostics.SubscriptionAdded();
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int UnadviseGotFocus(long subscriptionId)
+    {
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            if (!_gotFocusSubscriptions.Remove(subscriptionId, out var subscription))
+                return global::Avalonia.Host.HResults.E_INVALIDARG;
+            subscription.Unsubscribe();
+            global::Avalonia.Host.ProjectionDiagnostics.SubscriptionRemoved();
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int AdviseLostFocus(IAvnControlLostFocusHandler? handler, out long subscriptionId)
+    {
+        subscriptionId = 0;
+        if (handler is null)
+            return global::Avalonia.Host.HResults.E_POINTER;
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            var eventSource = _value;
+            var callback = new global::System.EventHandler<Avalonia.Input.FocusChangedEventArgs>((_, eventArgs) =>
+            {
+                var hr = handler.Invoke();
+                if (hr < 0)
+                    global::System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(hr);
+            });
+            eventSource.LostFocus += callback;
+            subscriptionId = global::System.Threading.Interlocked.Increment(ref _nextLostFocusSubscriptionId);
+            _lostFocusSubscriptions.Add(subscriptionId, (handler, () => eventSource.LostFocus -= callback));
+            global::Avalonia.Host.ProjectionDiagnostics.SubscriptionAdded();
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int UnadviseLostFocus(long subscriptionId)
+    {
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            if (!_lostFocusSubscriptions.Remove(subscriptionId, out var subscription))
+                return global::Avalonia.Host.HResults.E_INVALIDARG;
+            subscription.Unsubscribe();
+            global::Avalonia.Host.ProjectionDiagnostics.SubscriptionRemoved();
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
     public int AdviseKeyDown(IAvnControlKeyDownHandler? handler, out long subscriptionId)
     {
         subscriptionId = 0;
@@ -1235,6 +1386,54 @@ public sealed partial class AvnDatePicker : IAvnDatePicker
         }
     }
 
+    public int AdviseKeyUp(IAvnControlKeyUpHandler? handler, out long subscriptionId)
+    {
+        subscriptionId = 0;
+        if (handler is null)
+            return global::Avalonia.Host.HResults.E_POINTER;
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            var eventSource = _value;
+            var callback = new global::System.EventHandler<Avalonia.Input.KeyEventArgs>((_, eventArgs) =>
+            {
+                var handled = eventArgs.Handled ? 1 : 0;
+                var hr = handler.Invoke((int)eventArgs.Key, (int)eventArgs.PhysicalKey, (int)eventArgs.KeyModifiers, eventArgs.KeySymbol, ref handled);
+                if (hr < 0)
+                    global::System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(hr);
+                eventArgs.Handled = handled != 0;
+            });
+            eventSource.KeyUp += callback;
+            subscriptionId = global::System.Threading.Interlocked.Increment(ref _nextKeyUpSubscriptionId);
+            _keyUpSubscriptions.Add(subscriptionId, (handler, () => eventSource.KeyUp -= callback));
+            global::Avalonia.Host.ProjectionDiagnostics.SubscriptionAdded();
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int UnadviseKeyUp(long subscriptionId)
+    {
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            if (!_keyUpSubscriptions.Remove(subscriptionId, out var subscription))
+                return global::Avalonia.Host.HResults.E_INVALIDARG;
+            subscription.Unsubscribe();
+            global::Avalonia.Host.ProjectionDiagnostics.SubscriptionRemoved();
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
     public int AdvisePointerEntered(IAvnControlPointerEnteredHandler? handler, out long subscriptionId)
     {
         subscriptionId = 0;
@@ -1247,7 +1446,7 @@ public sealed partial class AvnDatePicker : IAvnDatePicker
             var eventSource = _value;
             var callback = new global::System.EventHandler<Avalonia.Input.PointerEventArgs>((_, eventArgs) =>
             {
-                var hr = handler.Invoke();
+                var hr = handler.Invoke((int)eventArgs.KeyModifiers);
                 if (hr < 0)
                     global::System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(hr);
             });
@@ -1293,7 +1492,7 @@ public sealed partial class AvnDatePicker : IAvnDatePicker
             var eventSource = _value;
             var callback = new global::System.EventHandler<Avalonia.Input.PointerEventArgs>((_, eventArgs) =>
             {
-                var hr = handler.Invoke();
+                var hr = handler.Invoke((int)eventArgs.KeyModifiers);
                 if (hr < 0)
                     global::System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(hr);
             });
@@ -1316,6 +1515,144 @@ public sealed partial class AvnDatePicker : IAvnDatePicker
             using var call = _state.EnterCall();
             _value.VerifyAccess();
             if (!_pointerExitedSubscriptions.Remove(subscriptionId, out var subscription))
+                return global::Avalonia.Host.HResults.E_INVALIDARG;
+            subscription.Unsubscribe();
+            global::Avalonia.Host.ProjectionDiagnostics.SubscriptionRemoved();
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int AdvisePointerWheelChanged(IAvnControlPointerWheelChangedHandler? handler, out long subscriptionId)
+    {
+        subscriptionId = 0;
+        if (handler is null)
+            return global::Avalonia.Host.HResults.E_POINTER;
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            var eventSource = _value;
+            var callback = new global::System.EventHandler<Avalonia.Input.PointerWheelEventArgs>((_, eventArgs) =>
+            {
+                var hr = handler.Invoke(AvnVector.FromAvalonia(eventArgs.Delta), (int)eventArgs.KeyModifiers);
+                if (hr < 0)
+                    global::System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(hr);
+            });
+            eventSource.PointerWheelChanged += callback;
+            subscriptionId = global::System.Threading.Interlocked.Increment(ref _nextPointerWheelChangedSubscriptionId);
+            _pointerWheelChangedSubscriptions.Add(subscriptionId, (handler, () => eventSource.PointerWheelChanged -= callback));
+            global::Avalonia.Host.ProjectionDiagnostics.SubscriptionAdded();
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int UnadvisePointerWheelChanged(long subscriptionId)
+    {
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            if (!_pointerWheelChangedSubscriptions.Remove(subscriptionId, out var subscription))
+                return global::Avalonia.Host.HResults.E_INVALIDARG;
+            subscription.Unsubscribe();
+            global::Avalonia.Host.ProjectionDiagnostics.SubscriptionRemoved();
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int AdviseTapped(IAvnControlTappedHandler? handler, out long subscriptionId)
+    {
+        subscriptionId = 0;
+        if (handler is null)
+            return global::Avalonia.Host.HResults.E_POINTER;
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            var eventSource = _value;
+            var callback = new global::System.EventHandler<Avalonia.Input.TappedEventArgs>((_, eventArgs) =>
+            {
+                var hr = handler.Invoke((int)eventArgs.KeyModifiers);
+                if (hr < 0)
+                    global::System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(hr);
+            });
+            eventSource.Tapped += callback;
+            subscriptionId = global::System.Threading.Interlocked.Increment(ref _nextTappedSubscriptionId);
+            _tappedSubscriptions.Add(subscriptionId, (handler, () => eventSource.Tapped -= callback));
+            global::Avalonia.Host.ProjectionDiagnostics.SubscriptionAdded();
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int UnadviseTapped(long subscriptionId)
+    {
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            if (!_tappedSubscriptions.Remove(subscriptionId, out var subscription))
+                return global::Avalonia.Host.HResults.E_INVALIDARG;
+            subscription.Unsubscribe();
+            global::Avalonia.Host.ProjectionDiagnostics.SubscriptionRemoved();
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int AdviseDoubleTapped(IAvnControlDoubleTappedHandler? handler, out long subscriptionId)
+    {
+        subscriptionId = 0;
+        if (handler is null)
+            return global::Avalonia.Host.HResults.E_POINTER;
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            var eventSource = _value;
+            var callback = new global::System.EventHandler<Avalonia.Input.TappedEventArgs>((_, eventArgs) =>
+            {
+                var hr = handler.Invoke();
+                if (hr < 0)
+                    global::System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(hr);
+            });
+            eventSource.DoubleTapped += callback;
+            subscriptionId = global::System.Threading.Interlocked.Increment(ref _nextDoubleTappedSubscriptionId);
+            _doubleTappedSubscriptions.Add(subscriptionId, (handler, () => eventSource.DoubleTapped -= callback));
+            global::Avalonia.Host.ProjectionDiagnostics.SubscriptionAdded();
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int UnadviseDoubleTapped(long subscriptionId)
+    {
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            if (!_doubleTappedSubscriptions.Remove(subscriptionId, out var subscription))
                 return global::Avalonia.Host.HResults.E_INVALIDARG;
             subscription.Unsubscribe();
             global::Avalonia.Host.ProjectionDiagnostics.SubscriptionRemoved();
@@ -2188,12 +2525,30 @@ public sealed partial class AvnDatePicker : IAvnDatePicker
             global::Avalonia.Host.ProjectionDiagnostics.SubscriptionRemoved();
         }
         _sizeChangedSubscriptions.Clear();
+        foreach (var subscription in _gotFocusSubscriptions.Values)
+        {
+            subscription.Unsubscribe();
+            global::Avalonia.Host.ProjectionDiagnostics.SubscriptionRemoved();
+        }
+        _gotFocusSubscriptions.Clear();
+        foreach (var subscription in _lostFocusSubscriptions.Values)
+        {
+            subscription.Unsubscribe();
+            global::Avalonia.Host.ProjectionDiagnostics.SubscriptionRemoved();
+        }
+        _lostFocusSubscriptions.Clear();
         foreach (var subscription in _keyDownSubscriptions.Values)
         {
             subscription.Unsubscribe();
             global::Avalonia.Host.ProjectionDiagnostics.SubscriptionRemoved();
         }
         _keyDownSubscriptions.Clear();
+        foreach (var subscription in _keyUpSubscriptions.Values)
+        {
+            subscription.Unsubscribe();
+            global::Avalonia.Host.ProjectionDiagnostics.SubscriptionRemoved();
+        }
+        _keyUpSubscriptions.Clear();
         foreach (var subscription in _pointerEnteredSubscriptions.Values)
         {
             subscription.Unsubscribe();
@@ -2206,6 +2561,24 @@ public sealed partial class AvnDatePicker : IAvnDatePicker
             global::Avalonia.Host.ProjectionDiagnostics.SubscriptionRemoved();
         }
         _pointerExitedSubscriptions.Clear();
+        foreach (var subscription in _pointerWheelChangedSubscriptions.Values)
+        {
+            subscription.Unsubscribe();
+            global::Avalonia.Host.ProjectionDiagnostics.SubscriptionRemoved();
+        }
+        _pointerWheelChangedSubscriptions.Clear();
+        foreach (var subscription in _tappedSubscriptions.Values)
+        {
+            subscription.Unsubscribe();
+            global::Avalonia.Host.ProjectionDiagnostics.SubscriptionRemoved();
+        }
+        _tappedSubscriptions.Clear();
+        foreach (var subscription in _doubleTappedSubscriptions.Values)
+        {
+            subscription.Unsubscribe();
+            global::Avalonia.Host.ProjectionDiagnostics.SubscriptionRemoved();
+        }
+        _doubleTappedSubscriptions.Clear();
         foreach (var subscription in _selectedDateChangedSubscriptions.Values)
         {
             subscription.Unsubscribe();

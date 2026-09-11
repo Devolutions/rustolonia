@@ -73,18 +73,18 @@ fn chrome_members_publish_brush_pointers_and_geometry_by_value() {
 #[test]
 fn chrome_wave_interfaces_publish_abi_version_four() {
     for expected in [
-        "#define I_AVN_BORDER_ABI_VERSION 12",
-        "#define I_AVN_PANEL_ABI_VERSION 11",
-        "#define I_AVN_TEMPLATED_CONTROL_ABI_VERSION 12",
-        "#define I_AVN_TEXT_BLOCK_ABI_VERSION 14",
+        "#define I_AVN_BORDER_ABI_VERSION 15",
+        "#define I_AVN_PANEL_ABI_VERSION 14",
+        "#define I_AVN_TEMPLATED_CONTROL_ABI_VERSION 15",
+        "#define I_AVN_TEXT_BLOCK_ABI_VERSION 17",
         // The factory grew create_solid_color_brush at version 2, a creator per wave A control
         // at version 3, and a creator per constructible wave B type at version 4.
         "#define I_AVN_CONTROL_FACTORY_ABI_VERSION 13",
         // Nothing was added to StyledElement, Control or Decorator, and none of their bases
         // moved, so their flattened vtables are byte-identical to version 3.
         "#define I_AVN_STYLED_ELEMENT_ABI_VERSION 6",
-        "#define I_AVN_CONTROL_ABI_VERSION 8",
-        "#define I_AVN_DECORATOR_ABI_VERSION 10",
+        "#define I_AVN_CONTROL_ABI_VERSION 11",
+        "#define I_AVN_DECORATOR_ABI_VERSION 13",
         "#define I_AVN_AVALONIA_OBJECT_ABI_VERSION 2",
     ] {
         assert!(HEADER.contains(expected), "header is missing `{expected}`");
@@ -129,13 +129,15 @@ fn widened_interfaces_republish_under_fresh_iids() {
         format_iid(&I_AVN_STYLED_ELEMENT_IID),
         "383D0620-1A23-575B-B609-391608903CB1"
     );
+    // Wave P grew Control (KeyUp/GotFocus/LostFocus), so Control and Decorator
+    // republished under fresh IIDs.
     assert_eq!(
         format_iid(&I_AVN_CONTROL_IID),
-        "06D79016-63D8-5035-B293-19969F0BB3C6"
+        "8B272500-09E4-535F-ABF1-14992E90E778"
     );
     assert_eq!(
         format_iid(&I_AVN_DECORATOR_IID),
-        "57E09C6B-A22C-5F01-B65C-E54C3DD55E6C"
+        "F8530439-ABA5-5B16-9C0B-2132D4EFD205"
     );
 
     // The brush is a brand new interface, so it starts at version 1 with its own IID.

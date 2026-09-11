@@ -169,7 +169,7 @@ public class GeometryMarshallingEmitterTests
 
         // Widening IAvnControl republishes it at version 3; IAvnAvaloniaObject projects no
         // members, so its vtable and version are untouched.
-        Assert.Contains("#define I_AVN_CONTROL_ABI_VERSION 8", header, StringComparison.Ordinal);
+        Assert.Contains("#define I_AVN_CONTROL_ABI_VERSION 11", header, StringComparison.Ordinal);
         Assert.Contains(
             "#define I_AVN_AVALONIA_OBJECT_ABI_VERSION 2",
             header,

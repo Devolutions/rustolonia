@@ -10,5 +10,5 @@ namespace Avalonia.Host.Com;
 public partial interface IAvnControlPointerEnteredHandler
 {
     [PreserveSig]
-    int Invoke();
+    int Invoke(int KeyModifiers);
 }

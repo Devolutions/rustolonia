@@ -1804,6 +1804,28 @@ pub mod key_modifiers {
 
 #[repr(i32)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum NavigationMethod {
+    Unspecified = 0,
+    Tab = 1,
+    Directional = 2,
+    Pointer = 3,
+}
+
+impl TryFrom<i32> for NavigationMethod {
+    type Error = crate::Error;
+    fn try_from(value: i32) -> Result<Self> {
+        match value {
+            0 => Ok(Self::Unspecified),
+            1 => Ok(Self::Tab),
+            2 => Ok(Self::Directional),
+            3 => Ok(Self::Pointer),
+            _ => Err(crate::Error::InvalidEnumValue(value)),
+        }
+    }
+}
+
+#[repr(i32)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PhysicalKey {
     None = 0,
     Backquote = 1,
@@ -2617,12 +2639,21 @@ pub use sys::IAvnCalendarDatePickerSelectedDateChangedArgs;
 pub use sys::ContextMenuOpeningEventArgs;
 pub use sys::ContextMenuClosingEventArgs;
 pub use sys::ControlSizeChangedEventArgs;
+pub use sys::ControlGotFocusEventArgs;
 pub use sys::ControlKeyDownEventArgs;
+pub use sys::ControlKeyUpEventArgs;
+pub use sys::ControlPointerEnteredEventArgs;
+pub use sys::ControlPointerExitedEventArgs;
+pub use sys::ControlPointerWheelChangedEventArgs;
+pub use sys::ControlTappedEventArgs;
 pub use sys::DatePickerSelectedDateChangedEventArgs;
 pub use sys::ExpanderCollapsingEventArgs;
 pub use sys::ExpanderExpandingEventArgs;
 pub use sys::NumericUpDownSpinnedEventArgs;
+pub use sys::NumericUpDownValueChangedEventArgs;
 pub use sys::PopupFlyoutBaseClosingEventArgs;
+pub use sys::RangeBaseValueChangedEventArgs;
+pub use sys::IAvnSelectingItemsControlSelectionChangedArgs;
 pub use sys::ThumbDragStartedEventArgs;
 pub use sys::ThumbDragDeltaEventArgs;
 pub use sys::ThumbDragCompletedEventArgs;
@@ -2631,6 +2662,7 @@ pub use sys::SplitViewPaneClosingEventArgs;
 pub use sys::SplitViewPaneOpeningEventArgs;
 pub use sys::TimePickerSelectedTimeChangedEventArgs;
 pub use sys::TransitioningContentControlTransitionCompletedEventArgs;
+pub use sys::IAvnTreeViewSelectionChangedArgs;
 pub use sys::WindowClosingEventArgs;
 
 #[derive(Clone, Debug)]
@@ -3045,6 +3077,14 @@ impl AutoCompleteBox {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -3053,6 +3093,7 @@ impl AutoCompleteBox {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -3090,6 +3131,30 @@ impl AutoCompleteBox {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -3101,30 +3166,72 @@ impl AutoCompleteBox {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -3844,6 +3951,14 @@ impl Border {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -3852,6 +3967,7 @@ impl Border {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -3889,6 +4005,30 @@ impl Border {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -3900,30 +4040,72 @@ impl Border {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_child(&self) -> Result<Option<Control>> {
@@ -4273,6 +4455,14 @@ impl Button {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -4281,6 +4471,7 @@ impl Button {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -4318,6 +4509,30 @@ impl Button {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -4329,30 +4544,72 @@ impl Button {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -4885,6 +5142,14 @@ impl ButtonSpinner {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -4893,6 +5158,7 @@ impl ButtonSpinner {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -4930,6 +5196,30 @@ impl ButtonSpinner {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -4941,30 +5231,72 @@ impl ButtonSpinner {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -5460,6 +5792,14 @@ impl Calendar {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -5468,6 +5808,7 @@ impl Calendar {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -5505,6 +5846,30 @@ impl Calendar {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -5516,30 +5881,72 @@ impl Calendar {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -6108,6 +6515,14 @@ impl CalendarDatePicker {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -6116,6 +6531,7 @@ impl CalendarDatePicker {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -6153,6 +6569,30 @@ impl CalendarDatePicker {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -6164,30 +6604,72 @@ impl CalendarDatePicker {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -6821,6 +7303,14 @@ impl Canvas {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -6829,6 +7319,7 @@ impl Canvas {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -6866,6 +7357,30 @@ impl Canvas {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -6877,30 +7392,72 @@ impl Canvas {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn children(&self) -> Result<ControlList> {
@@ -7216,6 +7773,14 @@ impl Carousel {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -7224,6 +7789,7 @@ impl Carousel {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -7261,6 +7827,30 @@ impl Carousel {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -7272,30 +7862,72 @@ impl Carousel {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -7537,16 +8169,14 @@ impl Carousel {
         self.set_wrap_selection(value)?;
         Ok(self)
     }
-    pub fn subscribe_selection_changed(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::selecting_items_control_selection_changed_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_selection_changed(&self, callback: impl FnMut(&mut sys::ComPtr<sys::IAvnSelectingItemsControlSelectionChangedArgs>) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::selecting_items_control_selection_changed_handler(move |args| { callback(args); Ok(()) });
         let subscription_id = self.raw.advise_selection_changed(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_selection_changed(subscription_id)))
     }
-    pub fn on_selection_changed(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_selection_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut sys::ComPtr<sys::IAvnSelectingItemsControlSelectionChangedArgs>) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_selection_changed(callback)?);
         Ok(self)
     }
@@ -7828,6 +8458,14 @@ impl CheckBox {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -7836,6 +8474,7 @@ impl CheckBox {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -7873,6 +8512,30 @@ impl CheckBox {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -7884,30 +8547,72 @@ impl CheckBox {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -8469,6 +9174,14 @@ impl ComboBox {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -8477,6 +9190,7 @@ impl ComboBox {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -8514,6 +9228,30 @@ impl ComboBox {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -8525,30 +9263,72 @@ impl ComboBox {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -8790,16 +9570,14 @@ impl ComboBox {
         self.set_wrap_selection(value)?;
         Ok(self)
     }
-    pub fn subscribe_selection_changed(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::selecting_items_control_selection_changed_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_selection_changed(&self, callback: impl FnMut(&mut sys::ComPtr<sys::IAvnSelectingItemsControlSelectionChangedArgs>) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::selecting_items_control_selection_changed_handler(move |args| { callback(args); Ok(()) });
         let subscription_id = self.raw.advise_selection_changed(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_selection_changed(subscription_id)))
     }
-    pub fn on_selection_changed(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_selection_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut sys::ComPtr<sys::IAvnSelectingItemsControlSelectionChangedArgs>) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_selection_changed(callback)?);
         Ok(self)
     }
@@ -9159,6 +9937,14 @@ impl ComboBoxItem {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -9167,6 +9953,7 @@ impl ComboBoxItem {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -9204,6 +9991,30 @@ impl ComboBoxItem {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -9215,30 +10026,72 @@ impl ComboBoxItem {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -9696,6 +10549,14 @@ impl CommandBar {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -9704,6 +10565,7 @@ impl CommandBar {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -9741,6 +10603,30 @@ impl CommandBar {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -9752,30 +10638,72 @@ impl CommandBar {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -10343,6 +11271,14 @@ impl CommandBarButton {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -10351,6 +11287,7 @@ impl CommandBarButton {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -10388,6 +11325,30 @@ impl CommandBarButton {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -10399,30 +11360,72 @@ impl CommandBarButton {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -11012,6 +12015,14 @@ impl CommandBarSeparator {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -11020,6 +12031,7 @@ impl CommandBarSeparator {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -11057,6 +12069,30 @@ impl CommandBarSeparator {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -11068,30 +12104,72 @@ impl CommandBarSeparator {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -11514,6 +12592,14 @@ impl CommandBarToggleButton {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -11522,6 +12608,7 @@ impl CommandBarToggleButton {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -11559,6 +12646,30 @@ impl CommandBarToggleButton {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -11570,30 +12681,72 @@ impl CommandBarToggleButton {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -12212,6 +13365,14 @@ impl ContentControl {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -12220,6 +13381,7 @@ impl ContentControl {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -12257,6 +13419,30 @@ impl ContentControl {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -12268,30 +13454,72 @@ impl ContentControl {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -12741,6 +13969,14 @@ impl ContextMenu {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -12749,6 +13985,7 @@ impl ContextMenu {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -12786,6 +14023,30 @@ impl ContextMenu {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -12797,30 +14058,72 @@ impl ContextMenu {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -13062,16 +14365,14 @@ impl ContextMenu {
         self.set_wrap_selection(value)?;
         Ok(self)
     }
-    pub fn subscribe_selection_changed(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::selecting_items_control_selection_changed_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_selection_changed(&self, callback: impl FnMut(&mut sys::ComPtr<sys::IAvnSelectingItemsControlSelectionChangedArgs>) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::selecting_items_control_selection_changed_handler(move |args| { callback(args); Ok(()) });
         let subscription_id = self.raw.advise_selection_changed(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_selection_changed(subscription_id)))
     }
-    pub fn on_selection_changed(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_selection_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut sys::ComPtr<sys::IAvnSelectingItemsControlSelectionChangedArgs>) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_selection_changed(callback)?);
         Ok(self)
     }
@@ -13479,6 +14780,14 @@ impl Control {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -13487,6 +14796,7 @@ impl Control {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -13524,6 +14834,30 @@ impl Control {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -13535,30 +14869,72 @@ impl Control {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
 }
@@ -13820,6 +15196,14 @@ impl DatePicker {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -13828,6 +15212,7 @@ impl DatePicker {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -13865,6 +15250,30 @@ impl DatePicker {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -13876,30 +15285,72 @@ impl DatePicker {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -14419,6 +15870,14 @@ impl Decorator {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -14427,6 +15886,7 @@ impl Decorator {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -14464,6 +15924,30 @@ impl Decorator {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -14475,30 +15959,72 @@ impl Decorator {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_child(&self) -> Result<Option<Control>> {
@@ -14781,6 +16307,14 @@ impl DockPanel {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -14789,6 +16323,7 @@ impl DockPanel {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -14826,6 +16361,30 @@ impl DockPanel {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -14837,30 +16396,72 @@ impl DockPanel {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn children(&self) -> Result<ControlList> {
@@ -15173,6 +16774,14 @@ impl DropDownButton {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -15181,6 +16790,7 @@ impl DropDownButton {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -15218,6 +16828,30 @@ impl DropDownButton {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -15229,30 +16863,72 @@ impl DropDownButton {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -15785,6 +17461,14 @@ impl Expander {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -15793,6 +17477,7 @@ impl Expander {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -15830,6 +17515,30 @@ impl Expander {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -15841,30 +17550,72 @@ impl Expander {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -16402,6 +18153,14 @@ impl FlexPanel {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -16410,6 +18169,7 @@ impl FlexPanel {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -16447,6 +18207,30 @@ impl FlexPanel {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -16458,30 +18242,72 @@ impl FlexPanel {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn children(&self) -> Result<ControlList> {
@@ -17030,6 +18856,14 @@ impl Grid {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -17038,6 +18872,7 @@ impl Grid {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -17075,6 +18910,30 @@ impl Grid {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -17086,30 +18945,72 @@ impl Grid {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn children(&self) -> Result<ControlList> {
@@ -17480,6 +19381,14 @@ impl GridSplitter {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -17488,6 +19397,7 @@ impl GridSplitter {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -17525,6 +19435,30 @@ impl GridSplitter {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -17536,30 +19470,72 @@ impl GridSplitter {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -18045,6 +20021,14 @@ impl GroupBox {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -18053,6 +20037,7 @@ impl GroupBox {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -18090,6 +20075,30 @@ impl GroupBox {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -18101,30 +20110,72 @@ impl GroupBox {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -18595,6 +20646,14 @@ impl HyperlinkButton {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -18603,6 +20662,7 @@ impl HyperlinkButton {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -18640,6 +20700,30 @@ impl HyperlinkButton {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -18651,30 +20735,72 @@ impl HyperlinkButton {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -19222,6 +21348,14 @@ impl IconElement {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -19230,6 +21364,7 @@ impl IconElement {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -19267,6 +21402,30 @@ impl IconElement {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -19278,30 +21437,72 @@ impl IconElement {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -19708,6 +21909,14 @@ impl Image {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -19716,6 +21925,7 @@ impl Image {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -19753,6 +21963,30 @@ impl Image {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -19764,30 +21998,72 @@ impl Image {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_source(&self) -> Result<Option<String>> {
@@ -20093,6 +22369,14 @@ impl ItemsControl {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -20101,6 +22385,7 @@ impl ItemsControl {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -20138,6 +22423,30 @@ impl ItemsControl {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -20149,30 +22458,72 @@ impl ItemsControl {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -20619,6 +22970,14 @@ impl Label {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -20627,6 +22986,7 @@ impl Label {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -20664,6 +23024,30 @@ impl Label {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -20675,30 +23059,72 @@ impl Label {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -21159,6 +23585,14 @@ impl LayoutTransformControl {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -21167,6 +23601,7 @@ impl LayoutTransformControl {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -21204,6 +23639,30 @@ impl LayoutTransformControl {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -21215,30 +23674,72 @@ impl LayoutTransformControl {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_child(&self) -> Result<Option<Control>> {
@@ -21529,6 +24030,14 @@ impl ListBox {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -21537,6 +24046,7 @@ impl ListBox {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -21574,6 +24084,30 @@ impl ListBox {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -21585,30 +24119,72 @@ impl ListBox {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -21850,16 +24426,14 @@ impl ListBox {
         self.set_wrap_selection(value)?;
         Ok(self)
     }
-    pub fn subscribe_selection_changed(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::selecting_items_control_selection_changed_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_selection_changed(&self, callback: impl FnMut(&mut sys::ComPtr<sys::IAvnSelectingItemsControlSelectionChangedArgs>) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::selecting_items_control_selection_changed_handler(move |args| { callback(args); Ok(()) });
         let subscription_id = self.raw.advise_selection_changed(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_selection_changed(subscription_id)))
     }
-    pub fn on_selection_changed(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_selection_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut sys::ComPtr<sys::IAvnSelectingItemsControlSelectionChangedArgs>) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_selection_changed(callback)?);
         Ok(self)
     }
@@ -22132,6 +24706,14 @@ impl ListBoxItem {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -22140,6 +24722,7 @@ impl ListBoxItem {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -22177,6 +24760,30 @@ impl ListBoxItem {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -22188,30 +24795,72 @@ impl ListBoxItem {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -22669,6 +25318,14 @@ impl MaskedTextBox {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -22677,6 +25334,7 @@ impl MaskedTextBox {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -22714,6 +25372,30 @@ impl MaskedTextBox {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -22725,30 +25407,72 @@ impl MaskedTextBox {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -23590,6 +26314,14 @@ impl Menu {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -23598,6 +26330,7 @@ impl Menu {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -23635,6 +26368,30 @@ impl Menu {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -23646,30 +26403,72 @@ impl Menu {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -23911,16 +26710,14 @@ impl Menu {
         self.set_wrap_selection(value)?;
         Ok(self)
     }
-    pub fn subscribe_selection_changed(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::selecting_items_control_selection_changed_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_selection_changed(&self, callback: impl FnMut(&mut sys::ComPtr<sys::IAvnSelectingItemsControlSelectionChangedArgs>) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::selecting_items_control_selection_changed_handler(move |args| { callback(args); Ok(()) });
         let subscription_id = self.raw.advise_selection_changed(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_selection_changed(subscription_id)))
     }
-    pub fn on_selection_changed(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_selection_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut sys::ComPtr<sys::IAvnSelectingItemsControlSelectionChangedArgs>) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_selection_changed(callback)?);
         Ok(self)
     }
@@ -24208,6 +27005,14 @@ impl MenuBase {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -24216,6 +27021,7 @@ impl MenuBase {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -24253,6 +27059,30 @@ impl MenuBase {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -24264,30 +27094,72 @@ impl MenuBase {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -24529,16 +27401,14 @@ impl MenuBase {
         self.set_wrap_selection(value)?;
         Ok(self)
     }
-    pub fn subscribe_selection_changed(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::selecting_items_control_selection_changed_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_selection_changed(&self, callback: impl FnMut(&mut sys::ComPtr<sys::IAvnSelectingItemsControlSelectionChangedArgs>) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::selecting_items_control_selection_changed_handler(move |args| { callback(args); Ok(()) });
         let subscription_id = self.raw.advise_selection_changed(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_selection_changed(subscription_id)))
     }
-    pub fn on_selection_changed(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_selection_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut sys::ComPtr<sys::IAvnSelectingItemsControlSelectionChangedArgs>) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_selection_changed(callback)?);
         Ok(self)
     }
@@ -25034,6 +27904,14 @@ impl MenuItem {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -25042,6 +27920,7 @@ impl MenuItem {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -25079,6 +27958,30 @@ impl MenuItem {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -25090,30 +27993,72 @@ impl MenuItem {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -25355,16 +28300,14 @@ impl MenuItem {
         self.set_wrap_selection(value)?;
         Ok(self)
     }
-    pub fn subscribe_selection_changed(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::selecting_items_control_selection_changed_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_selection_changed(&self, callback: impl FnMut(&mut sys::ComPtr<sys::IAvnSelectingItemsControlSelectionChangedArgs>) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::selecting_items_control_selection_changed_handler(move |args| { callback(args); Ok(()) });
         let subscription_id = self.raw.advise_selection_changed(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_selection_changed(subscription_id)))
     }
-    pub fn on_selection_changed(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_selection_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut sys::ComPtr<sys::IAvnSelectingItemsControlSelectionChangedArgs>) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_selection_changed(callback)?);
         Ok(self)
     }
@@ -25786,6 +28729,14 @@ impl NotificationCard {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -25794,6 +28745,7 @@ impl NotificationCard {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -25831,6 +28783,30 @@ impl NotificationCard {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -25842,30 +28818,72 @@ impl NotificationCard {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -26349,6 +29367,14 @@ impl WindowNotificationManager {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -26357,6 +29383,7 @@ impl WindowNotificationManager {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -26394,6 +29421,30 @@ impl WindowNotificationManager {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -26405,30 +29456,72 @@ impl WindowNotificationManager {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -26859,6 +29952,14 @@ impl NumericUpDown {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -26867,6 +29968,7 @@ impl NumericUpDown {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -26904,6 +30006,30 @@ impl NumericUpDown {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -26915,30 +30041,72 @@ impl NumericUpDown {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -27283,16 +30451,14 @@ impl NumericUpDown {
         scope.retain_subscription(self.subscribe_spinned(callback)?);
         Ok(self)
     }
-    pub fn subscribe_value_changed(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::numeric_up_down_value_changed_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_value_changed(&self, callback: impl FnMut(&mut NumericUpDownValueChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::numeric_up_down_value_changed_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_value_changed(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_value_changed(subscription_id)))
     }
-    pub fn on_value_changed(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_value_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut NumericUpDownValueChangedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_value_changed(callback)?);
         Ok(self)
     }
@@ -27555,6 +30721,14 @@ impl Panel {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -27563,6 +30737,7 @@ impl Panel {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -27600,6 +30775,30 @@ impl Panel {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -27611,30 +30810,72 @@ impl Panel {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn children(&self) -> Result<ControlList> {
@@ -27914,6 +31155,14 @@ impl PathIcon {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -27922,6 +31171,7 @@ impl PathIcon {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -27959,6 +31209,30 @@ impl PathIcon {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -27970,30 +31244,72 @@ impl PathIcon {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -28411,6 +31727,14 @@ impl PipsPager {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -28419,6 +31743,7 @@ impl PipsPager {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -28456,6 +31781,30 @@ impl PipsPager {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -28467,30 +31816,72 @@ impl PipsPager {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -29012,6 +32403,14 @@ impl HeaderedContentControl {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -29020,6 +32419,7 @@ impl HeaderedContentControl {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -29057,6 +32457,30 @@ impl HeaderedContentControl {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -29068,30 +32492,72 @@ impl HeaderedContentControl {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -29562,6 +33028,14 @@ impl HeaderedItemsControl {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -29570,6 +33044,7 @@ impl HeaderedItemsControl {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -29607,6 +33082,30 @@ impl HeaderedItemsControl {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -29618,30 +33117,72 @@ impl HeaderedItemsControl {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -30109,6 +33650,14 @@ impl HeaderedSelectingItemsControl {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -30117,6 +33666,7 @@ impl HeaderedSelectingItemsControl {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -30154,6 +33704,30 @@ impl HeaderedSelectingItemsControl {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -30165,30 +33739,72 @@ impl HeaderedSelectingItemsControl {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -30430,16 +34046,14 @@ impl HeaderedSelectingItemsControl {
         self.set_wrap_selection(value)?;
         Ok(self)
     }
-    pub fn subscribe_selection_changed(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::selecting_items_control_selection_changed_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_selection_changed(&self, callback: impl FnMut(&mut sys::ComPtr<sys::IAvnSelectingItemsControlSelectionChangedArgs>) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::selecting_items_control_selection_changed_handler(move |args| { callback(args); Ok(()) });
         let subscription_id = self.raw.advise_selection_changed(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_selection_changed(subscription_id)))
     }
-    pub fn on_selection_changed(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_selection_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut sys::ComPtr<sys::IAvnSelectingItemsControlSelectionChangedArgs>) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_selection_changed(callback)?);
         Ok(self)
     }
@@ -30723,6 +34337,14 @@ impl Popup {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -30731,6 +34353,7 @@ impl Popup {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -30768,6 +34391,30 @@ impl Popup {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -30779,30 +34426,72 @@ impl Popup {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_window_manager_add_shadow_hint(&self) -> Result<bool> { Ok(self.raw.get_window_manager_add_shadow_hint()?) }
@@ -31431,6 +35120,14 @@ impl RangeBase {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -31439,6 +35136,7 @@ impl RangeBase {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -31476,6 +35174,30 @@ impl RangeBase {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -31487,30 +35209,72 @@ impl RangeBase {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -31698,16 +35462,14 @@ impl RangeBase {
         self.set_large_change(value)?;
         Ok(self)
     }
-    pub fn subscribe_value_changed(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::range_base_value_changed_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_value_changed(&self, callback: impl FnMut(&mut RangeBaseValueChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::range_base_value_changed_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_value_changed(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_value_changed(subscription_id)))
     }
-    pub fn on_value_changed(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_value_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut RangeBaseValueChangedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_value_changed(callback)?);
         Ok(self)
     }
@@ -31970,6 +35732,14 @@ impl SelectingItemsControl {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -31978,6 +35748,7 @@ impl SelectingItemsControl {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -32015,6 +35786,30 @@ impl SelectingItemsControl {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -32026,30 +35821,72 @@ impl SelectingItemsControl {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -32291,16 +36128,14 @@ impl SelectingItemsControl {
         self.set_wrap_selection(value)?;
         Ok(self)
     }
-    pub fn subscribe_selection_changed(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::selecting_items_control_selection_changed_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_selection_changed(&self, callback: impl FnMut(&mut sys::ComPtr<sys::IAvnSelectingItemsControlSelectionChangedArgs>) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::selecting_items_control_selection_changed_handler(move |args| { callback(args); Ok(()) });
         let subscription_id = self.raw.advise_selection_changed(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_selection_changed(subscription_id)))
     }
-    pub fn on_selection_changed(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_selection_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut sys::ComPtr<sys::IAvnSelectingItemsControlSelectionChangedArgs>) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_selection_changed(callback)?);
         Ok(self)
     }
@@ -32563,6 +36398,14 @@ impl TemplatedControl {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -32571,6 +36414,7 @@ impl TemplatedControl {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -32608,6 +36452,30 @@ impl TemplatedControl {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -32619,30 +36487,72 @@ impl TemplatedControl {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -33049,6 +36959,14 @@ impl Thumb {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -33057,6 +36975,7 @@ impl Thumb {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -33094,6 +37013,30 @@ impl Thumb {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -33105,30 +37048,72 @@ impl Thumb {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -33568,6 +37553,14 @@ impl ToggleButton {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -33576,6 +37569,7 @@ impl ToggleButton {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -33613,6 +37607,30 @@ impl ToggleButton {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -33624,30 +37642,72 @@ impl ToggleButton {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -34209,6 +38269,14 @@ impl UniformGrid {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -34217,6 +38285,7 @@ impl UniformGrid {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -34254,6 +38323,30 @@ impl UniformGrid {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -34265,30 +38358,72 @@ impl UniformGrid {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn children(&self) -> Result<ControlList> {
@@ -34608,6 +38743,14 @@ impl ProgressBar {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -34616,6 +38759,7 @@ impl ProgressBar {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -34653,6 +38797,30 @@ impl ProgressBar {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -34664,30 +38832,72 @@ impl ProgressBar {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -34875,16 +39085,14 @@ impl ProgressBar {
         self.set_large_change(value)?;
         Ok(self)
     }
-    pub fn subscribe_value_changed(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::range_base_value_changed_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_value_changed(&self, callback: impl FnMut(&mut RangeBaseValueChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::range_base_value_changed_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_value_changed(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_value_changed(subscription_id)))
     }
-    pub fn on_value_changed(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_value_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut RangeBaseValueChangedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_value_changed(callback)?);
         Ok(self)
     }
@@ -35186,6 +39394,14 @@ impl RadioButton {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -35194,6 +39410,7 @@ impl RadioButton {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -35231,6 +39448,30 @@ impl RadioButton {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -35242,30 +39483,72 @@ impl RadioButton {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -35838,6 +40121,14 @@ impl RefreshContainer {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -35846,6 +40137,7 @@ impl RefreshContainer {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -35883,6 +40175,30 @@ impl RefreshContainer {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -35894,30 +40210,72 @@ impl RefreshContainer {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -36400,6 +40758,14 @@ impl RelativePanel {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -36408,6 +40774,7 @@ impl RelativePanel {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -36445,6 +40812,30 @@ impl RelativePanel {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -36456,30 +40847,72 @@ impl RelativePanel {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn children(&self) -> Result<ControlList> {
@@ -36813,6 +41246,14 @@ impl RepeatButton {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -36821,6 +41262,7 @@ impl RepeatButton {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -36858,6 +41300,30 @@ impl RepeatButton {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -36869,30 +41335,72 @@ impl RepeatButton {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -37441,6 +41949,14 @@ impl ScrollViewer {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -37449,6 +41965,7 @@ impl ScrollViewer {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -37486,6 +42003,30 @@ impl ScrollViewer {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -37497,30 +42038,72 @@ impl ScrollViewer {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -38136,6 +42719,14 @@ impl SelectableTextBlock {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -38144,6 +42735,7 @@ impl SelectableTextBlock {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -38181,6 +42773,30 @@ impl SelectableTextBlock {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -38192,30 +42808,72 @@ impl SelectableTextBlock {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_padding(&self) -> Result<Thickness> {
@@ -38714,6 +43372,14 @@ impl Separator {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -38722,6 +43388,7 @@ impl Separator {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -38759,6 +43426,30 @@ impl Separator {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -38770,30 +43461,72 @@ impl Separator {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -39200,6 +43933,14 @@ impl Arc {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -39208,6 +43949,7 @@ impl Arc {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -39245,6 +43987,30 @@ impl Arc {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -39256,30 +44022,72 @@ impl Arc {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_fill(&self) -> Result<Option<Brush>> {
@@ -39647,6 +44455,14 @@ impl Ellipse {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -39655,6 +44471,7 @@ impl Ellipse {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -39692,6 +44509,30 @@ impl Ellipse {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -39703,30 +44544,72 @@ impl Ellipse {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_fill(&self) -> Result<Option<Brush>> {
@@ -40078,6 +44961,14 @@ impl Line {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -40086,6 +44977,7 @@ impl Line {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -40123,6 +45015,30 @@ impl Line {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -40134,30 +45050,72 @@ impl Line {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_fill(&self) -> Result<Option<Brush>> {
@@ -40529,6 +45487,14 @@ impl Path {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -40537,6 +45503,7 @@ impl Path {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -40574,6 +45541,30 @@ impl Path {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -40585,30 +45576,72 @@ impl Path {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_fill(&self) -> Result<Option<Brush>> {
@@ -40971,6 +46004,14 @@ impl Polygon {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -40979,6 +46020,7 @@ impl Polygon {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -41016,6 +46058,30 @@ impl Polygon {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -41027,30 +46093,72 @@ impl Polygon {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_fill(&self) -> Result<Option<Brush>> {
@@ -41424,6 +46532,14 @@ impl Polyline {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -41432,6 +46548,7 @@ impl Polyline {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -41469,6 +46586,30 @@ impl Polyline {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -41480,30 +46621,72 @@ impl Polyline {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_fill(&self) -> Result<Option<Brush>> {
@@ -41877,6 +47060,14 @@ impl Rectangle {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -41885,6 +47076,7 @@ impl Rectangle {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -41922,6 +47114,30 @@ impl Rectangle {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -41933,30 +47149,72 @@ impl Rectangle {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_fill(&self) -> Result<Option<Brush>> {
@@ -42324,6 +47582,14 @@ impl Sector {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -42332,6 +47598,7 @@ impl Sector {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -42369,6 +47636,30 @@ impl Sector {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -42380,30 +47671,72 @@ impl Sector {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_fill(&self) -> Result<Option<Brush>> {
@@ -42767,6 +48100,14 @@ impl Shape {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -42775,6 +48116,7 @@ impl Shape {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -42812,6 +48154,30 @@ impl Shape {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -42823,30 +48189,72 @@ impl Shape {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_fill(&self) -> Result<Option<Brush>> {
@@ -43198,6 +48606,14 @@ impl Slider {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -43206,6 +48622,7 @@ impl Slider {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -43243,6 +48660,30 @@ impl Slider {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -43254,30 +48695,72 @@ impl Slider {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -43465,16 +48948,14 @@ impl Slider {
         self.set_large_change(value)?;
         Ok(self)
     }
-    pub fn subscribe_value_changed(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::range_base_value_changed_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_value_changed(&self, callback: impl FnMut(&mut RangeBaseValueChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::range_base_value_changed_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_value_changed(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_value_changed(subscription_id)))
     }
-    pub fn on_value_changed(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_value_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut RangeBaseValueChangedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_value_changed(callback)?);
         Ok(self)
     }
@@ -43790,6 +49271,14 @@ impl Spinner {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -43798,6 +49287,7 @@ impl Spinner {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -43835,6 +49325,30 @@ impl Spinner {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -43846,30 +49360,72 @@ impl Spinner {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -44338,6 +49894,14 @@ impl SplitButton {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -44346,6 +49910,7 @@ impl SplitButton {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -44383,6 +49948,30 @@ impl SplitButton {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -44394,30 +49983,72 @@ impl SplitButton {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -44922,6 +50553,14 @@ impl SplitView {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -44930,6 +50569,7 @@ impl SplitView {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -44967,6 +50607,30 @@ impl SplitView {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -44978,30 +50642,72 @@ impl SplitView {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -45585,6 +51291,14 @@ impl StackPanel {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -45593,6 +51307,7 @@ impl StackPanel {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -45630,6 +51345,30 @@ impl StackPanel {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -45641,30 +51380,72 @@ impl StackPanel {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn children(&self) -> Result<ControlList> {
@@ -45979,6 +51760,14 @@ impl TabControl {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -45987,6 +51776,7 @@ impl TabControl {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -46024,6 +51814,30 @@ impl TabControl {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -46035,30 +51849,72 @@ impl TabControl {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -46300,16 +52156,14 @@ impl TabControl {
         self.set_wrap_selection(value)?;
         Ok(self)
     }
-    pub fn subscribe_selection_changed(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::selecting_items_control_selection_changed_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_selection_changed(&self, callback: impl FnMut(&mut sys::ComPtr<sys::IAvnSelectingItemsControlSelectionChangedArgs>) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::selecting_items_control_selection_changed_handler(move |args| { callback(args); Ok(()) });
         let subscription_id = self.raw.advise_selection_changed(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_selection_changed(subscription_id)))
     }
-    pub fn on_selection_changed(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_selection_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut sys::ComPtr<sys::IAvnSelectingItemsControlSelectionChangedArgs>) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_selection_changed(callback)?);
         Ok(self)
     }
@@ -46631,6 +52485,14 @@ impl TabItem {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -46639,6 +52501,7 @@ impl TabItem {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -46676,6 +52539,30 @@ impl TabItem {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -46687,30 +52574,72 @@ impl TabItem {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -47223,6 +53152,14 @@ impl TableView {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -47231,6 +53168,7 @@ impl TableView {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -47268,6 +53206,30 @@ impl TableView {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -47279,30 +53241,72 @@ impl TableView {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -47544,16 +53548,14 @@ impl TableView {
         self.set_wrap_selection(value)?;
         Ok(self)
     }
-    pub fn subscribe_selection_changed(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::selecting_items_control_selection_changed_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_selection_changed(&self, callback: impl FnMut(&mut sys::ComPtr<sys::IAvnSelectingItemsControlSelectionChangedArgs>) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::selecting_items_control_selection_changed_handler(move |args| { callback(args); Ok(()) });
         let subscription_id = self.raw.advise_selection_changed(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_selection_changed(subscription_id)))
     }
-    pub fn on_selection_changed(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_selection_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut sys::ComPtr<sys::IAvnSelectingItemsControlSelectionChangedArgs>) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_selection_changed(callback)?);
         Ok(self)
     }
@@ -47844,6 +53846,14 @@ impl TableViewCell {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -47852,6 +53862,7 @@ impl TableViewCell {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -47889,6 +53900,30 @@ impl TableViewCell {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -47900,30 +53935,72 @@ impl TableViewCell {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -48576,6 +54653,14 @@ impl TableViewRow {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -48584,6 +54669,7 @@ impl TableViewRow {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -48621,6 +54707,30 @@ impl TableViewRow {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -48632,30 +54742,72 @@ impl TableViewRow {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -49113,6 +55265,14 @@ impl TextBlock {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -49121,6 +55281,7 @@ impl TextBlock {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -49158,6 +55319,30 @@ impl TextBlock {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -49169,30 +55354,72 @@ impl TextBlock {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_padding(&self) -> Result<Thickness> {
@@ -49633,6 +55860,14 @@ impl TextBox {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -49641,6 +55876,7 @@ impl TextBox {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -49678,6 +55914,30 @@ impl TextBox {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -49689,30 +55949,72 @@ impl TextBox {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -50501,6 +56803,14 @@ impl ThemeVariantScope {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -50509,6 +56819,7 @@ impl ThemeVariantScope {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -50546,6 +56857,30 @@ impl ThemeVariantScope {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -50557,30 +56892,72 @@ impl ThemeVariantScope {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_child(&self) -> Result<Option<Control>> {
@@ -50874,6 +57251,14 @@ impl TimePicker {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -50882,6 +57267,7 @@ impl TimePicker {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -50919,6 +57305,30 @@ impl TimePicker {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -50930,30 +57340,72 @@ impl TimePicker {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -51429,6 +57881,14 @@ impl ToggleSplitButton {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -51437,6 +57897,7 @@ impl ToggleSplitButton {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -51474,6 +57935,30 @@ impl ToggleSplitButton {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -51485,30 +57970,72 @@ impl ToggleSplitButton {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -52034,6 +58561,14 @@ impl ToggleSwitch {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -52042,6 +58577,7 @@ impl ToggleSwitch {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -52079,6 +58615,30 @@ impl ToggleSwitch {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -52090,30 +58650,72 @@ impl ToggleSwitch {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -52717,6 +59319,14 @@ impl ToolTip {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -52725,6 +59335,7 @@ impl ToolTip {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -52762,6 +59373,30 @@ impl ToolTip {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -52773,30 +59408,72 @@ impl ToolTip {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -53328,6 +60005,14 @@ impl TransitioningContentControl {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -53336,6 +60021,7 @@ impl TransitioningContentControl {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -53373,6 +60059,30 @@ impl TransitioningContentControl {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -53384,30 +60094,72 @@ impl TransitioningContentControl {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -53953,6 +60705,14 @@ impl TreeView {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -53961,6 +60721,7 @@ impl TreeView {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -53998,6 +60759,30 @@ impl TreeView {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -54009,30 +60794,72 @@ impl TreeView {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -54266,16 +61093,14 @@ impl TreeView {
         let container = container.as_control()?;
         Ok(Variant::from_abi(self.raw.tree_item_from_container_with_control(&container)?))
     }
-    pub fn subscribe_selection_changed(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::tree_view_selection_changed_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_selection_changed(&self, callback: impl FnMut(&mut sys::ComPtr<sys::IAvnTreeViewSelectionChangedArgs>) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::tree_view_selection_changed_handler(move |args| { callback(args); Ok(()) });
         let subscription_id = self.raw.advise_selection_changed(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_selection_changed(subscription_id)))
     }
-    pub fn on_selection_changed(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_selection_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut sys::ComPtr<sys::IAvnTreeViewSelectionChangedArgs>) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_selection_changed(callback)?);
         Ok(self)
     }
@@ -54538,6 +61363,14 @@ impl TreeViewItem {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -54546,6 +61379,7 @@ impl TreeViewItem {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -54583,6 +61417,30 @@ impl TreeViewItem {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -54594,30 +61452,72 @@ impl TreeViewItem {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -55128,6 +62028,14 @@ impl UserControl {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -55136,6 +62044,7 @@ impl UserControl {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -55173,6 +62082,30 @@ impl UserControl {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -55184,30 +62117,72 @@ impl UserControl {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -55657,6 +62632,14 @@ impl Viewbox {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -55665,6 +62648,7 @@ impl Viewbox {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -55702,6 +62686,30 @@ impl Viewbox {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -55713,30 +62721,72 @@ impl Viewbox {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_stretch(&self) -> Result<Stretch> {
@@ -56031,6 +63081,14 @@ impl Window {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -56039,6 +63097,7 @@ impl Window {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -56076,6 +63135,30 @@ impl Window {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -56087,30 +63170,72 @@ impl Window {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn get_background(&self) -> Result<Option<Brush>> {
@@ -56724,6 +63849,14 @@ impl WrapPanel {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -56732,6 +63865,7 @@ impl WrapPanel {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -56769,6 +63903,30 @@ impl WrapPanel {
         scope.retain_subscription(self.subscribe_size_changed(callback)?);
         Ok(self)
     }
+    pub fn subscribe_got_focus(&self, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_got_focus_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_lost_focus(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_lost_focus_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(self)
+    }
     pub fn subscribe_key_down(&self, callback: impl FnMut(&mut ControlKeyDownEventArgs) + Send + 'static) -> Result<EventSubscription> {
         let mut callback = callback;
         let handler = sys::control_key_down_handler(move |event| { callback(event); Ok(()) });
@@ -56780,30 +63938,72 @@ impl WrapPanel {
         scope.retain_subscription(self.subscribe_key_down(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_entered(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_entered_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_key_up(&self, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_key_up_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_entered(&self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_entered_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_entered(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
     }
-    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_entered(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
         Ok(self)
     }
-    pub fn subscribe_pointer_exited(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::control_pointer_exited_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_pointer_exited(&self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_exited_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_pointer_exited(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
     }
-    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_pointer_exited(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_pointer_wheel_changed(&self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_pointer_wheel_changed_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_tapped(&self, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::control_tapped_handler(move |event| { callback(event); Ok(()) });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped(self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_double_tapped(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::control_double_tapped_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
         Ok(self)
     }
     pub fn children(&self) -> Result<ControlList> {

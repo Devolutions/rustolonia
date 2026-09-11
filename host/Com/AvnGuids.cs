@@ -27,4 +27,9 @@ internal static class AvnGuids
     // file entries back, and nothing below is added to a published vtable.
     public const string IAvnApplication4 = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4D60";
     public const string IAvnClipboardData = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4D61";
+
+    // Stage 32 modal dialog activation. Another separately versioned capability;
+    // the completion rides the shared async operation registry, and nothing below
+    // is added to a published vtable.
+    public const string IAvnApplication5 = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4D70";
 }

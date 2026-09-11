@@ -129,6 +129,14 @@ public sealed class EventParameterProjection
 {
     public required string Name { get; init; }
     public ParameterDirection Direction { get; init; } = ParameterDirection.In;
+
+    /// <summary>
+    /// An optional per-parameter marshalling override for argument properties whose CLR
+    /// type has no direct ABI shape (for example <c>decimal?</c>, which crosses as an
+    /// invariant UTF-16 string through a host converter). Overrides the extractor's
+    /// type-driven mapping for this one parameter.
+    /// </summary>
+    public MarshallingOverride? Override { get; init; }
 }
 
 public sealed class MarshallingOverride

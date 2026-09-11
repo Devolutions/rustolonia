@@ -23,7 +23,7 @@ fn wrap_panel_carries_spacing_orientation_and_item_size() {
         "*set_items_alignment)(IAvnWrapPanel* self, int32_t value)",
         "*set_item_width)(IAvnWrapPanel* self, double value)",
         "*set_item_height)(IAvnWrapPanel* self, double value)",
-        "#define I_AVN_WRAP_PANEL_ABI_VERSION 8",
+        "#define I_AVN_WRAP_PANEL_ABI_VERSION 11",
     ] {
         assert!(HEADER.contains(expected), "header is missing `{expected}`");
     }
@@ -87,18 +87,18 @@ fn viewbox_child_is_a_control_and_grid_splitter_sits_on_thumb() {
 #[test]
 fn wave_c_interfaces_publish_abi_version_one_and_nothing_else_moved() {
     for expected in [
-        "#define I_AVN_WRAP_PANEL_ABI_VERSION 8",
-        "#define I_AVN_UNIFORM_GRID_ABI_VERSION 8",
-        "#define I_AVN_RELATIVE_PANEL_ABI_VERSION 8",
-        "#define I_AVN_VIEWBOX_ABI_VERSION 8",
-        "#define I_AVN_FLEX_PANEL_ABI_VERSION 8",
-        "#define I_AVN_THUMB_ABI_VERSION 10",
-        "#define I_AVN_GRID_SPLITTER_ABI_VERSION 10",
+        "#define I_AVN_WRAP_PANEL_ABI_VERSION 11",
+        "#define I_AVN_UNIFORM_GRID_ABI_VERSION 11",
+        "#define I_AVN_RELATIVE_PANEL_ABI_VERSION 11",
+        "#define I_AVN_VIEWBOX_ABI_VERSION 11",
+        "#define I_AVN_FLEX_PANEL_ABI_VERSION 11",
+        "#define I_AVN_THUMB_ABI_VERSION 13",
+        "#define I_AVN_GRID_SPLITTER_ABI_VERSION 13",
         "#define I_AVN_AVALONIA_OBJECT_ABI_VERSION 2",
-        "#define I_AVN_CONTROL_ABI_VERSION 8",
-        "#define I_AVN_PANEL_ABI_VERSION 11",
-        "#define I_AVN_TEMPLATED_CONTROL_ABI_VERSION 12",
-        "#define I_AVN_CONTENT_CONTROL_ABI_VERSION 13",
+        "#define I_AVN_CONTROL_ABI_VERSION 11",
+        "#define I_AVN_PANEL_ABI_VERSION 14",
+        "#define I_AVN_TEMPLATED_CONTROL_ABI_VERSION 15",
+        "#define I_AVN_CONTENT_CONTROL_ABI_VERSION 16",
         "#define I_AVN_FLYOUT_ABI_VERSION 4",
     ] {
         assert!(HEADER.contains(expected), "header is missing `{expected}`");

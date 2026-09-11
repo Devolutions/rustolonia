@@ -1,8 +1,8 @@
 use crate::ir::ProjectionIr;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap, HashSet};
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct AbiBaseline {
     pub schema_version: i32,
@@ -21,7 +21,7 @@ pub struct AbiBaseline {
     pub interfaces: Vec<AbiInterface>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct AbiDefinitions {
     pub hresult: String,
@@ -31,7 +31,7 @@ pub struct AbiDefinitions {
     pub pointer_model: String,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct RetiredIdentity {
     pub iid: String,
@@ -40,14 +40,14 @@ pub struct RetiredIdentity {
     pub reason: String,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct AbiValueType {
     pub name: String,
     pub fields: Vec<AbiField>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct AbiField {
     #[serde(rename = "type")]
@@ -55,7 +55,7 @@ pub struct AbiField {
     pub name: String,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct AbiInterface {
     pub name: String,
@@ -63,13 +63,13 @@ pub struct AbiInterface {
     pub iid_constant: String,
     pub abi_version: i32,
     pub slots: Vec<usize>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub ir_bases: Vec<String>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub ir_members: Vec<usize>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct AbiSlot {
     pub name: String,
@@ -78,7 +78,7 @@ pub struct AbiSlot {
     pub parameters: Vec<AbiParameter>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct AbiParameter {
     #[serde(rename = "type")]
@@ -209,6 +209,42 @@ pub fn attach_ir(inventory: &mut AbiInventory, ir: &ProjectionIr) -> Result<(), 
     }
     inventory.ir_member_catalog = intern.members;
     Ok(())
+}
+
+/// Rebuilds the frozen released-ABI snapshot from the current native header and
+/// projection IR. The previous snapshot supplies the producer pin and the retired
+/// identity list; both carry forward unchanged. This is the intentional, reviewed
+/// way to advance the ABI: change the projection, regenerate, then rewrite the
+/// baseline so `identity_breaks` compares future builds against the new release.
+pub fn regenerate_baseline(ir_json: &str, header: &str, existing: &str) -> Result<String, String> {
+    let ir: ProjectionIr = serde_json::from_str(ir_json)
+        .map_err(|error| format!("Failed to parse projection IR: {error}"))?;
+    let previous: AbiBaseline = serde_json::from_str(existing)
+        .map_err(|error| format!("Failed to parse existing ABI baseline: {error}"))?;
+    if previous.kind != "released" {
+        return Err(format!(
+            "Existing ABI snapshot kind must be 'released', found '{}'.",
+            previous.kind
+        ));
+    }
+    let mut inventory = parse_header(header)?;
+    attach_ir(&mut inventory, &ir)?;
+    let baseline = AbiBaseline {
+        schema_version: previous.schema_version,
+        kind: previous.kind,
+        projection_ir_version: ir.version,
+        producer_pin: previous.producer_pin,
+        abi_definitions: inventory.definitions,
+        retired_identities: previous.retired_identities,
+        value_types: inventory.value_types,
+        slot_catalog: inventory.slot_catalog,
+        ir_member_catalog: inventory.ir_member_catalog,
+        interfaces: inventory.interfaces,
+    };
+    let mut json = serde_json::to_string_pretty(&baseline)
+        .map_err(|error| format!("Failed to serialize ABI baseline: {error}"))?;
+    json.push('\n');
+    Ok(json)
 }
 
 pub fn identity_breaks(
@@ -768,11 +804,17 @@ mod tests {
         let mut current = parse_header(&mutated).unwrap();
         let ir: ProjectionIr = serde_json::from_str(IR_JSON).unwrap();
         attach_ir(&mut current, &ir).unwrap();
+        let control_iid = &released
+            .interfaces
+            .iter()
+            .find(|interface| interface.name == "IAvnControl")
+            .expect("the released baseline lists IAvnControl")
+            .iid[..8];
         let breaks = identity_breaks(&released, &current).unwrap();
         assert!(
             breaks
                 .iter()
-                .any(|message| message.contains("06D79016")
+                .any(|message| message.contains(control_iid)
                     && message.contains("callable signature")),
             "{breaks:?}"
         );

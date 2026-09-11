@@ -1,4 +1,4 @@
-﻿use avalonia_sys::{app_handler, button_click_handler, Error, Host, AVN_E_FIXTURE};
+use avalonia_sys::{app_handler, button_click_handler, Error, Host, AVN_E_FIXTURE};
 use libloading::Library;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};

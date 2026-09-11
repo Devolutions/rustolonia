@@ -2085,6 +2085,10 @@ public static class ComSourceEmitter
             MarshallingKind.NullableBool =>
                 $"!eventArgs.{parameter.Name}.HasValue ? -1 : eventArgs.{parameter.Name}.Value ? 1 : 0",
             MarshallingKind.Variant => $"AvnVariant.FromObject(eventArgs.{parameter.Name})",
+            // A StringUtf16 event field whose CLR type is not string converts through the
+            // host-side converter named by the projection (decimal? rides AvnDecimal).
+            MarshallingKind.StringUtf16 when parameter.StringConverterTypeName is { } converter =>
+                $"global::{converter}.ToAbi(eventArgs.{parameter.Name})",
             _ when GeometryMarshalling.TryGet(parameter.Kind, out var geometry) =>
                 $"{geometry.AbiName}.FromAvalonia(eventArgs.{parameter.Name})",
             MarshallingKind.DateTimeI64 when parameter.IsNullable &&
@@ -2106,6 +2110,8 @@ public static class ComSourceEmitter
         {
             MarshallingKind.I32 when parameter.ManagedTypeName is not "System.Int32" =>
                 $"(global::{parameter.ManagedTypeName}){value}",
+            MarshallingKind.StringUtf16 when parameter.StringConverterTypeName is { } writeConverter =>
+                $"global::{writeConverter}.FromAbi({value})",
             MarshallingKind.Bool => $"{value} != 0",
             MarshallingKind.NullableBool =>
                 $"{value} switch {{ -1 => null, 0 => false, 1 => true, _ => throw new global::System.ArgumentOutOfRangeException(nameof({value})) }}",

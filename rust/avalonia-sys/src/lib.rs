@@ -21,6 +21,7 @@ mod clipboard;
 mod com;
 mod command;
 mod data_template;
+mod dialogs;
 mod dispatcher;
 mod echo;
 mod event_callback;
@@ -45,6 +46,7 @@ pub use clipboard::{IAvnApplication4, IAvnClipboardData, IAVN_APPLICATION4_METHO
 pub use com::{ComInterface, ComPtr, IUnknown};
 pub use command::{command, Command};
 pub use data_template::{data_template, DataTemplate};
+pub use dialogs::IAvnApplication5;
 pub use dispatcher::{action, IAvnAction, IAvnDispatcher};
 pub use echo::IAvnEcho;
 pub use factory::IAvnActivationFactory;

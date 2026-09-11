@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using Avalonia.Controls;
@@ -630,7 +630,7 @@ public class ComSourceEmitterTests
         var buttonEnd = header.IndexOf("struct IAvnButton {", buttonStart, StringComparison.Ordinal);
         var buttonHeader = header[buttonStart..buttonEnd];
         Assert.Contains("get_object_id", buttonHeader, StringComparison.Ordinal);
-        Assert.Contains("#define I_AVN_BUTTON_ABI_VERSION 16", header, StringComparison.Ordinal);
+        Assert.Contains("#define I_AVN_BUTTON_ABI_VERSION 19", header, StringComparison.Ordinal);
         Assert.True(
             buttonHeader.IndexOf("get_object_id", StringComparison.Ordinal) <
             buttonHeader.IndexOf("get_classes", StringComparison.Ordinal));

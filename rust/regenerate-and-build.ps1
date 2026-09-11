@@ -6,6 +6,7 @@ param(
     [switch]$SkipManagedBuild,
     [switch]$Test,
     [switch]$ValidateTemplate,
+    [switch]$UpdateAbiBaseline,
     [string]$PackageRid
 )
 
@@ -38,6 +39,19 @@ try
     if ($LASTEXITCODE -ne 0)
     {
         exit $LASTEXITCODE
+    }
+
+    if ($UpdateAbiBaseline)
+    {
+        Write-Host "==> [1/4] Rewriting the released ABI baseline (intentional ABI wave)"
+        cargo run -p avalonia-bindgen -- --write-baseline `
+            (Join-Path '.' 'projection.ir.json') `
+            (Join-Path '.' 'avalonia-sys' 'include' 'avalonia-rust-abi.h') `
+            (Join-Path '.' 'abi-baseline.json')
+        if ($LASTEXITCODE -ne 0)
+        {
+            exit $LASTEXITCODE
+        }
     }
 }
 finally

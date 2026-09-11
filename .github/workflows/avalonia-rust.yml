@@ -6,7 +6,9 @@ on:
       - '**'
       - '.github/workflows/avalonia-rust.yml'
   push:
-    branches: [main]
+    # The default branch is `master`; targeting `main` (the fork's default) meant the
+    # upstream repository never ran this gate on its own default branch.
+    branches: [master]
     paths:
       - '**'
       - '.github/workflows/avalonia-rust.yml'
