@@ -106,6 +106,74 @@ fn build_ui(scope: &AppScope) -> Result<()> {
             }
         })?;
 
+    // Wave T: modal dialog activation — a dialog window opens modally over the main
+    // window, returns its result through the shared async operation, and reports it.
+    let dialog_label = TextBlock::new()?
+        .text("Dialog: -")?
+        .margin(Thickness::symmetric(12.0, 0.0))?;
+    let ask = Button::new()?
+        .content(Some(&TextBlock::new()?.text("Ask")?))?
+        .margin(Thickness::uniform(4.0))?
+        .on_click(scope, {
+            let scope = scope.clone();
+            let dialog_label = dialog_label.clone();
+            move |_| {
+                let Some(owner) = scope.main_window() else {
+                    return;
+                };
+                let dialog = match Window::new().and_then(|d| {
+                    let d = d.title("Question")?.width(260.0)?.height(120.0)?;
+                    let text = TextBlock::new()?
+                        .text("Accept or decline?")?
+                        .horizontal_alignment(HorizontalAlignment::Center)?
+                        .margin(Thickness::uniform(12.0))?;
+                    let accept = Button::new()?
+                        .content(Some(&TextBlock::new()?.text("Accept")?))?
+                        .margin(Thickness::uniform(4.0))?;
+                    let decline = Button::new()?
+                        .content(Some(&TextBlock::new()?.text("Decline")?))?
+                        .margin(Thickness::uniform(4.0))?;
+                    let buttons = StackPanel::new()?
+                        .orientation(Orientation::Horizontal)?
+                        .horizontal_alignment(HorizontalAlignment::Center)?;
+                    buttons.children()?.add(accept.clone())?;
+                    buttons.children()?.add(decline.clone())?;
+                    let root = StackPanel::new()?.orientation(Orientation::Vertical)?;
+                    root.children()?.add(text)?;
+                    root.children()?.add(buttons)?;
+                    d.set_content(Some(&root))?;
+                    accept.on_click(&scope, {
+                        let d = d.clone();
+                        move |_| {
+                            let _ = d.close_with_object("accepted");
+                        }
+                    })?;
+                    decline.on_click(&scope, {
+                        let d = d.clone();
+                        move |_| {
+                            let _ = d.close_with_object("declined");
+                        }
+                    })?;
+                    Ok(d)
+                }) {
+                    Ok(d) => d,
+                    Err(_) => return,
+                };
+                if let Ok(operation) = scope.show_dialog(&owner, &dialog) {
+                    let dialog_label = dialog_label.clone();
+                    let _ = scope.spawn(async move {
+                        let result = operation.await.unwrap_or(None);
+                        let _ = dialog_label
+                            .set_text(format!("Dialog: {}", result.as_deref().unwrap_or("(none)")));
+                    });
+                }
+            }
+        })?;
+    let dialog_row = StackPanel::new()?
+        .orientation(Orientation::Horizontal)?
+        .horizontal_alignment(HorizontalAlignment::Center)?;
+    dialog_row.children()?.add(ask)?;
+
     let increment = Button::new()?
         .content(Some(&TextBlock::new()?.text("Increment")?))?
         .margin(Thickness::uniform(4.0))?
@@ -187,6 +255,8 @@ fn build_ui(scope: &AppScope) -> Result<()> {
     children.add(wheel_label)?;
     children.add(numeric)?;
     children.add(numeric_label)?;
+    children.add(dialog_row)?;
+    children.add(dialog_label)?;
     children.add(focus_label.clone())?;
     children.add(log)?;
     children.add(selection_label)?;

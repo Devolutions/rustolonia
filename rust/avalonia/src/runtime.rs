@@ -198,6 +198,27 @@ impl AppScope {
         )
     }
 
+    /// Shows `dialog` modally over `window`, completing with the dialog result the host
+    /// converted (`None` when the dialog returned no result). Dropping the returned
+    /// operation closes the dialog.
+    pub fn show_dialog(
+        &self,
+        window: &Window,
+        dialog: &Window,
+    ) -> Result<AsyncOperation<Option<String>>> {
+        let owner = window.raw.clone();
+        let dialog = dialog.raw.clone();
+        let application = self.context.application.clone();
+        let dialogs = application.dialogs()?;
+        AsyncOperation::start(
+            application,
+            move |completion| {
+                dialogs.start_show_dialog(Some(&owner), Some(&dialog), Some(completion))
+            },
+            decode_string,
+        )
+    }
+
     pub fn spawn(&self, future: impl Future<Output = ()> + Send + 'static) -> Result<()> {
         self.state
             .tasks
