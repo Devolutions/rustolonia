@@ -2642,31 +2642,23 @@ unsafe extern "system" fn i_avn_control_key_up_handler_invoke(this: *mut IAvnCon
 
 pub const I_AVN_CONTROL_POINTER_ENTERED_HANDLER_IID: Guid = Guid { data1: 0xCC8694AC, data2: 0xC51C, data3: 0x5791, data4: [0xA8, 0x98, 0x1B, 0x0D, 0xE4, 0xD8, 0x4D, 0xC8] };
 
+#[derive(Debug)]
+pub struct ControlPointerEnteredEventArgs {
+    pub key_modifiers: i32,
+}
+
 #[repr(C)]
 struct IAvnControlPointerEnteredHandlerVtbl {
     query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
     add_ref: unsafe extern "system" fn(*mut IUnknown) -> u32,
     release: unsafe extern "system" fn(*mut IUnknown) -> u32,
-    invoke: unsafe extern "system" fn(*mut IAvnControlPointerEnteredHandler) -> i32,
+    invoke: unsafe extern "system" fn(*mut IAvnControlPointerEnteredHandler, key_modifiers: i32) -> i32,
 }
 
 #[repr(C)]
-pub struct IAvnControlPointerEnteredHandler {
-    vtbl: *const IAvnControlPointerEnteredHandlerVtbl,
-}
+pub struct IAvnControlPointerEnteredHandler { vtbl: *const IAvnControlPointerEnteredHandlerVtbl }
 
-unsafe impl ComInterface for IAvnControlPointerEnteredHandler {
-    const IID: Guid = I_AVN_CONTROL_POINTER_ENTERED_HANDLER_IID;
-}
-
-impl ComPtr<IAvnControlPointerEnteredHandler> {
-    pub fn invoke(&self) -> Result<()> {
-        unsafe {
-            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().invoke)(self.as_raw());
-            hresult::check(hr)
-        }
-    }
-}
+unsafe impl ComInterface for IAvnControlPointerEnteredHandler { const IID: Guid = I_AVN_CONTROL_POINTER_ENTERED_HANDLER_IID; }
 
 static I_AVN_CONTROL_POINTER_ENTERED_HANDLER_VTBL: IAvnControlPointerEnteredHandlerVtbl = IAvnControlPointerEnteredHandlerVtbl {
     query_interface: i_avn_control_pointer_entered_handler_query_interface,
@@ -2675,53 +2667,51 @@ static I_AVN_CONTROL_POINTER_ENTERED_HANDLER_VTBL: IAvnControlPointerEnteredHand
     invoke: i_avn_control_pointer_entered_handler_invoke,
 };
 
-pub fn control_pointer_entered_handler(mut callback: impl FnMut() -> Result<()> + Send + 'static) -> ComPtr<IAvnControlPointerEnteredHandler> {
-    crate::event_callback::create::<IAvnControlPointerEnteredHandler, ()>(IAvnControlPointerEnteredHandler { vtbl: &I_AVN_CONTROL_POINTER_ENTERED_HANDLER_VTBL }, move |_| callback())
+pub fn control_pointer_entered_handler(callback: impl FnMut(&mut ControlPointerEnteredEventArgs) -> Result<()> + Send + 'static) -> ComPtr<IAvnControlPointerEnteredHandler> {
+    crate::event_callback::create(IAvnControlPointerEnteredHandler { vtbl: &I_AVN_CONTROL_POINTER_ENTERED_HANDLER_VTBL }, callback)
 }
 
 unsafe extern "system" fn i_avn_control_pointer_entered_handler_query_interface(this: *mut IUnknown, iid: *const Guid, result: *mut *mut c_void) -> i32 {
-    crate::event_callback::query_interface::<IAvnControlPointerEnteredHandler, ()>(this, iid, result)
+    crate::event_callback::query_interface::<IAvnControlPointerEnteredHandler, ControlPointerEnteredEventArgs>(this, iid, result)
 }
 
 unsafe extern "system" fn i_avn_control_pointer_entered_handler_add_ref(this: *mut IUnknown) -> u32 {
-    crate::event_callback::add_ref::<IAvnControlPointerEnteredHandler, ()>(this)
+    crate::event_callback::add_ref::<IAvnControlPointerEnteredHandler, ControlPointerEnteredEventArgs>(this)
 }
 
 unsafe extern "system" fn i_avn_control_pointer_entered_handler_release(this: *mut IUnknown) -> u32 {
-    crate::event_callback::release::<IAvnControlPointerEnteredHandler, ()>(this)
+    crate::event_callback::release::<IAvnControlPointerEnteredHandler, ControlPointerEnteredEventArgs>(this)
 }
 
-unsafe extern "system" fn i_avn_control_pointer_entered_handler_invoke(this: *mut IAvnControlPointerEnteredHandler) -> i32 {
-    crate::event_callback::invoke::<IAvnControlPointerEnteredHandler, ()>(this, &mut ())
+unsafe extern "system" fn i_avn_control_pointer_entered_handler_invoke(this: *mut IAvnControlPointerEnteredHandler, key_modifiers: i32) -> i32 {
+    let mut arguments = ControlPointerEnteredEventArgs {
+        key_modifiers,
+    };
+    let hr = crate::event_callback::invoke::<IAvnControlPointerEnteredHandler, ControlPointerEnteredEventArgs>(this, &mut arguments);
+    if hr >= 0 {
+    }
+    hr
 }
 
 pub const I_AVN_CONTROL_POINTER_EXITED_HANDLER_IID: Guid = Guid { data1: 0x218295EF, data2: 0xA88D, data3: 0x5B93, data4: [0x8A, 0x33, 0x97, 0xAB, 0xD4, 0x1E, 0x66, 0x45] };
+
+#[derive(Debug)]
+pub struct ControlPointerExitedEventArgs {
+    pub key_modifiers: i32,
+}
 
 #[repr(C)]
 struct IAvnControlPointerExitedHandlerVtbl {
     query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
     add_ref: unsafe extern "system" fn(*mut IUnknown) -> u32,
     release: unsafe extern "system" fn(*mut IUnknown) -> u32,
-    invoke: unsafe extern "system" fn(*mut IAvnControlPointerExitedHandler) -> i32,
+    invoke: unsafe extern "system" fn(*mut IAvnControlPointerExitedHandler, key_modifiers: i32) -> i32,
 }
 
 #[repr(C)]
-pub struct IAvnControlPointerExitedHandler {
-    vtbl: *const IAvnControlPointerExitedHandlerVtbl,
-}
+pub struct IAvnControlPointerExitedHandler { vtbl: *const IAvnControlPointerExitedHandlerVtbl }
 
-unsafe impl ComInterface for IAvnControlPointerExitedHandler {
-    const IID: Guid = I_AVN_CONTROL_POINTER_EXITED_HANDLER_IID;
-}
-
-impl ComPtr<IAvnControlPointerExitedHandler> {
-    pub fn invoke(&self) -> Result<()> {
-        unsafe {
-            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().invoke)(self.as_raw());
-            hresult::check(hr)
-        }
-    }
-}
+unsafe impl ComInterface for IAvnControlPointerExitedHandler { const IID: Guid = I_AVN_CONTROL_POINTER_EXITED_HANDLER_IID; }
 
 static I_AVN_CONTROL_POINTER_EXITED_HANDLER_VTBL: IAvnControlPointerExitedHandlerVtbl = IAvnControlPointerExitedHandlerVtbl {
     query_interface: i_avn_control_pointer_exited_handler_query_interface,
@@ -2730,24 +2720,193 @@ static I_AVN_CONTROL_POINTER_EXITED_HANDLER_VTBL: IAvnControlPointerExitedHandle
     invoke: i_avn_control_pointer_exited_handler_invoke,
 };
 
-pub fn control_pointer_exited_handler(mut callback: impl FnMut() -> Result<()> + Send + 'static) -> ComPtr<IAvnControlPointerExitedHandler> {
-    crate::event_callback::create::<IAvnControlPointerExitedHandler, ()>(IAvnControlPointerExitedHandler { vtbl: &I_AVN_CONTROL_POINTER_EXITED_HANDLER_VTBL }, move |_| callback())
+pub fn control_pointer_exited_handler(callback: impl FnMut(&mut ControlPointerExitedEventArgs) -> Result<()> + Send + 'static) -> ComPtr<IAvnControlPointerExitedHandler> {
+    crate::event_callback::create(IAvnControlPointerExitedHandler { vtbl: &I_AVN_CONTROL_POINTER_EXITED_HANDLER_VTBL }, callback)
 }
 
 unsafe extern "system" fn i_avn_control_pointer_exited_handler_query_interface(this: *mut IUnknown, iid: *const Guid, result: *mut *mut c_void) -> i32 {
-    crate::event_callback::query_interface::<IAvnControlPointerExitedHandler, ()>(this, iid, result)
+    crate::event_callback::query_interface::<IAvnControlPointerExitedHandler, ControlPointerExitedEventArgs>(this, iid, result)
 }
 
 unsafe extern "system" fn i_avn_control_pointer_exited_handler_add_ref(this: *mut IUnknown) -> u32 {
-    crate::event_callback::add_ref::<IAvnControlPointerExitedHandler, ()>(this)
+    crate::event_callback::add_ref::<IAvnControlPointerExitedHandler, ControlPointerExitedEventArgs>(this)
 }
 
 unsafe extern "system" fn i_avn_control_pointer_exited_handler_release(this: *mut IUnknown) -> u32 {
-    crate::event_callback::release::<IAvnControlPointerExitedHandler, ()>(this)
+    crate::event_callback::release::<IAvnControlPointerExitedHandler, ControlPointerExitedEventArgs>(this)
 }
 
-unsafe extern "system" fn i_avn_control_pointer_exited_handler_invoke(this: *mut IAvnControlPointerExitedHandler) -> i32 {
-    crate::event_callback::invoke::<IAvnControlPointerExitedHandler, ()>(this, &mut ())
+unsafe extern "system" fn i_avn_control_pointer_exited_handler_invoke(this: *mut IAvnControlPointerExitedHandler, key_modifiers: i32) -> i32 {
+    let mut arguments = ControlPointerExitedEventArgs {
+        key_modifiers,
+    };
+    let hr = crate::event_callback::invoke::<IAvnControlPointerExitedHandler, ControlPointerExitedEventArgs>(this, &mut arguments);
+    if hr >= 0 {
+    }
+    hr
+}
+
+pub const I_AVN_CONTROL_POINTER_WHEEL_CHANGED_HANDLER_IID: Guid = Guid { data1: 0x4318E60A, data2: 0x86C6, data3: 0x5142, data4: [0x86, 0x00, 0x0D, 0x61, 0xAA, 0x20, 0xCE, 0x93] };
+
+#[derive(Debug)]
+pub struct ControlPointerWheelChangedEventArgs {
+    pub delta: AvnVector,
+    pub key_modifiers: i32,
+}
+
+#[repr(C)]
+struct IAvnControlPointerWheelChangedHandlerVtbl {
+    query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
+    add_ref: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    release: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    invoke: unsafe extern "system" fn(*mut IAvnControlPointerWheelChangedHandler, delta: AvnVector, key_modifiers: i32) -> i32,
+}
+
+#[repr(C)]
+pub struct IAvnControlPointerWheelChangedHandler { vtbl: *const IAvnControlPointerWheelChangedHandlerVtbl }
+
+unsafe impl ComInterface for IAvnControlPointerWheelChangedHandler { const IID: Guid = I_AVN_CONTROL_POINTER_WHEEL_CHANGED_HANDLER_IID; }
+
+static I_AVN_CONTROL_POINTER_WHEEL_CHANGED_HANDLER_VTBL: IAvnControlPointerWheelChangedHandlerVtbl = IAvnControlPointerWheelChangedHandlerVtbl {
+    query_interface: i_avn_control_pointer_wheel_changed_handler_query_interface,
+    add_ref: i_avn_control_pointer_wheel_changed_handler_add_ref,
+    release: i_avn_control_pointer_wheel_changed_handler_release,
+    invoke: i_avn_control_pointer_wheel_changed_handler_invoke,
+};
+
+pub fn control_pointer_wheel_changed_handler(callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) -> Result<()> + Send + 'static) -> ComPtr<IAvnControlPointerWheelChangedHandler> {
+    crate::event_callback::create(IAvnControlPointerWheelChangedHandler { vtbl: &I_AVN_CONTROL_POINTER_WHEEL_CHANGED_HANDLER_VTBL }, callback)
+}
+
+unsafe extern "system" fn i_avn_control_pointer_wheel_changed_handler_query_interface(this: *mut IUnknown, iid: *const Guid, result: *mut *mut c_void) -> i32 {
+    crate::event_callback::query_interface::<IAvnControlPointerWheelChangedHandler, ControlPointerWheelChangedEventArgs>(this, iid, result)
+}
+
+unsafe extern "system" fn i_avn_control_pointer_wheel_changed_handler_add_ref(this: *mut IUnknown) -> u32 {
+    crate::event_callback::add_ref::<IAvnControlPointerWheelChangedHandler, ControlPointerWheelChangedEventArgs>(this)
+}
+
+unsafe extern "system" fn i_avn_control_pointer_wheel_changed_handler_release(this: *mut IUnknown) -> u32 {
+    crate::event_callback::release::<IAvnControlPointerWheelChangedHandler, ControlPointerWheelChangedEventArgs>(this)
+}
+
+unsafe extern "system" fn i_avn_control_pointer_wheel_changed_handler_invoke(this: *mut IAvnControlPointerWheelChangedHandler, delta: AvnVector, key_modifiers: i32) -> i32 {
+    let mut arguments = ControlPointerWheelChangedEventArgs {
+        delta,
+        key_modifiers,
+    };
+    let hr = crate::event_callback::invoke::<IAvnControlPointerWheelChangedHandler, ControlPointerWheelChangedEventArgs>(this, &mut arguments);
+    if hr >= 0 {
+    }
+    hr
+}
+
+pub const I_AVN_CONTROL_TAPPED_HANDLER_IID: Guid = Guid { data1: 0x7784D53F, data2: 0xFAEE, data3: 0x5089, data4: [0x88, 0x44, 0xC9, 0xF5, 0xCC, 0x3E, 0x86, 0x32] };
+
+#[derive(Debug)]
+pub struct ControlTappedEventArgs {
+    pub key_modifiers: i32,
+}
+
+#[repr(C)]
+struct IAvnControlTappedHandlerVtbl {
+    query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
+    add_ref: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    release: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    invoke: unsafe extern "system" fn(*mut IAvnControlTappedHandler, key_modifiers: i32) -> i32,
+}
+
+#[repr(C)]
+pub struct IAvnControlTappedHandler { vtbl: *const IAvnControlTappedHandlerVtbl }
+
+unsafe impl ComInterface for IAvnControlTappedHandler { const IID: Guid = I_AVN_CONTROL_TAPPED_HANDLER_IID; }
+
+static I_AVN_CONTROL_TAPPED_HANDLER_VTBL: IAvnControlTappedHandlerVtbl = IAvnControlTappedHandlerVtbl {
+    query_interface: i_avn_control_tapped_handler_query_interface,
+    add_ref: i_avn_control_tapped_handler_add_ref,
+    release: i_avn_control_tapped_handler_release,
+    invoke: i_avn_control_tapped_handler_invoke,
+};
+
+pub fn control_tapped_handler(callback: impl FnMut(&mut ControlTappedEventArgs) -> Result<()> + Send + 'static) -> ComPtr<IAvnControlTappedHandler> {
+    crate::event_callback::create(IAvnControlTappedHandler { vtbl: &I_AVN_CONTROL_TAPPED_HANDLER_VTBL }, callback)
+}
+
+unsafe extern "system" fn i_avn_control_tapped_handler_query_interface(this: *mut IUnknown, iid: *const Guid, result: *mut *mut c_void) -> i32 {
+    crate::event_callback::query_interface::<IAvnControlTappedHandler, ControlTappedEventArgs>(this, iid, result)
+}
+
+unsafe extern "system" fn i_avn_control_tapped_handler_add_ref(this: *mut IUnknown) -> u32 {
+    crate::event_callback::add_ref::<IAvnControlTappedHandler, ControlTappedEventArgs>(this)
+}
+
+unsafe extern "system" fn i_avn_control_tapped_handler_release(this: *mut IUnknown) -> u32 {
+    crate::event_callback::release::<IAvnControlTappedHandler, ControlTappedEventArgs>(this)
+}
+
+unsafe extern "system" fn i_avn_control_tapped_handler_invoke(this: *mut IAvnControlTappedHandler, key_modifiers: i32) -> i32 {
+    let mut arguments = ControlTappedEventArgs {
+        key_modifiers,
+    };
+    let hr = crate::event_callback::invoke::<IAvnControlTappedHandler, ControlTappedEventArgs>(this, &mut arguments);
+    if hr >= 0 {
+    }
+    hr
+}
+
+pub const I_AVN_CONTROL_DOUBLE_TAPPED_HANDLER_IID: Guid = Guid { data1: 0x11D5E069, data2: 0xAEFD, data3: 0x566B, data4: [0x92, 0xCC, 0xCD, 0xB4, 0x83, 0x87, 0x7C, 0x33] };
+
+#[repr(C)]
+struct IAvnControlDoubleTappedHandlerVtbl {
+    query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
+    add_ref: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    release: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    invoke: unsafe extern "system" fn(*mut IAvnControlDoubleTappedHandler) -> i32,
+}
+
+#[repr(C)]
+pub struct IAvnControlDoubleTappedHandler {
+    vtbl: *const IAvnControlDoubleTappedHandlerVtbl,
+}
+
+unsafe impl ComInterface for IAvnControlDoubleTappedHandler {
+    const IID: Guid = I_AVN_CONTROL_DOUBLE_TAPPED_HANDLER_IID;
+}
+
+impl ComPtr<IAvnControlDoubleTappedHandler> {
+    pub fn invoke(&self) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().invoke)(self.as_raw());
+            hresult::check(hr)
+        }
+    }
+}
+
+static I_AVN_CONTROL_DOUBLE_TAPPED_HANDLER_VTBL: IAvnControlDoubleTappedHandlerVtbl = IAvnControlDoubleTappedHandlerVtbl {
+    query_interface: i_avn_control_double_tapped_handler_query_interface,
+    add_ref: i_avn_control_double_tapped_handler_add_ref,
+    release: i_avn_control_double_tapped_handler_release,
+    invoke: i_avn_control_double_tapped_handler_invoke,
+};
+
+pub fn control_double_tapped_handler(mut callback: impl FnMut() -> Result<()> + Send + 'static) -> ComPtr<IAvnControlDoubleTappedHandler> {
+    crate::event_callback::create::<IAvnControlDoubleTappedHandler, ()>(IAvnControlDoubleTappedHandler { vtbl: &I_AVN_CONTROL_DOUBLE_TAPPED_HANDLER_VTBL }, move |_| callback())
+}
+
+unsafe extern "system" fn i_avn_control_double_tapped_handler_query_interface(this: *mut IUnknown, iid: *const Guid, result: *mut *mut c_void) -> i32 {
+    crate::event_callback::query_interface::<IAvnControlDoubleTappedHandler, ()>(this, iid, result)
+}
+
+unsafe extern "system" fn i_avn_control_double_tapped_handler_add_ref(this: *mut IUnknown) -> u32 {
+    crate::event_callback::add_ref::<IAvnControlDoubleTappedHandler, ()>(this)
+}
+
+unsafe extern "system" fn i_avn_control_double_tapped_handler_release(this: *mut IUnknown) -> u32 {
+    crate::event_callback::release::<IAvnControlDoubleTappedHandler, ()>(this)
+}
+
+unsafe extern "system" fn i_avn_control_double_tapped_handler_invoke(this: *mut IAvnControlDoubleTappedHandler) -> i32 {
+    crate::event_callback::invoke::<IAvnControlDoubleTappedHandler, ()>(this, &mut ())
 }
 
 pub const I_AVN_DATE_PICKER_SELECTED_DATE_CHANGED_HANDLER_IID: Guid = Guid { data1: 0x74C9BE6F, data2: 0xE5CD, data3: 0x5936, data4: [0xB4, 0xBF, 0x59, 0xCC, 0x08, 0x43, 0x09, 0x6F] };
@@ -6148,7 +6307,7 @@ impl ComPtr<IAvnAvaloniaObject> {
     }
 }
 
-pub const I_AVN_AUTO_COMPLETE_BOX_IID: Guid = Guid { data1: 0x86643B56, data2: 0xB59D, data3: 0x5EE3, data4: [0x8A, 0x9B, 0xD4, 0x4F, 0x7D, 0xA9, 0x09, 0xE7] };
+pub const I_AVN_AUTO_COMPLETE_BOX_IID: Guid = Guid { data1: 0x26FFE15E, data2: 0x6149, data3: 0x5898, data4: [0x93, 0xEB, 0x55, 0x90, 0x93, 0x38, 0xDC, 0x9A] };
 
 #[repr(C)]
 struct IAvnAutoCompleteBoxVtbl {
@@ -6227,6 +6386,12 @@ struct IAvnAutoCompleteBoxVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, *mut i32) -> i32,
@@ -6822,6 +6987,45 @@ impl ComPtr<IAvnAutoCompleteBox> {
     pub fn unadvise_pointer_exited(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_exited)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -7453,7 +7657,7 @@ impl ComPtr<IAvnAutoCompleteBox> {
     }
 }
 
-pub const I_AVN_BORDER_IID: Guid = Guid { data1: 0xDFE5487A, data2: 0xB7C3, data3: 0x5DD1, data4: [0xA6, 0xEF, 0x0C, 0xC9, 0xB9, 0xE6, 0xFC, 0x9C] };
+pub const I_AVN_BORDER_IID: Guid = Guid { data1: 0xDF677487, data2: 0xF79D, data3: 0x50DF, data4: [0xA4, 0x74, 0x0A, 0xF6, 0x9F, 0x6A, 0x6C, 0x5B] };
 
 #[repr(C)]
 struct IAvnBorderVtbl {
@@ -7532,6 +7736,12 @@ struct IAvnBorderVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnBorder, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnBorder, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnBorder, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnBorder, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnBorder, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnBorder, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnBorder, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnBorder, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnBorder, i64) -> i32,
     get_child: unsafe extern "system" fn(*mut IAvnBorder, *mut *mut IAvnControl) -> i32,
     set_child: unsafe extern "system" fn(*mut IAvnBorder, *mut IAvnControl) -> i32,
     get_padding: unsafe extern "system" fn(*mut IAvnBorder, *mut AvnThickness) -> i32,
@@ -8057,6 +8267,45 @@ impl ComPtr<IAvnBorder> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_child(&self) -> Result<Option<ComPtr<IAvnControl>>> {
         unsafe {
             let mut value: *mut IAvnControl = ptr::null_mut();
@@ -8180,7 +8429,7 @@ impl ComPtr<IAvnBorder> {
     }
 }
 
-pub const I_AVN_BUTTON_IID: Guid = Guid { data1: 0x39E10286, data2: 0x7BB7, data3: 0x511B, data4: [0x88, 0x85, 0x73, 0x3B, 0x3A, 0xB3, 0x80, 0xF6] };
+pub const I_AVN_BUTTON_IID: Guid = Guid { data1: 0xE66D2CD1, data2: 0xA3CD, data3: 0x538E, data4: [0x96, 0x07, 0xB5, 0xE7, 0x84, 0x66, 0x9C, 0x89] };
 
 #[repr(C)]
 struct IAvnButtonVtbl {
@@ -8259,6 +8508,12 @@ struct IAvnButtonVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnButton, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnButton, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnButton, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnButton, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnButton, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnButton, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnButton, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnButton, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnButton, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnButton, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnButton, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnButton, *mut i32) -> i32,
@@ -8820,6 +9075,45 @@ impl ComPtr<IAvnButton> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -9196,7 +9490,7 @@ impl ComPtr<IAvnButton> {
     }
 }
 
-pub const I_AVN_BUTTON_SPINNER_IID: Guid = Guid { data1: 0x121045E2, data2: 0x0F99, data3: 0x5036, data4: [0xA5, 0xF8, 0x37, 0x3B, 0x15, 0xBC, 0x64, 0x49] };
+pub const I_AVN_BUTTON_SPINNER_IID: Guid = Guid { data1: 0xBD9E8536, data2: 0xAD5B, data3: 0x51C7, data4: [0xB3, 0xE0, 0x2D, 0xB5, 0x21, 0x85, 0x2F, 0x7C] };
 
 #[repr(C)]
 struct IAvnButtonSpinnerVtbl {
@@ -9275,6 +9569,12 @@ struct IAvnButtonSpinnerVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnButtonSpinner, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnButtonSpinner, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnButtonSpinner, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnButtonSpinner, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnButtonSpinner, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnButtonSpinner, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnButtonSpinner, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnButtonSpinner, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnButtonSpinner, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnButtonSpinner, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnButtonSpinner, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnButtonSpinner, *mut i32) -> i32,
@@ -9829,6 +10129,45 @@ impl ComPtr<IAvnButtonSpinner> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -10154,7 +10493,7 @@ impl ComPtr<IAvnButtonSpinner> {
     }
 }
 
-pub const I_AVN_CALENDAR_IID: Guid = Guid { data1: 0xD1959E20, data2: 0xE08E, data3: 0x5A66, data4: [0xA6, 0x3B, 0x4B, 0xD7, 0x14, 0xE6, 0x09, 0xD7] };
+pub const I_AVN_CALENDAR_IID: Guid = Guid { data1: 0x9FF3FEBD, data2: 0x5CC5, data3: 0x5DB1, data4: [0x94, 0xDA, 0xE0, 0x3D, 0x3D, 0x41, 0xD9, 0x47] };
 
 #[repr(C)]
 struct IAvnCalendarVtbl {
@@ -10233,6 +10572,12 @@ struct IAvnCalendarVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnCalendar, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnCalendar, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnCalendar, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnCalendar, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnCalendar, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnCalendar, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnCalendar, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnCalendar, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnCalendar, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnCalendar, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnCalendar, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnCalendar, *mut i32) -> i32,
@@ -10801,6 +11146,45 @@ impl ComPtr<IAvnCalendar> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -11228,7 +11612,7 @@ impl ComPtr<IAvnCalendar> {
     }
 }
 
-pub const I_AVN_CALENDAR_DATE_PICKER_IID: Guid = Guid { data1: 0x52B3592A, data2: 0xD20D, data3: 0x5C93, data4: [0x8D, 0x31, 0xE0, 0x55, 0x2A, 0x74, 0x45, 0xFE] };
+pub const I_AVN_CALENDAR_DATE_PICKER_IID: Guid = Guid { data1: 0x57923347, data2: 0x6143, data3: 0x59E6, data4: [0xBA, 0xFC, 0xC7, 0x45, 0xA8, 0x98, 0x21, 0x64] };
 
 #[repr(C)]
 struct IAvnCalendarDatePickerVtbl {
@@ -11307,6 +11691,12 @@ struct IAvnCalendarDatePickerVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, *mut i32) -> i32,
@@ -11887,6 +12277,45 @@ impl ComPtr<IAvnCalendarDatePicker> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -12398,7 +12827,7 @@ impl ComPtr<IAvnCalendarDatePicker> {
     }
 }
 
-pub const I_AVN_CANVAS_IID: Guid = Guid { data1: 0xCE4E710B, data2: 0xD3A5, data3: 0x5021, data4: [0xA3, 0x43, 0x75, 0x8F, 0xA0, 0x78, 0xE7, 0x91] };
+pub const I_AVN_CANVAS_IID: Guid = Guid { data1: 0xC16EF1BD, data2: 0x5F4F, data3: 0x5C2C, data4: [0xA3, 0xEA, 0x50, 0x8C, 0x4B, 0x05, 0xBA, 0x3C] };
 
 #[repr(C)]
 struct IAvnCanvasVtbl {
@@ -12477,6 +12906,12 @@ struct IAvnCanvasVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnCanvas, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnCanvas, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnCanvas, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnCanvas, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnCanvas, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnCanvas, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnCanvas, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnCanvas, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnCanvas, i64) -> i32,
     get_children: unsafe extern "system" fn(*mut IAvnCanvas, *mut *mut IAvnControlList) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnCanvas, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnCanvas, *mut IAvnBrush) -> i32,
@@ -12988,6 +13423,45 @@ impl ComPtr<IAvnCanvas> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_children(&self) -> Result<ComPtr<IAvnControlList>> {
         unsafe {
             let mut value: *mut IAvnControlList = ptr::null_mut();
@@ -13012,7 +13486,7 @@ impl ComPtr<IAvnCanvas> {
     }
 }
 
-pub const I_AVN_CAROUSEL_IID: Guid = Guid { data1: 0xB496C390, data2: 0x157D, data3: 0x54E1, data4: [0x84, 0x15, 0xE4, 0x87, 0xE9, 0x3D, 0xAF, 0x7D] };
+pub const I_AVN_CAROUSEL_IID: Guid = Guid { data1: 0x78C353C4, data2: 0x749B, data3: 0x55FC, data4: [0xA9, 0xEF, 0x66, 0x60, 0x81, 0x55, 0xB0, 0xDB] };
 
 #[repr(C)]
 struct IAvnCarouselVtbl {
@@ -13091,6 +13565,12 @@ struct IAvnCarouselVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnCarousel, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnCarousel, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnCarousel, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnCarousel, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnCarousel, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnCarousel, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnCarousel, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnCarousel, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnCarousel, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnCarousel, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnCarousel, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnCarousel, *mut i32) -> i32,
@@ -13660,6 +14140,45 @@ impl ComPtr<IAvnCarousel> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -14089,7 +14608,7 @@ impl ComPtr<IAvnCarousel> {
     }
 }
 
-pub const I_AVN_CHECK_BOX_IID: Guid = Guid { data1: 0xAACDB973, data2: 0xAF3D, data3: 0x5BA5, data4: [0xA0, 0x94, 0x63, 0x51, 0x78, 0xEF, 0x2C, 0x2E] };
+pub const I_AVN_CHECK_BOX_IID: Guid = Guid { data1: 0xC4E191D8, data2: 0x29FB, data3: 0x5623, data4: [0xAF, 0x97, 0xE3, 0xAA, 0xD9, 0x50, 0xE2, 0x7B] };
 
 #[repr(C)]
 struct IAvnCheckBoxVtbl {
@@ -14168,6 +14687,12 @@ struct IAvnCheckBoxVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnCheckBox, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnCheckBox, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnCheckBox, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnCheckBox, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnCheckBox, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnCheckBox, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnCheckBox, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnCheckBox, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnCheckBox, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnCheckBox, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnCheckBox, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnCheckBox, *mut i32) -> i32,
@@ -14735,6 +15260,45 @@ impl ComPtr<IAvnCheckBox> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -15152,7 +15716,7 @@ impl ComPtr<IAvnCheckBox> {
     }
 }
 
-pub const I_AVN_COMBO_BOX_IID: Guid = Guid { data1: 0xC05FA67D, data2: 0x1BEE, data3: 0x51A8, data4: [0x93, 0x67, 0x03, 0x00, 0xAA, 0x1C, 0xAE, 0x23] };
+pub const I_AVN_COMBO_BOX_IID: Guid = Guid { data1: 0xEEBBD41C, data2: 0x3704, data3: 0x5BC1, data4: [0xBB, 0x31, 0xE8, 0x7E, 0xF4, 0x07, 0xCB, 0x79] };
 
 #[repr(C)]
 struct IAvnComboBoxVtbl {
@@ -15231,6 +15795,12 @@ struct IAvnComboBoxVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnComboBox, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnComboBox, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnComboBox, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnComboBox, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnComboBox, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnComboBox, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnComboBox, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnComboBox, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnComboBox, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnComboBox, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnComboBox, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnComboBox, *mut i32) -> i32,
@@ -15813,6 +16383,45 @@ impl ComPtr<IAvnComboBox> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -16334,7 +16943,7 @@ impl ComPtr<IAvnComboBox> {
     }
 }
 
-pub const I_AVN_COMBO_BOX_ITEM_IID: Guid = Guid { data1: 0x4AF5334E, data2: 0x4FEC, data3: 0x5F97, data4: [0x84, 0xF0, 0xCD, 0x61, 0xFD, 0x0C, 0x6B, 0x88] };
+pub const I_AVN_COMBO_BOX_ITEM_IID: Guid = Guid { data1: 0x66D70CA8, data2: 0x4E9B, data3: 0x5BD6, data4: [0x95, 0x83, 0x82, 0x59, 0x51, 0x61, 0xCB, 0x34] };
 
 #[repr(C)]
 struct IAvnComboBoxItemVtbl {
@@ -16413,6 +17022,12 @@ struct IAvnComboBoxItemVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnComboBoxItem, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnComboBoxItem, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnComboBoxItem, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnComboBoxItem, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnComboBoxItem, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnComboBoxItem, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnComboBoxItem, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnComboBoxItem, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnComboBoxItem, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnComboBoxItem, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnComboBoxItem, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnComboBoxItem, *mut i32) -> i32,
@@ -16959,6 +17574,45 @@ impl ComPtr<IAvnComboBoxItem> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -17229,7 +17883,7 @@ impl ComPtr<IAvnComboBoxItem> {
     }
 }
 
-pub const I_AVN_COMMAND_BAR_IID: Guid = Guid { data1: 0x355E12ED, data2: 0x4932, data3: 0x5C4C, data4: [0x8A, 0xC1, 0xAA, 0x74, 0xB6, 0x66, 0xB5, 0x84] };
+pub const I_AVN_COMMAND_BAR_IID: Guid = Guid { data1: 0x180E1033, data2: 0xDD01, data3: 0x5433, data4: [0xA4, 0x91, 0xB2, 0x04, 0x9D, 0x71, 0x94, 0x49] };
 
 #[repr(C)]
 struct IAvnCommandBarVtbl {
@@ -17308,6 +17962,12 @@ struct IAvnCommandBarVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnCommandBar, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnCommandBar, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnCommandBar, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnCommandBar, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnCommandBar, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnCommandBar, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnCommandBar, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnCommandBar, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnCommandBar, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnCommandBar, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnCommandBar, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnCommandBar, *mut i32) -> i32,
@@ -17878,6 +18538,45 @@ impl ComPtr<IAvnCommandBar> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -18316,7 +19015,7 @@ impl ComPtr<IAvnCommandBar> {
     }
 }
 
-pub const I_AVN_COMMAND_BAR_BUTTON_IID: Guid = Guid { data1: 0x3A7F177E, data2: 0xFB8E, data3: 0x5893, data4: [0xB5, 0x74, 0x99, 0xAC, 0xD4, 0xCB, 0xC8, 0xB5] };
+pub const I_AVN_COMMAND_BAR_BUTTON_IID: Guid = Guid { data1: 0x259356D2, data2: 0x8840, data3: 0x5531, data4: [0x94, 0x27, 0x7F, 0xD0, 0xB9, 0x70, 0x7A, 0xC7] };
 
 #[repr(C)]
 struct IAvnCommandBarButtonVtbl {
@@ -18395,6 +19094,12 @@ struct IAvnCommandBarButtonVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnCommandBarButton, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnCommandBarButton, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnCommandBarButton, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnCommandBarButton, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnCommandBarButton, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnCommandBarButton, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnCommandBarButton, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnCommandBarButton, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnCommandBarButton, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnCommandBarButton, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnCommandBarButton, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnCommandBarButton, *mut i32) -> i32,
@@ -18968,6 +19673,45 @@ impl ComPtr<IAvnCommandBarButton> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -19429,7 +20173,7 @@ impl ComPtr<IAvnCommandBarButton> {
     }
 }
 
-pub const I_AVN_COMMAND_BAR_SEPARATOR_IID: Guid = Guid { data1: 0x21D4AA3D, data2: 0xADFF, data3: 0x5CC6, data4: [0x9E, 0x76, 0xEA, 0x1F, 0xBB, 0xD1, 0x1C, 0x33] };
+pub const I_AVN_COMMAND_BAR_SEPARATOR_IID: Guid = Guid { data1: 0x3438DF70, data2: 0xF2D1, data3: 0x5474, data4: [0xA2, 0x88, 0xD9, 0x7C, 0xCE, 0xAC, 0xC9, 0xF9] };
 
 #[repr(C)]
 struct IAvnCommandBarSeparatorVtbl {
@@ -19508,6 +20252,12 @@ struct IAvnCommandBarSeparatorVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, *mut i32) -> i32,
@@ -20048,6 +20798,45 @@ impl ComPtr<IAvnCommandBarSeparator> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -20276,7 +21065,7 @@ impl ComPtr<IAvnCommandBarSeparator> {
     }
 }
 
-pub const I_AVN_COMMAND_BAR_TOGGLE_BUTTON_IID: Guid = Guid { data1: 0x28AA86DE, data2: 0x6253, data3: 0x5D07, data4: [0x96, 0x4D, 0x23, 0x78, 0x55, 0x52, 0xFB, 0x86] };
+pub const I_AVN_COMMAND_BAR_TOGGLE_BUTTON_IID: Guid = Guid { data1: 0x97BD5478, data2: 0x2731, data3: 0x5994, data4: [0x94, 0x27, 0x4A, 0x6E, 0xCB, 0x9E, 0xE0, 0x4B] };
 
 #[repr(C)]
 struct IAvnCommandBarToggleButtonVtbl {
@@ -20355,6 +21144,12 @@ struct IAvnCommandBarToggleButtonVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, *mut i32) -> i32,
@@ -20934,6 +21729,45 @@ impl ComPtr<IAvnCommandBarToggleButton> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -21436,7 +22270,7 @@ impl ComPtr<IAvnCommandBarToggleButton> {
     }
 }
 
-pub const I_AVN_CONTENT_CONTROL_IID: Guid = Guid { data1: 0x71FA5ADD, data2: 0x9F62, data3: 0x5918, data4: [0x84, 0xD4, 0x4B, 0x30, 0x0B, 0x8E, 0xA1, 0x92] };
+pub const I_AVN_CONTENT_CONTROL_IID: Guid = Guid { data1: 0x611A61DE, data2: 0x9AD0, data3: 0x5456, data4: [0x97, 0x9A, 0xEE, 0x52, 0x5E, 0x51, 0x32, 0xCE] };
 
 #[repr(C)]
 struct IAvnContentControlVtbl {
@@ -21515,6 +22349,12 @@ struct IAvnContentControlVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnContentControl, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnContentControl, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnContentControl, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnContentControl, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnContentControl, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnContentControl, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnContentControl, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnContentControl, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnContentControl, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnContentControl, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnContentControl, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnContentControl, *mut i32) -> i32,
@@ -22059,6 +22899,45 @@ impl ComPtr<IAvnContentControl> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -22315,7 +23194,7 @@ impl ComPtr<IAvnContentControl> {
     }
 }
 
-pub const I_AVN_CONTEXT_MENU_IID: Guid = Guid { data1: 0x770B19A7, data2: 0xFB74, data3: 0x5BCA, data4: [0xB1, 0xDD, 0x9E, 0x0E, 0xF1, 0x24, 0xEF, 0xEE] };
+pub const I_AVN_CONTEXT_MENU_IID: Guid = Guid { data1: 0xF63FBE8E, data2: 0x277B, data3: 0x531C, data4: [0xB3, 0xF5, 0xE9, 0xA2, 0xCC, 0xEF, 0x11, 0xA8] };
 
 #[repr(C)]
 struct IAvnContextMenuVtbl {
@@ -22394,6 +23273,12 @@ struct IAvnContextMenuVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnContextMenu, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnContextMenu, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnContextMenu, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnContextMenu, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnContextMenu, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnContextMenu, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnContextMenu, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnContextMenu, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnContextMenu, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnContextMenu, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnContextMenu, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnContextMenu, *mut i32) -> i32,
@@ -22985,6 +23870,45 @@ impl ComPtr<IAvnContextMenu> {
     pub fn unadvise_pointer_exited(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_exited)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -23587,7 +24511,7 @@ impl ComPtr<IAvnContextMenu> {
     }
 }
 
-pub const I_AVN_CONTROL_IID: Guid = Guid { data1: 0xABDFF81D, data2: 0xDB26, data3: 0x5BB7, data4: [0x9A, 0xCA, 0x18, 0x35, 0x3E, 0x6D, 0xB4, 0xD4] };
+pub const I_AVN_CONTROL_IID: Guid = Guid { data1: 0xE2F44292, data2: 0x89FA, data3: 0x5AFA, data4: [0x92, 0x94, 0xFF, 0x2F, 0x26, 0xDB, 0x68, 0xCE] };
 
 #[repr(C)]
 struct IAvnControlVtbl {
@@ -23666,6 +24590,12 @@ struct IAvnControlVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnControl, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnControl, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnControl, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnControl, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnControl, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnControl, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnControl, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnControl, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnControl, i64) -> i32,
 }
 
 #[repr(C)]
@@ -24174,9 +25104,48 @@ impl ComPtr<IAvnControl> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
 }
 
-pub const I_AVN_DATE_PICKER_IID: Guid = Guid { data1: 0x1441AD02, data2: 0x88FD, data3: 0x5BCE, data4: [0x9A, 0x23, 0x18, 0x60, 0x76, 0x67, 0xFA, 0xA3] };
+pub const I_AVN_DATE_PICKER_IID: Guid = Guid { data1: 0xDF809CB0, data2: 0x67FA, data3: 0x58E8, data4: [0x92, 0x0C, 0x1B, 0x95, 0x74, 0xA7, 0xB3, 0x69] };
 
 #[repr(C)]
 struct IAvnDatePickerVtbl {
@@ -24255,6 +25224,12 @@ struct IAvnDatePickerVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnDatePicker, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnDatePicker, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnDatePicker, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnDatePicker, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnDatePicker, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnDatePicker, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnDatePicker, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnDatePicker, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnDatePicker, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnDatePicker, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnDatePicker, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnDatePicker, *mut i32) -> i32,
@@ -24814,6 +25789,45 @@ impl ComPtr<IAvnDatePicker> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -25179,7 +26193,7 @@ impl ComPtr<IAvnDatePicker> {
     }
 }
 
-pub const I_AVN_DECORATOR_IID: Guid = Guid { data1: 0x73D7A8D4, data2: 0x2B75, data3: 0x5F19, data4: [0x95, 0x8F, 0xDE, 0x0D, 0x15, 0xAC, 0x30, 0x79] };
+pub const I_AVN_DECORATOR_IID: Guid = Guid { data1: 0xC3E4D085, data2: 0x4977, data3: 0x566E, data4: [0xB8, 0x43, 0x75, 0xD8, 0x6B, 0x43, 0xC2, 0xC9] };
 
 #[repr(C)]
 struct IAvnDecoratorVtbl {
@@ -25258,6 +26272,12 @@ struct IAvnDecoratorVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnDecorator, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnDecorator, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnDecorator, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnDecorator, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnDecorator, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnDecorator, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnDecorator, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnDecorator, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnDecorator, i64) -> i32,
     get_child: unsafe extern "system" fn(*mut IAvnDecorator, *mut *mut IAvnControl) -> i32,
     set_child: unsafe extern "system" fn(*mut IAvnDecorator, *mut IAvnControl) -> i32,
     get_padding: unsafe extern "system" fn(*mut IAvnDecorator, *mut AvnThickness) -> i32,
@@ -25770,6 +26790,45 @@ impl ComPtr<IAvnDecorator> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_child(&self) -> Result<Option<ComPtr<IAvnControl>>> {
         unsafe {
             let mut value: *mut IAvnControl = ptr::null_mut();
@@ -25800,7 +26859,7 @@ impl ComPtr<IAvnDecorator> {
     }
 }
 
-pub const I_AVN_DOCK_PANEL_IID: Guid = Guid { data1: 0x36376ACD, data2: 0x9F74, data3: 0x59B8, data4: [0xAD, 0xCA, 0xCA, 0xE9, 0x6F, 0x5E, 0x70, 0xB9] };
+pub const I_AVN_DOCK_PANEL_IID: Guid = Guid { data1: 0x8D7E3210, data2: 0x853F, data3: 0x5D42, data4: [0xAE, 0x5B, 0xA5, 0x91, 0x5B, 0xD5, 0x39, 0x28] };
 
 #[repr(C)]
 struct IAvnDockPanelVtbl {
@@ -25879,6 +26938,12 @@ struct IAvnDockPanelVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnDockPanel, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnDockPanel, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnDockPanel, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnDockPanel, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnDockPanel, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnDockPanel, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnDockPanel, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnDockPanel, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnDockPanel, i64) -> i32,
     get_children: unsafe extern "system" fn(*mut IAvnDockPanel, *mut *mut IAvnControlList) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnDockPanel, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnDockPanel, *mut IAvnBrush) -> i32,
@@ -26396,6 +27461,45 @@ impl ComPtr<IAvnDockPanel> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_children(&self) -> Result<ComPtr<IAvnControlList>> {
         unsafe {
             let mut value: *mut IAvnControlList = ptr::null_mut();
@@ -26462,7 +27566,7 @@ impl ComPtr<IAvnDockPanel> {
     }
 }
 
-pub const I_AVN_DROP_DOWN_BUTTON_IID: Guid = Guid { data1: 0x85F27971, data2: 0xCEB0, data3: 0x528D, data4: [0x8D, 0x3B, 0xC0, 0xAB, 0x62, 0xE1, 0x1F, 0xDA] };
+pub const I_AVN_DROP_DOWN_BUTTON_IID: Guid = Guid { data1: 0xBCBBD462, data2: 0xBE4D, data3: 0x517B, data4: [0x96, 0xB1, 0xBD, 0xF7, 0x62, 0xCA, 0x9B, 0x4B] };
 
 #[repr(C)]
 struct IAvnDropDownButtonVtbl {
@@ -26541,6 +27645,12 @@ struct IAvnDropDownButtonVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnDropDownButton, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnDropDownButton, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnDropDownButton, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnDropDownButton, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnDropDownButton, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnDropDownButton, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnDropDownButton, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnDropDownButton, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnDropDownButton, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnDropDownButton, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnDropDownButton, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnDropDownButton, *mut i32) -> i32,
@@ -27102,6 +28212,45 @@ impl ComPtr<IAvnDropDownButton> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -27478,7 +28627,7 @@ impl ComPtr<IAvnDropDownButton> {
     }
 }
 
-pub const I_AVN_EXPANDER_IID: Guid = Guid { data1: 0x5655BDB3, data2: 0xEF10, data3: 0x56D0, data4: [0xBE, 0x24, 0x59, 0xFC, 0x88, 0x35, 0x09, 0x39] };
+pub const I_AVN_EXPANDER_IID: Guid = Guid { data1: 0xDFCCCA83, data2: 0x1ADA, data3: 0x5620, data4: [0x82, 0x30, 0x0C, 0x1D, 0x66, 0x50, 0x7F, 0x12] };
 
 #[repr(C)]
 struct IAvnExpanderVtbl {
@@ -27557,6 +28706,12 @@ struct IAvnExpanderVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnExpander, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnExpander, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnExpander, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnExpander, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnExpander, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnExpander, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnExpander, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnExpander, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnExpander, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnExpander, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnExpander, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnExpander, *mut i32) -> i32,
@@ -28117,6 +29272,45 @@ impl ComPtr<IAvnExpander> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -28481,7 +29675,7 @@ impl ComPtr<IAvnExpander> {
     }
 }
 
-pub const I_AVN_FLEX_PANEL_IID: Guid = Guid { data1: 0x5E186F8A, data2: 0xD1FB, data3: 0x5989, data4: [0xA4, 0x96, 0x63, 0x98, 0x2A, 0x99, 0x97, 0x52] };
+pub const I_AVN_FLEX_PANEL_IID: Guid = Guid { data1: 0x1CC87ECC, data2: 0x363C, data3: 0x5A07, data4: [0x90, 0x23, 0xAE, 0xA8, 0x0D, 0xBE, 0xF8, 0xB0] };
 
 #[repr(C)]
 struct IAvnFlexPanelVtbl {
@@ -28560,6 +29754,12 @@ struct IAvnFlexPanelVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnFlexPanel, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnFlexPanel, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnFlexPanel, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnFlexPanel, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnFlexPanel, i64) -> i32,
     get_children: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut *mut IAvnControlList) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnBrush) -> i32,
@@ -29085,6 +30285,45 @@ impl ComPtr<IAvnFlexPanel> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_children(&self) -> Result<ComPtr<IAvnControlList>> {
         unsafe {
             let mut value: *mut IAvnControlList = ptr::null_mut();
@@ -29551,7 +30790,7 @@ impl ComPtr<IAvnFlyout> {
     }
 }
 
-pub const I_AVN_GRID_IID: Guid = Guid { data1: 0x63034BE5, data2: 0x179A, data3: 0x5196, data4: [0x83, 0x38, 0xF1, 0x07, 0x85, 0xC6, 0xDD, 0xDD] };
+pub const I_AVN_GRID_IID: Guid = Guid { data1: 0x887286EA, data2: 0x8097, data3: 0x52EB, data4: [0x9C, 0xEF, 0xFA, 0x1D, 0xA7, 0x82, 0x8D, 0x0F] };
 
 #[repr(C)]
 struct IAvnGridVtbl {
@@ -29630,6 +30869,12 @@ struct IAvnGridVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnGrid, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnGrid, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnGrid, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnGrid, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnGrid, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnGrid, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnGrid, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnGrid, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnGrid, i64) -> i32,
     get_children: unsafe extern "system" fn(*mut IAvnGrid, *mut *mut IAvnControlList) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnGrid, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnGrid, *mut IAvnBrush) -> i32,
@@ -30151,6 +31396,45 @@ impl ComPtr<IAvnGrid> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_children(&self) -> Result<ComPtr<IAvnControlList>> {
         unsafe {
             let mut value: *mut IAvnControlList = ptr::null_mut();
@@ -30247,7 +31531,7 @@ impl ComPtr<IAvnGrid> {
     }
 }
 
-pub const I_AVN_GRID_SPLITTER_IID: Guid = Guid { data1: 0x93629BF6, data2: 0xE409, data3: 0x5BF3, data4: [0xBB, 0x49, 0x45, 0x4A, 0x88, 0x45, 0x50, 0xE3] };
+pub const I_AVN_GRID_SPLITTER_IID: Guid = Guid { data1: 0x9D81E579, data2: 0x275C, data3: 0x53A1, data4: [0x8C, 0x3B, 0x91, 0xF1, 0x0E, 0x2D, 0x84, 0x03] };
 
 #[repr(C)]
 struct IAvnGridSplitterVtbl {
@@ -30326,6 +31610,12 @@ struct IAvnGridSplitterVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnGridSplitter, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnGridSplitter, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnGridSplitter, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnGridSplitter, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnGridSplitter, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnGridSplitter, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnGridSplitter, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnGridSplitter, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnGridSplitter, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnGridSplitter, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnGridSplitter, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnGridSplitter, *mut i32) -> i32,
@@ -30878,6 +32168,45 @@ impl ComPtr<IAvnGridSplitter> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -31187,7 +32516,7 @@ impl ComPtr<IAvnGridSplitter> {
     }
 }
 
-pub const I_AVN_GROUP_BOX_IID: Guid = Guid { data1: 0xB2A2A0DC, data2: 0x533F, data3: 0x50D6, data4: [0xB4, 0x86, 0x8A, 0xFB, 0x44, 0xB0, 0xE8, 0x2D] };
+pub const I_AVN_GROUP_BOX_IID: Guid = Guid { data1: 0xF8356E2B, data2: 0x46EA, data3: 0x58CC, data4: [0x80, 0x74, 0x78, 0x9B, 0xA4, 0x2F, 0x0C, 0x79] };
 
 #[repr(C)]
 struct IAvnGroupBoxVtbl {
@@ -31266,6 +32595,12 @@ struct IAvnGroupBoxVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnGroupBox, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnGroupBox, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnGroupBox, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnGroupBox, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnGroupBox, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnGroupBox, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnGroupBox, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnGroupBox, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnGroupBox, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnGroupBox, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnGroupBox, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnGroupBox, *mut i32) -> i32,
@@ -31814,6 +33149,45 @@ impl ComPtr<IAvnGroupBox> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -32098,7 +33472,7 @@ impl ComPtr<IAvnGroupBox> {
     }
 }
 
-pub const I_AVN_HYPERLINK_BUTTON_IID: Guid = Guid { data1: 0xCCCE2078, data2: 0xE616, data3: 0x51A8, data4: [0xA5, 0x5F, 0x77, 0xD3, 0x16, 0xF2, 0xC9, 0xAB] };
+pub const I_AVN_HYPERLINK_BUTTON_IID: Guid = Guid { data1: 0x59F93515, data2: 0x012E, data3: 0x5F89, data4: [0x99, 0x98, 0x87, 0xE5, 0x94, 0x70, 0x34, 0xC1] };
 
 #[repr(C)]
 struct IAvnHyperlinkButtonVtbl {
@@ -32177,6 +33551,12 @@ struct IAvnHyperlinkButtonVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnHyperlinkButton, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnHyperlinkButton, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnHyperlinkButton, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnHyperlinkButton, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnHyperlinkButton, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnHyperlinkButton, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnHyperlinkButton, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnHyperlinkButton, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnHyperlinkButton, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnHyperlinkButton, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnHyperlinkButton, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnHyperlinkButton, *mut i32) -> i32,
@@ -32742,6 +34122,45 @@ impl ComPtr<IAvnHyperlinkButton> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -33147,7 +34566,7 @@ impl ComPtr<IAvnHyperlinkButton> {
     }
 }
 
-pub const I_AVN_ICON_ELEMENT_IID: Guid = Guid { data1: 0x0A1BCD24, data2: 0x9DC9, data3: 0x55DB, data4: [0xB2, 0xAA, 0x93, 0x00, 0x41, 0x18, 0x5E, 0x3B] };
+pub const I_AVN_ICON_ELEMENT_IID: Guid = Guid { data1: 0x21137537, data2: 0x05A7, data3: 0x5CD9, data4: [0x8F, 0xED, 0x59, 0xDA, 0xCA, 0x08, 0x64, 0x07] };
 
 #[repr(C)]
 struct IAvnIconElementVtbl {
@@ -33226,6 +34645,12 @@ struct IAvnIconElementVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnIconElement, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnIconElement, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnIconElement, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnIconElement, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnIconElement, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnIconElement, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnIconElement, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnIconElement, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnIconElement, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnIconElement, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnIconElement, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnIconElement, *mut i32) -> i32,
@@ -33762,6 +35187,45 @@ impl ComPtr<IAvnIconElement> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -33962,7 +35426,7 @@ impl ComPtr<IAvnIconElement> {
     }
 }
 
-pub const I_AVN_IMAGE_IID: Guid = Guid { data1: 0x4A556F2B, data2: 0x827F, data3: 0x5748, data4: [0xB7, 0xCD, 0xC4, 0x84, 0x52, 0x72, 0x7A, 0x29] };
+pub const I_AVN_IMAGE_IID: Guid = Guid { data1: 0x9CBC9E3A, data2: 0x098A, data3: 0x51D7, data4: [0x96, 0x47, 0xE2, 0x06, 0x15, 0x05, 0x82, 0x87] };
 
 #[repr(C)]
 struct IAvnImageVtbl {
@@ -34041,6 +35505,12 @@ struct IAvnImageVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnImage, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnImage, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnImage, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnImage, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnImage, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnImage, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnImage, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnImage, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnImage, i64) -> i32,
     get_source: unsafe extern "system" fn(*mut IAvnImage, *mut *mut u16) -> i32,
     set_source: unsafe extern "system" fn(*mut IAvnImage, *mut u16) -> i32,
     get_blend_mode: unsafe extern "system" fn(*mut IAvnImage, *mut i32) -> i32,
@@ -34557,6 +36027,45 @@ impl ComPtr<IAvnImage> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_source(&self) -> Result<*mut u16> {
         unsafe {
             let mut value: *mut u16 = ptr::null_mut();
@@ -34616,7 +36125,7 @@ impl ComPtr<IAvnImage> {
     }
 }
 
-pub const I_AVN_ITEMS_CONTROL_IID: Guid = Guid { data1: 0xB656735C, data2: 0xEECA, data3: 0x50CC, data4: [0xA8, 0x7D, 0xB4, 0x36, 0x2F, 0x7E, 0x04, 0x5A] };
+pub const I_AVN_ITEMS_CONTROL_IID: Guid = Guid { data1: 0x45705E13, data2: 0xA906, data3: 0x50E2, data4: [0xA0, 0xD8, 0xDC, 0xC2, 0x05, 0x85, 0xFD, 0xA6] };
 
 #[repr(C)]
 struct IAvnItemsControlVtbl {
@@ -34695,6 +36204,12 @@ struct IAvnItemsControlVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnItemsControl, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnItemsControl, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnItemsControl, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnItemsControl, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnItemsControl, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnItemsControl, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnItemsControl, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnItemsControl, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnItemsControl, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnItemsControl, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnItemsControl, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnItemsControl, *mut i32) -> i32,
@@ -35243,6 +36758,45 @@ impl ComPtr<IAvnItemsControl> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -35527,7 +37081,7 @@ impl ComPtr<IAvnItemsControl> {
     }
 }
 
-pub const I_AVN_LABEL_IID: Guid = Guid { data1: 0xA1ACC10D, data2: 0x5788, data3: 0x5CFF, data4: [0x9D, 0x99, 0x79, 0x87, 0x70, 0x89, 0x8E, 0x14] };
+pub const I_AVN_LABEL_IID: Guid = Guid { data1: 0x73C1CCE5, data2: 0x8DB6, data3: 0x5A69, data4: [0xB8, 0xFB, 0xAC, 0x63, 0x95, 0x28, 0xAE, 0x72] };
 
 #[repr(C)]
 struct IAvnLabelVtbl {
@@ -35606,6 +37160,12 @@ struct IAvnLabelVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnLabel, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnLabel, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnLabel, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnLabel, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnLabel, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnLabel, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnLabel, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnLabel, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnLabel, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnLabel, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnLabel, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnLabel, *mut i32) -> i32,
@@ -36152,6 +37712,45 @@ impl ComPtr<IAvnLabel> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -36422,7 +38021,7 @@ impl ComPtr<IAvnLabel> {
     }
 }
 
-pub const I_AVN_LAYOUT_TRANSFORM_CONTROL_IID: Guid = Guid { data1: 0x5295C33E, data2: 0x5E49, data3: 0x5425, data4: [0xB0, 0x6D, 0xD0, 0xA3, 0x7D, 0x4A, 0xAE, 0x68] };
+pub const I_AVN_LAYOUT_TRANSFORM_CONTROL_IID: Guid = Guid { data1: 0x4CF77BF7, data2: 0x4ED9, data3: 0x59F6, data4: [0x98, 0xC0, 0xAE, 0x96, 0x82, 0xB3, 0xAD, 0xFE] };
 
 #[repr(C)]
 struct IAvnLayoutTransformControlVtbl {
@@ -36501,6 +38100,12 @@ struct IAvnLayoutTransformControlVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, i64) -> i32,
     get_child: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, *mut *mut IAvnControl) -> i32,
     set_child: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, *mut IAvnControl) -> i32,
     get_padding: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, *mut AvnThickness) -> i32,
@@ -37015,6 +38620,45 @@ impl ComPtr<IAvnLayoutTransformControl> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_child(&self) -> Result<Option<ComPtr<IAvnControl>>> {
         unsafe {
             let mut value: *mut IAvnControl = ptr::null_mut();
@@ -37059,7 +38703,7 @@ impl ComPtr<IAvnLayoutTransformControl> {
     }
 }
 
-pub const I_AVN_LIST_BOX_IID: Guid = Guid { data1: 0x6D07BC84, data2: 0xD7C4, data3: 0x5226, data4: [0xA6, 0x9E, 0xAA, 0xF3, 0xEE, 0x16, 0x63, 0xA9] };
+pub const I_AVN_LIST_BOX_IID: Guid = Guid { data1: 0xC45989AF, data2: 0x4038, data3: 0x524F, data4: [0x88, 0x5B, 0xE5, 0x71, 0x85, 0xB2, 0x21, 0x59] };
 
 #[repr(C)]
 struct IAvnListBoxVtbl {
@@ -37138,6 +38782,12 @@ struct IAvnListBoxVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnListBox, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnListBox, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnListBox, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnListBox, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnListBox, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnListBox, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnListBox, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnListBox, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnListBox, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnListBox, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnListBox, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnListBox, *mut i32) -> i32,
@@ -37704,6 +39354,45 @@ impl ComPtr<IAvnListBox> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -38111,7 +39800,7 @@ impl ComPtr<IAvnListBox> {
     }
 }
 
-pub const I_AVN_LIST_BOX_ITEM_IID: Guid = Guid { data1: 0x4BB2FF76, data2: 0xE252, data3: 0x53F1, data4: [0x8A, 0xE0, 0xE3, 0x2A, 0x2C, 0x1B, 0xBE, 0x76] };
+pub const I_AVN_LIST_BOX_ITEM_IID: Guid = Guid { data1: 0xD51DAD4D, data2: 0xC109, data3: 0x5ABD, data4: [0x84, 0xB4, 0xF3, 0xC6, 0x00, 0x7F, 0x61, 0x33] };
 
 #[repr(C)]
 struct IAvnListBoxItemVtbl {
@@ -38190,6 +39879,12 @@ struct IAvnListBoxItemVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnListBoxItem, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnListBoxItem, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnListBoxItem, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnListBoxItem, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnListBoxItem, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnListBoxItem, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnListBoxItem, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnListBoxItem, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnListBoxItem, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnListBoxItem, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnListBoxItem, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnListBoxItem, *mut i32) -> i32,
@@ -38736,6 +40431,45 @@ impl ComPtr<IAvnListBoxItem> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -39006,7 +40740,7 @@ impl ComPtr<IAvnListBoxItem> {
     }
 }
 
-pub const I_AVN_MASKED_TEXT_BOX_IID: Guid = Guid { data1: 0xE621C745, data2: 0xA587, data3: 0x5BDD, data4: [0xA1, 0xC5, 0x8F, 0x49, 0x8B, 0x86, 0x36, 0xC5] };
+pub const I_AVN_MASKED_TEXT_BOX_IID: Guid = Guid { data1: 0xACF377B4, data2: 0xD865, data3: 0x5245, data4: [0x8C, 0xFE, 0xAE, 0x04, 0x61, 0xEF, 0x95, 0xFB] };
 
 #[repr(C)]
 struct IAvnMaskedTextBoxVtbl {
@@ -39085,6 +40819,12 @@ struct IAvnMaskedTextBoxVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnMaskedTextBox, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnMaskedTextBox, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnMaskedTextBox, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnMaskedTextBox, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnMaskedTextBox, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnMaskedTextBox, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnMaskedTextBox, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnMaskedTextBox, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnMaskedTextBox, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnMaskedTextBox, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnMaskedTextBox, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnMaskedTextBox, *mut i32) -> i32,
@@ -39721,6 +41461,45 @@ impl ComPtr<IAvnMaskedTextBox> {
     pub fn unadvise_pointer_exited(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_exited)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -40643,7 +42422,7 @@ impl ComPtr<IAvnMaskedTextBox> {
     }
 }
 
-pub const I_AVN_MENU_IID: Guid = Guid { data1: 0x0220FC0F, data2: 0xFA60, data3: 0x5173, data4: [0x9E, 0x8B, 0xAD, 0x96, 0x35, 0x1B, 0x3C, 0x6D] };
+pub const I_AVN_MENU_IID: Guid = Guid { data1: 0x71FC2F34, data2: 0x4C1D, data3: 0x591E, data4: [0xA5, 0x67, 0xAB, 0x31, 0x51, 0xC7, 0x77, 0x85] };
 
 #[repr(C)]
 struct IAvnMenuVtbl {
@@ -40722,6 +42501,12 @@ struct IAvnMenuVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnMenu, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnMenu, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnMenu, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnMenu, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnMenu, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnMenu, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnMenu, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnMenu, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnMenu, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnMenu, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnMenu, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnMenu, *mut i32) -> i32,
@@ -41291,6 +43076,45 @@ impl ComPtr<IAvnMenu> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -41718,7 +43542,7 @@ impl ComPtr<IAvnMenu> {
     }
 }
 
-pub const I_AVN_MENU_BASE_IID: Guid = Guid { data1: 0x3B780634, data2: 0x1A42, data3: 0x576F, data4: [0xA5, 0x87, 0xEE, 0x11, 0xF0, 0xB5, 0xC8, 0xE8] };
+pub const I_AVN_MENU_BASE_IID: Guid = Guid { data1: 0x1E92B6FA, data2: 0x9790, data3: 0x5135, data4: [0x8A, 0xC6, 0xA5, 0x66, 0xA0, 0xEA, 0xD4, 0x14] };
 
 #[repr(C)]
 struct IAvnMenuBaseVtbl {
@@ -41797,6 +43621,12 @@ struct IAvnMenuBaseVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnMenuBase, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnMenuBase, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnMenuBase, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnMenuBase, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnMenuBase, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnMenuBase, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnMenuBase, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnMenuBase, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnMenuBase, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnMenuBase, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnMenuBase, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnMenuBase, *mut i32) -> i32,
@@ -42363,6 +44193,45 @@ impl ComPtr<IAvnMenuBase> {
     pub fn unadvise_pointer_exited(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_exited)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -43146,7 +45015,7 @@ impl ComPtr<IAvnMenuFlyout> {
     }
 }
 
-pub const I_AVN_MENU_ITEM_IID: Guid = Guid { data1: 0xB08CE5EB, data2: 0xF84F, data3: 0x5466, data4: [0xBB, 0x66, 0x98, 0x6E, 0x09, 0x71, 0x33, 0x3B] };
+pub const I_AVN_MENU_ITEM_IID: Guid = Guid { data1: 0x15CE4E5D, data2: 0xE0E7, data3: 0x5356, data4: [0xAC, 0xFF, 0xD7, 0x42, 0xB7, 0x28, 0x0B, 0x97] };
 
 #[repr(C)]
 struct IAvnMenuItemVtbl {
@@ -43225,6 +45094,12 @@ struct IAvnMenuItemVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnMenuItem, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnMenuItem, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnMenuItem, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnMenuItem, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnMenuItem, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnMenuItem, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnMenuItem, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnMenuItem, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnMenuItem, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnMenuItem, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnMenuItem, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnMenuItem, *mut i32) -> i32,
@@ -43818,6 +45693,45 @@ impl ComPtr<IAvnMenuItem> {
     pub fn unadvise_pointer_exited(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_exited)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -44441,7 +46355,7 @@ impl ComPtr<IAvnMenuItem> {
     }
 }
 
-pub const I_AVN_NOTIFICATION_CARD_IID: Guid = Guid { data1: 0x9E575724, data2: 0x617A, data3: 0x54E5, data4: [0xBF, 0x78, 0xB6, 0xC6, 0x8E, 0x5F, 0x43, 0x43] };
+pub const I_AVN_NOTIFICATION_CARD_IID: Guid = Guid { data1: 0xDB52E2D8, data2: 0xCC48, data3: 0x5F72, data4: [0xB2, 0x20, 0x52, 0xBD, 0xF1, 0x6B, 0xC0, 0x55] };
 
 #[repr(C)]
 struct IAvnNotificationCardVtbl {
@@ -44520,6 +46434,12 @@ struct IAvnNotificationCardVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnNotificationCard, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnNotificationCard, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnNotificationCard, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnNotificationCard, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnNotificationCard, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnNotificationCard, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnNotificationCard, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnNotificationCard, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnNotificationCard, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnNotificationCard, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnNotificationCard, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnNotificationCard, *mut i32) -> i32,
@@ -45072,6 +46992,45 @@ impl ComPtr<IAvnNotificationCard> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -45383,7 +47342,7 @@ impl ComPtr<IAvnNotificationCard> {
     }
 }
 
-pub const I_AVN_WINDOW_NOTIFICATION_MANAGER_IID: Guid = Guid { data1: 0x7C085288, data2: 0x6201, data3: 0x58A3, data4: [0xBD, 0x39, 0x14, 0xF2, 0x36, 0x96, 0x50, 0x4B] };
+pub const I_AVN_WINDOW_NOTIFICATION_MANAGER_IID: Guid = Guid { data1: 0x2EECEA93, data2: 0x798A, data3: 0x57D8, data4: [0x9E, 0xD9, 0x91, 0xC4, 0xEA, 0x6D, 0x28, 0x2F] };
 
 #[repr(C)]
 struct IAvnWindowNotificationManagerVtbl {
@@ -45462,6 +47421,12 @@ struct IAvnWindowNotificationManagerVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, *mut i32) -> i32,
@@ -46007,6 +47972,45 @@ impl ComPtr<IAvnWindowNotificationManager> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -46265,7 +48269,7 @@ impl ComPtr<IAvnWindowNotificationManager> {
     }
 }
 
-pub const I_AVN_NUMERIC_UP_DOWN_IID: Guid = Guid { data1: 0x63426B0F, data2: 0x1A76, data3: 0x51A9, data4: [0x9E, 0x98, 0x34, 0x3D, 0x2E, 0x69, 0xC1, 0x56] };
+pub const I_AVN_NUMERIC_UP_DOWN_IID: Guid = Guid { data1: 0x1082FB46, data2: 0x8635, data3: 0x515E, data4: [0x82, 0x2C, 0x12, 0x62, 0x9B, 0x6D, 0x25, 0xF8] };
 
 #[repr(C)]
 struct IAvnNumericUpDownVtbl {
@@ -46344,6 +48348,12 @@ struct IAvnNumericUpDownVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnNumericUpDown, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnNumericUpDown, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnNumericUpDown, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnNumericUpDown, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnNumericUpDown, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnNumericUpDown, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnNumericUpDown, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnNumericUpDown, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnNumericUpDown, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnNumericUpDown, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnNumericUpDown, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnNumericUpDown, *mut i32) -> i32,
@@ -46920,6 +48930,45 @@ impl ComPtr<IAvnNumericUpDown> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -47405,7 +49454,7 @@ impl ComPtr<IAvnNumericUpDown> {
     }
 }
 
-pub const I_AVN_PANEL_IID: Guid = Guid { data1: 0x96AD03DD, data2: 0xF271, data3: 0x537E, data4: [0xA9, 0x33, 0xB7, 0xC7, 0x5D, 0x63, 0xAC, 0x0C] };
+pub const I_AVN_PANEL_IID: Guid = Guid { data1: 0xE6C6B17E, data2: 0x9747, data3: 0x5739, data4: [0xB2, 0x55, 0x52, 0xE7, 0x37, 0xA7, 0xA2, 0xA2] };
 
 #[repr(C)]
 struct IAvnPanelVtbl {
@@ -47484,6 +49533,12 @@ struct IAvnPanelVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnPanel, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnPanel, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnPanel, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnPanel, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnPanel, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnPanel, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnPanel, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnPanel, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnPanel, i64) -> i32,
     get_children: unsafe extern "system" fn(*mut IAvnPanel, *mut *mut IAvnControlList) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnPanel, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnPanel, *mut IAvnBrush) -> i32,
@@ -47995,6 +50050,45 @@ impl ComPtr<IAvnPanel> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_children(&self) -> Result<ComPtr<IAvnControlList>> {
         unsafe {
             let mut value: *mut IAvnControlList = ptr::null_mut();
@@ -48019,7 +50113,7 @@ impl ComPtr<IAvnPanel> {
     }
 }
 
-pub const I_AVN_PATH_ICON_IID: Guid = Guid { data1: 0x885577A3, data2: 0xAC29, data3: 0x51D9, data4: [0xAC, 0xB5, 0xD3, 0x0A, 0xBB, 0xB4, 0x84, 0xFC] };
+pub const I_AVN_PATH_ICON_IID: Guid = Guid { data1: 0x6D274452, data2: 0x1819, data3: 0x559D, data4: [0xBB, 0x43, 0x52, 0xE6, 0x8A, 0xB6, 0x4E, 0x10] };
 
 #[repr(C)]
 struct IAvnPathIconVtbl {
@@ -48098,6 +50192,12 @@ struct IAvnPathIconVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnPathIcon, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnPathIcon, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnPathIcon, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnPathIcon, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnPathIcon, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnPathIcon, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnPathIcon, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnPathIcon, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnPathIcon, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnPathIcon, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnPathIcon, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnPathIcon, *mut i32) -> i32,
@@ -48636,6 +50736,45 @@ impl ComPtr<IAvnPathIcon> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -48851,7 +50990,7 @@ impl ComPtr<IAvnPathIcon> {
     }
 }
 
-pub const I_AVN_PIPS_PAGER_IID: Guid = Guid { data1: 0x6C3C0A8B, data2: 0x3237, data3: 0x50C1, data4: [0x8D, 0xF3, 0x51, 0x71, 0xED, 0xF2, 0xA1, 0xB8] };
+pub const I_AVN_PIPS_PAGER_IID: Guid = Guid { data1: 0xFBFAC5E1, data2: 0xFD39, data3: 0x56C8, data4: [0x82, 0x08, 0x7C, 0x0E, 0x0A, 0xFA, 0x68, 0xCD] };
 
 #[repr(C)]
 struct IAvnPipsPagerVtbl {
@@ -48930,6 +51069,12 @@ struct IAvnPipsPagerVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnPipsPager, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnPipsPager, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnPipsPager, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnPipsPager, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnPipsPager, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnPipsPager, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnPipsPager, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnPipsPager, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnPipsPager, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnPipsPager, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnPipsPager, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnPipsPager, *mut i32) -> i32,
@@ -49480,6 +51625,45 @@ impl ComPtr<IAvnPipsPager> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -49883,7 +52067,7 @@ impl ComPtr<IAvnFlyoutBase> {
     }
 }
 
-pub const I_AVN_HEADERED_CONTENT_CONTROL_IID: Guid = Guid { data1: 0xC1825F55, data2: 0xDE82, data3: 0x5447, data4: [0x93, 0xA8, 0x4A, 0x55, 0xF6, 0x3B, 0xA6, 0x52] };
+pub const I_AVN_HEADERED_CONTENT_CONTROL_IID: Guid = Guid { data1: 0xD8948145, data2: 0x837B, data3: 0x5DC3, data4: [0xA6, 0x85, 0x14, 0xDF, 0x38, 0x16, 0x7A, 0x93] };
 
 #[repr(C)]
 struct IAvnHeaderedContentControlVtbl {
@@ -49962,6 +52146,12 @@ struct IAvnHeaderedContentControlVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, *mut i32) -> i32,
@@ -50510,6 +52700,45 @@ impl ComPtr<IAvnHeaderedContentControl> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -50794,7 +53023,7 @@ impl ComPtr<IAvnHeaderedContentControl> {
     }
 }
 
-pub const I_AVN_HEADERED_ITEMS_CONTROL_IID: Guid = Guid { data1: 0xB6281359, data2: 0x24AB, data3: 0x5280, data4: [0x8B, 0x2C, 0x76, 0x2A, 0x53, 0x52, 0x9C, 0x27] };
+pub const I_AVN_HEADERED_ITEMS_CONTROL_IID: Guid = Guid { data1: 0xD25B235E, data2: 0xD49F, data3: 0x55B2, data4: [0xAD, 0xF8, 0x90, 0xA2, 0xBF, 0xCB, 0x96, 0xAB] };
 
 #[repr(C)]
 struct IAvnHeaderedItemsControlVtbl {
@@ -50873,6 +53102,12 @@ struct IAvnHeaderedItemsControlVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, *mut i32) -> i32,
@@ -51425,6 +53660,45 @@ impl ComPtr<IAvnHeaderedItemsControl> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -51737,7 +54011,7 @@ impl ComPtr<IAvnHeaderedItemsControl> {
     }
 }
 
-pub const I_AVN_HEADERED_SELECTING_ITEMS_CONTROL_IID: Guid = Guid { data1: 0x8640C1BF, data2: 0x2502, data3: 0x5E21, data4: [0xB8, 0x61, 0x1E, 0xCB, 0xD1, 0x91, 0x8F, 0xD1] };
+pub const I_AVN_HEADERED_SELECTING_ITEMS_CONTROL_IID: Guid = Guid { data1: 0xBA5CD52E, data2: 0xECDF, data3: 0x5379, data4: [0xAC, 0x86, 0x58, 0x97, 0xFA, 0x85, 0x3C, 0x60] };
 
 #[repr(C)]
 struct IAvnHeaderedSelectingItemsControlVtbl {
@@ -51816,6 +54090,12 @@ struct IAvnHeaderedSelectingItemsControlVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, *mut i32) -> i32,
@@ -52382,6 +54662,45 @@ impl ComPtr<IAvnHeaderedSelectingItemsControl> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -52791,7 +55110,7 @@ impl ComPtr<IAvnHeaderedSelectingItemsControl> {
     }
 }
 
-pub const I_AVN_POPUP_IID: Guid = Guid { data1: 0x6CCB1B6A, data2: 0xEC3B, data3: 0x5625, data4: [0xA6, 0x04, 0x97, 0xB5, 0x6F, 0xF5, 0xB8, 0x6F] };
+pub const I_AVN_POPUP_IID: Guid = Guid { data1: 0x30B75D6F, data2: 0x4E12, data3: 0x505C, data4: [0x8C, 0x73, 0xE0, 0x2A, 0x5F, 0xCD, 0xB3, 0x56] };
 
 #[repr(C)]
 struct IAvnPopupVtbl {
@@ -52870,6 +55189,12 @@ struct IAvnPopupVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnPopup, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnPopup, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnPopup, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnPopup, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnPopup, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnPopup, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnPopup, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnPopup, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnPopup, i64) -> i32,
     get_window_manager_add_shadow_hint: unsafe extern "system" fn(*mut IAvnPopup, *mut i32) -> i32,
     set_window_manager_add_shadow_hint: unsafe extern "system" fn(*mut IAvnPopup, i32) -> i32,
     get_child: unsafe extern "system" fn(*mut IAvnPopup, *mut *mut IAvnControl) -> i32,
@@ -53421,6 +55746,45 @@ impl ComPtr<IAvnPopup> {
     pub fn unadvise_pointer_exited(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_exited)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -54058,7 +56422,7 @@ impl ComPtr<IAvnPopupFlyoutBase> {
     }
 }
 
-pub const I_AVN_RANGE_BASE_IID: Guid = Guid { data1: 0xF1231250, data2: 0xDB6B, data3: 0x52E4, data4: [0xA4, 0x2E, 0x3C, 0x57, 0xE7, 0x3C, 0x70, 0x23] };
+pub const I_AVN_RANGE_BASE_IID: Guid = Guid { data1: 0xD910F3E2, data2: 0xCD14, data3: 0x547A, data4: [0x8E, 0x8C, 0xBF, 0xEC, 0x9F, 0x4C, 0x92, 0x6F] };
 
 #[repr(C)]
 struct IAvnRangeBaseVtbl {
@@ -54137,6 +56501,12 @@ struct IAvnRangeBaseVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnRangeBase, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnRangeBase, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnRangeBase, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnRangeBase, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnRangeBase, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnRangeBase, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnRangeBase, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnRangeBase, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnRangeBase, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnRangeBase, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnRangeBase, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnRangeBase, *mut i32) -> i32,
@@ -54685,6 +57055,45 @@ impl ComPtr<IAvnRangeBase> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -54968,7 +57377,7 @@ impl ComPtr<IAvnRangeBase> {
     }
 }
 
-pub const I_AVN_SELECTING_ITEMS_CONTROL_IID: Guid = Guid { data1: 0x56020FA9, data2: 0xD4A4, data3: 0x52B6, data4: [0xB5, 0xFC, 0xEA, 0xEB, 0x6F, 0xD5, 0x63, 0xC2] };
+pub const I_AVN_SELECTING_ITEMS_CONTROL_IID: Guid = Guid { data1: 0x18B99B99, data2: 0x03A3, data3: 0x5C68, data4: [0x84, 0x71, 0xD4, 0x63, 0xC4, 0xED, 0x17, 0x78] };
 
 #[repr(C)]
 struct IAvnSelectingItemsControlVtbl {
@@ -55047,6 +57456,12 @@ struct IAvnSelectingItemsControlVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, *mut i32) -> i32,
@@ -55609,6 +58024,45 @@ impl ComPtr<IAvnSelectingItemsControl> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -55990,7 +58444,7 @@ impl ComPtr<IAvnSelectingItemsControl> {
     }
 }
 
-pub const I_AVN_TEMPLATED_CONTROL_IID: Guid = Guid { data1: 0xE2867468, data2: 0x09D4, data3: 0x5D05, data4: [0xA9, 0x56, 0xF6, 0x87, 0xA7, 0x8D, 0xF5, 0x1A] };
+pub const I_AVN_TEMPLATED_CONTROL_IID: Guid = Guid { data1: 0x6E80826C, data2: 0xF337, data3: 0x5A4D, data4: [0xA5, 0xBB, 0x1C, 0x0D, 0xF4, 0x36, 0xB6, 0xD0] };
 
 #[repr(C)]
 struct IAvnTemplatedControlVtbl {
@@ -56069,6 +58523,12 @@ struct IAvnTemplatedControlVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnTemplatedControl, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnTemplatedControl, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnTemplatedControl, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnTemplatedControl, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnTemplatedControl, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnTemplatedControl, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnTemplatedControl, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnTemplatedControl, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnTemplatedControl, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnTemplatedControl, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnTemplatedControl, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnTemplatedControl, *mut i32) -> i32,
@@ -56605,6 +59065,45 @@ impl ComPtr<IAvnTemplatedControl> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -56805,7 +59304,7 @@ impl ComPtr<IAvnTemplatedControl> {
     }
 }
 
-pub const I_AVN_THUMB_IID: Guid = Guid { data1: 0xB62C6C73, data2: 0x14C3, data3: 0x5E0D, data4: [0xA7, 0x25, 0xF5, 0x60, 0x61, 0x07, 0xB4, 0x54] };
+pub const I_AVN_THUMB_IID: Guid = Guid { data1: 0xA9A96FDF, data2: 0xBFCF, data3: 0x5E37, data4: [0xA1, 0x1E, 0x4B, 0x65, 0x3C, 0xE3, 0x6C, 0x00] };
 
 #[repr(C)]
 struct IAvnThumbVtbl {
@@ -56884,6 +59383,12 @@ struct IAvnThumbVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnThumb, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnThumb, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnThumb, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnThumb, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnThumb, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnThumb, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnThumb, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnThumb, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnThumb, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnThumb, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnThumb, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnThumb, *mut i32) -> i32,
@@ -57426,6 +59931,45 @@ impl ComPtr<IAvnThumb> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -57665,7 +60209,7 @@ impl ComPtr<IAvnThumb> {
     }
 }
 
-pub const I_AVN_TOGGLE_BUTTON_IID: Guid = Guid { data1: 0xF9840045, data2: 0x23B2, data3: 0x5318, data4: [0xA7, 0xDA, 0xEB, 0x7F, 0x32, 0x87, 0xFB, 0xD8] };
+pub const I_AVN_TOGGLE_BUTTON_IID: Guid = Guid { data1: 0x23A7F6FB, data2: 0xAFEF, data3: 0x5E4D, data4: [0x8A, 0x9A, 0x94, 0xF4, 0xEF, 0xCF, 0x6B, 0x12] };
 
 #[repr(C)]
 struct IAvnToggleButtonVtbl {
@@ -57744,6 +60288,12 @@ struct IAvnToggleButtonVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnToggleButton, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnToggleButton, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnToggleButton, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnToggleButton, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnToggleButton, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnToggleButton, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnToggleButton, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnToggleButton, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnToggleButton, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnToggleButton, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnToggleButton, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnToggleButton, *mut i32) -> i32,
@@ -58311,6 +60861,45 @@ impl ComPtr<IAvnToggleButton> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -58728,7 +61317,7 @@ impl ComPtr<IAvnToggleButton> {
     }
 }
 
-pub const I_AVN_UNIFORM_GRID_IID: Guid = Guid { data1: 0x600B20CC, data2: 0x7AA7, data3: 0x5EC9, data4: [0xB7, 0x73, 0xA8, 0x93, 0xB4, 0x37, 0x6F, 0x95] };
+pub const I_AVN_UNIFORM_GRID_IID: Guid = Guid { data1: 0x061A5BD1, data2: 0x9360, data3: 0x53D2, data4: [0xBE, 0xF6, 0x7E, 0xB9, 0xEC, 0xAE, 0xA4, 0x93] };
 
 #[repr(C)]
 struct IAvnUniformGridVtbl {
@@ -58807,6 +61396,12 @@ struct IAvnUniformGridVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnUniformGrid, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnUniformGrid, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnUniformGrid, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnUniformGrid, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnUniformGrid, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnUniformGrid, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnUniformGrid, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnUniformGrid, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnUniformGrid, i64) -> i32,
     get_children: unsafe extern "system" fn(*mut IAvnUniformGrid, *mut *mut IAvnControlList) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnUniformGrid, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnUniformGrid, *mut IAvnBrush) -> i32,
@@ -59328,6 +61923,45 @@ impl ComPtr<IAvnUniformGrid> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_children(&self) -> Result<ComPtr<IAvnControlList>> {
         unsafe {
             let mut value: *mut IAvnControlList = ptr::null_mut();
@@ -59422,7 +62056,7 @@ impl ComPtr<IAvnUniformGrid> {
     }
 }
 
-pub const I_AVN_PROGRESS_BAR_IID: Guid = Guid { data1: 0xA87F44AD, data2: 0x6E9D, data3: 0x5059, data4: [0xA3, 0x55, 0xCB, 0xC9, 0x07, 0xAD, 0x0F, 0x45] };
+pub const I_AVN_PROGRESS_BAR_IID: Guid = Guid { data1: 0x5AD47222, data2: 0x012D, data3: 0x56C8, data4: [0x84, 0x59, 0x42, 0xDD, 0x29, 0x5B, 0x9D, 0xAF] };
 
 #[repr(C)]
 struct IAvnProgressBarVtbl {
@@ -59501,6 +62135,12 @@ struct IAvnProgressBarVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnProgressBar, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnProgressBar, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnProgressBar, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnProgressBar, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnProgressBar, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnProgressBar, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnProgressBar, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnProgressBar, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnProgressBar, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnProgressBar, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnProgressBar, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnProgressBar, *mut i32) -> i32,
@@ -60058,6 +62698,45 @@ impl ComPtr<IAvnProgressBar> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -60406,7 +63085,7 @@ impl ComPtr<IAvnProgressBar> {
     }
 }
 
-pub const I_AVN_RADIO_BUTTON_IID: Guid = Guid { data1: 0x1D9D9433, data2: 0xE351, data3: 0x59FA, data4: [0xA6, 0x5E, 0xF7, 0x8D, 0xF4, 0x22, 0x3F, 0x1C] };
+pub const I_AVN_RADIO_BUTTON_IID: Guid = Guid { data1: 0xA2E6518A, data2: 0x5B2E, data3: 0x5424, data4: [0x84, 0xFE, 0xCF, 0xA3, 0x25, 0xD9, 0x32, 0x88] };
 
 #[repr(C)]
 struct IAvnRadioButtonVtbl {
@@ -60485,6 +63164,12 @@ struct IAvnRadioButtonVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnRadioButton, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnRadioButton, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnRadioButton, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnRadioButton, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnRadioButton, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnRadioButton, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnRadioButton, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnRadioButton, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnRadioButton, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnRadioButton, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnRadioButton, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnRadioButton, *mut i32) -> i32,
@@ -61054,6 +63739,45 @@ impl ComPtr<IAvnRadioButton> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -61486,7 +64210,7 @@ impl ComPtr<IAvnRadioButton> {
     }
 }
 
-pub const I_AVN_REFRESH_CONTAINER_IID: Guid = Guid { data1: 0x3693CF05, data2: 0xF784, data3: 0x5394, data4: [0xB7, 0xD2, 0x6D, 0xF5, 0x11, 0xF8, 0x6F, 0x97] };
+pub const I_AVN_REFRESH_CONTAINER_IID: Guid = Guid { data1: 0x95707491, data2: 0x9943, data3: 0x5B6C, data4: [0xBF, 0x2E, 0x1A, 0x68, 0xA7, 0x97, 0xA8, 0x42] };
 
 #[repr(C)]
 struct IAvnRefreshContainerVtbl {
@@ -61565,6 +64289,12 @@ struct IAvnRefreshContainerVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnRefreshContainer, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnRefreshContainer, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnRefreshContainer, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnRefreshContainer, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnRefreshContainer, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnRefreshContainer, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnRefreshContainer, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnRefreshContainer, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnRefreshContainer, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnRefreshContainer, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnRefreshContainer, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnRefreshContainer, *mut i32) -> i32,
@@ -62116,6 +64846,45 @@ impl ComPtr<IAvnRefreshContainer> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -62419,7 +65188,7 @@ impl ComPtr<IAvnRefreshContainer> {
     }
 }
 
-pub const I_AVN_RELATIVE_PANEL_IID: Guid = Guid { data1: 0x0E550183, data2: 0x4D72, data3: 0x5357, data4: [0x8C, 0x3F, 0x9F, 0x15, 0xE4, 0x1B, 0xC9, 0x76] };
+pub const I_AVN_RELATIVE_PANEL_IID: Guid = Guid { data1: 0xA52468AD, data2: 0xE31F, data3: 0x58F2, data4: [0x8A, 0x74, 0x1A, 0xB7, 0xE7, 0x3D, 0x66, 0xE6] };
 
 #[repr(C)]
 struct IAvnRelativePanelVtbl {
@@ -62498,6 +65267,12 @@ struct IAvnRelativePanelVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnRelativePanel, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnRelativePanel, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnRelativePanel, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnRelativePanel, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnRelativePanel, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnRelativePanel, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnRelativePanel, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnRelativePanel, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnRelativePanel, i64) -> i32,
     get_children: unsafe extern "system" fn(*mut IAvnRelativePanel, *mut *mut IAvnControlList) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnRelativePanel, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnRelativePanel, *mut IAvnBrush) -> i32,
@@ -63009,6 +65784,45 @@ impl ComPtr<IAvnRelativePanel> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_children(&self) -> Result<ComPtr<IAvnControlList>> {
         unsafe {
             let mut value: *mut IAvnControlList = ptr::null_mut();
@@ -63033,7 +65847,7 @@ impl ComPtr<IAvnRelativePanel> {
     }
 }
 
-pub const I_AVN_REPEAT_BUTTON_IID: Guid = Guid { data1: 0xE1023A87, data2: 0x3E17, data3: 0x5F1D, data4: [0x86, 0x71, 0x36, 0xC4, 0xFD, 0x0D, 0x1C, 0xC3] };
+pub const I_AVN_REPEAT_BUTTON_IID: Guid = Guid { data1: 0xDF355462, data2: 0x7926, data3: 0x5F77, data4: [0xB4, 0x63, 0x22, 0xB1, 0x64, 0xC7, 0xA4, 0x02] };
 
 #[repr(C)]
 struct IAvnRepeatButtonVtbl {
@@ -63112,6 +65926,12 @@ struct IAvnRepeatButtonVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnRepeatButton, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnRepeatButton, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnRepeatButton, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnRepeatButton, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnRepeatButton, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnRepeatButton, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnRepeatButton, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnRepeatButton, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnRepeatButton, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnRepeatButton, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnRepeatButton, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnRepeatButton, *mut i32) -> i32,
@@ -63677,6 +66497,45 @@ impl ComPtr<IAvnRepeatButton> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -64081,7 +66940,7 @@ impl ComPtr<IAvnRepeatButton> {
     }
 }
 
-pub const I_AVN_SCROLL_VIEWER_IID: Guid = Guid { data1: 0x74E7350C, data2: 0x320E, data3: 0x5E2A, data4: [0xA8, 0xB9, 0xCD, 0xD9, 0x29, 0xB6, 0xB8, 0x26] };
+pub const I_AVN_SCROLL_VIEWER_IID: Guid = Guid { data1: 0x4CCB656E, data2: 0x34E8, data3: 0x5621, data4: [0xAF, 0x96, 0x1C, 0x2A, 0xF4, 0xF1, 0xDA, 0xAE] };
 
 #[repr(C)]
 struct IAvnScrollViewerVtbl {
@@ -64160,6 +67019,12 @@ struct IAvnScrollViewerVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnScrollViewer, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnScrollViewer, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnScrollViewer, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnScrollViewer, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnScrollViewer, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnScrollViewer, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnScrollViewer, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnScrollViewer, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnScrollViewer, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnScrollViewer, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnScrollViewer, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnScrollViewer, *mut i32) -> i32,
@@ -64749,6 +67614,45 @@ impl ComPtr<IAvnScrollViewer> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -65314,7 +68218,7 @@ impl ComPtr<IAvnScrollViewer> {
     }
 }
 
-pub const I_AVN_SELECTABLE_TEXT_BLOCK_IID: Guid = Guid { data1: 0x843AC2A4, data2: 0x7FEF, data3: 0x5858, data4: [0x8A, 0x9A, 0xF1, 0x99, 0xBB, 0xA5, 0x26, 0x38] };
+pub const I_AVN_SELECTABLE_TEXT_BLOCK_IID: Guid = Guid { data1: 0x8E36E51E, data2: 0x30AC, data3: 0x563D, data4: [0xA2, 0xD7, 0x79, 0x33, 0x5F, 0x5F, 0xAD, 0x8C] };
 
 #[repr(C)]
 struct IAvnSelectableTextBlockVtbl {
@@ -65393,6 +68297,12 @@ struct IAvnSelectableTextBlockVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, i64) -> i32,
     get_padding: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, *mut AvnThickness) -> i32,
     set_padding: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, AvnThickness) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, *mut *mut IAvnBrush) -> i32,
@@ -65952,6 +68862,45 @@ impl ComPtr<IAvnSelectableTextBlock> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_padding(&self) -> Result<AvnThickness> {
         unsafe {
             let mut value: AvnThickness = Default::default();
@@ -66313,7 +69262,7 @@ impl ComPtr<IAvnSelectableTextBlock> {
     }
 }
 
-pub const I_AVN_SEPARATOR_IID: Guid = Guid { data1: 0x87BD59B4, data2: 0xCB85, data3: 0x5216, data4: [0xB7, 0x57, 0x72, 0xF9, 0x5F, 0xCB, 0x49, 0xE3] };
+pub const I_AVN_SEPARATOR_IID: Guid = Guid { data1: 0xC97E1335, data2: 0x936C, data3: 0x5319, data4: [0x91, 0xB3, 0x09, 0xE2, 0xE1, 0x60, 0x7D, 0x5A] };
 
 #[repr(C)]
 struct IAvnSeparatorVtbl {
@@ -66392,6 +69341,12 @@ struct IAvnSeparatorVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnSeparator, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnSeparator, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnSeparator, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnSeparator, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnSeparator, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnSeparator, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnSeparator, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnSeparator, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnSeparator, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnSeparator, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnSeparator, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnSeparator, *mut i32) -> i32,
@@ -66928,6 +69883,45 @@ impl ComPtr<IAvnSeparator> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -67128,7 +70122,7 @@ impl ComPtr<IAvnSeparator> {
     }
 }
 
-pub const I_AVN_ARC_IID: Guid = Guid { data1: 0x394ACB52, data2: 0x3BF3, data3: 0x52D6, data4: [0x97, 0xE8, 0x4B, 0xF0, 0xC1, 0x02, 0xF4, 0xBE] };
+pub const I_AVN_ARC_IID: Guid = Guid { data1: 0xD707907F, data2: 0xAF00, data3: 0x561A, data4: [0x93, 0x74, 0x03, 0xA9, 0x0D, 0xF5, 0x5B, 0x83] };
 
 #[repr(C)]
 struct IAvnArcVtbl {
@@ -67207,6 +70201,12 @@ struct IAvnArcVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnArc, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnArc, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnArc, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnArc, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnArc, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnArc, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnArc, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnArc, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnArc, i64) -> i32,
     get_fill: unsafe extern "system" fn(*mut IAvnArc, *mut *mut IAvnBrush) -> i32,
     set_fill: unsafe extern "system" fn(*mut IAvnArc, *mut IAvnBrush) -> i32,
     get_stretch: unsafe extern "system" fn(*mut IAvnArc, *mut i32) -> i32,
@@ -67737,6 +70737,45 @@ impl ComPtr<IAvnArc> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_fill(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -67894,7 +70933,7 @@ impl ComPtr<IAvnArc> {
     }
 }
 
-pub const I_AVN_ELLIPSE_IID: Guid = Guid { data1: 0x2AA5065D, data2: 0x5B4C, data3: 0x542B, data4: [0xB6, 0xCC, 0xA2, 0x30, 0xA5, 0x76, 0xE4, 0xF1] };
+pub const I_AVN_ELLIPSE_IID: Guid = Guid { data1: 0xECCCD4F8, data2: 0x7656, data3: 0x5346, data4: [0xB5, 0x62, 0xE8, 0x26, 0xC2, 0x7E, 0x03, 0x9E] };
 
 #[repr(C)]
 struct IAvnEllipseVtbl {
@@ -67973,6 +71012,12 @@ struct IAvnEllipseVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnEllipse, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnEllipse, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnEllipse, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnEllipse, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnEllipse, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnEllipse, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnEllipse, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnEllipse, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnEllipse, i64) -> i32,
     get_fill: unsafe extern "system" fn(*mut IAvnEllipse, *mut *mut IAvnBrush) -> i32,
     set_fill: unsafe extern "system" fn(*mut IAvnEllipse, *mut IAvnBrush) -> i32,
     get_stretch: unsafe extern "system" fn(*mut IAvnEllipse, *mut i32) -> i32,
@@ -68499,6 +71544,45 @@ impl ComPtr<IAvnEllipse> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_fill(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -68628,7 +71712,7 @@ impl ComPtr<IAvnEllipse> {
     }
 }
 
-pub const I_AVN_LINE_IID: Guid = Guid { data1: 0x12A0F43A, data2: 0x9EAB, data3: 0x5F5B, data4: [0x96, 0xEF, 0xD9, 0x1E, 0x25, 0xF3, 0x1B, 0x78] };
+pub const I_AVN_LINE_IID: Guid = Guid { data1: 0xC3F76A13, data2: 0x4998, data3: 0x5B6B, data4: [0xAD, 0x06, 0xEF, 0xB5, 0xE4, 0xB9, 0xEC, 0x61] };
 
 #[repr(C)]
 struct IAvnLineVtbl {
@@ -68707,6 +71791,12 @@ struct IAvnLineVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnLine, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnLine, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnLine, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnLine, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnLine, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnLine, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnLine, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnLine, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnLine, i64) -> i32,
     get_fill: unsafe extern "system" fn(*mut IAvnLine, *mut *mut IAvnBrush) -> i32,
     set_fill: unsafe extern "system" fn(*mut IAvnLine, *mut IAvnBrush) -> i32,
     get_stretch: unsafe extern "system" fn(*mut IAvnLine, *mut i32) -> i32,
@@ -69237,6 +72327,45 @@ impl ComPtr<IAvnLine> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_fill(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -69394,7 +72523,7 @@ impl ComPtr<IAvnLine> {
     }
 }
 
-pub const I_AVN_PATH_IID: Guid = Guid { data1: 0xE5A71060, data2: 0x50E1, data3: 0x5554, data4: [0x81, 0xB4, 0x03, 0x08, 0x98, 0xF2, 0x93, 0xCF] };
+pub const I_AVN_PATH_IID: Guid = Guid { data1: 0x708CD7FD, data2: 0x817B, data3: 0x56CB, data4: [0xAE, 0x5C, 0xC7, 0x4F, 0x67, 0xCA, 0xD4, 0xF6] };
 
 #[repr(C)]
 struct IAvnPathVtbl {
@@ -69473,6 +72602,12 @@ struct IAvnPathVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnPath, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnPath, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnPath, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnPath, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnPath, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnPath, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnPath, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnPath, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnPath, i64) -> i32,
     get_fill: unsafe extern "system" fn(*mut IAvnPath, *mut *mut IAvnBrush) -> i32,
     set_fill: unsafe extern "system" fn(*mut IAvnPath, *mut IAvnBrush) -> i32,
     get_stretch: unsafe extern "system" fn(*mut IAvnPath, *mut i32) -> i32,
@@ -70001,6 +73136,45 @@ impl ComPtr<IAvnPath> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_fill(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -70145,7 +73319,7 @@ impl ComPtr<IAvnPath> {
     }
 }
 
-pub const I_AVN_POLYGON_IID: Guid = Guid { data1: 0xE706EC48, data2: 0x3CA1, data3: 0x5BEA, data4: [0x90, 0x7E, 0x46, 0x0C, 0xA5, 0x3B, 0x06, 0xBE] };
+pub const I_AVN_POLYGON_IID: Guid = Guid { data1: 0x4F93F9D8, data2: 0x08E6, data3: 0x56F7, data4: [0xA5, 0x1B, 0x07, 0x39, 0x28, 0x79, 0x5D, 0x7D] };
 
 #[repr(C)]
 struct IAvnPolygonVtbl {
@@ -70224,6 +73398,12 @@ struct IAvnPolygonVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnPolygon, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnPolygon, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnPolygon, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnPolygon, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnPolygon, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnPolygon, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnPolygon, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnPolygon, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnPolygon, i64) -> i32,
     get_fill: unsafe extern "system" fn(*mut IAvnPolygon, *mut *mut IAvnBrush) -> i32,
     set_fill: unsafe extern "system" fn(*mut IAvnPolygon, *mut IAvnBrush) -> i32,
     get_stretch: unsafe extern "system" fn(*mut IAvnPolygon, *mut i32) -> i32,
@@ -70754,6 +73934,45 @@ impl ComPtr<IAvnPolygon> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_fill(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -70912,7 +74131,7 @@ impl ComPtr<IAvnPolygon> {
     }
 }
 
-pub const I_AVN_POLYLINE_IID: Guid = Guid { data1: 0x035DBEE9, data2: 0xDC4D, data3: 0x57B6, data4: [0x91, 0x40, 0xDD, 0x59, 0xB2, 0x08, 0xA9, 0xDC] };
+pub const I_AVN_POLYLINE_IID: Guid = Guid { data1: 0x2DBA0D61, data2: 0xC35B, data3: 0x5D12, data4: [0x82, 0xA7, 0x55, 0x5E, 0xDA, 0x62, 0x0B, 0xC5] };
 
 #[repr(C)]
 struct IAvnPolylineVtbl {
@@ -70991,6 +74210,12 @@ struct IAvnPolylineVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnPolyline, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnPolyline, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnPolyline, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnPolyline, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnPolyline, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnPolyline, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnPolyline, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnPolyline, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnPolyline, i64) -> i32,
     get_fill: unsafe extern "system" fn(*mut IAvnPolyline, *mut *mut IAvnBrush) -> i32,
     set_fill: unsafe extern "system" fn(*mut IAvnPolyline, *mut IAvnBrush) -> i32,
     get_stretch: unsafe extern "system" fn(*mut IAvnPolyline, *mut i32) -> i32,
@@ -71521,6 +74746,45 @@ impl ComPtr<IAvnPolyline> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_fill(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -71679,7 +74943,7 @@ impl ComPtr<IAvnPolyline> {
     }
 }
 
-pub const I_AVN_RECTANGLE_IID: Guid = Guid { data1: 0xE87D8C84, data2: 0x1090, data3: 0x5B7D, data4: [0x9D, 0xBA, 0x9F, 0x12, 0x2E, 0x19, 0xE3, 0x33] };
+pub const I_AVN_RECTANGLE_IID: Guid = Guid { data1: 0x95D3D828, data2: 0x9CB6, data3: 0x536E, data4: [0x96, 0xD5, 0x2D, 0x5D, 0x67, 0xC3, 0x46, 0x3F] };
 
 #[repr(C)]
 struct IAvnRectangleVtbl {
@@ -71758,6 +75022,12 @@ struct IAvnRectangleVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnRectangle, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnRectangle, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnRectangle, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnRectangle, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnRectangle, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnRectangle, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnRectangle, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnRectangle, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnRectangle, i64) -> i32,
     get_fill: unsafe extern "system" fn(*mut IAvnRectangle, *mut *mut IAvnBrush) -> i32,
     set_fill: unsafe extern "system" fn(*mut IAvnRectangle, *mut IAvnBrush) -> i32,
     get_stretch: unsafe extern "system" fn(*mut IAvnRectangle, *mut i32) -> i32,
@@ -72288,6 +75558,45 @@ impl ComPtr<IAvnRectangle> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_fill(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -72445,7 +75754,7 @@ impl ComPtr<IAvnRectangle> {
     }
 }
 
-pub const I_AVN_SECTOR_IID: Guid = Guid { data1: 0x5716DA45, data2: 0x6417, data3: 0x5758, data4: [0x89, 0xE7, 0x30, 0x34, 0x27, 0x80, 0x83, 0x53] };
+pub const I_AVN_SECTOR_IID: Guid = Guid { data1: 0xA6E3E187, data2: 0x67DD, data3: 0x5603, data4: [0x93, 0xD8, 0x74, 0x31, 0xB6, 0x44, 0x9C, 0xD7] };
 
 #[repr(C)]
 struct IAvnSectorVtbl {
@@ -72524,6 +75833,12 @@ struct IAvnSectorVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnSector, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnSector, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnSector, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnSector, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnSector, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnSector, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnSector, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnSector, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnSector, i64) -> i32,
     get_fill: unsafe extern "system" fn(*mut IAvnSector, *mut *mut IAvnBrush) -> i32,
     set_fill: unsafe extern "system" fn(*mut IAvnSector, *mut IAvnBrush) -> i32,
     get_stretch: unsafe extern "system" fn(*mut IAvnSector, *mut i32) -> i32,
@@ -73054,6 +76369,45 @@ impl ComPtr<IAvnSector> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_fill(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -73211,7 +76565,7 @@ impl ComPtr<IAvnSector> {
     }
 }
 
-pub const I_AVN_SHAPE_IID: Guid = Guid { data1: 0x5CB7105C, data2: 0xDAF9, data3: 0x5211, data4: [0x96, 0x59, 0x62, 0xEA, 0xB0, 0x32, 0x08, 0xFF] };
+pub const I_AVN_SHAPE_IID: Guid = Guid { data1: 0x8C49AE37, data2: 0x0535, data3: 0x5DEF, data4: [0x92, 0x6C, 0xD0, 0xD6, 0x85, 0x7C, 0xC2, 0x16] };
 
 #[repr(C)]
 struct IAvnShapeVtbl {
@@ -73290,6 +76644,12 @@ struct IAvnShapeVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnShape, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnShape, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnShape, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnShape, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnShape, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnShape, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnShape, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnShape, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnShape, i64) -> i32,
     get_fill: unsafe extern "system" fn(*mut IAvnShape, *mut *mut IAvnBrush) -> i32,
     set_fill: unsafe extern "system" fn(*mut IAvnShape, *mut IAvnBrush) -> i32,
     get_stretch: unsafe extern "system" fn(*mut IAvnShape, *mut i32) -> i32,
@@ -73816,6 +77176,45 @@ impl ComPtr<IAvnShape> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_fill(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -73945,7 +77344,7 @@ impl ComPtr<IAvnShape> {
     }
 }
 
-pub const I_AVN_SLIDER_IID: Guid = Guid { data1: 0xBF042391, data2: 0xAF5A, data3: 0x5DD4, data4: [0xB3, 0x21, 0x05, 0x5C, 0xA9, 0xF7, 0x0D, 0x23] };
+pub const I_AVN_SLIDER_IID: Guid = Guid { data1: 0x8F19D970, data2: 0x60A0, data3: 0x5AA7, data4: [0xA9, 0xCF, 0xDF, 0x78, 0x82, 0xB1, 0x1E, 0x7A] };
 
 #[repr(C)]
 struct IAvnSliderVtbl {
@@ -74024,6 +77423,12 @@ struct IAvnSliderVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnSlider, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnSlider, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnSlider, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnSlider, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnSlider, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnSlider, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnSlider, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnSlider, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnSlider, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnSlider, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnSlider, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnSlider, *mut i32) -> i32,
@@ -74584,6 +77989,45 @@ impl ComPtr<IAvnSlider> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -74952,7 +78396,7 @@ impl ComPtr<IAvnSlider> {
     }
 }
 
-pub const I_AVN_SPINNER_IID: Guid = Guid { data1: 0x4A63E264, data2: 0xF914, data3: 0x5256, data4: [0x93, 0xAB, 0x12, 0x68, 0x89, 0x5B, 0x90, 0x73] };
+pub const I_AVN_SPINNER_IID: Guid = Guid { data1: 0xCF93246B, data2: 0xDA27, data3: 0x5FC8, data4: [0x83, 0x82, 0xFE, 0x60, 0x00, 0xF8, 0x3F, 0xA4] };
 
 #[repr(C)]
 struct IAvnSpinnerVtbl {
@@ -75031,6 +78475,12 @@ struct IAvnSpinnerVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnSpinner, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnSpinner, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnSpinner, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnSpinner, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnSpinner, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnSpinner, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnSpinner, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnSpinner, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnSpinner, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnSpinner, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnSpinner, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnSpinner, *mut i32) -> i32,
@@ -75579,6 +79029,45 @@ impl ComPtr<IAvnSpinner> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -75862,7 +79351,7 @@ impl ComPtr<IAvnSpinner> {
     }
 }
 
-pub const I_AVN_SPLIT_BUTTON_IID: Guid = Guid { data1: 0x11D77809, data2: 0x48B6, data3: 0x5A29, data4: [0xB8, 0xD9, 0x5D, 0x41, 0x3B, 0xC9, 0x6A, 0x85] };
+pub const I_AVN_SPLIT_BUTTON_IID: Guid = Guid { data1: 0x88415351, data2: 0x1718, data3: 0x57DE, data4: [0x98, 0xD6, 0x5D, 0xEE, 0x17, 0x94, 0x02, 0x9C] };
 
 #[repr(C)]
 struct IAvnSplitButtonVtbl {
@@ -75941,6 +79430,12 @@ struct IAvnSplitButtonVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnSplitButton, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnSplitButton, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnSplitButton, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnSplitButton, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnSplitButton, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnSplitButton, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnSplitButton, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnSplitButton, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnSplitButton, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnSplitButton, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnSplitButton, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnSplitButton, *mut i32) -> i32,
@@ -76495,6 +79990,45 @@ impl ComPtr<IAvnSplitButton> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -76821,7 +80355,7 @@ impl ComPtr<IAvnSplitButton> {
     }
 }
 
-pub const I_AVN_SPLIT_VIEW_IID: Guid = Guid { data1: 0x048A7E1E, data2: 0x0539, data3: 0x5D4A, data4: [0x95, 0xD8, 0x5C, 0x2E, 0x6D, 0x42, 0x92, 0x02] };
+pub const I_AVN_SPLIT_VIEW_IID: Guid = Guid { data1: 0xCF2AF228, data2: 0xF18D, data3: 0x57E1, data4: [0xB3, 0x62, 0x6A, 0x69, 0x2F, 0xEB, 0x7A, 0xC4] };
 
 #[repr(C)]
 struct IAvnSplitViewVtbl {
@@ -76900,6 +80434,12 @@ struct IAvnSplitViewVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnSplitView, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnSplitView, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnSplitView, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnSplitView, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnSplitView, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnSplitView, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnSplitView, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnSplitView, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnSplitView, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnSplitView, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnSplitView, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnSplitView, *mut i32) -> i32,
@@ -77470,6 +81010,45 @@ impl ComPtr<IAvnSplitView> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -77904,7 +81483,7 @@ impl ComPtr<IAvnSplitView> {
     }
 }
 
-pub const I_AVN_STACK_PANEL_IID: Guid = Guid { data1: 0x17521479, data2: 0xDA81, data3: 0x5A88, data4: [0x99, 0x84, 0x55, 0x7E, 0xE0, 0x8F, 0xF8, 0x97] };
+pub const I_AVN_STACK_PANEL_IID: Guid = Guid { data1: 0x41C138FB, data2: 0xC0C9, data3: 0x579F, data4: [0xA3, 0xB9, 0x76, 0x08, 0x07, 0x32, 0xA9, 0x4C] };
 
 #[repr(C)]
 struct IAvnStackPanelVtbl {
@@ -77983,6 +81562,12 @@ struct IAvnStackPanelVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnStackPanel, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnStackPanel, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnStackPanel, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnStackPanel, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnStackPanel, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnStackPanel, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnStackPanel, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnStackPanel, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnStackPanel, i64) -> i32,
     get_children: unsafe extern "system" fn(*mut IAvnStackPanel, *mut *mut IAvnControlList) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnStackPanel, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnStackPanel, *mut IAvnBrush) -> i32,
@@ -78502,6 +82087,45 @@ impl ComPtr<IAvnStackPanel> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_children(&self) -> Result<ComPtr<IAvnControlList>> {
         unsafe {
             let mut value: *mut IAvnControlList = ptr::null_mut();
@@ -78582,7 +82206,7 @@ impl ComPtr<IAvnStackPanel> {
     }
 }
 
-pub const I_AVN_TAB_CONTROL_IID: Guid = Guid { data1: 0x8F087347, data2: 0x637D, data3: 0x5F69, data4: [0xBA, 0xBE, 0x6D, 0x6E, 0xD3, 0x04, 0x40, 0xC1] };
+pub const I_AVN_TAB_CONTROL_IID: Guid = Guid { data1: 0x27DF6FA4, data2: 0x888C, data3: 0x53C3, data4: [0x86, 0x12, 0x18, 0x67, 0x47, 0xFD, 0x07, 0xBF] };
 
 #[repr(C)]
 struct IAvnTabControlVtbl {
@@ -78661,6 +82285,12 @@ struct IAvnTabControlVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnTabControl, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnTabControl, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnTabControl, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnTabControl, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnTabControl, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnTabControl, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnTabControl, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnTabControl, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnTabControl, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnTabControl, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnTabControl, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnTabControl, *mut i32) -> i32,
@@ -79235,6 +82865,45 @@ impl ComPtr<IAvnTabControl> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -79702,7 +83371,7 @@ impl ComPtr<IAvnTabControl> {
     }
 }
 
-pub const I_AVN_TAB_ITEM_IID: Guid = Guid { data1: 0x406B7990, data2: 0x01A7, data3: 0x533E, data4: [0x9A, 0x2A, 0x7B, 0x70, 0xDD, 0xFC, 0xE8, 0xEC] };
+pub const I_AVN_TAB_ITEM_IID: Guid = Guid { data1: 0xDED2B477, data2: 0xBC45, data3: 0x5613, data4: [0xBA, 0x24, 0xCD, 0xBA, 0xB6, 0x35, 0xD7, 0x85] };
 
 #[repr(C)]
 struct IAvnTabItemVtbl {
@@ -79781,6 +83450,12 @@ struct IAvnTabItemVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnTabItem, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnTabItem, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnTabItem, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnTabItem, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnTabItem, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnTabItem, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnTabItem, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnTabItem, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnTabItem, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnTabItem, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnTabItem, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnTabItem, *mut i32) -> i32,
@@ -80338,6 +84013,45 @@ impl ComPtr<IAvnTabItem> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -80686,7 +84400,7 @@ impl ComPtr<IAvnTabItem> {
     }
 }
 
-pub const I_AVN_TABLE_VIEW_IID: Guid = Guid { data1: 0xD4BE6E5C, data2: 0xB5DD, data3: 0x5BB0, data4: [0xA3, 0x0F, 0x3C, 0xC8, 0x33, 0x76, 0x7F, 0x7C] };
+pub const I_AVN_TABLE_VIEW_IID: Guid = Guid { data1: 0xBA62A21B, data2: 0xC26D, data3: 0x587F, data4: [0xA4, 0x1F, 0x35, 0xE6, 0x7E, 0x20, 0x0B, 0x69] };
 
 #[repr(C)]
 struct IAvnTableViewVtbl {
@@ -80765,6 +84479,12 @@ struct IAvnTableViewVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnTableView, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnTableView, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnTableView, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnTableView, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnTableView, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnTableView, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnTableView, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnTableView, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnTableView, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnTableView, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnTableView, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnTableView, *mut i32) -> i32,
@@ -81335,6 +85055,45 @@ impl ComPtr<IAvnTableView> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -81770,7 +85529,7 @@ impl ComPtr<IAvnTableView> {
     }
 }
 
-pub const I_AVN_TABLE_VIEW_CELL_IID: Guid = Guid { data1: 0x7B4DC408, data2: 0x8142, data3: 0x5915, data4: [0xB1, 0xA7, 0x15, 0xCE, 0x22, 0x06, 0x25, 0x12] };
+pub const I_AVN_TABLE_VIEW_CELL_IID: Guid = Guid { data1: 0x2B1B1C38, data2: 0x97FD, data3: 0x59A3, data4: [0x8B, 0xCD, 0x59, 0xAC, 0xBD, 0xC0, 0x33, 0x68] };
 
 #[repr(C)]
 struct IAvnTableViewCellVtbl {
@@ -81849,6 +85608,12 @@ struct IAvnTableViewCellVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnTableViewCell, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnTableViewCell, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnTableViewCell, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnTableViewCell, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnTableViewCell, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnTableViewCell, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnTableViewCell, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnTableViewCell, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnTableViewCell, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnTableViewCell, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnTableViewCell, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnTableViewCell, *mut i32) -> i32,
@@ -82390,6 +86155,45 @@ impl ComPtr<IAvnTableViewCell> {
     pub fn unadvise_pointer_exited(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_exited)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -83001,7 +86805,7 @@ impl ComPtr<IAvnTableViewColumn> {
     }
 }
 
-pub const I_AVN_TABLE_VIEW_ROW_IID: Guid = Guid { data1: 0x1A492B55, data2: 0x9FB8, data3: 0x5F66, data4: [0x98, 0x6E, 0xEF, 0x1D, 0xED, 0x34, 0xA3, 0x8D] };
+pub const I_AVN_TABLE_VIEW_ROW_IID: Guid = Guid { data1: 0x8E3BA93D, data2: 0xD0BE, data3: 0x51D9, data4: [0xA0, 0x07, 0x2A, 0xF6, 0x14, 0xAC, 0x6A, 0xDB] };
 
 #[repr(C)]
 struct IAvnTableViewRowVtbl {
@@ -83080,6 +86884,12 @@ struct IAvnTableViewRowVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnTableViewRow, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnTableViewRow, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnTableViewRow, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnTableViewRow, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnTableViewRow, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnTableViewRow, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnTableViewRow, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnTableViewRow, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnTableViewRow, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnTableViewRow, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnTableViewRow, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnTableViewRow, *mut i32) -> i32,
@@ -83626,6 +87436,45 @@ impl ComPtr<IAvnTableViewRow> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -83896,7 +87745,7 @@ impl ComPtr<IAvnTableViewRow> {
     }
 }
 
-pub const I_AVN_TEXT_BLOCK_IID: Guid = Guid { data1: 0x06129468, data2: 0xB036, data3: 0x5F97, data4: [0xAC, 0xA3, 0x6C, 0x51, 0xB8, 0x45, 0x74, 0x6D] };
+pub const I_AVN_TEXT_BLOCK_IID: Guid = Guid { data1: 0x199AE412, data2: 0xEE08, data3: 0x5BDE, data4: [0xA4, 0x98, 0x66, 0xAE, 0x02, 0x31, 0xAA, 0x3F] };
 
 #[repr(C)]
 struct IAvnTextBlockVtbl {
@@ -83975,6 +87824,12 @@ struct IAvnTextBlockVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnTextBlock, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnTextBlock, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnTextBlock, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnTextBlock, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnTextBlock, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnTextBlock, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnTextBlock, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnTextBlock, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnTextBlock, i64) -> i32,
     get_padding: unsafe extern "system" fn(*mut IAvnTextBlock, *mut AvnThickness) -> i32,
     set_padding: unsafe extern "system" fn(*mut IAvnTextBlock, AvnThickness) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnTextBlock, *mut *mut IAvnBrush) -> i32,
@@ -84519,6 +88374,45 @@ impl ComPtr<IAvnTextBlock> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_padding(&self) -> Result<AvnThickness> {
         unsafe {
             let mut value: AvnThickness = Default::default();
@@ -84777,7 +88671,7 @@ impl ComPtr<IAvnTextBlock> {
     }
 }
 
-pub const I_AVN_TEXT_BOX_IID: Guid = Guid { data1: 0xBCD740F5, data2: 0x7423, data3: 0x5B2D, data4: [0xAD, 0x5E, 0xCB, 0x40, 0x07, 0x22, 0x26, 0xF8] };
+pub const I_AVN_TEXT_BOX_IID: Guid = Guid { data1: 0x55D76247, data2: 0x3F6A, data3: 0x5F45, data4: [0xAC, 0x3C, 0x33, 0xB3, 0x4A, 0x38, 0x32, 0x9A] };
 
 #[repr(C)]
 struct IAvnTextBoxVtbl {
@@ -84856,6 +88750,12 @@ struct IAvnTextBoxVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnTextBox, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnTextBox, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnTextBox, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnTextBox, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnTextBox, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnTextBox, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnTextBox, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnTextBox, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnTextBox, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnTextBox, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnTextBox, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnTextBox, *mut i32) -> i32,
@@ -85478,6 +89378,45 @@ impl ComPtr<IAvnTextBox> {
     pub fn unadvise_pointer_exited(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_exited)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -86299,7 +90238,7 @@ impl ComPtr<IAvnTextBox> {
     }
 }
 
-pub const I_AVN_THEME_VARIANT_SCOPE_IID: Guid = Guid { data1: 0x2E35671F, data2: 0xC418, data3: 0x50E8, data4: [0x86, 0xC1, 0xED, 0x85, 0x8C, 0x03, 0x6A, 0x8D] };
+pub const I_AVN_THEME_VARIANT_SCOPE_IID: Guid = Guid { data1: 0xFF6B43AB, data2: 0xB89D, data3: 0x5574, data4: [0xBB, 0xDE, 0x9A, 0xCA, 0xCD, 0x23, 0xDB, 0xA4] };
 
 #[repr(C)]
 struct IAvnThemeVariantScopeVtbl {
@@ -86378,6 +90317,12 @@ struct IAvnThemeVariantScopeVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnThemeVariantScope, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnThemeVariantScope, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnThemeVariantScope, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnThemeVariantScope, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnThemeVariantScope, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnThemeVariantScope, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnThemeVariantScope, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnThemeVariantScope, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnThemeVariantScope, i64) -> i32,
     get_child: unsafe extern "system" fn(*mut IAvnThemeVariantScope, *mut *mut IAvnControl) -> i32,
     set_child: unsafe extern "system" fn(*mut IAvnThemeVariantScope, *mut IAvnControl) -> i32,
     get_padding: unsafe extern "system" fn(*mut IAvnThemeVariantScope, *mut AvnThickness) -> i32,
@@ -86892,6 +90837,45 @@ impl ComPtr<IAvnThemeVariantScope> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_child(&self) -> Result<Option<ComPtr<IAvnControl>>> {
         unsafe {
             let mut value: *mut IAvnControl = ptr::null_mut();
@@ -86937,7 +90921,7 @@ impl ComPtr<IAvnThemeVariantScope> {
     }
 }
 
-pub const I_AVN_TIME_PICKER_IID: Guid = Guid { data1: 0x9F3B7D7A, data2: 0xE290, data3: 0x5ADC, data4: [0x99, 0x7C, 0x21, 0x3A, 0x25, 0xF2, 0x0D, 0x3B] };
+pub const I_AVN_TIME_PICKER_IID: Guid = Guid { data1: 0x5E7CE65A, data2: 0xFE53, data3: 0x551C, data4: [0x9F, 0x5A, 0x23, 0x44, 0xEE, 0x09, 0xE0, 0x02] };
 
 #[repr(C)]
 struct IAvnTimePickerVtbl {
@@ -87016,6 +91000,12 @@ struct IAvnTimePickerVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnTimePicker, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnTimePicker, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnTimePicker, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnTimePicker, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnTimePicker, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnTimePicker, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnTimePicker, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnTimePicker, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnTimePicker, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnTimePicker, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnTimePicker, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnTimePicker, *mut i32) -> i32,
@@ -87567,6 +91557,45 @@ impl ComPtr<IAvnTimePicker> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -87872,7 +91901,7 @@ impl ComPtr<IAvnTimePicker> {
     }
 }
 
-pub const I_AVN_TOGGLE_SPLIT_BUTTON_IID: Guid = Guid { data1: 0x4FD7A582, data2: 0x1766, data3: 0x5CC7, data4: [0xB1, 0x73, 0x72, 0xF4, 0x7F, 0xDF, 0x6B, 0xFF] };
+pub const I_AVN_TOGGLE_SPLIT_BUTTON_IID: Guid = Guid { data1: 0x0057E49B, data2: 0xBB54, data3: 0x516F, data4: [0x8F, 0xDA, 0xB1, 0xE6, 0x46, 0xA1, 0xC8, 0x97] };
 
 #[repr(C)]
 struct IAvnToggleSplitButtonVtbl {
@@ -87951,6 +91980,12 @@ struct IAvnToggleSplitButtonVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnToggleSplitButton, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnToggleSplitButton, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnToggleSplitButton, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnToggleSplitButton, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnToggleSplitButton, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnToggleSplitButton, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnToggleSplitButton, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnToggleSplitButton, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnToggleSplitButton, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnToggleSplitButton, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnToggleSplitButton, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnToggleSplitButton, *mut i32) -> i32,
@@ -88509,6 +92544,45 @@ impl ComPtr<IAvnToggleSplitButton> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -88862,7 +92936,7 @@ impl ComPtr<IAvnToggleSplitButton> {
     }
 }
 
-pub const I_AVN_TOGGLE_SWITCH_IID: Guid = Guid { data1: 0x96F69492, data2: 0x4FBE, data3: 0x565F, data4: [0x85, 0x72, 0xD7, 0xAE, 0xA4, 0x09, 0x97, 0xE9] };
+pub const I_AVN_TOGGLE_SWITCH_IID: Guid = Guid { data1: 0xB022C6CE, data2: 0x8A5D, data3: 0x5700, data4: [0xB3, 0x41, 0x11, 0x4A, 0x6A, 0x4F, 0xBC, 0xA0] };
 
 #[repr(C)]
 struct IAvnToggleSwitchVtbl {
@@ -88941,6 +93015,12 @@ struct IAvnToggleSwitchVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnToggleSwitch, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnToggleSwitch, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnToggleSwitch, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnToggleSwitch, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnToggleSwitch, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnToggleSwitch, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnToggleSwitch, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnToggleSwitch, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnToggleSwitch, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnToggleSwitch, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnToggleSwitch, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnToggleSwitch, *mut i32) -> i32,
@@ -89516,6 +93596,45 @@ impl ComPtr<IAvnToggleSwitch> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -89989,7 +94108,7 @@ impl ComPtr<IAvnToggleSwitch> {
     }
 }
 
-pub const I_AVN_TOOL_TIP_IID: Guid = Guid { data1: 0x8158AEAF, data2: 0xB85C, data3: 0x59C4, data4: [0xBF, 0xCE, 0x98, 0xDF, 0x20, 0xF4, 0xC2, 0xC9] };
+pub const I_AVN_TOOL_TIP_IID: Guid = Guid { data1: 0x2B78EA6B, data2: 0xFE62, data3: 0x5508, data4: [0xAB, 0x5F, 0x58, 0x6C, 0x35, 0x23, 0xC5, 0xA1] };
 
 #[repr(C)]
 struct IAvnToolTipVtbl {
@@ -90068,6 +94187,12 @@ struct IAvnToolTipVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnToolTip, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnToolTip, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnToolTip, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnToolTip, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnToolTip, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnToolTip, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnToolTip, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnToolTip, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnToolTip, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnToolTip, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnToolTip, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnToolTip, *mut i32) -> i32,
@@ -90612,6 +94737,45 @@ impl ComPtr<IAvnToolTip> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -90868,7 +95032,7 @@ impl ComPtr<IAvnToolTip> {
     }
 }
 
-pub const I_AVN_TRANSITIONING_CONTENT_CONTROL_IID: Guid = Guid { data1: 0x643AACDC, data2: 0xAB53, data3: 0x56DF, data4: [0xA1, 0x97, 0x28, 0x04, 0x2B, 0xF4, 0xD6, 0x9F] };
+pub const I_AVN_TRANSITIONING_CONTENT_CONTROL_IID: Guid = Guid { data1: 0xFD0EB25C, data2: 0x585B, data3: 0x5EDA, data4: [0xB1, 0xED, 0xF6, 0x29, 0xA7, 0x65, 0xB5, 0xA9] };
 
 #[repr(C)]
 struct IAvnTransitioningContentControlVtbl {
@@ -90947,6 +95111,12 @@ struct IAvnTransitioningContentControlVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, *mut i32) -> i32,
@@ -91495,6 +95665,45 @@ impl ComPtr<IAvnTransitioningContentControl> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -91912,7 +96121,7 @@ impl ComPtr<IAvnTrayIcon> {
     }
 }
 
-pub const I_AVN_TREE_VIEW_IID: Guid = Guid { data1: 0xE8A54D8B, data2: 0x7903, data3: 0x57AE, data4: [0x9B, 0xF8, 0xF5, 0xA8, 0x05, 0x50, 0x28, 0xFC] };
+pub const I_AVN_TREE_VIEW_IID: Guid = Guid { data1: 0x0B60003F, data2: 0xEC3F, data3: 0x5F72, data4: [0x97, 0x63, 0x04, 0xC3, 0xC4, 0xFF, 0xE8, 0xDD] };
 
 #[repr(C)]
 struct IAvnTreeViewVtbl {
@@ -91991,6 +96200,12 @@ struct IAvnTreeViewVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnTreeView, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnTreeView, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnTreeView, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnTreeView, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnTreeView, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnTreeView, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnTreeView, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnTreeView, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnTreeView, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnTreeView, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnTreeView, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnTreeView, *mut i32) -> i32,
@@ -92555,6 +96770,45 @@ impl ComPtr<IAvnTreeView> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -92946,7 +97200,7 @@ impl ComPtr<IAvnTreeView> {
     }
 }
 
-pub const I_AVN_TREE_VIEW_ITEM_IID: Guid = Guid { data1: 0xCDD644B1, data2: 0x7E5B, data3: 0x5C32, data4: [0x92, 0x71, 0x5A, 0x69, 0xCE, 0xE6, 0x50, 0x05] };
+pub const I_AVN_TREE_VIEW_ITEM_IID: Guid = Guid { data1: 0xF173219D, data2: 0xC63C, data3: 0x5669, data4: [0xBE, 0x7D, 0x98, 0xE9, 0x8B, 0xF1, 0xC5, 0x4B] };
 
 #[repr(C)]
 struct IAvnTreeViewItemVtbl {
@@ -93025,6 +97279,12 @@ struct IAvnTreeViewItemVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnTreeViewItem, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnTreeViewItem, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnTreeViewItem, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnTreeViewItem, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnTreeViewItem, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnTreeViewItem, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnTreeViewItem, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnTreeViewItem, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnTreeViewItem, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnTreeViewItem, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnTreeViewItem, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnTreeViewItem, *mut i32) -> i32,
@@ -93586,6 +97846,45 @@ impl ComPtr<IAvnTreeViewItem> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -93960,7 +98259,7 @@ impl ComPtr<IAvnTreeViewItem> {
     }
 }
 
-pub const I_AVN_USER_CONTROL_IID: Guid = Guid { data1: 0xE3ABA05B, data2: 0xDFF9, data3: 0x53C3, data4: [0x88, 0x85, 0xCE, 0x2D, 0x78, 0xFE, 0xFF, 0xFC] };
+pub const I_AVN_USER_CONTROL_IID: Guid = Guid { data1: 0x0BFF79AB, data2: 0x0D63, data3: 0x5654, data4: [0x8F, 0x44, 0xDB, 0xBD, 0xA6, 0x30, 0xFA, 0x30] };
 
 #[repr(C)]
 struct IAvnUserControlVtbl {
@@ -94039,6 +98338,12 @@ struct IAvnUserControlVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnUserControl, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnUserControl, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnUserControl, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnUserControl, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnUserControl, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnUserControl, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnUserControl, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnUserControl, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnUserControl, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnUserControl, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnUserControl, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnUserControl, *mut i32) -> i32,
@@ -94583,6 +98888,45 @@ impl ComPtr<IAvnUserControl> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -94839,7 +99183,7 @@ impl ComPtr<IAvnUserControl> {
     }
 }
 
-pub const I_AVN_VIEWBOX_IID: Guid = Guid { data1: 0x3140444B, data2: 0x2172, data3: 0x5105, data4: [0xB7, 0xAD, 0xD8, 0x10, 0xD5, 0x79, 0x4C, 0x13] };
+pub const I_AVN_VIEWBOX_IID: Guid = Guid { data1: 0x159B2487, data2: 0x78B8, data3: 0x5C1A, data4: [0x93, 0x2D, 0xA6, 0x7C, 0x6E, 0x2E, 0x74, 0x20] };
 
 #[repr(C)]
 struct IAvnViewboxVtbl {
@@ -94918,6 +99262,12 @@ struct IAvnViewboxVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnViewbox, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnViewbox, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnViewbox, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnViewbox, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnViewbox, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnViewbox, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnViewbox, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnViewbox, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnViewbox, i64) -> i32,
     get_stretch: unsafe extern "system" fn(*mut IAvnViewbox, *mut i32) -> i32,
     set_stretch: unsafe extern "system" fn(*mut IAvnViewbox, i32) -> i32,
     get_stretch_direction: unsafe extern "system" fn(*mut IAvnViewbox, *mut i32) -> i32,
@@ -95432,6 +99782,45 @@ impl ComPtr<IAvnViewbox> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_stretch(&self) -> Result<i32> {
         unsafe {
             let mut value: i32 = 0;
@@ -95476,7 +99865,7 @@ impl ComPtr<IAvnViewbox> {
     }
 }
 
-pub const I_AVN_WINDOW_IID: Guid = Guid { data1: 0x29E3362E, data2: 0xB16E, data3: 0x5163, data4: [0xAE, 0xD3, 0xCF, 0x14, 0xD6, 0xB1, 0x27, 0x84] };
+pub const I_AVN_WINDOW_IID: Guid = Guid { data1: 0xBF221569, data2: 0x8214, data3: 0x5478, data4: [0x95, 0x05, 0x0B, 0x21, 0xA2, 0x66, 0x35, 0x45] };
 
 #[repr(C)]
 struct IAvnWindowVtbl {
@@ -95555,6 +99944,12 @@ struct IAvnWindowVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnWindow, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnWindow, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnWindow, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnWindow, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnWindow, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnWindow, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnWindow, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnWindow, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnWindow, i64) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnWindow, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnWindow, *mut IAvnBrush) -> i32,
     get_background_sizing: unsafe extern "system" fn(*mut IAvnWindow, *mut i32) -> i32,
@@ -96140,6 +100535,45 @@ impl ComPtr<IAvnWindow> {
             hresult::check(hr)
         }
     }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
     pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -96683,7 +101117,7 @@ impl ComPtr<IAvnWindow> {
     }
 }
 
-pub const I_AVN_WRAP_PANEL_IID: Guid = Guid { data1: 0x802A39C5, data2: 0x57F6, data3: 0x5E1A, data4: [0x9D, 0xA8, 0x02, 0x63, 0x45, 0x71, 0xCF, 0x6D] };
+pub const I_AVN_WRAP_PANEL_IID: Guid = Guid { data1: 0xFE3C3653, data2: 0x52AA, data3: 0x529D, data4: [0x8A, 0xCE, 0x7F, 0x54, 0xE7, 0xD7, 0x43, 0x87] };
 
 #[repr(C)]
 struct IAvnWrapPanelVtbl {
@@ -96762,6 +101196,12 @@ struct IAvnWrapPanelVtbl {
     unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnWrapPanel, i64) -> i32,
     advise_pointer_exited: unsafe extern "system" fn(*mut IAvnWrapPanel, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
     unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnWrapPanel, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnWrapPanel, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnWrapPanel, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnWrapPanel, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnWrapPanel, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnWrapPanel, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnWrapPanel, i64) -> i32,
     get_children: unsafe extern "system" fn(*mut IAvnWrapPanel, *mut *mut IAvnControlList) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnWrapPanel, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnWrapPanel, *mut IAvnBrush) -> i32,
@@ -97282,6 +101722,45 @@ impl ComPtr<IAvnWrapPanel> {
     pub fn unadvise_pointer_exited(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_exited)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }

@@ -6,8 +6,8 @@ using System.Runtime.InteropServices.Marshalling;
 namespace Avalonia.Host.Com;
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("218295EF-A88D-5B93-8A33-97ABD41E6645")]
-public partial interface IAvnControlPointerExitedHandler
+[Guid("7784D53F-FAEE-5089-8844-C9F5CC3E8632")]
+public partial interface IAvnControlTappedHandler
 {
     [PreserveSig]
     int Invoke(int KeyModifiers);

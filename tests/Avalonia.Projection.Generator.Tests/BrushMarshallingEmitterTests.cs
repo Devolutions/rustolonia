@@ -153,11 +153,11 @@ public class BrushMarshallingEmitterTests
 
         // Widened interfaces republish at version 4; the ones whose flattened vtable did not
         // move keep the version they already published.
-        Assert.Contains("#define I_AVN_BORDER_ABI_VERSION 13", header, StringComparison.Ordinal);
-        Assert.Contains("#define I_AVN_PANEL_ABI_VERSION 12", header, StringComparison.Ordinal);
-        Assert.Contains("#define I_AVN_TEXT_BLOCK_ABI_VERSION 15", header, StringComparison.Ordinal);
-        Assert.Contains("#define I_AVN_CONTROL_ABI_VERSION 9", header, StringComparison.Ordinal);
-        Assert.Contains("#define I_AVN_DECORATOR_ABI_VERSION 11", header, StringComparison.Ordinal);
+        Assert.Contains("#define I_AVN_BORDER_ABI_VERSION 14", header, StringComparison.Ordinal);
+        Assert.Contains("#define I_AVN_PANEL_ABI_VERSION 13", header, StringComparison.Ordinal);
+        Assert.Contains("#define I_AVN_TEXT_BLOCK_ABI_VERSION 16", header, StringComparison.Ordinal);
+        Assert.Contains("#define I_AVN_CONTROL_ABI_VERSION 10", header, StringComparison.Ordinal);
+        Assert.Contains("#define I_AVN_DECORATOR_ABI_VERSION 12", header, StringComparison.Ordinal);
         Assert.Contains(
             "#define I_AVN_AVALONIA_OBJECT_ABI_VERSION 2",
             header,

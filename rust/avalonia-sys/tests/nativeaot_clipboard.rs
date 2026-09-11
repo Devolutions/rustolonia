@@ -1,4 +1,4 @@
-﻿//! Raw ABI conformance for the stage 31 clipboard command capability.
+//! Raw ABI conformance for the stage 31 clipboard command capability.
 //!
 //! These run against the published NativeAOT host and prove that every vtable
 //! slot of `IAvnApplication4`/`IAvnClipboardData` lines up between the managed

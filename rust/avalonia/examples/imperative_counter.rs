@@ -8,8 +8,8 @@ use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::Arc;
 
 use avalonia::{
-    App, AppScope, Brush, Button, Color, HorizontalAlignment, ListBox, Orientation, Result, Slider,
-    StackPanel, TextBlock, TextBox, Thickness, Window,
+    App, AppScope, Border, Brush, Button, Color, HorizontalAlignment, ListBox, Orientation, Result,
+    Slider, StackPanel, TextBlock, TextBox, Thickness, Window,
 };
 
 fn main() -> Result<()> {
@@ -64,6 +64,25 @@ fn build_ui(scope: &AppScope) -> Result<()> {
                 let _ = slider_label.set_text(format!("Slider: {:.0}", args.new_value));
             }
         })?;
+
+    // Wave Q payload: the wheel event carries its Vector delta across the ABI.
+    let wheel_label = TextBlock::new()?
+        .text("Wheel: -")?
+        .margin(Thickness::symmetric(12.0, 0.0))?;
+    let wheel_zone = Border::new()?
+        .margin(Thickness::symmetric(12.0, 4.0))?
+        .padding(Thickness::uniform(6.0))?
+        .background(Brush::solid(Color::new(255, 230, 235, 240)))?
+        .child(Some(
+            &TextBlock::new()?.text("Hover here and scroll the wheel")?,
+        ))?;
+    let wheel_zone = wheel_zone.on_pointer_wheel_changed(scope, {
+        let wheel_label = wheel_label.clone();
+        move |args| {
+            let _ =
+                wheel_label.set_text(format!("Wheel: ({:.0}, {:.0})", args.delta.x, args.delta.y));
+        }
+    })?;
 
     let increment = Button::new()?
         .content(Some(&TextBlock::new()?.text("Increment")?))?
@@ -136,6 +155,8 @@ fn build_ui(scope: &AppScope) -> Result<()> {
     children.add(echo)?;
     children.add(slider)?;
     children.add(slider_label)?;
+    children.add(wheel_zone)?;
+    children.add(wheel_label)?;
     children.add(log)?;
     children.add(selection_label)?;
 

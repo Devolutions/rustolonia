@@ -6,9 +6,9 @@ using System.Runtime.InteropServices.Marshalling;
 namespace Avalonia.Host.Com;
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("218295EF-A88D-5B93-8A33-97ABD41E6645")]
-public partial interface IAvnControlPointerExitedHandler
+[Guid("4318E60A-86C6-5142-8600-0D61AA20CE93")]
+public partial interface IAvnControlPointerWheelChangedHandler
 {
     [PreserveSig]
-    int Invoke(int KeyModifiers);
+    int Invoke(AvnVector Delta, int KeyModifiers);
 }

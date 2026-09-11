@@ -19,11 +19,11 @@
     },
     {
       "path": "IAvnArc.g.cs",
-      "sha256": "59d16dd626ffb007382e9d761d0e65860e116d659b0d9ed27a53946f3626a474"
+      "sha256": "d0d21649fda16dbf92ad11c905d4216d471934c9aa0a348b25189f7627582309"
     },
     {
       "path": "IAvnAutoCompleteBox.g.cs",
-      "sha256": "6a1501a24d43e6b76b7dc12228b788d89c39d0f2aa46c00f01d38538281ed1da"
+      "sha256": "6c50d87d8db3a9a6af2a39d9ece46009a7cfae47c6ec13658571f6c10d2c0e45"
     },
     {
       "path": "IAvnAutoCompleteBoxDropDownClosedHandler.g.cs",
@@ -63,7 +63,7 @@
     },
     {
       "path": "IAvnBorder.g.cs",
-      "sha256": "5aa0f929ee0197060daee6517eed696548cc1c2c18112d25b4f624fcb7e89f0e"
+      "sha256": "40a45dcd57fa5f8734710efc44999541e78d36c804e9cfd532d25772cf59f7a6"
     },
     {
       "path": "IAvnBrush.g.cs",
@@ -71,7 +71,7 @@
     },
     {
       "path": "IAvnButton.g.cs",
-      "sha256": "8eac1d8864849741000d65bd68829d2e0ffbcb42ca3bad73896e2abeee2dd55f"
+      "sha256": "5800d43c1b0e6f5a89105e4426f0d12097ad29b542572e5174295f2eb40e003f"
     },
     {
       "path": "IAvnButtonClickHandler.g.cs",
@@ -79,15 +79,15 @@
     },
     {
       "path": "IAvnButtonSpinner.g.cs",
-      "sha256": "60a65cdb6d991b3e3ff58bf5db1cca56638a8a408a763e40512811dcf40306c8"
+      "sha256": "489d371f73a5f7de6e7fce2016588640841129c190da292de5338ab652265aa1"
     },
     {
       "path": "IAvnCalendar.g.cs",
-      "sha256": "32cda70ad0e7d2089c29aa2c4148d973eb5d27064d551d87c90326726a84a089"
+      "sha256": "ab3ae8c4f97399647a21e6fd4f97e6ce1ae7aa68e25d1a929d69526e28099414"
     },
     {
       "path": "IAvnCalendarDatePicker.g.cs",
-      "sha256": "af4e6c24be30782abdf0b46d889f5196263227c060cc8a9ae8bd5373fa542253"
+      "sha256": "6d0157bf5e3d10f9e78f5fd1d9bf3c318c6579c7de72443d716530e25b946310"
     },
     {
       "path": "IAvnCalendarDatePickerCalendarClosedHandler.g.cs",
@@ -119,7 +119,7 @@
     },
     {
       "path": "IAvnCanvas.g.cs",
-      "sha256": "e5df3c4724d5e955cd0f5c117ba849dd9ede906661f9a54bef8d8388ac506665"
+      "sha256": "485a9e56e000ee0d9e5c9479a58c26a84791ca88709451e7c430b3b5bb580b89"
     },
     {
       "path": "IAvnCanvasStatics.g.cs",
@@ -127,15 +127,15 @@
     },
     {
       "path": "IAvnCarousel.g.cs",
-      "sha256": "f7b4727ebd5e2fb8f2afc732b01f0cbf4c52a718db65a08745475be9dfbe3b85"
+      "sha256": "d684c435a77968cec2911a2eec59361d1086911335f9a66f52025ba2918270f5"
     },
     {
       "path": "IAvnCheckBox.g.cs",
-      "sha256": "dd8c8c532d70da177ad9127fd31176579cf9eadc1c6be2594584a510483093b8"
+      "sha256": "279885f9960c5b97a9c3bbe67c16adfb099e58a3e912ecaf153d0acfb11239b0"
     },
     {
       "path": "IAvnComboBox.g.cs",
-      "sha256": "ab6af3a65f4f08f81bf0e3558521ecd6e1f0d627dc32f5d2093f05f7f8a448fa"
+      "sha256": "26a915d4ea36d5b754722210f8962e77c7f3632d8c6702e78f962356c95e2434"
     },
     {
       "path": "IAvnComboBoxDropDownClosedHandler.g.cs",
@@ -147,7 +147,7 @@
     },
     {
       "path": "IAvnComboBoxItem.g.cs",
-      "sha256": "c7f80f04d06f78f495d94ec0a3d3e2ac9152187420f521d82e39b777bed7b3e8"
+      "sha256": "130c6fe5978fc0da3a68b6bfaf1141e3f5924e749f17e048f5e0de62b48a2749"
     },
     {
       "path": "IAvnCommand.g.cs",
@@ -155,11 +155,11 @@
     },
     {
       "path": "IAvnCommandBar.g.cs",
-      "sha256": "17d9616479700c1285736ee3c81f697ef329485ded59670e19ffec392852073d"
+      "sha256": "98c6d23b791ffb42a6f1eea25b109b15e6ba8c4b88fb57afeb1ce3cd6d4c069c"
     },
     {
       "path": "IAvnCommandBarButton.g.cs",
-      "sha256": "6b59a0b13c171af10e621eee7f03b7a8f43b4a7abef4fae48cf64a3a69d131b6"
+      "sha256": "261b18f40be3b9002ae9ab1ebeba2c2dbb2fc8ab0b1d5f534e79e82747e0d1c9"
     },
     {
       "path": "IAvnCommandBarClosedHandler.g.cs",
@@ -179,19 +179,19 @@
     },
     {
       "path": "IAvnCommandBarSeparator.g.cs",
-      "sha256": "e6c8b7a045661a9a409b55c10ce226dd85b023afc8f4041aca22e132482c7534"
+      "sha256": "f9b7ecac60994a8663b5d03c1a1eedf8470dfe1aff97c8da2324dce09e0ee6f9"
     },
     {
       "path": "IAvnCommandBarToggleButton.g.cs",
-      "sha256": "eaa6bc8a3dcb554b2b0a4631d8d13ec66292deec54b33720c0764ed55e631df3"
+      "sha256": "10a6259198d39f57cd64ad9732749bfe64500f540a5f58fb2c0375259bb53c0b"
     },
     {
       "path": "IAvnContentControl.g.cs",
-      "sha256": "5e4ff7d86636b483e5a482b1e2cbb52e04bc337b10ba4eb2d8ab06282dba8cdd"
+      "sha256": "d0e76be71b953f835f4b9b809a013aea04a1a9343a1f164de8b227425d17b2d2"
     },
     {
       "path": "IAvnContextMenu.g.cs",
-      "sha256": "24dc67e6541f36abe54ec0a479b6707555cdefa64475adba6a7a38eeae96b7a4"
+      "sha256": "c1a01ee264639e7df6204b35895278d58baf601c25733166888fda72e17753bd"
     },
     {
       "path": "IAvnContextMenuClosingHandler.g.cs",
@@ -203,7 +203,11 @@
     },
     {
       "path": "IAvnControl.g.cs",
-      "sha256": "8868cd2d509d95e146a94d60d57f8e08598e074922206172d78a41d8b7f1e1ab"
+      "sha256": "e966ed1662a5864009f89e61b2cc83a47b0a08bdc31d6c4c6133d069c48f89c9"
+    },
+    {
+      "path": "IAvnControlDoubleTappedHandler.g.cs",
+      "sha256": "3910943c09f6a262602a5fa4b199e8513067ba9fc43857cb2f6dc75a0b6a31d8"
     },
     {
       "path": "IAvnControlFactory.g.cs",
@@ -235,15 +239,23 @@
     },
     {
       "path": "IAvnControlPointerEnteredHandler.g.cs",
-      "sha256": "fd84807be1efb7f5509b2c4ae9e456bd06d52c9fc8727fed4dd305540636fbb0"
+      "sha256": "b5d3ad5ab7d33cdb52a991a61afd3080788561168b64c8c4ce9166dee1fbe69c"
     },
     {
       "path": "IAvnControlPointerExitedHandler.g.cs",
-      "sha256": "a86108c11b2bc1fce7052de8052a47320fac06fa01c30bbc9b4f9c200dae0fed"
+      "sha256": "fdcc1b4e2a736fd3a8486900000883469b18a2d3bda75c3e904e6a53f37e3b82"
+    },
+    {
+      "path": "IAvnControlPointerWheelChangedHandler.g.cs",
+      "sha256": "264a6c18e6a73f73b61da627d62ce3c165c8d38ab2ee609d54918661906aa2a2"
     },
     {
       "path": "IAvnControlSizeChangedHandler.g.cs",
       "sha256": "5f3f554e45973763235aad7350ad22b0c476e9643857b86a82b4b8b21fd89033"
+    },
+    {
+      "path": "IAvnControlTappedHandler.g.cs",
+      "sha256": "f6801edfac3857a990f1284eab945d7619cefe5ab6186255fc15dc95b47a2260"
     },
     {
       "path": "IAvnControlUnloadedHandler.g.cs",
@@ -255,7 +267,7 @@
     },
     {
       "path": "IAvnDatePicker.g.cs",
-      "sha256": "57596e1ee4edb79e3c4c48ba0d6327c286cc49fdb7409a6582a6a8efa327bcef"
+      "sha256": "ef435bbbb43d75d7731f29929894deb9c917924229a2f5f86ff170177b382297"
     },
     {
       "path": "IAvnDatePickerSelectedDateChangedHandler.g.cs",
@@ -267,11 +279,11 @@
     },
     {
       "path": "IAvnDecorator.g.cs",
-      "sha256": "d1567af9c1029e2f2d8fdfb678a6f92c424fd6637a0b780774774f6db7e4a82d"
+      "sha256": "1fbe8bc5c915b3b89aeef8e6c51e02354785ca9e8fe2a5349c1bc25314683d70"
     },
     {
       "path": "IAvnDockPanel.g.cs",
-      "sha256": "8ce541a5ba44af31361e4e9348f91871120c15a93624c59f2614601160d09b5a"
+      "sha256": "30b97d9d62fd07931f3d5cee8e1ae318eac51572c4de0df4a481fcff108ccd5f"
     },
     {
       "path": "IAvnDockPanelStatics.g.cs",
@@ -279,15 +291,15 @@
     },
     {
       "path": "IAvnDropDownButton.g.cs",
-      "sha256": "ab8ab87dbe6cad7e7070216ba8464753a2cebf0aae9a2b2eca7957f6523c04a3"
+      "sha256": "eb935c724caeac2266e279cea4fc77e37cbb0b56449f1c1efb1da70fc975db72"
     },
     {
       "path": "IAvnEllipse.g.cs",
-      "sha256": "bab25a06db466ed246ca1e428ced3c6027166b160fbfe4b0e8911d40b4dd61d4"
+      "sha256": "c5816cbc997a85df54a11eaf8ab40913883419ebe3ab96cc206b2f7741d6206f"
     },
     {
       "path": "IAvnExpander.g.cs",
-      "sha256": "cf486379c64cd674b159c23f25b0906098832f102859ed93ef60d915b2db85a9"
+      "sha256": "7413f6b640f65ef29c16d28d23f66ae1708ae484e4906a660e86a8352871ac78"
     },
     {
       "path": "IAvnExpanderCollapsedHandler.g.cs",
@@ -307,7 +319,7 @@
     },
     {
       "path": "IAvnFlexPanel.g.cs",
-      "sha256": "bd71b4d1b7cc38956d39c7d3e77b85447707296231a9629a4280557b5e7230ce"
+      "sha256": "18e7f60d925a9ba10b81892a9f4b67090786df558eb770cbf422b1aff11d1e45"
     },
     {
       "path": "IAvnFlyout.g.cs",
@@ -327,11 +339,11 @@
     },
     {
       "path": "IAvnGrid.g.cs",
-      "sha256": "a5faa7a8fc98eb4839e03dd2d1eb8c9851a74cee3330ec3640e61120fdc37831"
+      "sha256": "d31d0ec5c5af40b9bc3bf1229b02c630e99f6f31c74b2631063eb39f7a74f0fc"
     },
     {
       "path": "IAvnGridSplitter.g.cs",
-      "sha256": "1876f90e45a18f43c4195b398670134f7e79bfde2193e5946f4742f555d2d7cc"
+      "sha256": "3c3b6eb659edb52978aebef5a55ac7d93439bba687e23481876c54dc2ac2868e"
     },
     {
       "path": "IAvnGridStatics.g.cs",
@@ -339,31 +351,31 @@
     },
     {
       "path": "IAvnGroupBox.g.cs",
-      "sha256": "22572df2c63616bd8ab6124c805892bd86dd8c90e0b8555fb2a80a70b533f937"
+      "sha256": "06b2c600bd39b228ae40d64414f69eaf16276ead9cc8f67a143d31da36f0cbc2"
     },
     {
       "path": "IAvnHeaderedContentControl.g.cs",
-      "sha256": "3e6eaf93327699196e21aeff52f637534355e46bc74e4806b9f666d35cec3db2"
+      "sha256": "2acb7dbccae029b70a87ccc6b9dd28a1b139dd443071c901b72b982af7eb4c29"
     },
     {
       "path": "IAvnHeaderedItemsControl.g.cs",
-      "sha256": "f75d8d62c018a32c9c8f879767bc6267d02d4706e63769461234c2cd6399a427"
+      "sha256": "5818ee1eb926244dda30807062286e0f93ecd60a2817f14c625ed6d63a0fd28b"
     },
     {
       "path": "IAvnHeaderedSelectingItemsControl.g.cs",
-      "sha256": "5bde4d7323596488226f56cfc737ea86020400a57101f59177aa749357f46930"
+      "sha256": "5d3c5f77afde6d2228f44a7297b4d200850764146bf9e8d057755bad00d3eb40"
     },
     {
       "path": "IAvnHyperlinkButton.g.cs",
-      "sha256": "5c443423ea57a16709275476fb40959d7921b2630eb4204149e50ab138fab06b"
+      "sha256": "d2aa077ceed817f8721f0b67df7e0dcd69e657b1f482a4faebf09ce28b1abcc7"
     },
     {
       "path": "IAvnIconElement.g.cs",
-      "sha256": "fcb3a64ff61fbe13d1c76e361d29e6640dab782c3ded197b03add7bb4ea1b6da"
+      "sha256": "ce174630bb8f8cbc6a956be4f7c3154f452702ac07a432d2d61a116724c8e2d6"
     },
     {
       "path": "IAvnImage.g.cs",
-      "sha256": "6c04e891889857265f64f582dffb542093bebbaad0722dd31e13187fc22abc69"
+      "sha256": "851bc80e9eca2f3ceab53976c3415f1b80f91a47b9c7f4fa40273a462b5e1348"
     },
     {
       "path": "IAvnItemList.g.cs",
@@ -371,39 +383,39 @@
     },
     {
       "path": "IAvnItemsControl.g.cs",
-      "sha256": "43757e13e3d7464753b12931a04c3c4adcceea32bc64417384281bd9b8493afb"
+      "sha256": "aa723338af9bf331b79097ed4dbac1e0944332389b7b7229b0d39b8c32d68ac4"
     },
     {
       "path": "IAvnLabel.g.cs",
-      "sha256": "780bf4bcccda4fb5e26632c653059c6c42417171d5f9c51c44e1e0a80a6542d2"
+      "sha256": "3466197f82acc8cdaa7992dfa9f1df42568089f676756d530db00fd9ad6dd095"
     },
     {
       "path": "IAvnLayoutTransformControl.g.cs",
-      "sha256": "3c68a5b5e8852b2d13eb1af1df88e16cc2a02f8fc69a25d4c2659f53245ac7e0"
+      "sha256": "3caad460f8b12da1e67b31719aa67199939ef305f7aac2fca83e36cd7a306ed1"
     },
     {
       "path": "IAvnLine.g.cs",
-      "sha256": "334299c6f645a0851caa39bf56bf0f355b2139094bb65d9cf0d14eead73da704"
+      "sha256": "3f506144cf7cfe2deb4bea64010978af268083dcc5f8dcbd0a6e8544e61e5be4"
     },
     {
       "path": "IAvnListBox.g.cs",
-      "sha256": "a8487e7971d6ed17b90fab74cf8fbf729b33fccd37ae038b4d6bea0e9a0740dc"
+      "sha256": "4db73e83807d8fac2f931a54536e6977402b8f1f766e6b93c7bed74fe637d740"
     },
     {
       "path": "IAvnListBoxItem.g.cs",
-      "sha256": "d7b612c31c4b38fe5446b479fffa8f5c1ca0d5c74e9bc3df8bfd85af4711db09"
+      "sha256": "351b5e42a890c4096a7e497bcfa6d485f7f3e540ccce9459a381f69f85e46466"
     },
     {
       "path": "IAvnMaskedTextBox.g.cs",
-      "sha256": "33023bfeffdc9618496e2e53c70d3b1bba1f98f48d0624940be3fca426fc8ff3"
+      "sha256": "b1c63e850e630d1400c4bc671afc7ba6686d177553978784fdc395975b9dc18f"
     },
     {
       "path": "IAvnMenu.g.cs",
-      "sha256": "71ae9d7dc5173eba1d27f73eae255049b156b92768dbe91a8c15d937e2658133"
+      "sha256": "76c655d5ec30b85ac45dfb39548b4ad0c2e7f26ad762bf47f6ba93bc943f97b4"
     },
     {
       "path": "IAvnMenuBase.g.cs",
-      "sha256": "77512be5669e638d3cfa54faa157a69616a9bf1d1c3d60086f4e9aaddb69074c"
+      "sha256": "b47b3bd7c6c9f8059662ad1dea257854559327774c4a8d16768ea225cd3074cc"
     },
     {
       "path": "IAvnMenuBaseClosedHandler.g.cs",
@@ -419,7 +431,7 @@
     },
     {
       "path": "IAvnMenuItem.g.cs",
-      "sha256": "4a3aa400070e6e0d51752aa2693f0503be01ef666d6e8cf564f52eabaebd8f68"
+      "sha256": "3c3fc9bb507c92a1f0f003387eca278f498cf2936efc8d588ec352b872b3f4af"
     },
     {
       "path": "IAvnMenuItemClickHandler.g.cs",
@@ -435,7 +447,7 @@
     },
     {
       "path": "IAvnNotificationCard.g.cs",
-      "sha256": "3b9ffcb8d57cedcc80110cd5b6cc9044f5dbd9940683208a0da718bd94de2413"
+      "sha256": "530e4c5f4d35cff7ec89b9b180d43612ff9fcd15df66ed22d853a3b484a16403"
     },
     {
       "path": "IAvnNotificationCardNotificationClosedHandler.g.cs",
@@ -443,7 +455,7 @@
     },
     {
       "path": "IAvnNumericUpDown.g.cs",
-      "sha256": "56b9fb7415d54b67029a55475c2158aea6f167a22ab48b959c00ddfe36427031"
+      "sha256": "faf8e8a96f780712d59dd8a6a7ba03738dfc830ffa665d30530d8baf23569f59"
     },
     {
       "path": "IAvnNumericUpDownSpinnedHandler.g.cs",
@@ -455,19 +467,19 @@
     },
     {
       "path": "IAvnPanel.g.cs",
-      "sha256": "5afb8cb9dadfdd318d6dee1c777ed8611992ebef14ed58b18d0ba361bf7b388b"
+      "sha256": "cdaf43072f7e10b42187105d53adeec2deff102dd211cc8713eee1cd82e8f85b"
     },
     {
       "path": "IAvnPath.g.cs",
-      "sha256": "cebf4a14ecfeb5c763afa60cda46c90aae6ebe8ab0e2c7f32eaba94bc4af4ad3"
+      "sha256": "b590472bc88323f22d45928e030e028b1de04e9ea52534f789005cfd9582e5a4"
     },
     {
       "path": "IAvnPathIcon.g.cs",
-      "sha256": "6a6d6991ef17506049b1e5c38ccf0b988754346783ccf7202807135ff34f44dc"
+      "sha256": "e119f90b4228a80f92db9d5f91a59119692eadb0c671d45992f6d364faca22d5"
     },
     {
       "path": "IAvnPipsPager.g.cs",
-      "sha256": "d786db945bd454f88ea36e4d8047a153d81a6d1b70bbce78a017f86c119557bf"
+      "sha256": "5149a676817b9295bb8a99c2ec1e5790b3ee9fd1c3c8782f823fbc38843cd285"
     },
     {
       "path": "IAvnPipsPagerSelectedIndexChangedHandler.g.cs",
@@ -475,15 +487,15 @@
     },
     {
       "path": "IAvnPolygon.g.cs",
-      "sha256": "5f50d77c6a93be787568e5c0fa281159bf58b8fc315a8fe18b8a3816a6bfa2f5"
+      "sha256": "ce891aa81bdb20131f66af4f78426a2ab0569dab5fcee76ca7be2153cf8bca66"
     },
     {
       "path": "IAvnPolyline.g.cs",
-      "sha256": "fcb5e30a76fbb5d073d3961a89493d14b821e0c0a7f93684b00cf087d7b5e7e1"
+      "sha256": "5d427ca8b22bb75339ce957c4b1e5c7a962cbe47b4de7a54e569b6ba89e84d18"
     },
     {
       "path": "IAvnPopup.g.cs",
-      "sha256": "3c8c920c3f904d56ac67f714248a57093e94711932dc8ddcc42c73f354a34f8e"
+      "sha256": "14af50db10a6b612c4cdd7c18e7bdf2b3783dd3311b9eeb6d707139dfef5a180"
     },
     {
       "path": "IAvnPopupClosedHandler.g.cs",
@@ -507,15 +519,15 @@
     },
     {
       "path": "IAvnProgressBar.g.cs",
-      "sha256": "912f79cd7d0fbc6dd994e6443f8d22360db050cf317eef02fe99837b4422964a"
+      "sha256": "afb9e9b99a2703b3bd4f567ebbcb6f6f22a72da54f7890f1b9a3c231811409e0"
     },
     {
       "path": "IAvnRadioButton.g.cs",
-      "sha256": "6ae3f71064dbf16c16b9eea366bd0f1d2dc21bffaff2dbe7c1ba4150060f2717"
+      "sha256": "70e42d8168ec2df9420973cf8f2ebd3a93faa969ca90229467a4a02003cbabce"
     },
     {
       "path": "IAvnRangeBase.g.cs",
-      "sha256": "ef9c0e3e8c5e4d0e9c753822ce42321ae0ee13071d6b0caf335aefa6e37c3064"
+      "sha256": "9fa2bbd184333da4d978a3891e93caf8cbba7edb5870fa437fe93d4150361f61"
     },
     {
       "path": "IAvnRangeBaseValueChangedHandler.g.cs",
@@ -523,11 +535,11 @@
     },
     {
       "path": "IAvnRectangle.g.cs",
-      "sha256": "96b104bd2f1d505c2daf5b0447b546de4bb7973f127cb8b9c8faf2afd51c57a7"
+      "sha256": "38bbba63f34c83d92e088d68a1859ccfe468e12397ad211dcf5b8fd71271f167"
     },
     {
       "path": "IAvnRefreshContainer.g.cs",
-      "sha256": "5dd5ac6109b95f4c4a149a94aeb765be5e44409d7ba4a438a0a3ab7bdc2224b8"
+      "sha256": "826a55e8c64e552e0229f4a968c3c56ad1543995495cc35d22c6f8d016d2b701"
     },
     {
       "path": "IAvnRefreshContainerRefreshRequestedHandler.g.cs",
@@ -535,7 +547,7 @@
     },
     {
       "path": "IAvnRelativePanel.g.cs",
-      "sha256": "4a61c1a614967e958b313faddf84d7ac35996756d9de58db919b95ed421c96cd"
+      "sha256": "aedc6b17a2501bdbbe20b7eff386d5db0c0a3de79d24e86fd635a00a0e87282d"
     },
     {
       "path": "IAvnRelativePanelStatics.g.cs",
@@ -543,11 +555,11 @@
     },
     {
       "path": "IAvnRepeatButton.g.cs",
-      "sha256": "81e2a687e61a778c044e89e78e621c531fe1a766b2e14af930681a4970a94b61"
+      "sha256": "6ae1b2f4fc8552080c7701240700e0714d173664ebcc36b1fc1db6e1743e6a8d"
     },
     {
       "path": "IAvnScrollViewer.g.cs",
-      "sha256": "e6a9416e7fd79588665ac3dbb11420a5ef9e230c7c6a3e36efc690a7969ea44c"
+      "sha256": "c6731f08d082232d8e63cad08e39e3d58e87011d3d1e518ece1e1791eb3ae0a4"
     },
     {
       "path": "IAvnScrollViewerScrollChangedHandler.g.cs",
@@ -555,11 +567,11 @@
     },
     {
       "path": "IAvnSector.g.cs",
-      "sha256": "f51a366187f746c101b316a9ef6f08a8ba9265ae07b6a8970faefbd0f9921715"
+      "sha256": "032999ec0e1e8eacf5653f8d359502e3e0e23e82ffe73b9ce4270b5af9a5d409"
     },
     {
       "path": "IAvnSelectableTextBlock.g.cs",
-      "sha256": "a39f31c4f84484d2b1c7fff8a6a795492fc5d635292493984a0b0cca0ea03144"
+      "sha256": "f0836499f750580cbc3f160d84b268e7f09d7fb6f225d64a951233f9666a2425"
     },
     {
       "path": "IAvnSelectableTextBlockCopyingToClipboardHandler.g.cs",
@@ -571,7 +583,7 @@
     },
     {
       "path": "IAvnSelectingItemsControl.g.cs",
-      "sha256": "c43f40ef094f7e73f49053146233ac597732f2f497f1672b13b09ace4ebae2e1"
+      "sha256": "79c9c1469a8732899320a3d3d20f06813f0a23198264758ad0c05a33f9b01f4e"
     },
     {
       "path": "IAvnSelectingItemsControlSelectionChangedHandler.g.cs",
@@ -579,19 +591,19 @@
     },
     {
       "path": "IAvnSeparator.g.cs",
-      "sha256": "e1268b65e02236de2eb719d577baa6b6b421394cbd4b6df9c608c566f66e03ee"
+      "sha256": "2032d4d11fec8442f1173f63722b8bf316891bedb80643313a856a62d4142a46"
     },
     {
       "path": "IAvnShape.g.cs",
-      "sha256": "fb36307b5076646d1337a42e36c4acc54962a700919296e10d44698287d967a0"
+      "sha256": "e442ba772fae1bd6c5f3c4e049eab69b931fadfc575dcb817dd38067c4d05bfb"
     },
     {
       "path": "IAvnSlider.g.cs",
-      "sha256": "f357e303ba362e023d008f2622e866301546a38d0183707bbd65a714eda167f9"
+      "sha256": "2d79c718f0b6e2f45ea42dffde901140659133ec7df1bb32ac0e0f1a86f19971"
     },
     {
       "path": "IAvnSpinner.g.cs",
-      "sha256": "c68e06f349b87b11e99a70e4b6ca44421686ae9140eef8177019827850721869"
+      "sha256": "8377b341f67fd827683364a72f331fca3bdf483bc864d7541aed41ae608af71a"
     },
     {
       "path": "IAvnSpinnerSpinHandler.g.cs",
@@ -599,7 +611,7 @@
     },
     {
       "path": "IAvnSplitButton.g.cs",
-      "sha256": "2c54885863c49f890cd6de799f469ad93de4c11b9ad7cf4f1d2271cd3fe847ad"
+      "sha256": "ed9702e19f846c7a5a98036a8e50a61045d2bb3c76197549ff1fbacf7d109a82"
     },
     {
       "path": "IAvnSplitButtonClickHandler.g.cs",
@@ -607,7 +619,7 @@
     },
     {
       "path": "IAvnSplitView.g.cs",
-      "sha256": "e1a2d61e71dd3b5ed70291a69970eb1c3dc416727f0766f1a819baea10e5aa5e"
+      "sha256": "e993a8d9a3286570fe82aabcb2f685cd886fb7d38c1b7abb7339722a9a649018"
     },
     {
       "path": "IAvnSplitViewPaneClosedHandler.g.cs",
@@ -627,7 +639,7 @@
     },
     {
       "path": "IAvnStackPanel.g.cs",
-      "sha256": "6c6aded90413454c6d1008edef403e1fbff3cb2a4b480c884bec8da853c7007a"
+      "sha256": "72c653c6f592caac83bd978c2c4a623f2659e67436cdb129b05ddcc6d360a139"
     },
     {
       "path": "IAvnStringList.g.cs",
@@ -663,19 +675,19 @@
     },
     {
       "path": "IAvnTabControl.g.cs",
-      "sha256": "44d06624e2e1dee2638d2f27583814a9d03b2f396accf68700ae9b5c13ca45ca"
+      "sha256": "a0747482fc29d542d1c3bc404c17caf3bdc3173760bc48567b3ada3ed11b4705"
     },
     {
       "path": "IAvnTabItem.g.cs",
-      "sha256": "58185d2e0b14d4ccd9e1e279f087fd21f3b0b051688526c859d9723abf72e18c"
+      "sha256": "23d0b3bcf2c855358147d74d3c3c0c3d824f32f64d0908065c7fa0e2c8e0c3de"
     },
     {
       "path": "IAvnTableView.g.cs",
-      "sha256": "c3f058752d43a8e8b71560c8e6b5207f653970aa11ccfc89dfd57d86f4ce1906"
+      "sha256": "02affd7228efe042aad1f07caddb6365ffc893caaac4cedda379bb688a64cac2"
     },
     {
       "path": "IAvnTableViewCell.g.cs",
-      "sha256": "98a51aeb0f603ce1064a9bb10497d7a22bff5e049ca8d7c6c59344d6cc0e625f"
+      "sha256": "ebbaf2d989fdf18e134647ef6310e9dac84c3ab96de7232ced819d2a76983909"
     },
     {
       "path": "IAvnTableViewColumn.g.cs",
@@ -683,19 +695,19 @@
     },
     {
       "path": "IAvnTableViewRow.g.cs",
-      "sha256": "57e1a649f5a254a69dafb57c9332950cefff5ae2e08baffb3430334f429b2879"
+      "sha256": "f61ab48c7a8a42ee1460de4404eb7408eaefc8c99176021718f6be53e3fb3b30"
     },
     {
       "path": "IAvnTemplatedControl.g.cs",
-      "sha256": "c90877cf2b322d8119c790b01a69460a0d40c82b95ff7f1e882b51f4d9acba68"
+      "sha256": "e6f9845d90ade71764dd591f101905c1e51bfc198ed8e11047af8cbe86790ce9"
     },
     {
       "path": "IAvnTextBlock.g.cs",
-      "sha256": "bb71c04fe8a1609646768c9f4f662615b15ddb9a27640e5c22cd5abab2b87171"
+      "sha256": "b7bf490513603b3a609ea2829611c4ee616079c2e7bf31e57369223d3d634c36"
     },
     {
       "path": "IAvnTextBox.g.cs",
-      "sha256": "fffea4d28dd44d8ed34ad63482855247f3b268148b003d12dca733e87823eaff"
+      "sha256": "994261279b1c866e278a2e61c241001bddb83f6d5a63afb33b56c4dcc7636b31"
     },
     {
       "path": "IAvnTextBoxCopyingToClipboardHandler.g.cs",
@@ -719,11 +731,11 @@
     },
     {
       "path": "IAvnThemeVariantScope.g.cs",
-      "sha256": "4fad267e51d834cd54f2f317470411d5de593ab90410fe3495bb9742ec152c58"
+      "sha256": "7576b71732f3fff420005753cd4b8007b6cf7f55207c70c1d68fc465ac921d08"
     },
     {
       "path": "IAvnThumb.g.cs",
-      "sha256": "5137fccd10ccf41df2f3578fc3e3de875c4515ba4c671fe9ee5a65ef8252a67e"
+      "sha256": "7bf06f21c98b98302a8612059f3ab345112a131959d6c733f9bb1537b9085877"
     },
     {
       "path": "IAvnThumbDragCompletedHandler.g.cs",
@@ -739,7 +751,7 @@
     },
     {
       "path": "IAvnTimePicker.g.cs",
-      "sha256": "94453a248781c0a719389c8f5a38035fdb3a8099e8c2c45a399e3405d5f277c1"
+      "sha256": "b638d1734f2f606316167a28161e5b1557ebc247ac9055938cbfa686119f114a"
     },
     {
       "path": "IAvnTimePickerSelectedTimeChangedHandler.g.cs",
@@ -747,7 +759,7 @@
     },
     {
       "path": "IAvnToggleButton.g.cs",
-      "sha256": "74e5d55d8b8489caba80a6a0aec6ea8674672c3f3186c534d52e17eff31596c6"
+      "sha256": "392fcbc0ad4fb7647e22a81aef172c0c3d57972a97c6f4664574be8073ca0a4d"
     },
     {
       "path": "IAvnToggleButtonIsCheckedChangedHandler.g.cs",
@@ -755,7 +767,7 @@
     },
     {
       "path": "IAvnToggleSplitButton.g.cs",
-      "sha256": "0583cdafe4bbe5bf20e636fbb7669299d9108fe39c0b06ba64991697bfba0f09"
+      "sha256": "3c54dfbdf81a96e514af7c12490804e0a6ae3a68d684b84fa9cbd7a2aeeff671"
     },
     {
       "path": "IAvnToggleSplitButtonIsCheckedChangedHandler.g.cs",
@@ -763,11 +775,11 @@
     },
     {
       "path": "IAvnToggleSwitch.g.cs",
-      "sha256": "10d9cb54bb64b628df0c889370b46a0fb2d28f907217b933337245b5fce05c2a"
+      "sha256": "e0723954a2700d0d8881c11dd7660941268621da6d7f6454d6dc9a78c207a0d7"
     },
     {
       "path": "IAvnToolTip.g.cs",
-      "sha256": "31de0fe541c3db5bdbe0aa3b05e472f3413291b12dda7d9fbbf67d9acc08cdf6"
+      "sha256": "aad27b820e3cd8c3338697b76de8da6aad136aa71772ed74bc4a20727e430229"
     },
     {
       "path": "IAvnToolTipStatics.g.cs",
@@ -775,7 +787,7 @@
     },
     {
       "path": "IAvnTransitioningContentControl.g.cs",
-      "sha256": "f83fb224bc40959d8f2948b90b3eaf412468e91b5559c4dd4497cb9d95bc4036"
+      "sha256": "e65e2fa8565401a7d05d9e695d2a56923f8f52e341b93cd737e2909baaf0a346"
     },
     {
       "path": "IAvnTransitioningContentControlTransitionCompletedHandler.g.cs",
@@ -791,11 +803,11 @@
     },
     {
       "path": "IAvnTreeView.g.cs",
-      "sha256": "078365e043f4e1ddd401b71ff0d940201d2174a4c657dd658d263246f1655218"
+      "sha256": "803b901021ffa4775394259c3797ff138e17c534dca4e3fee767ec76ba348723"
     },
     {
       "path": "IAvnTreeViewItem.g.cs",
-      "sha256": "ed031cec7fc25722a7d18d5ede4e1874c37feb4250ada566fb65075f2c810f3a"
+      "sha256": "b304969befd2deb521893774cb0de4b23673e0ca5b9b99e374dd0ec4360a1764"
     },
     {
       "path": "IAvnTreeViewItemCollapsedHandler.g.cs",
@@ -811,11 +823,11 @@
     },
     {
       "path": "IAvnUniformGrid.g.cs",
-      "sha256": "c968432b9b147124a9a0df90e77bf6b4285aa1929b3005f74dd9af86d1e87cac"
+      "sha256": "d70ad15d41631f9f6f162746803ce77b6f0d97e6bbc4d660aa282d616d19b47a"
     },
     {
       "path": "IAvnUserControl.g.cs",
-      "sha256": "9f736cb332a5f6b9ad5179f8f3134c6b6d9221b907aa002ff8975f47c52876bc"
+      "sha256": "f597ce354522e8f6f558fa8c2df97122915301a7b499ba5ba3ecafc238e1c0c3"
     },
     {
       "path": "IAvnVariantList.g.cs",
@@ -823,11 +835,11 @@
     },
     {
       "path": "IAvnViewbox.g.cs",
-      "sha256": "8a5f77d462f43b6e0c717b9af4f055e5e90f47d1d8224083e5982ed464d7749f"
+      "sha256": "e69a16c0004d473936454584c884bb24861637502ef89840256182d76120185a"
     },
     {
       "path": "IAvnWindow.g.cs",
-      "sha256": "e04d2587efddd87c49151a851c83f843a7b054a0cb4dca0837c0ec2fb0b7b1a1"
+      "sha256": "b48244373b15a622348979359f639640d1400276ca9bebbe2656f023cf627d35"
     },
     {
       "path": "IAvnWindowClosingHandler.g.cs",
@@ -835,11 +847,11 @@
     },
     {
       "path": "IAvnWindowNotificationManager.g.cs",
-      "sha256": "daaf87696c241192b6e79a1a3a6cf708d69b15d6da0323811ff9dc6835264964"
+      "sha256": "ea3a229c8f32d9b706fd7338d85368278dff8794c44b74419a82f5dac2df5b63"
     },
     {
       "path": "IAvnWrapPanel.g.cs",
-      "sha256": "a0308cdfdd093b2fd8705808cb6e7b8d3b8a18a594716ad0b80559f075c2f212"
+      "sha256": "eefe85243e35ad4e1a8b58f5e5a40f32207227966751e4bfce8aed0ff9725b77"
     },
     {
       "path": "ProjectionAotRoots.g.cs",

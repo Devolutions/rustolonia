@@ -73,18 +73,18 @@ fn chrome_members_publish_brush_pointers_and_geometry_by_value() {
 #[test]
 fn chrome_wave_interfaces_publish_abi_version_four() {
     for expected in [
-        "#define I_AVN_BORDER_ABI_VERSION 13",
-        "#define I_AVN_PANEL_ABI_VERSION 12",
-        "#define I_AVN_TEMPLATED_CONTROL_ABI_VERSION 13",
-        "#define I_AVN_TEXT_BLOCK_ABI_VERSION 15",
+        "#define I_AVN_BORDER_ABI_VERSION 14",
+        "#define I_AVN_PANEL_ABI_VERSION 13",
+        "#define I_AVN_TEMPLATED_CONTROL_ABI_VERSION 14",
+        "#define I_AVN_TEXT_BLOCK_ABI_VERSION 16",
         // The factory grew create_solid_color_brush at version 2, a creator per wave A control
         // at version 3, and a creator per constructible wave B type at version 4.
         "#define I_AVN_CONTROL_FACTORY_ABI_VERSION 13",
         // Nothing was added to StyledElement, Control or Decorator, and none of their bases
         // moved, so their flattened vtables are byte-identical to version 3.
         "#define I_AVN_STYLED_ELEMENT_ABI_VERSION 6",
-        "#define I_AVN_CONTROL_ABI_VERSION 9",
-        "#define I_AVN_DECORATOR_ABI_VERSION 11",
+        "#define I_AVN_CONTROL_ABI_VERSION 10",
+        "#define I_AVN_DECORATOR_ABI_VERSION 12",
         "#define I_AVN_AVALONIA_OBJECT_ABI_VERSION 2",
     ] {
         assert!(HEADER.contains(expected), "header is missing `{expected}`");
@@ -133,11 +133,11 @@ fn widened_interfaces_republish_under_fresh_iids() {
     // republished under fresh IIDs.
     assert_eq!(
         format_iid(&I_AVN_CONTROL_IID),
-        "ABDFF81D-DB26-5BB7-9ACA-18353E6DB4D4"
+        "E2F44292-89FA-5AFA-9294-FF2F26DB68CE"
     );
     assert_eq!(
         format_iid(&I_AVN_DECORATOR_IID),
-        "73D7A8D4-2B75-5F19-958F-DE0D15AC3079"
+        "C3E4D085-4977-566E-B843-75D86B43C2C9"
     );
 
     // The brush is a brand new interface, so it starts at version 1 with its own IID.

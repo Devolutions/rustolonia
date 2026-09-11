@@ -1,4 +1,4 @@
-﻿//! Raw ABI conformance for the stage 29 desktop file integration capability.
+//! Raw ABI conformance for the stage 29 desktop file integration capability.
 //!
 //! These run against the published NativeAOT host and prove that every vtable
 //! slot of the new, separately versioned interfaces lines up between the

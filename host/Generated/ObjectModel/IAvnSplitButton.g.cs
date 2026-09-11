@@ -7,7 +7,7 @@ using System.Runtime.InteropServices.Marshalling;
 namespace Avalonia.Host.Com;
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("11D77809-48B6-5A29-B8D9-5D413BC96A85")]
+[Guid("88415351-1718-57DE-98D6-5DEE1794029C")]
 public partial interface IAvnSplitButton : IAvnContentControl
 {
     [PreserveSig]
@@ -77,6 +77,12 @@ public sealed partial class AvnSplitButton : IAvnSplitButton
     private long _nextPointerEnteredSubscriptionId;
     private readonly global::System.Collections.Generic.Dictionary<long, (IAvnControlPointerExitedHandler Handler, global::System.Action Unsubscribe)> _pointerExitedSubscriptions = new();
     private long _nextPointerExitedSubscriptionId;
+    private readonly global::System.Collections.Generic.Dictionary<long, (IAvnControlPointerWheelChangedHandler Handler, global::System.Action Unsubscribe)> _pointerWheelChangedSubscriptions = new();
+    private long _nextPointerWheelChangedSubscriptionId;
+    private readonly global::System.Collections.Generic.Dictionary<long, (IAvnControlTappedHandler Handler, global::System.Action Unsubscribe)> _tappedSubscriptions = new();
+    private long _nextTappedSubscriptionId;
+    private readonly global::System.Collections.Generic.Dictionary<long, (IAvnControlDoubleTappedHandler Handler, global::System.Action Unsubscribe)> _doubleTappedSubscriptions = new();
+    private long _nextDoubleTappedSubscriptionId;
     private readonly global::System.Collections.Generic.Dictionary<long, (IAvnSplitButtonClickHandler Handler, global::System.Action Unsubscribe)> _clickSubscriptions = new();
     private long _nextClickSubscriptionId;
 
@@ -1354,7 +1360,7 @@ public sealed partial class AvnSplitButton : IAvnSplitButton
             var eventSource = _value;
             var callback = new global::System.EventHandler<Avalonia.Input.PointerEventArgs>((_, eventArgs) =>
             {
-                var hr = handler.Invoke();
+                var hr = handler.Invoke((int)eventArgs.KeyModifiers);
                 if (hr < 0)
                     global::System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(hr);
             });
@@ -1400,7 +1406,7 @@ public sealed partial class AvnSplitButton : IAvnSplitButton
             var eventSource = _value;
             var callback = new global::System.EventHandler<Avalonia.Input.PointerEventArgs>((_, eventArgs) =>
             {
-                var hr = handler.Invoke();
+                var hr = handler.Invoke((int)eventArgs.KeyModifiers);
                 if (hr < 0)
                     global::System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(hr);
             });
@@ -1423,6 +1429,144 @@ public sealed partial class AvnSplitButton : IAvnSplitButton
             using var call = _state.EnterCall();
             _value.VerifyAccess();
             if (!_pointerExitedSubscriptions.Remove(subscriptionId, out var subscription))
+                return global::Avalonia.Host.HResults.E_INVALIDARG;
+            subscription.Unsubscribe();
+            global::Avalonia.Host.ProjectionDiagnostics.SubscriptionRemoved();
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int AdvisePointerWheelChanged(IAvnControlPointerWheelChangedHandler? handler, out long subscriptionId)
+    {
+        subscriptionId = 0;
+        if (handler is null)
+            return global::Avalonia.Host.HResults.E_POINTER;
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            var eventSource = _value;
+            var callback = new global::System.EventHandler<Avalonia.Input.PointerWheelEventArgs>((_, eventArgs) =>
+            {
+                var hr = handler.Invoke(AvnVector.FromAvalonia(eventArgs.Delta), (int)eventArgs.KeyModifiers);
+                if (hr < 0)
+                    global::System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(hr);
+            });
+            eventSource.PointerWheelChanged += callback;
+            subscriptionId = global::System.Threading.Interlocked.Increment(ref _nextPointerWheelChangedSubscriptionId);
+            _pointerWheelChangedSubscriptions.Add(subscriptionId, (handler, () => eventSource.PointerWheelChanged -= callback));
+            global::Avalonia.Host.ProjectionDiagnostics.SubscriptionAdded();
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int UnadvisePointerWheelChanged(long subscriptionId)
+    {
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            if (!_pointerWheelChangedSubscriptions.Remove(subscriptionId, out var subscription))
+                return global::Avalonia.Host.HResults.E_INVALIDARG;
+            subscription.Unsubscribe();
+            global::Avalonia.Host.ProjectionDiagnostics.SubscriptionRemoved();
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int AdviseTapped(IAvnControlTappedHandler? handler, out long subscriptionId)
+    {
+        subscriptionId = 0;
+        if (handler is null)
+            return global::Avalonia.Host.HResults.E_POINTER;
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            var eventSource = _value;
+            var callback = new global::System.EventHandler<Avalonia.Input.TappedEventArgs>((_, eventArgs) =>
+            {
+                var hr = handler.Invoke((int)eventArgs.KeyModifiers);
+                if (hr < 0)
+                    global::System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(hr);
+            });
+            eventSource.Tapped += callback;
+            subscriptionId = global::System.Threading.Interlocked.Increment(ref _nextTappedSubscriptionId);
+            _tappedSubscriptions.Add(subscriptionId, (handler, () => eventSource.Tapped -= callback));
+            global::Avalonia.Host.ProjectionDiagnostics.SubscriptionAdded();
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int UnadviseTapped(long subscriptionId)
+    {
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            if (!_tappedSubscriptions.Remove(subscriptionId, out var subscription))
+                return global::Avalonia.Host.HResults.E_INVALIDARG;
+            subscription.Unsubscribe();
+            global::Avalonia.Host.ProjectionDiagnostics.SubscriptionRemoved();
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int AdviseDoubleTapped(IAvnControlDoubleTappedHandler? handler, out long subscriptionId)
+    {
+        subscriptionId = 0;
+        if (handler is null)
+            return global::Avalonia.Host.HResults.E_POINTER;
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            var eventSource = _value;
+            var callback = new global::System.EventHandler<Avalonia.Input.TappedEventArgs>((_, eventArgs) =>
+            {
+                var hr = handler.Invoke();
+                if (hr < 0)
+                    global::System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(hr);
+            });
+            eventSource.DoubleTapped += callback;
+            subscriptionId = global::System.Threading.Interlocked.Increment(ref _nextDoubleTappedSubscriptionId);
+            _doubleTappedSubscriptions.Add(subscriptionId, (handler, () => eventSource.DoubleTapped -= callback));
+            global::Avalonia.Host.ProjectionDiagnostics.SubscriptionAdded();
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int UnadviseDoubleTapped(long subscriptionId)
+    {
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            if (!_doubleTappedSubscriptions.Remove(subscriptionId, out var subscription))
                 return global::Avalonia.Host.HResults.E_INVALIDARG;
             subscription.Unsubscribe();
             global::Avalonia.Host.ProjectionDiagnostics.SubscriptionRemoved();
@@ -2254,6 +2398,24 @@ public sealed partial class AvnSplitButton : IAvnSplitButton
             global::Avalonia.Host.ProjectionDiagnostics.SubscriptionRemoved();
         }
         _pointerExitedSubscriptions.Clear();
+        foreach (var subscription in _pointerWheelChangedSubscriptions.Values)
+        {
+            subscription.Unsubscribe();
+            global::Avalonia.Host.ProjectionDiagnostics.SubscriptionRemoved();
+        }
+        _pointerWheelChangedSubscriptions.Clear();
+        foreach (var subscription in _tappedSubscriptions.Values)
+        {
+            subscription.Unsubscribe();
+            global::Avalonia.Host.ProjectionDiagnostics.SubscriptionRemoved();
+        }
+        _tappedSubscriptions.Clear();
+        foreach (var subscription in _doubleTappedSubscriptions.Values)
+        {
+            subscription.Unsubscribe();
+            global::Avalonia.Host.ProjectionDiagnostics.SubscriptionRemoved();
+        }
+        _doubleTappedSubscriptions.Clear();
         foreach (var subscription in _clickSubscriptions.Values)
         {
             subscription.Unsubscribe();

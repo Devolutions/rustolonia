@@ -1,4 +1,4 @@
-﻿use avalonia_sys::{ComPtr, Host, IUnknown, AVN_E_FIXTURE, E_NOINTERFACE};
+use avalonia_sys::{ComPtr, Host, IUnknown, AVN_E_FIXTURE, E_NOINTERFACE};
 use libloading::Library;
 use std::ffi::c_void;
 use std::path::PathBuf;
