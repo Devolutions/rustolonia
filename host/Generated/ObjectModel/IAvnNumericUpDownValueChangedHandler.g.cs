@@ -6,9 +6,9 @@ using System.Runtime.InteropServices.Marshalling;
 namespace Avalonia.Host.Com;
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("68A72F63-B469-5312-925F-F7FCCF35A0DF")]
+[Guid("A605166E-63BA-5359-A3F5-997F780B611B")]
 public partial interface IAvnNumericUpDownValueChangedHandler
 {
     [PreserveSig]
-    int Invoke();
+    int Invoke(string? OldValue, string? NewValue);
 }

@@ -2650,6 +2650,7 @@ pub use sys::DatePickerSelectedDateChangedEventArgs;
 pub use sys::ExpanderCollapsingEventArgs;
 pub use sys::ExpanderExpandingEventArgs;
 pub use sys::NumericUpDownSpinnedEventArgs;
+pub use sys::NumericUpDownValueChangedEventArgs;
 pub use sys::PopupFlyoutBaseClosingEventArgs;
 pub use sys::RangeBaseValueChangedEventArgs;
 pub use sys::IAvnSelectingItemsControlSelectionChangedArgs;
@@ -30072,16 +30073,14 @@ impl NumericUpDown {
         scope.retain_subscription(self.subscribe_spinned(callback)?);
         Ok(self)
     }
-    pub fn subscribe_value_changed(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
-        let handler = sys::numeric_up_down_value_changed_handler(move || {
-            callback(());
-            Ok(())
-        });
+    pub fn subscribe_value_changed(&self, callback: impl FnMut(&mut NumericUpDownValueChangedEventArgs) + Send + 'static) -> Result<EventSubscription> {
+        let mut callback = callback;
+        let handler = sys::numeric_up_down_value_changed_handler(move |event| { callback(event); Ok(()) });
         let subscription_id = self.raw.advise_value_changed(&handler)?;
         let source = self.raw.clone();
         Ok(EventSubscription::new(move || source.unadvise_value_changed(subscription_id)))
     }
-    pub fn on_value_changed(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+    pub fn on_value_changed(self, scope: &crate::AppScope, callback: impl FnMut(&mut NumericUpDownValueChangedEventArgs) + Send + 'static) -> Result<Self> {
         scope.retain_subscription(self.subscribe_value_changed(callback)?);
         Ok(self)
     }

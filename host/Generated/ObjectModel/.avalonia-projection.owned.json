@@ -455,7 +455,7 @@
     },
     {
       "path": "IAvnNumericUpDown.g.cs",
-      "sha256": "faf8e8a96f780712d59dd8a6a7ba03738dfc830ffa665d30530d8baf23569f59"
+      "sha256": "14e8e08bf87fa2710d9529b2baa68dd77e126d2dba46718b0a0c5164094afb66"
     },
     {
       "path": "IAvnNumericUpDownSpinnedHandler.g.cs",
@@ -463,7 +463,7 @@
     },
     {
       "path": "IAvnNumericUpDownValueChangedHandler.g.cs",
-      "sha256": "9becd19a0ca1df6bfd0b9c858c2b05ede19d28f783461941373d8e94983959fd"
+      "sha256": "7f759b9baccf1a0c98d4c5783e3d5dea7d60e50c557354f3d4b24e751336d8e3"
     },
     {
       "path": "IAvnPanel.g.cs",

@@ -320,6 +320,22 @@ public static class ClrTypeExtractor
                         eventParameters.Clear();
                         break;
                     }
+
+                    if (parameterProjection.Override is { } parameterOverride)
+                    {
+                        eventParameters.Add(new ProjectedParameter
+                        {
+                            Name = property.Name,
+                            Kind = parameterOverride.Kind,
+                            InterfaceName = parameterOverride.InterfaceName,
+                            ManagedTypeName = property.PropertyType.FullName,
+                            IsNullable = parameterOverride.IsNullable ?? IsNullable(property),
+                            Direction = parameterProjection.Direction,
+                            StringConverterTypeName = parameterOverride.StringConverterTypeName,
+                        });
+                        continue;
+                    }
+
                     if (!TryMapType(
                             property.PropertyType,
                             projectedNames,

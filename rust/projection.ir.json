@@ -4021,11 +4021,28 @@
         {
           "name": "ValueChanged",
           "handlerInterfaceName": "Avalonia.Host.Com.IAvnNumericUpDownValueChangedHandler",
-          "handlerInterfaceIid": "68A72F63-B469-5312-925F-F7FCCF35A0DF",
-          "handlerInterfaceAbiVersion": 1,
-          "payloadKind": "None",
+          "handlerInterfaceIid": "A605166E-63BA-5359-A3F5-997F780B611B",
+          "handlerInterfaceAbiVersion": 2,
+          "payloadKind": "Fields",
           "managedHandlerTypeName": "System.EventHandler\u003CAvalonia.Controls.NumericUpDownValueChangedEventArgs\u003E",
-          "parameters": []
+          "parameters": [
+            {
+              "name": "OldValue",
+              "kind": "StringUtf16",
+              "direction": "In",
+              "managedTypeName": "System.Nullable\u00601[[System.Decimal, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+              "isNullable": true,
+              "stringConverterTypeName": "Avalonia.Host.Com.AvnDecimal"
+            },
+            {
+              "name": "NewValue",
+              "kind": "StringUtf16",
+              "direction": "In",
+              "managedTypeName": "System.Nullable\u00601[[System.Decimal, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+              "isNullable": true,
+              "stringConverterTypeName": "Avalonia.Host.Com.AvnDecimal"
+            }
+          ]
         }
       ]
     },

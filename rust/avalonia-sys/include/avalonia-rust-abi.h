@@ -1422,17 +1422,17 @@ struct IAvnNumericUpDownSpinnedHandler { const IAvnNumericUpDownSpinnedHandlerVt
 #define I_AVN_NUMERIC_UP_DOWN_SPINNED_HANDLER_VTABLE_SLOTS 4
 
 static const AvnGuid I_AVN_NUMERIC_UP_DOWN_VALUE_CHANGED_HANDLER_IID = {
-    0x68A72F63,
-    0xB469,
-    0x5312,
-    { 0x92, 0x5F, 0xF7, 0xFC, 0xCF, 0x35, 0xA0, 0xDF }
+    0xA605166E,
+    0x63BA,
+    0x5359,
+    { 0xA3, 0xF5, 0x99, 0x7F, 0x78, 0x0B, 0x61, 0x1B }
 };
-#define I_AVN_NUMERIC_UP_DOWN_VALUE_CHANGED_HANDLER_ABI_VERSION 1
+#define I_AVN_NUMERIC_UP_DOWN_VALUE_CHANGED_HANDLER_ABI_VERSION 2
 struct IAvnNumericUpDownValueChangedHandlerVtbl {
     AvnHResult (AVN_CALL *query_interface)(IAvnNumericUpDownValueChangedHandler* self, const AvnGuid* iid, void** result); /* slot 0 */
     uint32_t (AVN_CALL *add_ref)(IAvnNumericUpDownValueChangedHandler* self); /* slot 1 */
     uint32_t (AVN_CALL *release)(IAvnNumericUpDownValueChangedHandler* self); /* slot 2 */
-    AvnHResult (AVN_CALL *invoke)(IAvnNumericUpDownValueChangedHandler* self); /* slot 3 */
+    AvnHResult (AVN_CALL *invoke)(IAvnNumericUpDownValueChangedHandler* self, const uint16_t* old_value, const uint16_t* new_value); /* slot 3 */
 };
 struct IAvnNumericUpDownValueChangedHandler { const IAvnNumericUpDownValueChangedHandlerVtbl* vtbl; };
 #define I_AVN_NUMERIC_UP_DOWN_VALUE_CHANGED_HANDLER_VTABLE_SLOTS 4

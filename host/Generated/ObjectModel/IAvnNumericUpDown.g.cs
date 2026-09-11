@@ -2720,7 +2720,7 @@ public sealed partial class AvnNumericUpDown : IAvnNumericUpDown
             var eventSource = _value;
             var callback = new global::System.EventHandler<Avalonia.Controls.NumericUpDownValueChangedEventArgs>((_, eventArgs) =>
             {
-                var hr = handler.Invoke();
+                var hr = handler.Invoke(global::Avalonia.Host.Com.AvnDecimal.ToAbi(eventArgs.OldValue), global::Avalonia.Host.Com.AvnDecimal.ToAbi(eventArgs.NewValue));
                 if (hr < 0)
                     global::System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(hr);
             });

@@ -146,6 +146,9 @@ public static class AvaloniaProjectionProfiles
             ["Avalonia.Host.Com.IAvnSelectingItemsControlSelectionChangedHandler"] = 2,
             ["Avalonia.Host.Com.IAvnTreeViewSelectionChangedHandler"] = 2,
             ["Avalonia.Host.Com.IAvnRangeBaseValueChangedHandler"] = 2,
+            // Wave R: the NumericUpDown value-change handler gains the old/new invariant-string
+            // decimal payload, so it mints a new IID at version 2.
+            ["Avalonia.Host.Com.IAvnNumericUpDownValueChangedHandler"] = 2,
         },
         IncludeTypeNames =
         [
@@ -1447,9 +1450,32 @@ public static class AvaloniaProjectionProfiles
             {
                 PayloadKind = EventPayloadKind.None,
             },
+            // Wave R: the old/new decimal pair crosses as invariant UTF-16 strings through
+            // the same AvnDecimal converter the Value property already uses.
             ["Avalonia.Controls.NumericUpDown.ValueChanged"] = new()
             {
-                PayloadKind = EventPayloadKind.None,
+                PayloadKind = EventPayloadKind.Fields,
+                Parameters =
+                [
+                    new()
+                    {
+                        Name = "OldValue",
+                        Override = new()
+                        {
+                            Kind = MarshallingKind.StringUtf16,
+                            StringConverterTypeName = "Avalonia.Host.Com.AvnDecimal",
+                        },
+                    },
+                    new()
+                    {
+                        Name = "NewValue",
+                        Override = new()
+                        {
+                            Kind = MarshallingKind.StringUtf16,
+                            StringConverterTypeName = "Avalonia.Host.Com.AvnDecimal",
+                        },
+                    },
+                ],
             },
             ["Avalonia.Controls.CalendarDatePicker.CalendarOpened"] = new()
             {

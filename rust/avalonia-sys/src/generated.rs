@@ -3514,33 +3514,26 @@ unsafe extern "system" fn i_avn_numeric_up_down_spinned_handler_invoke(this: *mu
     hr
 }
 
-pub const I_AVN_NUMERIC_UP_DOWN_VALUE_CHANGED_HANDLER_IID: Guid = Guid { data1: 0x68A72F63, data2: 0xB469, data3: 0x5312, data4: [0x92, 0x5F, 0xF7, 0xFC, 0xCF, 0x35, 0xA0, 0xDF] };
+pub const I_AVN_NUMERIC_UP_DOWN_VALUE_CHANGED_HANDLER_IID: Guid = Guid { data1: 0xA605166E, data2: 0x63BA, data3: 0x5359, data4: [0xA3, 0xF5, 0x99, 0x7F, 0x78, 0x0B, 0x61, 0x1B] };
+
+#[derive(Debug)]
+pub struct NumericUpDownValueChangedEventArgs {
+    pub old_value: Option<String>,
+    pub new_value: Option<String>,
+}
 
 #[repr(C)]
 struct IAvnNumericUpDownValueChangedHandlerVtbl {
     query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
     add_ref: unsafe extern "system" fn(*mut IUnknown) -> u32,
     release: unsafe extern "system" fn(*mut IUnknown) -> u32,
-    invoke: unsafe extern "system" fn(*mut IAvnNumericUpDownValueChangedHandler) -> i32,
+    invoke: unsafe extern "system" fn(*mut IAvnNumericUpDownValueChangedHandler, old_value: *mut u16, new_value: *mut u16) -> i32,
 }
 
 #[repr(C)]
-pub struct IAvnNumericUpDownValueChangedHandler {
-    vtbl: *const IAvnNumericUpDownValueChangedHandlerVtbl,
-}
+pub struct IAvnNumericUpDownValueChangedHandler { vtbl: *const IAvnNumericUpDownValueChangedHandlerVtbl }
 
-unsafe impl ComInterface for IAvnNumericUpDownValueChangedHandler {
-    const IID: Guid = I_AVN_NUMERIC_UP_DOWN_VALUE_CHANGED_HANDLER_IID;
-}
-
-impl ComPtr<IAvnNumericUpDownValueChangedHandler> {
-    pub fn invoke(&self) -> Result<()> {
-        unsafe {
-            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().invoke)(self.as_raw());
-            hresult::check(hr)
-        }
-    }
-}
+unsafe impl ComInterface for IAvnNumericUpDownValueChangedHandler { const IID: Guid = I_AVN_NUMERIC_UP_DOWN_VALUE_CHANGED_HANDLER_IID; }
 
 static I_AVN_NUMERIC_UP_DOWN_VALUE_CHANGED_HANDLER_VTBL: IAvnNumericUpDownValueChangedHandlerVtbl = IAvnNumericUpDownValueChangedHandlerVtbl {
     query_interface: i_avn_numeric_up_down_value_changed_handler_query_interface,
@@ -3549,24 +3542,31 @@ static I_AVN_NUMERIC_UP_DOWN_VALUE_CHANGED_HANDLER_VTBL: IAvnNumericUpDownValueC
     invoke: i_avn_numeric_up_down_value_changed_handler_invoke,
 };
 
-pub fn numeric_up_down_value_changed_handler(mut callback: impl FnMut() -> Result<()> + Send + 'static) -> ComPtr<IAvnNumericUpDownValueChangedHandler> {
-    crate::event_callback::create::<IAvnNumericUpDownValueChangedHandler, ()>(IAvnNumericUpDownValueChangedHandler { vtbl: &I_AVN_NUMERIC_UP_DOWN_VALUE_CHANGED_HANDLER_VTBL }, move |_| callback())
+pub fn numeric_up_down_value_changed_handler(callback: impl FnMut(&mut NumericUpDownValueChangedEventArgs) -> Result<()> + Send + 'static) -> ComPtr<IAvnNumericUpDownValueChangedHandler> {
+    crate::event_callback::create(IAvnNumericUpDownValueChangedHandler { vtbl: &I_AVN_NUMERIC_UP_DOWN_VALUE_CHANGED_HANDLER_VTBL }, callback)
 }
 
 unsafe extern "system" fn i_avn_numeric_up_down_value_changed_handler_query_interface(this: *mut IUnknown, iid: *const Guid, result: *mut *mut c_void) -> i32 {
-    crate::event_callback::query_interface::<IAvnNumericUpDownValueChangedHandler, ()>(this, iid, result)
+    crate::event_callback::query_interface::<IAvnNumericUpDownValueChangedHandler, NumericUpDownValueChangedEventArgs>(this, iid, result)
 }
 
 unsafe extern "system" fn i_avn_numeric_up_down_value_changed_handler_add_ref(this: *mut IUnknown) -> u32 {
-    crate::event_callback::add_ref::<IAvnNumericUpDownValueChangedHandler, ()>(this)
+    crate::event_callback::add_ref::<IAvnNumericUpDownValueChangedHandler, NumericUpDownValueChangedEventArgs>(this)
 }
 
 unsafe extern "system" fn i_avn_numeric_up_down_value_changed_handler_release(this: *mut IUnknown) -> u32 {
-    crate::event_callback::release::<IAvnNumericUpDownValueChangedHandler, ()>(this)
+    crate::event_callback::release::<IAvnNumericUpDownValueChangedHandler, NumericUpDownValueChangedEventArgs>(this)
 }
 
-unsafe extern "system" fn i_avn_numeric_up_down_value_changed_handler_invoke(this: *mut IAvnNumericUpDownValueChangedHandler) -> i32 {
-    crate::event_callback::invoke::<IAvnNumericUpDownValueChangedHandler, ()>(this, &mut ())
+unsafe extern "system" fn i_avn_numeric_up_down_value_changed_handler_invoke(this: *mut IAvnNumericUpDownValueChangedHandler, old_value: *mut u16, new_value: *mut u16) -> i32 {
+    let mut arguments = NumericUpDownValueChangedEventArgs {
+        old_value: crate::clone_utf16(old_value),
+        new_value: crate::clone_utf16(new_value),
+    };
+    let hr = crate::event_callback::invoke::<IAvnNumericUpDownValueChangedHandler, NumericUpDownValueChangedEventArgs>(this, &mut arguments);
+    if hr >= 0 {
+    }
+    hr
 }
 
 pub const I_AVN_PIPS_PAGER_SELECTED_INDEX_CHANGED_HANDLER_IID: Guid = Guid { data1: 0xF40B94E7, data2: 0xCD23, data3: 0x55D9, data4: [0xA4, 0x62, 0x55, 0x90, 0xA6, 0xFB, 0xB2, 0xB7] };

@@ -1658,6 +1658,31 @@ public class ClrTypeExtractorTests
             textBox.Properties.Single(p => p.Name == "CaretBlinkInterval").Kind);
         Assert.DoesNotContain(textBox.Properties, p => p.Name == "Watermark");
         Assert.Equal(17, Type(ir, "IAvnMaskedTextBox").AbiVersion);
+    }
+
+    [Fact]
+    public void Wave_r_numeric_up_down_value_changed_carries_the_decimal_pair_as_invariant_strings()
+    {
+        var ir = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
+
+        // The decimal? old/new pair has no numeric ABI shape; it crosses as invariant
+        // UTF-16 through the AvnDecimal converter the Value property already uses, so the
+        // payload-carrying handler republishes at version 2 while the control itself moves
+        // only with its own members.
+        var valueChanged = Type(ir, "IAvnNumericUpDown").Events
+            .Single(@event => @event.Name == nameof(NumericUpDown.ValueChanged));
+        Assert.Equal(EventPayloadKind.Fields, valueChanged.PayloadKind);
+        Assert.Equal(2, valueChanged.HandlerInterfaceAbiVersion);
+        Assert.All(valueChanged.Parameters, parameter =>
+        {
+            Assert.Equal(MarshallingKind.StringUtf16, parameter.Kind);
+            Assert.Equal("Avalonia.Host.Com.AvnDecimal", parameter.StringConverterTypeName);
+            Assert.True(parameter.IsNullable);
+        });
+        Assert.Equal(
+            [nameof(NumericUpDownValueChangedEventArgs.OldValue),
+                nameof(NumericUpDownValueChangedEventArgs.NewValue)],
+            valueChanged.Parameters.Select(parameter => parameter.Name));
         Assert.Contains(Type(ir, "IAvnMaskedTextBox").Properties, p => p.Name == "MaskCompleted");
         Assert.Equal(14, Type(ir, "IAvnTemplatedControl").AbiVersion);
         Assert.Equal(13, ir.FactoryAbiVersion);

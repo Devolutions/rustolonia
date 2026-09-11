@@ -8,8 +8,8 @@ use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::Arc;
 
 use avalonia::{
-    App, AppScope, Border, Brush, Button, Color, HorizontalAlignment, ListBox, Orientation, Result,
-    Slider, StackPanel, TextBlock, TextBox, Thickness, Window,
+    App, AppScope, Border, Brush, Button, Color, HorizontalAlignment, ListBox, NumericUpDown,
+    Orientation, Result, Slider, StackPanel, TextBlock, TextBox, Thickness, Window,
 };
 
 fn main() -> Result<()> {
@@ -84,6 +84,28 @@ fn build_ui(scope: &AppScope) -> Result<()> {
         }
     })?;
 
+    // Wave R payload: NumericUpDown.ValueChanged carries the old/new decimal pair as
+    // invariant strings across the ABI.
+    let numeric_label = TextBlock::new()?
+        .text("Number: -")?
+        .margin(Thickness::symmetric(12.0, 0.0))?;
+    let numeric = NumericUpDown::new()?
+        .margin(Thickness::symmetric(12.0, 4.0))?
+        .minimum("0")?
+        .maximum("10")?
+        .increment("0.5")?
+        .value("1.5")?
+        .on_value_changed(scope, {
+            let numeric_label = numeric_label.clone();
+            move |args| {
+                let _ = numeric_label.set_text(format!(
+                    "Number: {} -> {}",
+                    args.old_value.as_deref().unwrap_or("∅"),
+                    args.new_value.as_deref().unwrap_or("∅")
+                ));
+            }
+        })?;
+
     let increment = Button::new()?
         .content(Some(&TextBlock::new()?.text("Increment")?))?
         .margin(Thickness::uniform(4.0))?
@@ -157,6 +179,8 @@ fn build_ui(scope: &AppScope) -> Result<()> {
     children.add(slider_label)?;
     children.add(wheel_zone)?;
     children.add(wheel_label)?;
+    children.add(numeric)?;
+    children.add(numeric_label)?;
     children.add(log)?;
     children.add(selection_label)?;
 
