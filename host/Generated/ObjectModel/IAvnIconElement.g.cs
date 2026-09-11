@@ -7,7 +7,7 @@ using System.Runtime.InteropServices.Marshalling;
 namespace Avalonia.Host.Com;
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("21137537-05A7-5CD9-8FED-59DACA086407")]
+[Guid("32A49476-DB0C-5038-B888-A66D122EC557")]
 public partial interface IAvnIconElement : IAvnTemplatedControl
 {
 }
@@ -959,6 +959,37 @@ public sealed partial class AvnIconElement : IAvnIconElement
         }
     }
 
+    public int GetFocusable(out int value)
+    {
+        value = default;
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            value = _value.Focusable ? 1 : 0;
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int SetFocusable(int value)
+    {
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            _value.Focusable = value != 0;
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
     public int GetIsEnabled(out int value)
     {
         value = default;
@@ -982,6 +1013,22 @@ public sealed partial class AvnIconElement : IAvnIconElement
             using var call = _state.EnterCall();
             _value.VerifyAccess();
             _value.IsEnabled = value != 0;
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int FocusWithNavigationMethodAndKeyModifiers(int method, int keyModifiers, out int value)
+    {
+        value = default;
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            value = _value.Focus((global::Avalonia.Input.NavigationMethod)method, (global::Avalonia.Input.KeyModifiers)keyModifiers) ? 1 : 0;
             return global::Avalonia.Host.HResults.S_OK;
         }
         catch (global::System.Exception e)

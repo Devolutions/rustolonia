@@ -20,7 +20,7 @@ fn overlay_controls_publish_at_version_one() {
         "*set_pull_direction)(IAvnRefreshContainer* self, int32_t value)",
         "*create_popup)(IAvnControlFactory* self, IAvnPopup** value)",
         "*create_tray_icon)(IAvnControlFactory* self, IAvnTrayIcon** value)",
-        "#define I_AVN_POPUP_ABI_VERSION 10",
+        "#define I_AVN_POPUP_ABI_VERSION 11",
         "#define I_AVN_TRAY_ICON_ABI_VERSION 3",
         "#define I_AVN_CONTROL_FACTORY_ABI_VERSION 13",
     ] {

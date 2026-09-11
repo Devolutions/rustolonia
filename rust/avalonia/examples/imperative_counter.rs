@@ -8,8 +8,8 @@ use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::Arc;
 
 use avalonia::{
-    App, AppScope, Border, Brush, Button, Color, HorizontalAlignment, ListBox, NumericUpDown,
-    Orientation, Result, Slider, StackPanel, TextBlock, TextBox, Thickness, Window,
+    App, AppScope, Border, Brush, Button, Color, HorizontalAlignment, ListBox, NavigationMethod,
+    NumericUpDown, Orientation, Result, Slider, StackPanel, TextBlock, TextBox, Thickness, Window,
 };
 
 fn main() -> Result<()> {
@@ -164,11 +164,17 @@ fn build_ui(scope: &AppScope) -> Result<()> {
             let _ = echo.set_text(format!("Echo: {text}"));
         }
     })?;
+    let focus_target = input.clone();
 
     let root = StackPanel::new()?
         .orientation(Orientation::Vertical)?
         .spacing(4.0)?;
     root.set_background(Brush::solid(Color::new(255, 245, 245, 250)))?;
+    // Wave S: input focus is consumable from Rust — the window focuses the text box once
+    // the tree attaches and reports whether the call took.
+    let focus_label = TextBlock::new()?
+        .text("Focus: -")?
+        .margin(Thickness::symmetric(12.0, 0.0))?;
     let children = root.children()?;
     children.add(heading)?;
     children.add(count_label)?;
@@ -181,14 +187,19 @@ fn build_ui(scope: &AppScope) -> Result<()> {
     children.add(wheel_label)?;
     children.add(numeric)?;
     children.add(numeric_label)?;
+    children.add(focus_label.clone())?;
     children.add(log)?;
     children.add(selection_label)?;
 
     let window = Window::new()?
         .title("Imperative counter")?
         .width(420.0)?
-        .height(680.0)?;
+        .height(720.0)?;
     window.set_content(Some(&root))?;
     scope.mount(window)?;
+    let took = focus_target
+        .focus_with_navigation_method_and_key_modifiers(NavigationMethod::Pointer as i32, 0)
+        .unwrap_or(false);
+    focus_label.set_text(format!("Focus: {took}"))?;
     Ok(())
 }

@@ -7,7 +7,7 @@ using System.Runtime.InteropServices.Marshalling;
 namespace Avalonia.Host.Com;
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("E2F44292-89FA-5AFA-9294-FF2F26DB68CE")]
+[Guid("8B272500-09E4-535F-ABF1-14992E90E778")]
 public partial interface IAvnControl : IAvnStyledElement
 {
     [PreserveSig]
@@ -98,10 +98,19 @@ public partial interface IAvnControl : IAvnStyledElement
     int SetVerticalAlignment(int value);
 
     [PreserveSig]
+    int GetFocusable(out int value);
+
+    [PreserveSig]
+    int SetFocusable(int value);
+
+    [PreserveSig]
     int GetIsEnabled(out int value);
 
     [PreserveSig]
     int SetIsEnabled(int value);
+
+    [PreserveSig]
+    int FocusWithNavigationMethodAndKeyModifiers(int method, int keyModifiers, out int value);
 
     [PreserveSig]
     int AdviseLoaded(IAvnControlLoadedHandler? handler, out long subscriptionId);
@@ -1124,6 +1133,37 @@ public sealed partial class AvnControl : IAvnControl
         }
     }
 
+    public int GetFocusable(out int value)
+    {
+        value = default;
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            value = _value.Focusable ? 1 : 0;
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int SetFocusable(int value)
+    {
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            _value.Focusable = value != 0;
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
     public int GetIsEnabled(out int value)
     {
         value = default;
@@ -1147,6 +1187,22 @@ public sealed partial class AvnControl : IAvnControl
             using var call = _state.EnterCall();
             _value.VerifyAccess();
             _value.IsEnabled = value != 0;
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int FocusWithNavigationMethodAndKeyModifiers(int method, int keyModifiers, out int value)
+    {
+        value = default;
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            value = _value.Focus((global::Avalonia.Input.NavigationMethod)method, (global::Avalonia.Input.KeyModifiers)keyModifiers) ? 1 : 0;
             return global::Avalonia.Host.HResults.S_OK;
         }
         catch (global::System.Exception e)

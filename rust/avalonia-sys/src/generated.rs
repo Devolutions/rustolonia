@@ -6307,7 +6307,7 @@ impl ComPtr<IAvnAvaloniaObject> {
     }
 }
 
-pub const I_AVN_AUTO_COMPLETE_BOX_IID: Guid = Guid { data1: 0x26FFE15E, data2: 0x6149, data3: 0x5898, data4: [0x93, 0xEB, 0x55, 0x90, 0x93, 0x38, 0xDC, 0x9A] };
+pub const I_AVN_AUTO_COMPLETE_BOX_IID: Guid = Guid { data1: 0x6D1670C7, data2: 0x0D52, data3: 0x5BB1, data4: [0x82, 0x89, 0x6C, 0x26, 0x17, 0xB7, 0x4A, 0x6C] };
 
 #[repr(C)]
 struct IAvnAutoCompleteBoxVtbl {
@@ -6366,8 +6366,11 @@ struct IAvnAutoCompleteBoxVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -6859,6 +6862,20 @@ impl ComPtr<IAvnAutoCompleteBox> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -6871,6 +6888,13 @@ impl ComPtr<IAvnAutoCompleteBox> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -7657,7 +7681,7 @@ impl ComPtr<IAvnAutoCompleteBox> {
     }
 }
 
-pub const I_AVN_BORDER_IID: Guid = Guid { data1: 0xDF677487, data2: 0xF79D, data3: 0x50DF, data4: [0xA4, 0x74, 0x0A, 0xF6, 0x9F, 0x6A, 0x6C, 0x5B] };
+pub const I_AVN_BORDER_IID: Guid = Guid { data1: 0x430F4A36, data2: 0x8B46, data3: 0x5F3C, data4: [0x8E, 0x4D, 0xBD, 0x11, 0xAA, 0x52, 0x29, 0x69] };
 
 #[repr(C)]
 struct IAvnBorderVtbl {
@@ -7716,8 +7740,11 @@ struct IAvnBorderVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnBorder, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnBorder, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnBorder, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnBorder, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnBorder, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnBorder, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnBorder, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnBorder, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnBorder, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnBorder, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnBorder, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -8136,6 +8163,20 @@ impl ComPtr<IAvnBorder> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -8148,6 +8189,13 @@ impl ComPtr<IAvnBorder> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -8429,7 +8477,7 @@ impl ComPtr<IAvnBorder> {
     }
 }
 
-pub const I_AVN_BUTTON_IID: Guid = Guid { data1: 0xE66D2CD1, data2: 0xA3CD, data3: 0x538E, data4: [0x96, 0x07, 0xB5, 0xE7, 0x84, 0x66, 0x9C, 0x89] };
+pub const I_AVN_BUTTON_IID: Guid = Guid { data1: 0x085861C8, data2: 0xF91D, data3: 0x5AFE, data4: [0xB5, 0x7A, 0xE6, 0x01, 0x47, 0x7F, 0xC2, 0xD2] };
 
 #[repr(C)]
 struct IAvnButtonVtbl {
@@ -8488,8 +8536,11 @@ struct IAvnButtonVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnButton, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnButton, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnButton, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnButton, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnButton, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnButton, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnButton, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnButton, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnButton, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnButton, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnButton, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -8944,6 +8995,20 @@ impl ComPtr<IAvnButton> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -8956,6 +9021,13 @@ impl ComPtr<IAvnButton> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -9490,7 +9562,7 @@ impl ComPtr<IAvnButton> {
     }
 }
 
-pub const I_AVN_BUTTON_SPINNER_IID: Guid = Guid { data1: 0xBD9E8536, data2: 0xAD5B, data3: 0x51C7, data4: [0xB3, 0xE0, 0x2D, 0xB5, 0x21, 0x85, 0x2F, 0x7C] };
+pub const I_AVN_BUTTON_SPINNER_IID: Guid = Guid { data1: 0x907404D5, data2: 0x1DE4, data3: 0x574D, data4: [0x99, 0x0E, 0x2D, 0x8A, 0x79, 0x37, 0x3D, 0x6D] };
 
 #[repr(C)]
 struct IAvnButtonSpinnerVtbl {
@@ -9549,8 +9621,11 @@ struct IAvnButtonSpinnerVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnButtonSpinner, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnButtonSpinner, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnButtonSpinner, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnButtonSpinner, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnButtonSpinner, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnButtonSpinner, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnButtonSpinner, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnButtonSpinner, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnButtonSpinner, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnButtonSpinner, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnButtonSpinner, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -9998,6 +10073,20 @@ impl ComPtr<IAvnButtonSpinner> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -10010,6 +10099,13 @@ impl ComPtr<IAvnButtonSpinner> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -10493,7 +10589,7 @@ impl ComPtr<IAvnButtonSpinner> {
     }
 }
 
-pub const I_AVN_CALENDAR_IID: Guid = Guid { data1: 0x9FF3FEBD, data2: 0x5CC5, data3: 0x5DB1, data4: [0x94, 0xDA, 0xE0, 0x3D, 0x3D, 0x41, 0xD9, 0x47] };
+pub const I_AVN_CALENDAR_IID: Guid = Guid { data1: 0x2ECA7A03, data2: 0x1AA5, data3: 0x5FC5, data4: [0xB1, 0xCC, 0x7E, 0xCD, 0xDC, 0xF2, 0x00, 0xD1] };
 
 #[repr(C)]
 struct IAvnCalendarVtbl {
@@ -10552,8 +10648,11 @@ struct IAvnCalendarVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnCalendar, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnCalendar, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnCalendar, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnCalendar, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnCalendar, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnCalendar, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnCalendar, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnCalendar, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnCalendar, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnCalendar, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnCalendar, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -11015,6 +11114,20 @@ impl ComPtr<IAvnCalendar> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -11027,6 +11140,13 @@ impl ComPtr<IAvnCalendar> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -11612,7 +11732,7 @@ impl ComPtr<IAvnCalendar> {
     }
 }
 
-pub const I_AVN_CALENDAR_DATE_PICKER_IID: Guid = Guid { data1: 0x57923347, data2: 0x6143, data3: 0x59E6, data4: [0xBA, 0xFC, 0xC7, 0x45, 0xA8, 0x98, 0x21, 0x64] };
+pub const I_AVN_CALENDAR_DATE_PICKER_IID: Guid = Guid { data1: 0x3CB1E562, data2: 0x6FEB, data3: 0x5E8B, data4: [0xA7, 0x9A, 0x9C, 0x1B, 0x3D, 0xB4, 0xAE, 0x62] };
 
 #[repr(C)]
 struct IAvnCalendarDatePickerVtbl {
@@ -11671,8 +11791,11 @@ struct IAvnCalendarDatePickerVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -12146,6 +12269,20 @@ impl ComPtr<IAvnCalendarDatePicker> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -12158,6 +12295,13 @@ impl ComPtr<IAvnCalendarDatePicker> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -12827,7 +12971,7 @@ impl ComPtr<IAvnCalendarDatePicker> {
     }
 }
 
-pub const I_AVN_CANVAS_IID: Guid = Guid { data1: 0xC16EF1BD, data2: 0x5F4F, data3: 0x5C2C, data4: [0xA3, 0xEA, 0x50, 0x8C, 0x4B, 0x05, 0xBA, 0x3C] };
+pub const I_AVN_CANVAS_IID: Guid = Guid { data1: 0xDB97347A, data2: 0xFE7E, data3: 0x5006, data4: [0x93, 0xB7, 0xE4, 0xB5, 0x55, 0xA2, 0x61, 0xA9] };
 
 #[repr(C)]
 struct IAvnCanvasVtbl {
@@ -12886,8 +13030,11 @@ struct IAvnCanvasVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnCanvas, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnCanvas, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnCanvas, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnCanvas, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnCanvas, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnCanvas, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnCanvas, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnCanvas, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnCanvas, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnCanvas, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnCanvas, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -13292,6 +13439,20 @@ impl ComPtr<IAvnCanvas> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -13304,6 +13465,13 @@ impl ComPtr<IAvnCanvas> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -13486,7 +13654,7 @@ impl ComPtr<IAvnCanvas> {
     }
 }
 
-pub const I_AVN_CAROUSEL_IID: Guid = Guid { data1: 0x78C353C4, data2: 0x749B, data3: 0x55FC, data4: [0xA9, 0xEF, 0x66, 0x60, 0x81, 0x55, 0xB0, 0xDB] };
+pub const I_AVN_CAROUSEL_IID: Guid = Guid { data1: 0x062C586F, data2: 0xDB97, data3: 0x53CF, data4: [0x8D, 0xC3, 0xA2, 0xF1, 0x59, 0xE0, 0xBD, 0x23] };
 
 #[repr(C)]
 struct IAvnCarouselVtbl {
@@ -13545,8 +13713,11 @@ struct IAvnCarouselVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnCarousel, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnCarousel, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnCarousel, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnCarousel, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnCarousel, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnCarousel, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnCarousel, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnCarousel, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnCarousel, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnCarousel, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnCarousel, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -14009,6 +14180,20 @@ impl ComPtr<IAvnCarousel> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -14021,6 +14206,13 @@ impl ComPtr<IAvnCarousel> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -14608,7 +14800,7 @@ impl ComPtr<IAvnCarousel> {
     }
 }
 
-pub const I_AVN_CHECK_BOX_IID: Guid = Guid { data1: 0xC4E191D8, data2: 0x29FB, data3: 0x5623, data4: [0xAF, 0x97, 0xE3, 0xAA, 0xD9, 0x50, 0xE2, 0x7B] };
+pub const I_AVN_CHECK_BOX_IID: Guid = Guid { data1: 0x7A084E79, data2: 0xBA86, data3: 0x55BF, data4: [0xA9, 0xE8, 0xE7, 0x78, 0x6F, 0x3D, 0x42, 0x42] };
 
 #[repr(C)]
 struct IAvnCheckBoxVtbl {
@@ -14667,8 +14859,11 @@ struct IAvnCheckBoxVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnCheckBox, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnCheckBox, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnCheckBox, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnCheckBox, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnCheckBox, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnCheckBox, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnCheckBox, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnCheckBox, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnCheckBox, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnCheckBox, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnCheckBox, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -15129,6 +15324,20 @@ impl ComPtr<IAvnCheckBox> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -15141,6 +15350,13 @@ impl ComPtr<IAvnCheckBox> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -15716,7 +15932,7 @@ impl ComPtr<IAvnCheckBox> {
     }
 }
 
-pub const I_AVN_COMBO_BOX_IID: Guid = Guid { data1: 0xEEBBD41C, data2: 0x3704, data3: 0x5BC1, data4: [0xBB, 0x31, 0xE8, 0x7E, 0xF4, 0x07, 0xCB, 0x79] };
+pub const I_AVN_COMBO_BOX_IID: Guid = Guid { data1: 0x1DA7FC0F, data2: 0x6D3F, data3: 0x5669, data4: [0x86, 0x44, 0x03, 0x06, 0x86, 0xAD, 0x4F, 0xD3] };
 
 #[repr(C)]
 struct IAvnComboBoxVtbl {
@@ -15775,8 +15991,11 @@ struct IAvnComboBoxVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnComboBox, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnComboBox, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnComboBox, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnComboBox, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnComboBox, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnComboBox, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnComboBox, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnComboBox, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnComboBox, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnComboBox, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnComboBox, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -16252,6 +16471,20 @@ impl ComPtr<IAvnComboBox> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -16264,6 +16497,13 @@ impl ComPtr<IAvnComboBox> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -16943,7 +17183,7 @@ impl ComPtr<IAvnComboBox> {
     }
 }
 
-pub const I_AVN_COMBO_BOX_ITEM_IID: Guid = Guid { data1: 0x66D70CA8, data2: 0x4E9B, data3: 0x5BD6, data4: [0x95, 0x83, 0x82, 0x59, 0x51, 0x61, 0xCB, 0x34] };
+pub const I_AVN_COMBO_BOX_ITEM_IID: Guid = Guid { data1: 0x2D2F584F, data2: 0x6CD6, data3: 0x59C9, data4: [0xB5, 0x36, 0x46, 0x3E, 0x6C, 0xC2, 0x1B, 0x72] };
 
 #[repr(C)]
 struct IAvnComboBoxItemVtbl {
@@ -17002,8 +17242,11 @@ struct IAvnComboBoxItemVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnComboBoxItem, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnComboBoxItem, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnComboBoxItem, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnComboBoxItem, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnComboBoxItem, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnComboBoxItem, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnComboBoxItem, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnComboBoxItem, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnComboBoxItem, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnComboBoxItem, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnComboBoxItem, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -17443,6 +17686,20 @@ impl ComPtr<IAvnComboBoxItem> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -17455,6 +17712,13 @@ impl ComPtr<IAvnComboBoxItem> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -17883,7 +18147,7 @@ impl ComPtr<IAvnComboBoxItem> {
     }
 }
 
-pub const I_AVN_COMMAND_BAR_IID: Guid = Guid { data1: 0x180E1033, data2: 0xDD01, data3: 0x5433, data4: [0xA4, 0x91, 0xB2, 0x04, 0x9D, 0x71, 0x94, 0x49] };
+pub const I_AVN_COMMAND_BAR_IID: Guid = Guid { data1: 0x19280D2B, data2: 0x7145, data3: 0x59DC, data4: [0xAD, 0x55, 0x55, 0x75, 0x41, 0xEC, 0x01, 0x47] };
 
 #[repr(C)]
 struct IAvnCommandBarVtbl {
@@ -17942,8 +18206,11 @@ struct IAvnCommandBarVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnCommandBar, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnCommandBar, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnCommandBar, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnCommandBar, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnCommandBar, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnCommandBar, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnCommandBar, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnCommandBar, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnCommandBar, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnCommandBar, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnCommandBar, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -18407,6 +18674,20 @@ impl ComPtr<IAvnCommandBar> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -18419,6 +18700,13 @@ impl ComPtr<IAvnCommandBar> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -19015,7 +19303,7 @@ impl ComPtr<IAvnCommandBar> {
     }
 }
 
-pub const I_AVN_COMMAND_BAR_BUTTON_IID: Guid = Guid { data1: 0x259356D2, data2: 0x8840, data3: 0x5531, data4: [0x94, 0x27, 0x7F, 0xD0, 0xB9, 0x70, 0x7A, 0xC7] };
+pub const I_AVN_COMMAND_BAR_BUTTON_IID: Guid = Guid { data1: 0x45F67F66, data2: 0xADC9, data3: 0x5D8D, data4: [0x9D, 0x41, 0x87, 0x49, 0xF5, 0x37, 0x02, 0x5E] };
 
 #[repr(C)]
 struct IAvnCommandBarButtonVtbl {
@@ -19074,8 +19362,11 @@ struct IAvnCommandBarButtonVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnCommandBarButton, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnCommandBarButton, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnCommandBarButton, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnCommandBarButton, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnCommandBarButton, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnCommandBarButton, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnCommandBarButton, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnCommandBarButton, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnCommandBarButton, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnCommandBarButton, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnCommandBarButton, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -19542,6 +19833,20 @@ impl ComPtr<IAvnCommandBarButton> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -19554,6 +19859,13 @@ impl ComPtr<IAvnCommandBarButton> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -20173,7 +20485,7 @@ impl ComPtr<IAvnCommandBarButton> {
     }
 }
 
-pub const I_AVN_COMMAND_BAR_SEPARATOR_IID: Guid = Guid { data1: 0x3438DF70, data2: 0xF2D1, data3: 0x5474, data4: [0xA2, 0x88, 0xD9, 0x7C, 0xCE, 0xAC, 0xC9, 0xF9] };
+pub const I_AVN_COMMAND_BAR_SEPARATOR_IID: Guid = Guid { data1: 0x7A5D6F68, data2: 0x43D8, data3: 0x5F3C, data4: [0xB7, 0xA3, 0x09, 0xC4, 0x44, 0x0A, 0x3E, 0xF7] };
 
 #[repr(C)]
 struct IAvnCommandBarSeparatorVtbl {
@@ -20232,8 +20544,11 @@ struct IAvnCommandBarSeparatorVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -20667,6 +20982,20 @@ impl ComPtr<IAvnCommandBarSeparator> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -20679,6 +21008,13 @@ impl ComPtr<IAvnCommandBarSeparator> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -21065,7 +21401,7 @@ impl ComPtr<IAvnCommandBarSeparator> {
     }
 }
 
-pub const I_AVN_COMMAND_BAR_TOGGLE_BUTTON_IID: Guid = Guid { data1: 0x97BD5478, data2: 0x2731, data3: 0x5994, data4: [0x94, 0x27, 0x4A, 0x6E, 0xCB, 0x9E, 0xE0, 0x4B] };
+pub const I_AVN_COMMAND_BAR_TOGGLE_BUTTON_IID: Guid = Guid { data1: 0x3E3D29A6, data2: 0x520A, data3: 0x5B09, data4: [0x81, 0xE3, 0x63, 0x95, 0x78, 0x4D, 0x2C, 0x55] };
 
 #[repr(C)]
 struct IAvnCommandBarToggleButtonVtbl {
@@ -21124,8 +21460,11 @@ struct IAvnCommandBarToggleButtonVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -21598,6 +21937,20 @@ impl ComPtr<IAvnCommandBarToggleButton> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -21610,6 +21963,13 @@ impl ComPtr<IAvnCommandBarToggleButton> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -22270,7 +22630,7 @@ impl ComPtr<IAvnCommandBarToggleButton> {
     }
 }
 
-pub const I_AVN_CONTENT_CONTROL_IID: Guid = Guid { data1: 0x611A61DE, data2: 0x9AD0, data3: 0x5456, data4: [0x97, 0x9A, 0xEE, 0x52, 0x5E, 0x51, 0x32, 0xCE] };
+pub const I_AVN_CONTENT_CONTROL_IID: Guid = Guid { data1: 0x7312A513, data2: 0x1E46, data3: 0x5A98, data4: [0x95, 0x07, 0x85, 0x12, 0x20, 0xC7, 0xA4, 0x65] };
 
 #[repr(C)]
 struct IAvnContentControlVtbl {
@@ -22329,8 +22689,11 @@ struct IAvnContentControlVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnContentControl, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnContentControl, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnContentControl, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnContentControl, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnContentControl, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnContentControl, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnContentControl, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnContentControl, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnContentControl, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnContentControl, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnContentControl, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -22768,6 +23131,20 @@ impl ComPtr<IAvnContentControl> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -22780,6 +23157,13 @@ impl ComPtr<IAvnContentControl> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -23194,7 +23578,7 @@ impl ComPtr<IAvnContentControl> {
     }
 }
 
-pub const I_AVN_CONTEXT_MENU_IID: Guid = Guid { data1: 0xF63FBE8E, data2: 0x277B, data3: 0x531C, data4: [0xB3, 0xF5, 0xE9, 0xA2, 0xCC, 0xEF, 0x11, 0xA8] };
+pub const I_AVN_CONTEXT_MENU_IID: Guid = Guid { data1: 0x58A98293, data2: 0x5AA3, data3: 0x59E4, data4: [0xAB, 0x2B, 0xCE, 0x02, 0x1C, 0x5A, 0x5C, 0xCA] };
 
 #[repr(C)]
 struct IAvnContextMenuVtbl {
@@ -23253,8 +23637,11 @@ struct IAvnContextMenuVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnContextMenu, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnContextMenu, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnContextMenu, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnContextMenu, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnContextMenu, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnContextMenu, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnContextMenu, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnContextMenu, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnContextMenu, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnContextMenu, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnContextMenu, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -23742,6 +24129,20 @@ impl ComPtr<IAvnContextMenu> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -23754,6 +24155,13 @@ impl ComPtr<IAvnContextMenu> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -24511,7 +24919,7 @@ impl ComPtr<IAvnContextMenu> {
     }
 }
 
-pub const I_AVN_CONTROL_IID: Guid = Guid { data1: 0xE2F44292, data2: 0x89FA, data3: 0x5AFA, data4: [0x92, 0x94, 0xFF, 0x2F, 0x26, 0xDB, 0x68, 0xCE] };
+pub const I_AVN_CONTROL_IID: Guid = Guid { data1: 0x8B272500, data2: 0x09E4, data3: 0x535F, data4: [0xAB, 0xF1, 0x14, 0x99, 0x2E, 0x90, 0xE7, 0x78] };
 
 #[repr(C)]
 struct IAvnControlVtbl {
@@ -24570,8 +24978,11 @@ struct IAvnControlVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnControl, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnControl, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnControl, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnControl, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnControl, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnControl, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnControl, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnControl, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnControl, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnControl, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnControl, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -24973,6 +25384,20 @@ impl ComPtr<IAvnControl> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -24985,6 +25410,13 @@ impl ComPtr<IAvnControl> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -25145,7 +25577,7 @@ impl ComPtr<IAvnControl> {
     }
 }
 
-pub const I_AVN_DATE_PICKER_IID: Guid = Guid { data1: 0xDF809CB0, data2: 0x67FA, data3: 0x58E8, data4: [0x92, 0x0C, 0x1B, 0x95, 0x74, 0xA7, 0xB3, 0x69] };
+pub const I_AVN_DATE_PICKER_IID: Guid = Guid { data1: 0x2AAFC151, data2: 0x688F, data3: 0x5326, data4: [0xB6, 0x51, 0xD0, 0x22, 0xBD, 0x55, 0x48, 0x7D] };
 
 #[repr(C)]
 struct IAvnDatePickerVtbl {
@@ -25204,8 +25636,11 @@ struct IAvnDatePickerVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnDatePicker, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnDatePicker, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnDatePicker, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnDatePicker, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnDatePicker, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnDatePicker, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnDatePicker, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnDatePicker, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnDatePicker, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnDatePicker, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnDatePicker, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -25658,6 +26093,20 @@ impl ComPtr<IAvnDatePicker> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -25670,6 +26119,13 @@ impl ComPtr<IAvnDatePicker> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -26193,7 +26649,7 @@ impl ComPtr<IAvnDatePicker> {
     }
 }
 
-pub const I_AVN_DECORATOR_IID: Guid = Guid { data1: 0xC3E4D085, data2: 0x4977, data3: 0x566E, data4: [0xB8, 0x43, 0x75, 0xD8, 0x6B, 0x43, 0xC2, 0xC9] };
+pub const I_AVN_DECORATOR_IID: Guid = Guid { data1: 0xF8530439, data2: 0xABA5, data3: 0x5B16, data4: [0x9C, 0x0B, 0x21, 0x32, 0xD4, 0xEF, 0xD2, 0x05] };
 
 #[repr(C)]
 struct IAvnDecoratorVtbl {
@@ -26252,8 +26708,11 @@ struct IAvnDecoratorVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnDecorator, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnDecorator, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnDecorator, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnDecorator, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnDecorator, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnDecorator, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnDecorator, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnDecorator, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnDecorator, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnDecorator, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnDecorator, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -26659,6 +27118,20 @@ impl ComPtr<IAvnDecorator> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -26671,6 +27144,13 @@ impl ComPtr<IAvnDecorator> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -26859,7 +27339,7 @@ impl ComPtr<IAvnDecorator> {
     }
 }
 
-pub const I_AVN_DOCK_PANEL_IID: Guid = Guid { data1: 0x8D7E3210, data2: 0x853F, data3: 0x5D42, data4: [0xAE, 0x5B, 0xA5, 0x91, 0x5B, 0xD5, 0x39, 0x28] };
+pub const I_AVN_DOCK_PANEL_IID: Guid = Guid { data1: 0x63D1EF80, data2: 0xEEE5, data3: 0x50CA, data4: [0xB1, 0xA7, 0xC6, 0x00, 0x85, 0x60, 0xBF, 0xD3] };
 
 #[repr(C)]
 struct IAvnDockPanelVtbl {
@@ -26918,8 +27398,11 @@ struct IAvnDockPanelVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnDockPanel, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnDockPanel, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnDockPanel, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnDockPanel, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnDockPanel, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnDockPanel, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnDockPanel, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnDockPanel, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnDockPanel, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnDockPanel, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnDockPanel, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -27330,6 +27813,20 @@ impl ComPtr<IAvnDockPanel> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -27342,6 +27839,13 @@ impl ComPtr<IAvnDockPanel> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -27566,7 +28070,7 @@ impl ComPtr<IAvnDockPanel> {
     }
 }
 
-pub const I_AVN_DROP_DOWN_BUTTON_IID: Guid = Guid { data1: 0xBCBBD462, data2: 0xBE4D, data3: 0x517B, data4: [0x96, 0xB1, 0xBD, 0xF7, 0x62, 0xCA, 0x9B, 0x4B] };
+pub const I_AVN_DROP_DOWN_BUTTON_IID: Guid = Guid { data1: 0x99F4E9B6, data2: 0xDAAC, data3: 0x55B1, data4: [0xAF, 0xDE, 0x75, 0xD3, 0x8A, 0x5C, 0x24, 0x91] };
 
 #[repr(C)]
 struct IAvnDropDownButtonVtbl {
@@ -27625,8 +28129,11 @@ struct IAvnDropDownButtonVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnDropDownButton, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnDropDownButton, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnDropDownButton, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnDropDownButton, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnDropDownButton, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnDropDownButton, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnDropDownButton, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnDropDownButton, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnDropDownButton, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnDropDownButton, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnDropDownButton, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -28081,6 +28588,20 @@ impl ComPtr<IAvnDropDownButton> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -28093,6 +28614,13 @@ impl ComPtr<IAvnDropDownButton> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -28627,7 +29155,7 @@ impl ComPtr<IAvnDropDownButton> {
     }
 }
 
-pub const I_AVN_EXPANDER_IID: Guid = Guid { data1: 0xDFCCCA83, data2: 0x1ADA, data3: 0x5620, data4: [0x82, 0x30, 0x0C, 0x1D, 0x66, 0x50, 0x7F, 0x12] };
+pub const I_AVN_EXPANDER_IID: Guid = Guid { data1: 0x014D8342, data2: 0x03F6, data3: 0x590B, data4: [0xAF, 0xF5, 0xA8, 0x2C, 0x0E, 0xB3, 0x76, 0xBB] };
 
 #[repr(C)]
 struct IAvnExpanderVtbl {
@@ -28686,8 +29214,11 @@ struct IAvnExpanderVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnExpander, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnExpander, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnExpander, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnExpander, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnExpander, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnExpander, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnExpander, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnExpander, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnExpander, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnExpander, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnExpander, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -29141,6 +29672,20 @@ impl ComPtr<IAvnExpander> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -29153,6 +29698,13 @@ impl ComPtr<IAvnExpander> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -29675,7 +30227,7 @@ impl ComPtr<IAvnExpander> {
     }
 }
 
-pub const I_AVN_FLEX_PANEL_IID: Guid = Guid { data1: 0x1CC87ECC, data2: 0x363C, data3: 0x5A07, data4: [0x90, 0x23, 0xAE, 0xA8, 0x0D, 0xBE, 0xF8, 0xB0] };
+pub const I_AVN_FLEX_PANEL_IID: Guid = Guid { data1: 0x82049C23, data2: 0xF315, data3: 0x5A82, data4: [0x86, 0xD9, 0x84, 0x5D, 0x8B, 0x82, 0xBA, 0x59] };
 
 #[repr(C)]
 struct IAvnFlexPanelVtbl {
@@ -29734,8 +30286,11 @@ struct IAvnFlexPanelVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnFlexPanel, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnFlexPanel, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnFlexPanel, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnFlexPanel, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnFlexPanel, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnFlexPanel, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -30154,6 +30709,20 @@ impl ComPtr<IAvnFlexPanel> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -30166,6 +30735,13 @@ impl ComPtr<IAvnFlexPanel> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -30790,7 +31366,7 @@ impl ComPtr<IAvnFlyout> {
     }
 }
 
-pub const I_AVN_GRID_IID: Guid = Guid { data1: 0x887286EA, data2: 0x8097, data3: 0x52EB, data4: [0x9C, 0xEF, 0xFA, 0x1D, 0xA7, 0x82, 0x8D, 0x0F] };
+pub const I_AVN_GRID_IID: Guid = Guid { data1: 0x028C589C, data2: 0x2C52, data3: 0x5505, data4: [0x9C, 0xD2, 0x36, 0xA2, 0x5B, 0x4F, 0x43, 0xA6] };
 
 #[repr(C)]
 struct IAvnGridVtbl {
@@ -30849,8 +31425,11 @@ struct IAvnGridVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnGrid, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnGrid, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnGrid, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnGrid, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnGrid, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnGrid, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnGrid, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnGrid, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnGrid, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnGrid, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnGrid, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -31265,6 +31844,20 @@ impl ComPtr<IAvnGrid> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -31277,6 +31870,13 @@ impl ComPtr<IAvnGrid> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -31531,7 +32131,7 @@ impl ComPtr<IAvnGrid> {
     }
 }
 
-pub const I_AVN_GRID_SPLITTER_IID: Guid = Guid { data1: 0x9D81E579, data2: 0x275C, data3: 0x53A1, data4: [0x8C, 0x3B, 0x91, 0xF1, 0x0E, 0x2D, 0x84, 0x03] };
+pub const I_AVN_GRID_SPLITTER_IID: Guid = Guid { data1: 0x135352FD, data2: 0x917A, data3: 0x577E, data4: [0xA4, 0x28, 0xD1, 0xB6, 0x08, 0x27, 0x44, 0x11] };
 
 #[repr(C)]
 struct IAvnGridSplitterVtbl {
@@ -31590,8 +32190,11 @@ struct IAvnGridSplitterVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnGridSplitter, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnGridSplitter, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnGridSplitter, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnGridSplitter, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnGridSplitter, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnGridSplitter, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnGridSplitter, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnGridSplitter, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnGridSplitter, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnGridSplitter, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnGridSplitter, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -32037,6 +32640,20 @@ impl ComPtr<IAvnGridSplitter> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -32049,6 +32666,13 @@ impl ComPtr<IAvnGridSplitter> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -32516,7 +33140,7 @@ impl ComPtr<IAvnGridSplitter> {
     }
 }
 
-pub const I_AVN_GROUP_BOX_IID: Guid = Guid { data1: 0xF8356E2B, data2: 0x46EA, data3: 0x58CC, data4: [0x80, 0x74, 0x78, 0x9B, 0xA4, 0x2F, 0x0C, 0x79] };
+pub const I_AVN_GROUP_BOX_IID: Guid = Guid { data1: 0x83F8FB71, data2: 0x5FB5, data3: 0x5C67, data4: [0x9E, 0xDA, 0x9B, 0x19, 0x48, 0x17, 0x2B, 0x9E] };
 
 #[repr(C)]
 struct IAvnGroupBoxVtbl {
@@ -32575,8 +33199,11 @@ struct IAvnGroupBoxVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnGroupBox, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnGroupBox, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnGroupBox, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnGroupBox, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnGroupBox, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnGroupBox, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnGroupBox, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnGroupBox, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnGroupBox, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnGroupBox, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnGroupBox, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -33018,6 +33645,20 @@ impl ComPtr<IAvnGroupBox> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -33030,6 +33671,13 @@ impl ComPtr<IAvnGroupBox> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -33472,7 +34120,7 @@ impl ComPtr<IAvnGroupBox> {
     }
 }
 
-pub const I_AVN_HYPERLINK_BUTTON_IID: Guid = Guid { data1: 0x59F93515, data2: 0x012E, data3: 0x5F89, data4: [0x99, 0x98, 0x87, 0xE5, 0x94, 0x70, 0x34, 0xC1] };
+pub const I_AVN_HYPERLINK_BUTTON_IID: Guid = Guid { data1: 0x8130735B, data2: 0x8051, data3: 0x5246, data4: [0x99, 0x14, 0x24, 0x89, 0xE9, 0xC8, 0xBE, 0xA6] };
 
 #[repr(C)]
 struct IAvnHyperlinkButtonVtbl {
@@ -33531,8 +34179,11 @@ struct IAvnHyperlinkButtonVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnHyperlinkButton, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnHyperlinkButton, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnHyperlinkButton, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnHyperlinkButton, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnHyperlinkButton, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnHyperlinkButton, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnHyperlinkButton, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnHyperlinkButton, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnHyperlinkButton, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnHyperlinkButton, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnHyperlinkButton, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -33991,6 +34642,20 @@ impl ComPtr<IAvnHyperlinkButton> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -34003,6 +34668,13 @@ impl ComPtr<IAvnHyperlinkButton> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -34566,7 +35238,7 @@ impl ComPtr<IAvnHyperlinkButton> {
     }
 }
 
-pub const I_AVN_ICON_ELEMENT_IID: Guid = Guid { data1: 0x21137537, data2: 0x05A7, data3: 0x5CD9, data4: [0x8F, 0xED, 0x59, 0xDA, 0xCA, 0x08, 0x64, 0x07] };
+pub const I_AVN_ICON_ELEMENT_IID: Guid = Guid { data1: 0x32A49476, data2: 0xDB0C, data3: 0x5038, data4: [0xB8, 0x88, 0xA6, 0x6D, 0x12, 0x2E, 0xC5, 0x57] };
 
 #[repr(C)]
 struct IAvnIconElementVtbl {
@@ -34625,8 +35297,11 @@ struct IAvnIconElementVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnIconElement, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnIconElement, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnIconElement, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnIconElement, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnIconElement, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnIconElement, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnIconElement, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnIconElement, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnIconElement, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnIconElement, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnIconElement, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -35056,6 +35731,20 @@ impl ComPtr<IAvnIconElement> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -35068,6 +35757,13 @@ impl ComPtr<IAvnIconElement> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -35426,7 +36122,7 @@ impl ComPtr<IAvnIconElement> {
     }
 }
 
-pub const I_AVN_IMAGE_IID: Guid = Guid { data1: 0x9CBC9E3A, data2: 0x098A, data3: 0x51D7, data4: [0x96, 0x47, 0xE2, 0x06, 0x15, 0x05, 0x82, 0x87] };
+pub const I_AVN_IMAGE_IID: Guid = Guid { data1: 0x3BE59E46, data2: 0x0ECC, data3: 0x595F, data4: [0x85, 0xC0, 0x3C, 0xD4, 0x6F, 0x76, 0xD9, 0xB7] };
 
 #[repr(C)]
 struct IAvnImageVtbl {
@@ -35485,8 +36181,11 @@ struct IAvnImageVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnImage, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnImage, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnImage, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnImage, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnImage, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnImage, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnImage, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnImage, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnImage, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnImage, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnImage, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -35896,6 +36595,20 @@ impl ComPtr<IAvnImage> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -35908,6 +36621,13 @@ impl ComPtr<IAvnImage> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -36125,7 +36845,7 @@ impl ComPtr<IAvnImage> {
     }
 }
 
-pub const I_AVN_ITEMS_CONTROL_IID: Guid = Guid { data1: 0x45705E13, data2: 0xA906, data3: 0x50E2, data4: [0xA0, 0xD8, 0xDC, 0xC2, 0x05, 0x85, 0xFD, 0xA6] };
+pub const I_AVN_ITEMS_CONTROL_IID: Guid = Guid { data1: 0xC6061984, data2: 0x593E, data3: 0x5875, data4: [0x89, 0x56, 0x4B, 0x5C, 0x4B, 0x6D, 0x88, 0x6C] };
 
 #[repr(C)]
 struct IAvnItemsControlVtbl {
@@ -36184,8 +36904,11 @@ struct IAvnItemsControlVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnItemsControl, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnItemsControl, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnItemsControl, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnItemsControl, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnItemsControl, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnItemsControl, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnItemsControl, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnItemsControl, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnItemsControl, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnItemsControl, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnItemsControl, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -36627,6 +37350,20 @@ impl ComPtr<IAvnItemsControl> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -36639,6 +37376,13 @@ impl ComPtr<IAvnItemsControl> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -37081,7 +37825,7 @@ impl ComPtr<IAvnItemsControl> {
     }
 }
 
-pub const I_AVN_LABEL_IID: Guid = Guid { data1: 0x73C1CCE5, data2: 0x8DB6, data3: 0x5A69, data4: [0xB8, 0xFB, 0xAC, 0x63, 0x95, 0x28, 0xAE, 0x72] };
+pub const I_AVN_LABEL_IID: Guid = Guid { data1: 0xC85D82E9, data2: 0x5381, data3: 0x5B73, data4: [0xBB, 0x11, 0xC5, 0x47, 0xCE, 0xFA, 0x8A, 0x19] };
 
 #[repr(C)]
 struct IAvnLabelVtbl {
@@ -37140,8 +37884,11 @@ struct IAvnLabelVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnLabel, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnLabel, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnLabel, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnLabel, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnLabel, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnLabel, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnLabel, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnLabel, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnLabel, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnLabel, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnLabel, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -37581,6 +38328,20 @@ impl ComPtr<IAvnLabel> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -37593,6 +38354,13 @@ impl ComPtr<IAvnLabel> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -38021,7 +38789,7 @@ impl ComPtr<IAvnLabel> {
     }
 }
 
-pub const I_AVN_LAYOUT_TRANSFORM_CONTROL_IID: Guid = Guid { data1: 0x4CF77BF7, data2: 0x4ED9, data3: 0x59F6, data4: [0x98, 0xC0, 0xAE, 0x96, 0x82, 0xB3, 0xAD, 0xFE] };
+pub const I_AVN_LAYOUT_TRANSFORM_CONTROL_IID: Guid = Guid { data1: 0xD19B8CD6, data2: 0x21FB, data3: 0x5F7C, data4: [0x98, 0x5B, 0xA4, 0x86, 0x53, 0x24, 0x61, 0xA7] };
 
 #[repr(C)]
 struct IAvnLayoutTransformControlVtbl {
@@ -38080,8 +38848,11 @@ struct IAvnLayoutTransformControlVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnLayoutTransformControl, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -38489,6 +39260,20 @@ impl ComPtr<IAvnLayoutTransformControl> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -38501,6 +39286,13 @@ impl ComPtr<IAvnLayoutTransformControl> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -38703,7 +39495,7 @@ impl ComPtr<IAvnLayoutTransformControl> {
     }
 }
 
-pub const I_AVN_LIST_BOX_IID: Guid = Guid { data1: 0xC45989AF, data2: 0x4038, data3: 0x524F, data4: [0x88, 0x5B, 0xE5, 0x71, 0x85, 0xB2, 0x21, 0x59] };
+pub const I_AVN_LIST_BOX_IID: Guid = Guid { data1: 0xFD704B9F, data2: 0x4E33, data3: 0x516E, data4: [0xB4, 0x8D, 0xB1, 0xDC, 0x9A, 0xA4, 0x4D, 0xCA] };
 
 #[repr(C)]
 struct IAvnListBoxVtbl {
@@ -38762,8 +39554,11 @@ struct IAvnListBoxVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnListBox, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnListBox, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnListBox, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnListBox, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnListBox, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnListBox, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnListBox, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnListBox, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnListBox, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnListBox, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnListBox, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -39223,6 +40018,20 @@ impl ComPtr<IAvnListBox> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -39235,6 +40044,13 @@ impl ComPtr<IAvnListBox> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -39800,7 +40616,7 @@ impl ComPtr<IAvnListBox> {
     }
 }
 
-pub const I_AVN_LIST_BOX_ITEM_IID: Guid = Guid { data1: 0xD51DAD4D, data2: 0xC109, data3: 0x5ABD, data4: [0x84, 0xB4, 0xF3, 0xC6, 0x00, 0x7F, 0x61, 0x33] };
+pub const I_AVN_LIST_BOX_ITEM_IID: Guid = Guid { data1: 0xD177A044, data2: 0x40A9, data3: 0x5BD2, data4: [0xB9, 0xD5, 0xBC, 0x3B, 0x24, 0xF6, 0xF8, 0x7E] };
 
 #[repr(C)]
 struct IAvnListBoxItemVtbl {
@@ -39859,8 +40675,11 @@ struct IAvnListBoxItemVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnListBoxItem, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnListBoxItem, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnListBoxItem, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnListBoxItem, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnListBoxItem, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnListBoxItem, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnListBoxItem, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnListBoxItem, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnListBoxItem, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnListBoxItem, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnListBoxItem, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -40300,6 +41119,20 @@ impl ComPtr<IAvnListBoxItem> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -40312,6 +41145,13 @@ impl ComPtr<IAvnListBoxItem> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -40740,7 +41580,7 @@ impl ComPtr<IAvnListBoxItem> {
     }
 }
 
-pub const I_AVN_MASKED_TEXT_BOX_IID: Guid = Guid { data1: 0xACF377B4, data2: 0xD865, data3: 0x5245, data4: [0x8C, 0xFE, 0xAE, 0x04, 0x61, 0xEF, 0x95, 0xFB] };
+pub const I_AVN_MASKED_TEXT_BOX_IID: Guid = Guid { data1: 0x1C1A91B2, data2: 0x4417, data3: 0x5AB6, data4: [0xA2, 0x5A, 0xAF, 0x72, 0xF5, 0x7B, 0x56, 0x40] };
 
 #[repr(C)]
 struct IAvnMaskedTextBoxVtbl {
@@ -40799,8 +41639,11 @@ struct IAvnMaskedTextBoxVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnMaskedTextBox, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnMaskedTextBox, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnMaskedTextBox, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnMaskedTextBox, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnMaskedTextBox, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnMaskedTextBox, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnMaskedTextBox, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnMaskedTextBox, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnMaskedTextBox, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnMaskedTextBox, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnMaskedTextBox, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -41333,6 +42176,20 @@ impl ComPtr<IAvnMaskedTextBox> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -41345,6 +42202,13 @@ impl ComPtr<IAvnMaskedTextBox> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -42422,7 +43286,7 @@ impl ComPtr<IAvnMaskedTextBox> {
     }
 }
 
-pub const I_AVN_MENU_IID: Guid = Guid { data1: 0x71FC2F34, data2: 0x4C1D, data3: 0x591E, data4: [0xA5, 0x67, 0xAB, 0x31, 0x51, 0xC7, 0x77, 0x85] };
+pub const I_AVN_MENU_IID: Guid = Guid { data1: 0x7494D34A, data2: 0x1A50, data3: 0x5EB7, data4: [0x85, 0x32, 0xD5, 0xA9, 0xCA, 0x39, 0x92, 0xB5] };
 
 #[repr(C)]
 struct IAvnMenuVtbl {
@@ -42481,8 +43345,11 @@ struct IAvnMenuVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnMenu, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnMenu, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnMenu, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnMenu, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnMenu, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnMenu, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnMenu, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnMenu, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnMenu, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnMenu, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnMenu, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -42945,6 +43812,20 @@ impl ComPtr<IAvnMenu> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -42957,6 +43838,13 @@ impl ComPtr<IAvnMenu> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -43542,7 +44430,7 @@ impl ComPtr<IAvnMenu> {
     }
 }
 
-pub const I_AVN_MENU_BASE_IID: Guid = Guid { data1: 0x1E92B6FA, data2: 0x9790, data3: 0x5135, data4: [0x8A, 0xC6, 0xA5, 0x66, 0xA0, 0xEA, 0xD4, 0x14] };
+pub const I_AVN_MENU_BASE_IID: Guid = Guid { data1: 0xA5A9B117, data2: 0xB812, data3: 0x50DC, data4: [0xBE, 0xAA, 0xD8, 0x1C, 0xDA, 0xE4, 0x07, 0x0D] };
 
 #[repr(C)]
 struct IAvnMenuBaseVtbl {
@@ -43601,8 +44489,11 @@ struct IAvnMenuBaseVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnMenuBase, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnMenuBase, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnMenuBase, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnMenuBase, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnMenuBase, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnMenuBase, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnMenuBase, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnMenuBase, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnMenuBase, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnMenuBase, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnMenuBase, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -44065,6 +44956,20 @@ impl ComPtr<IAvnMenuBase> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -44077,6 +44982,13 @@ impl ComPtr<IAvnMenuBase> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -45015,7 +45927,7 @@ impl ComPtr<IAvnMenuFlyout> {
     }
 }
 
-pub const I_AVN_MENU_ITEM_IID: Guid = Guid { data1: 0x15CE4E5D, data2: 0xE0E7, data3: 0x5356, data4: [0xAC, 0xFF, 0xD7, 0x42, 0xB7, 0x28, 0x0B, 0x97] };
+pub const I_AVN_MENU_ITEM_IID: Guid = Guid { data1: 0x1863F45C, data2: 0x1039, data3: 0x5C4E, data4: [0x96, 0x68, 0x43, 0x36, 0x06, 0xE9, 0x1A, 0xB9] };
 
 #[repr(C)]
 struct IAvnMenuItemVtbl {
@@ -45074,8 +45986,11 @@ struct IAvnMenuItemVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnMenuItem, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnMenuItem, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnMenuItem, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnMenuItem, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnMenuItem, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnMenuItem, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnMenuItem, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnMenuItem, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnMenuItem, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnMenuItem, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnMenuItem, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -45565,6 +46480,20 @@ impl ComPtr<IAvnMenuItem> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -45577,6 +46506,13 @@ impl ComPtr<IAvnMenuItem> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -46355,7 +47291,7 @@ impl ComPtr<IAvnMenuItem> {
     }
 }
 
-pub const I_AVN_NOTIFICATION_CARD_IID: Guid = Guid { data1: 0xDB52E2D8, data2: 0xCC48, data3: 0x5F72, data4: [0xB2, 0x20, 0x52, 0xBD, 0xF1, 0x6B, 0xC0, 0x55] };
+pub const I_AVN_NOTIFICATION_CARD_IID: Guid = Guid { data1: 0x9E79955D, data2: 0x2569, data3: 0x59C2, data4: [0x9A, 0x3A, 0x25, 0xFE, 0x0A, 0xE5, 0x60, 0x26] };
 
 #[repr(C)]
 struct IAvnNotificationCardVtbl {
@@ -46414,8 +47350,11 @@ struct IAvnNotificationCardVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnNotificationCard, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnNotificationCard, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnNotificationCard, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnNotificationCard, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnNotificationCard, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnNotificationCard, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnNotificationCard, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnNotificationCard, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnNotificationCard, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnNotificationCard, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnNotificationCard, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -46861,6 +47800,20 @@ impl ComPtr<IAvnNotificationCard> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -46873,6 +47826,13 @@ impl ComPtr<IAvnNotificationCard> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -47342,7 +48302,7 @@ impl ComPtr<IAvnNotificationCard> {
     }
 }
 
-pub const I_AVN_WINDOW_NOTIFICATION_MANAGER_IID: Guid = Guid { data1: 0x2EECEA93, data2: 0x798A, data3: 0x57D8, data4: [0x9E, 0xD9, 0x91, 0xC4, 0xEA, 0x6D, 0x28, 0x2F] };
+pub const I_AVN_WINDOW_NOTIFICATION_MANAGER_IID: Guid = Guid { data1: 0xC159F361, data2: 0xBE6C, data3: 0x5268, data4: [0x8A, 0x0B, 0xE1, 0x2F, 0x63, 0x3F, 0x39, 0x5C] };
 
 #[repr(C)]
 struct IAvnWindowNotificationManagerVtbl {
@@ -47401,8 +48361,11 @@ struct IAvnWindowNotificationManagerVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -47841,6 +48804,20 @@ impl ComPtr<IAvnWindowNotificationManager> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -47853,6 +48830,13 @@ impl ComPtr<IAvnWindowNotificationManager> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -48269,7 +49253,7 @@ impl ComPtr<IAvnWindowNotificationManager> {
     }
 }
 
-pub const I_AVN_NUMERIC_UP_DOWN_IID: Guid = Guid { data1: 0x1082FB46, data2: 0x8635, data3: 0x515E, data4: [0x82, 0x2C, 0x12, 0x62, 0x9B, 0x6D, 0x25, 0xF8] };
+pub const I_AVN_NUMERIC_UP_DOWN_IID: Guid = Guid { data1: 0x5B2AA4AD, data2: 0xE367, data3: 0x58A1, data4: [0x99, 0xED, 0x81, 0x22, 0xD7, 0xC9, 0xB2, 0x09] };
 
 #[repr(C)]
 struct IAvnNumericUpDownVtbl {
@@ -48328,8 +49312,11 @@ struct IAvnNumericUpDownVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnNumericUpDown, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnNumericUpDown, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnNumericUpDown, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnNumericUpDown, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnNumericUpDown, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnNumericUpDown, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnNumericUpDown, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnNumericUpDown, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnNumericUpDown, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnNumericUpDown, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnNumericUpDown, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -48799,6 +49786,20 @@ impl ComPtr<IAvnNumericUpDown> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -48811,6 +49812,13 @@ impl ComPtr<IAvnNumericUpDown> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -49454,7 +50462,7 @@ impl ComPtr<IAvnNumericUpDown> {
     }
 }
 
-pub const I_AVN_PANEL_IID: Guid = Guid { data1: 0xE6C6B17E, data2: 0x9747, data3: 0x5739, data4: [0xB2, 0x55, 0x52, 0xE7, 0x37, 0xA7, 0xA2, 0xA2] };
+pub const I_AVN_PANEL_IID: Guid = Guid { data1: 0xFE37643D, data2: 0xBDE5, data3: 0x511B, data4: [0xAB, 0x66, 0xCB, 0x66, 0xB7, 0x3F, 0x68, 0x5F] };
 
 #[repr(C)]
 struct IAvnPanelVtbl {
@@ -49513,8 +50521,11 @@ struct IAvnPanelVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnPanel, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnPanel, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnPanel, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnPanel, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnPanel, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnPanel, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnPanel, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnPanel, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnPanel, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnPanel, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnPanel, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -49919,6 +50930,20 @@ impl ComPtr<IAvnPanel> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -49931,6 +50956,13 @@ impl ComPtr<IAvnPanel> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -50113,7 +51145,7 @@ impl ComPtr<IAvnPanel> {
     }
 }
 
-pub const I_AVN_PATH_ICON_IID: Guid = Guid { data1: 0x6D274452, data2: 0x1819, data3: 0x559D, data4: [0xBB, 0x43, 0x52, 0xE6, 0x8A, 0xB6, 0x4E, 0x10] };
+pub const I_AVN_PATH_ICON_IID: Guid = Guid { data1: 0x9C821A9C, data2: 0x6A11, data3: 0x5E74, data4: [0x8D, 0x69, 0xA6, 0x37, 0x66, 0x2C, 0xD2, 0x92] };
 
 #[repr(C)]
 struct IAvnPathIconVtbl {
@@ -50172,8 +51204,11 @@ struct IAvnPathIconVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnPathIcon, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnPathIcon, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnPathIcon, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnPathIcon, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnPathIcon, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnPathIcon, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnPathIcon, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnPathIcon, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnPathIcon, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnPathIcon, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnPathIcon, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -50605,6 +51640,20 @@ impl ComPtr<IAvnPathIcon> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -50617,6 +51666,13 @@ impl ComPtr<IAvnPathIcon> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -50990,7 +52046,7 @@ impl ComPtr<IAvnPathIcon> {
     }
 }
 
-pub const I_AVN_PIPS_PAGER_IID: Guid = Guid { data1: 0xFBFAC5E1, data2: 0xFD39, data3: 0x56C8, data4: [0x82, 0x08, 0x7C, 0x0E, 0x0A, 0xFA, 0x68, 0xCD] };
+pub const I_AVN_PIPS_PAGER_IID: Guid = Guid { data1: 0xB23699D7, data2: 0xACE9, data3: 0x5D8F, data4: [0x85, 0xED, 0x21, 0x6C, 0x49, 0xDE, 0xBE, 0x3E] };
 
 #[repr(C)]
 struct IAvnPipsPagerVtbl {
@@ -51049,8 +52105,11 @@ struct IAvnPipsPagerVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnPipsPager, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnPipsPager, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnPipsPager, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnPipsPager, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnPipsPager, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnPipsPager, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnPipsPager, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnPipsPager, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnPipsPager, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnPipsPager, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnPipsPager, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -51494,6 +52553,20 @@ impl ComPtr<IAvnPipsPager> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -51506,6 +52579,13 @@ impl ComPtr<IAvnPipsPager> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -52067,7 +53147,7 @@ impl ComPtr<IAvnFlyoutBase> {
     }
 }
 
-pub const I_AVN_HEADERED_CONTENT_CONTROL_IID: Guid = Guid { data1: 0xD8948145, data2: 0x837B, data3: 0x5DC3, data4: [0xA6, 0x85, 0x14, 0xDF, 0x38, 0x16, 0x7A, 0x93] };
+pub const I_AVN_HEADERED_CONTENT_CONTROL_IID: Guid = Guid { data1: 0x0408F0EA, data2: 0x5BA0, data3: 0x54C6, data4: [0xA8, 0xE6, 0x97, 0x93, 0x28, 0xFB, 0xE8, 0x8C] };
 
 #[repr(C)]
 struct IAvnHeaderedContentControlVtbl {
@@ -52126,8 +53206,11 @@ struct IAvnHeaderedContentControlVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -52569,6 +53652,20 @@ impl ComPtr<IAvnHeaderedContentControl> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -52581,6 +53678,13 @@ impl ComPtr<IAvnHeaderedContentControl> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -53023,7 +54127,7 @@ impl ComPtr<IAvnHeaderedContentControl> {
     }
 }
 
-pub const I_AVN_HEADERED_ITEMS_CONTROL_IID: Guid = Guid { data1: 0xD25B235E, data2: 0xD49F, data3: 0x55B2, data4: [0xAD, 0xF8, 0x90, 0xA2, 0xBF, 0xCB, 0x96, 0xAB] };
+pub const I_AVN_HEADERED_ITEMS_CONTROL_IID: Guid = Guid { data1: 0x2E4EBFCB, data2: 0xEA24, data3: 0x5842, data4: [0xAB, 0xC1, 0x0D, 0xC1, 0x37, 0xED, 0x31, 0xDA] };
 
 #[repr(C)]
 struct IAvnHeaderedItemsControlVtbl {
@@ -53082,8 +54186,11 @@ struct IAvnHeaderedItemsControlVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -53529,6 +54636,20 @@ impl ComPtr<IAvnHeaderedItemsControl> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -53541,6 +54662,13 @@ impl ComPtr<IAvnHeaderedItemsControl> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -54011,7 +55139,7 @@ impl ComPtr<IAvnHeaderedItemsControl> {
     }
 }
 
-pub const I_AVN_HEADERED_SELECTING_ITEMS_CONTROL_IID: Guid = Guid { data1: 0xBA5CD52E, data2: 0xECDF, data3: 0x5379, data4: [0xAC, 0x86, 0x58, 0x97, 0xFA, 0x85, 0x3C, 0x60] };
+pub const I_AVN_HEADERED_SELECTING_ITEMS_CONTROL_IID: Guid = Guid { data1: 0x723DA9D6, data2: 0x8356, data3: 0x5967, data4: [0x83, 0xE1, 0x0E, 0x0A, 0x4B, 0x1C, 0x1B, 0x2C] };
 
 #[repr(C)]
 struct IAvnHeaderedSelectingItemsControlVtbl {
@@ -54070,8 +55198,11 @@ struct IAvnHeaderedSelectingItemsControlVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -54531,6 +55662,20 @@ impl ComPtr<IAvnHeaderedSelectingItemsControl> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -54543,6 +55688,13 @@ impl ComPtr<IAvnHeaderedSelectingItemsControl> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -55110,7 +56262,7 @@ impl ComPtr<IAvnHeaderedSelectingItemsControl> {
     }
 }
 
-pub const I_AVN_POPUP_IID: Guid = Guid { data1: 0x30B75D6F, data2: 0x4E12, data3: 0x505C, data4: [0x8C, 0x73, 0xE0, 0x2A, 0x5F, 0xCD, 0xB3, 0x56] };
+pub const I_AVN_POPUP_IID: Guid = Guid { data1: 0xC8FAC379, data2: 0xF367, data3: 0x5D83, data4: [0x9A, 0xBF, 0x46, 0xEF, 0x6F, 0xCB, 0x77, 0x8B] };
 
 #[repr(C)]
 struct IAvnPopupVtbl {
@@ -55169,8 +56321,11 @@ struct IAvnPopupVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnPopup, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnPopup, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnPopup, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnPopup, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnPopup, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnPopup, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnPopup, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnPopup, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnPopup, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnPopup, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnPopup, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -55618,6 +56773,20 @@ impl ComPtr<IAvnPopup> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -55630,6 +56799,13 @@ impl ComPtr<IAvnPopup> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -56422,7 +57598,7 @@ impl ComPtr<IAvnPopupFlyoutBase> {
     }
 }
 
-pub const I_AVN_RANGE_BASE_IID: Guid = Guid { data1: 0xD910F3E2, data2: 0xCD14, data3: 0x547A, data4: [0x8E, 0x8C, 0xBF, 0xEC, 0x9F, 0x4C, 0x92, 0x6F] };
+pub const I_AVN_RANGE_BASE_IID: Guid = Guid { data1: 0x4B50BE51, data2: 0x3AF1, data3: 0x5ED3, data4: [0xB2, 0x9F, 0x61, 0xE8, 0x72, 0x8F, 0x05, 0xC9] };
 
 #[repr(C)]
 struct IAvnRangeBaseVtbl {
@@ -56481,8 +57657,11 @@ struct IAvnRangeBaseVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnRangeBase, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnRangeBase, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnRangeBase, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnRangeBase, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnRangeBase, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnRangeBase, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnRangeBase, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnRangeBase, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnRangeBase, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnRangeBase, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnRangeBase, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -56924,6 +58103,20 @@ impl ComPtr<IAvnRangeBase> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -56936,6 +58129,13 @@ impl ComPtr<IAvnRangeBase> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -57377,7 +58577,7 @@ impl ComPtr<IAvnRangeBase> {
     }
 }
 
-pub const I_AVN_SELECTING_ITEMS_CONTROL_IID: Guid = Guid { data1: 0x18B99B99, data2: 0x03A3, data3: 0x5C68, data4: [0x84, 0x71, 0xD4, 0x63, 0xC4, 0xED, 0x17, 0x78] };
+pub const I_AVN_SELECTING_ITEMS_CONTROL_IID: Guid = Guid { data1: 0xBF3CA6E3, data2: 0xC054, data3: 0x5059, data4: [0xAF, 0xE7, 0x20, 0xE3, 0x8D, 0x9B, 0x9D, 0xE8] };
 
 #[repr(C)]
 struct IAvnSelectingItemsControlVtbl {
@@ -57436,8 +58636,11 @@ struct IAvnSelectingItemsControlVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -57893,6 +59096,20 @@ impl ComPtr<IAvnSelectingItemsControl> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -57905,6 +59122,13 @@ impl ComPtr<IAvnSelectingItemsControl> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -58444,7 +59668,7 @@ impl ComPtr<IAvnSelectingItemsControl> {
     }
 }
 
-pub const I_AVN_TEMPLATED_CONTROL_IID: Guid = Guid { data1: 0x6E80826C, data2: 0xF337, data3: 0x5A4D, data4: [0xA5, 0xBB, 0x1C, 0x0D, 0xF4, 0x36, 0xB6, 0xD0] };
+pub const I_AVN_TEMPLATED_CONTROL_IID: Guid = Guid { data1: 0x1863F34C, data2: 0xF21F, data3: 0x5977, data4: [0xA3, 0x05, 0x59, 0x39, 0xD8, 0x0C, 0xB8, 0xC5] };
 
 #[repr(C)]
 struct IAvnTemplatedControlVtbl {
@@ -58503,8 +59727,11 @@ struct IAvnTemplatedControlVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnTemplatedControl, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnTemplatedControl, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnTemplatedControl, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnTemplatedControl, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnTemplatedControl, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnTemplatedControl, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnTemplatedControl, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnTemplatedControl, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnTemplatedControl, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnTemplatedControl, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnTemplatedControl, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -58934,6 +60161,20 @@ impl ComPtr<IAvnTemplatedControl> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -58946,6 +60187,13 @@ impl ComPtr<IAvnTemplatedControl> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -59304,7 +60552,7 @@ impl ComPtr<IAvnTemplatedControl> {
     }
 }
 
-pub const I_AVN_THUMB_IID: Guid = Guid { data1: 0xA9A96FDF, data2: 0xBFCF, data3: 0x5E37, data4: [0xA1, 0x1E, 0x4B, 0x65, 0x3C, 0xE3, 0x6C, 0x00] };
+pub const I_AVN_THUMB_IID: Guid = Guid { data1: 0xE465D453, data2: 0x88D0, data3: 0x5CD1, data4: [0xAF, 0x2C, 0x38, 0x9B, 0x5D, 0x80, 0xBE, 0x4D] };
 
 #[repr(C)]
 struct IAvnThumbVtbl {
@@ -59363,8 +60611,11 @@ struct IAvnThumbVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnThumb, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnThumb, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnThumb, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnThumb, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnThumb, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnThumb, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnThumb, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnThumb, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnThumb, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnThumb, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnThumb, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -59800,6 +61051,20 @@ impl ComPtr<IAvnThumb> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -59812,6 +61077,13 @@ impl ComPtr<IAvnThumb> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -60209,7 +61481,7 @@ impl ComPtr<IAvnThumb> {
     }
 }
 
-pub const I_AVN_TOGGLE_BUTTON_IID: Guid = Guid { data1: 0x23A7F6FB, data2: 0xAFEF, data3: 0x5E4D, data4: [0x8A, 0x9A, 0x94, 0xF4, 0xEF, 0xCF, 0x6B, 0x12] };
+pub const I_AVN_TOGGLE_BUTTON_IID: Guid = Guid { data1: 0xAA447DC6, data2: 0x1470, data3: 0x599E, data4: [0xB0, 0xF5, 0x27, 0xBF, 0x31, 0x3D, 0xC7, 0xE7] };
 
 #[repr(C)]
 struct IAvnToggleButtonVtbl {
@@ -60268,8 +61540,11 @@ struct IAvnToggleButtonVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnToggleButton, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnToggleButton, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnToggleButton, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnToggleButton, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnToggleButton, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnToggleButton, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnToggleButton, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnToggleButton, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnToggleButton, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnToggleButton, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnToggleButton, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -60730,6 +62005,20 @@ impl ComPtr<IAvnToggleButton> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -60742,6 +62031,13 @@ impl ComPtr<IAvnToggleButton> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -61317,7 +62613,7 @@ impl ComPtr<IAvnToggleButton> {
     }
 }
 
-pub const I_AVN_UNIFORM_GRID_IID: Guid = Guid { data1: 0x061A5BD1, data2: 0x9360, data3: 0x53D2, data4: [0xBE, 0xF6, 0x7E, 0xB9, 0xEC, 0xAE, 0xA4, 0x93] };
+pub const I_AVN_UNIFORM_GRID_IID: Guid = Guid { data1: 0x8B8511AD, data2: 0x3289, data3: 0x5415, data4: [0xA0, 0x3D, 0xE0, 0x26, 0x55, 0x49, 0xA8, 0x76] };
 
 #[repr(C)]
 struct IAvnUniformGridVtbl {
@@ -61376,8 +62672,11 @@ struct IAvnUniformGridVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnUniformGrid, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnUniformGrid, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnUniformGrid, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnUniformGrid, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnUniformGrid, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnUniformGrid, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnUniformGrid, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnUniformGrid, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnUniformGrid, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnUniformGrid, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnUniformGrid, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -61792,6 +63091,20 @@ impl ComPtr<IAvnUniformGrid> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -61804,6 +63117,13 @@ impl ComPtr<IAvnUniformGrid> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -62056,7 +63376,7 @@ impl ComPtr<IAvnUniformGrid> {
     }
 }
 
-pub const I_AVN_PROGRESS_BAR_IID: Guid = Guid { data1: 0x5AD47222, data2: 0x012D, data3: 0x56C8, data4: [0x84, 0x59, 0x42, 0xDD, 0x29, 0x5B, 0x9D, 0xAF] };
+pub const I_AVN_PROGRESS_BAR_IID: Guid = Guid { data1: 0x5B810486, data2: 0x98CC, data3: 0x51F9, data4: [0x8F, 0x12, 0x46, 0xA0, 0x95, 0x59, 0x5B, 0xB4] };
 
 #[repr(C)]
 struct IAvnProgressBarVtbl {
@@ -62115,8 +63435,11 @@ struct IAvnProgressBarVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnProgressBar, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnProgressBar, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnProgressBar, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnProgressBar, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnProgressBar, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnProgressBar, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnProgressBar, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnProgressBar, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnProgressBar, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnProgressBar, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnProgressBar, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -62567,6 +63890,20 @@ impl ComPtr<IAvnProgressBar> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -62579,6 +63916,13 @@ impl ComPtr<IAvnProgressBar> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -63085,7 +64429,7 @@ impl ComPtr<IAvnProgressBar> {
     }
 }
 
-pub const I_AVN_RADIO_BUTTON_IID: Guid = Guid { data1: 0xA2E6518A, data2: 0x5B2E, data3: 0x5424, data4: [0x84, 0xFE, 0xCF, 0xA3, 0x25, 0xD9, 0x32, 0x88] };
+pub const I_AVN_RADIO_BUTTON_IID: Guid = Guid { data1: 0xFBEA357A, data2: 0x8E1A, data3: 0x5579, data4: [0xA0, 0xCF, 0x4F, 0xD4, 0x88, 0x95, 0xDA, 0xDB] };
 
 #[repr(C)]
 struct IAvnRadioButtonVtbl {
@@ -63144,8 +64488,11 @@ struct IAvnRadioButtonVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnRadioButton, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnRadioButton, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnRadioButton, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnRadioButton, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnRadioButton, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnRadioButton, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnRadioButton, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnRadioButton, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnRadioButton, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnRadioButton, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnRadioButton, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -63608,6 +64955,20 @@ impl ComPtr<IAvnRadioButton> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -63620,6 +64981,13 @@ impl ComPtr<IAvnRadioButton> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -64210,7 +65578,7 @@ impl ComPtr<IAvnRadioButton> {
     }
 }
 
-pub const I_AVN_REFRESH_CONTAINER_IID: Guid = Guid { data1: 0x95707491, data2: 0x9943, data3: 0x5B6C, data4: [0xBF, 0x2E, 0x1A, 0x68, 0xA7, 0x97, 0xA8, 0x42] };
+pub const I_AVN_REFRESH_CONTAINER_IID: Guid = Guid { data1: 0x8A61432D, data2: 0xC34F, data3: 0x51D2, data4: [0x8A, 0xCC, 0xE3, 0x6D, 0x3D, 0x63, 0x9D, 0xC7] };
 
 #[repr(C)]
 struct IAvnRefreshContainerVtbl {
@@ -64269,8 +65637,11 @@ struct IAvnRefreshContainerVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnRefreshContainer, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnRefreshContainer, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnRefreshContainer, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnRefreshContainer, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnRefreshContainer, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnRefreshContainer, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnRefreshContainer, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnRefreshContainer, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnRefreshContainer, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnRefreshContainer, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnRefreshContainer, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -64715,6 +66086,20 @@ impl ComPtr<IAvnRefreshContainer> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -64727,6 +66112,13 @@ impl ComPtr<IAvnRefreshContainer> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -65188,7 +66580,7 @@ impl ComPtr<IAvnRefreshContainer> {
     }
 }
 
-pub const I_AVN_RELATIVE_PANEL_IID: Guid = Guid { data1: 0xA52468AD, data2: 0xE31F, data3: 0x58F2, data4: [0x8A, 0x74, 0x1A, 0xB7, 0xE7, 0x3D, 0x66, 0xE6] };
+pub const I_AVN_RELATIVE_PANEL_IID: Guid = Guid { data1: 0x65247A43, data2: 0x88C6, data3: 0x51B3, data4: [0x91, 0xA5, 0x4D, 0xD6, 0x46, 0x41, 0x01, 0x56] };
 
 #[repr(C)]
 struct IAvnRelativePanelVtbl {
@@ -65247,8 +66639,11 @@ struct IAvnRelativePanelVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnRelativePanel, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnRelativePanel, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnRelativePanel, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnRelativePanel, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnRelativePanel, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnRelativePanel, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnRelativePanel, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnRelativePanel, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnRelativePanel, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnRelativePanel, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnRelativePanel, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -65653,6 +67048,20 @@ impl ComPtr<IAvnRelativePanel> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -65665,6 +67074,13 @@ impl ComPtr<IAvnRelativePanel> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -65847,7 +67263,7 @@ impl ComPtr<IAvnRelativePanel> {
     }
 }
 
-pub const I_AVN_REPEAT_BUTTON_IID: Guid = Guid { data1: 0xDF355462, data2: 0x7926, data3: 0x5F77, data4: [0xB4, 0x63, 0x22, 0xB1, 0x64, 0xC7, 0xA4, 0x02] };
+pub const I_AVN_REPEAT_BUTTON_IID: Guid = Guid { data1: 0x4F04D781, data2: 0x4A77, data3: 0x5C93, data4: [0x81, 0x2D, 0x3D, 0x1D, 0xFC, 0x10, 0x62, 0x7C] };
 
 #[repr(C)]
 struct IAvnRepeatButtonVtbl {
@@ -65906,8 +67322,11 @@ struct IAvnRepeatButtonVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnRepeatButton, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnRepeatButton, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnRepeatButton, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnRepeatButton, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnRepeatButton, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnRepeatButton, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnRepeatButton, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnRepeatButton, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnRepeatButton, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnRepeatButton, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnRepeatButton, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -66366,6 +67785,20 @@ impl ComPtr<IAvnRepeatButton> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -66378,6 +67811,13 @@ impl ComPtr<IAvnRepeatButton> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -66940,7 +68380,7 @@ impl ComPtr<IAvnRepeatButton> {
     }
 }
 
-pub const I_AVN_SCROLL_VIEWER_IID: Guid = Guid { data1: 0x4CCB656E, data2: 0x34E8, data3: 0x5621, data4: [0xAF, 0x96, 0x1C, 0x2A, 0xF4, 0xF1, 0xDA, 0xAE] };
+pub const I_AVN_SCROLL_VIEWER_IID: Guid = Guid { data1: 0x1D6C37FA, data2: 0x326B, data3: 0x57A1, data4: [0xA0, 0x84, 0x77, 0x90, 0xE0, 0xCE, 0x29, 0x73] };
 
 #[repr(C)]
 struct IAvnScrollViewerVtbl {
@@ -66999,8 +68439,11 @@ struct IAvnScrollViewerVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnScrollViewer, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnScrollViewer, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnScrollViewer, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnScrollViewer, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnScrollViewer, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnScrollViewer, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnScrollViewer, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnScrollViewer, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnScrollViewer, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnScrollViewer, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnScrollViewer, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -67483,6 +68926,20 @@ impl ComPtr<IAvnScrollViewer> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -67495,6 +68952,13 @@ impl ComPtr<IAvnScrollViewer> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -68218,7 +69682,7 @@ impl ComPtr<IAvnScrollViewer> {
     }
 }
 
-pub const I_AVN_SELECTABLE_TEXT_BLOCK_IID: Guid = Guid { data1: 0x8E36E51E, data2: 0x30AC, data3: 0x563D, data4: [0xA2, 0xD7, 0x79, 0x33, 0x5F, 0x5F, 0xAD, 0x8C] };
+pub const I_AVN_SELECTABLE_TEXT_BLOCK_IID: Guid = Guid { data1: 0x11DADAD8, data2: 0x19AB, data3: 0x5C0C, data4: [0x96, 0x14, 0x00, 0xDD, 0x41, 0x25, 0x70, 0xF8] };
 
 #[repr(C)]
 struct IAvnSelectableTextBlockVtbl {
@@ -68277,8 +69741,11 @@ struct IAvnSelectableTextBlockVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -68731,6 +70198,20 @@ impl ComPtr<IAvnSelectableTextBlock> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -68743,6 +70224,13 @@ impl ComPtr<IAvnSelectableTextBlock> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -69262,7 +70750,7 @@ impl ComPtr<IAvnSelectableTextBlock> {
     }
 }
 
-pub const I_AVN_SEPARATOR_IID: Guid = Guid { data1: 0xC97E1335, data2: 0x936C, data3: 0x5319, data4: [0x91, 0xB3, 0x09, 0xE2, 0xE1, 0x60, 0x7D, 0x5A] };
+pub const I_AVN_SEPARATOR_IID: Guid = Guid { data1: 0x81DB67FE, data2: 0xE07A, data3: 0x5DD4, data4: [0xB1, 0x6C, 0x1E, 0x09, 0x9F, 0xC0, 0x59, 0xFB] };
 
 #[repr(C)]
 struct IAvnSeparatorVtbl {
@@ -69321,8 +70809,11 @@ struct IAvnSeparatorVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnSeparator, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnSeparator, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnSeparator, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnSeparator, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnSeparator, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnSeparator, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnSeparator, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnSeparator, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnSeparator, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnSeparator, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnSeparator, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -69752,6 +71243,20 @@ impl ComPtr<IAvnSeparator> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -69764,6 +71269,13 @@ impl ComPtr<IAvnSeparator> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -70122,7 +71634,7 @@ impl ComPtr<IAvnSeparator> {
     }
 }
 
-pub const I_AVN_ARC_IID: Guid = Guid { data1: 0xD707907F, data2: 0xAF00, data3: 0x561A, data4: [0x93, 0x74, 0x03, 0xA9, 0x0D, 0xF5, 0x5B, 0x83] };
+pub const I_AVN_ARC_IID: Guid = Guid { data1: 0x2DACA1F8, data2: 0x5364, data3: 0x5CB5, data4: [0xB4, 0x71, 0x81, 0x68, 0x2B, 0x00, 0xE3, 0x89] };
 
 #[repr(C)]
 struct IAvnArcVtbl {
@@ -70181,8 +71693,11 @@ struct IAvnArcVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnArc, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnArc, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnArc, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnArc, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnArc, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnArc, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnArc, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnArc, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnArc, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnArc, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnArc, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -70606,6 +72121,20 @@ impl ComPtr<IAvnArc> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -70618,6 +72147,13 @@ impl ComPtr<IAvnArc> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -70933,7 +72469,7 @@ impl ComPtr<IAvnArc> {
     }
 }
 
-pub const I_AVN_ELLIPSE_IID: Guid = Guid { data1: 0xECCCD4F8, data2: 0x7656, data3: 0x5346, data4: [0xB5, 0x62, 0xE8, 0x26, 0xC2, 0x7E, 0x03, 0x9E] };
+pub const I_AVN_ELLIPSE_IID: Guid = Guid { data1: 0x71442BCB, data2: 0x5E0D, data3: 0x53BF, data4: [0xB4, 0xC8, 0x4B, 0xE3, 0x9A, 0x9E, 0x19, 0x10] };
 
 #[repr(C)]
 struct IAvnEllipseVtbl {
@@ -70992,8 +72528,11 @@ struct IAvnEllipseVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnEllipse, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnEllipse, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnEllipse, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnEllipse, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnEllipse, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnEllipse, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnEllipse, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnEllipse, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnEllipse, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnEllipse, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnEllipse, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -71413,6 +72952,20 @@ impl ComPtr<IAvnEllipse> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -71425,6 +72978,13 @@ impl ComPtr<IAvnEllipse> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -71712,7 +73272,7 @@ impl ComPtr<IAvnEllipse> {
     }
 }
 
-pub const I_AVN_LINE_IID: Guid = Guid { data1: 0xC3F76A13, data2: 0x4998, data3: 0x5B6B, data4: [0xAD, 0x06, 0xEF, 0xB5, 0xE4, 0xB9, 0xEC, 0x61] };
+pub const I_AVN_LINE_IID: Guid = Guid { data1: 0xE432CA0E, data2: 0x417D, data3: 0x584A, data4: [0xA0, 0xAB, 0x88, 0x4A, 0xCB, 0x73, 0xA6, 0xF6] };
 
 #[repr(C)]
 struct IAvnLineVtbl {
@@ -71771,8 +73331,11 @@ struct IAvnLineVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnLine, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnLine, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnLine, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnLine, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnLine, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnLine, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnLine, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnLine, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnLine, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnLine, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnLine, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -72196,6 +73759,20 @@ impl ComPtr<IAvnLine> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -72208,6 +73785,13 @@ impl ComPtr<IAvnLine> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -72523,7 +74107,7 @@ impl ComPtr<IAvnLine> {
     }
 }
 
-pub const I_AVN_PATH_IID: Guid = Guid { data1: 0x708CD7FD, data2: 0x817B, data3: 0x56CB, data4: [0xAE, 0x5C, 0xC7, 0x4F, 0x67, 0xCA, 0xD4, 0xF6] };
+pub const I_AVN_PATH_IID: Guid = Guid { data1: 0xE663EA07, data2: 0xD965, data3: 0x5E67, data4: [0x92, 0x2A, 0xCA, 0x93, 0x2B, 0x48, 0x83, 0xEF] };
 
 #[repr(C)]
 struct IAvnPathVtbl {
@@ -72582,8 +74166,11 @@ struct IAvnPathVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnPath, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnPath, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnPath, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnPath, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnPath, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnPath, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnPath, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnPath, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnPath, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnPath, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnPath, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -73005,6 +74592,20 @@ impl ComPtr<IAvnPath> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -73017,6 +74618,13 @@ impl ComPtr<IAvnPath> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -73319,7 +74927,7 @@ impl ComPtr<IAvnPath> {
     }
 }
 
-pub const I_AVN_POLYGON_IID: Guid = Guid { data1: 0x4F93F9D8, data2: 0x08E6, data3: 0x56F7, data4: [0xA5, 0x1B, 0x07, 0x39, 0x28, 0x79, 0x5D, 0x7D] };
+pub const I_AVN_POLYGON_IID: Guid = Guid { data1: 0x0AAD3814, data2: 0xFD24, data3: 0x5051, data4: [0xAE, 0xD3, 0xFB, 0x09, 0x0E, 0x1C, 0x0A, 0x3F] };
 
 #[repr(C)]
 struct IAvnPolygonVtbl {
@@ -73378,8 +74986,11 @@ struct IAvnPolygonVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnPolygon, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnPolygon, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnPolygon, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnPolygon, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnPolygon, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnPolygon, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnPolygon, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnPolygon, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnPolygon, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnPolygon, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnPolygon, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -73803,6 +75414,20 @@ impl ComPtr<IAvnPolygon> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -73815,6 +75440,13 @@ impl ComPtr<IAvnPolygon> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -74131,7 +75763,7 @@ impl ComPtr<IAvnPolygon> {
     }
 }
 
-pub const I_AVN_POLYLINE_IID: Guid = Guid { data1: 0x2DBA0D61, data2: 0xC35B, data3: 0x5D12, data4: [0x82, 0xA7, 0x55, 0x5E, 0xDA, 0x62, 0x0B, 0xC5] };
+pub const I_AVN_POLYLINE_IID: Guid = Guid { data1: 0x5CBDF633, data2: 0x9B36, data3: 0x5DDE, data4: [0xBF, 0xBE, 0x48, 0xFD, 0x2F, 0xA5, 0x4C, 0x99] };
 
 #[repr(C)]
 struct IAvnPolylineVtbl {
@@ -74190,8 +75822,11 @@ struct IAvnPolylineVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnPolyline, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnPolyline, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnPolyline, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnPolyline, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnPolyline, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnPolyline, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnPolyline, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnPolyline, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnPolyline, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnPolyline, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnPolyline, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -74615,6 +76250,20 @@ impl ComPtr<IAvnPolyline> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -74627,6 +76276,13 @@ impl ComPtr<IAvnPolyline> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -74943,7 +76599,7 @@ impl ComPtr<IAvnPolyline> {
     }
 }
 
-pub const I_AVN_RECTANGLE_IID: Guid = Guid { data1: 0x95D3D828, data2: 0x9CB6, data3: 0x536E, data4: [0x96, 0xD5, 0x2D, 0x5D, 0x67, 0xC3, 0x46, 0x3F] };
+pub const I_AVN_RECTANGLE_IID: Guid = Guid { data1: 0x18F60995, data2: 0x254F, data3: 0x5AC8, data4: [0x81, 0x01, 0x5D, 0xF9, 0xA4, 0x4E, 0xE4, 0x88] };
 
 #[repr(C)]
 struct IAvnRectangleVtbl {
@@ -75002,8 +76658,11 @@ struct IAvnRectangleVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnRectangle, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnRectangle, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnRectangle, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnRectangle, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnRectangle, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnRectangle, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnRectangle, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnRectangle, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnRectangle, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnRectangle, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnRectangle, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -75427,6 +77086,20 @@ impl ComPtr<IAvnRectangle> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -75439,6 +77112,13 @@ impl ComPtr<IAvnRectangle> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -75754,7 +77434,7 @@ impl ComPtr<IAvnRectangle> {
     }
 }
 
-pub const I_AVN_SECTOR_IID: Guid = Guid { data1: 0xA6E3E187, data2: 0x67DD, data3: 0x5603, data4: [0x93, 0xD8, 0x74, 0x31, 0xB6, 0x44, 0x9C, 0xD7] };
+pub const I_AVN_SECTOR_IID: Guid = Guid { data1: 0xB5A66A03, data2: 0x1739, data3: 0x5B83, data4: [0xB5, 0xBB, 0x74, 0x8E, 0x76, 0xAF, 0x1B, 0x27] };
 
 #[repr(C)]
 struct IAvnSectorVtbl {
@@ -75813,8 +77493,11 @@ struct IAvnSectorVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnSector, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnSector, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnSector, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnSector, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnSector, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnSector, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnSector, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnSector, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnSector, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnSector, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnSector, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -76238,6 +77921,20 @@ impl ComPtr<IAvnSector> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -76250,6 +77947,13 @@ impl ComPtr<IAvnSector> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -76565,7 +78269,7 @@ impl ComPtr<IAvnSector> {
     }
 }
 
-pub const I_AVN_SHAPE_IID: Guid = Guid { data1: 0x8C49AE37, data2: 0x0535, data3: 0x5DEF, data4: [0x92, 0x6C, 0xD0, 0xD6, 0x85, 0x7C, 0xC2, 0x16] };
+pub const I_AVN_SHAPE_IID: Guid = Guid { data1: 0x9B09B01F, data2: 0xE387, data3: 0x5C6F, data4: [0xBB, 0x9B, 0x60, 0x5F, 0xC4, 0x3B, 0xA2, 0x33] };
 
 #[repr(C)]
 struct IAvnShapeVtbl {
@@ -76624,8 +78328,11 @@ struct IAvnShapeVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnShape, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnShape, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnShape, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnShape, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnShape, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnShape, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnShape, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnShape, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnShape, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnShape, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnShape, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -77045,6 +78752,20 @@ impl ComPtr<IAvnShape> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -77057,6 +78778,13 @@ impl ComPtr<IAvnShape> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -77344,7 +79072,7 @@ impl ComPtr<IAvnShape> {
     }
 }
 
-pub const I_AVN_SLIDER_IID: Guid = Guid { data1: 0x8F19D970, data2: 0x60A0, data3: 0x5AA7, data4: [0xA9, 0xCF, 0xDF, 0x78, 0x82, 0xB1, 0x1E, 0x7A] };
+pub const I_AVN_SLIDER_IID: Guid = Guid { data1: 0x87C098D1, data2: 0xE3D8, data3: 0x5297, data4: [0x8E, 0xFB, 0xB0, 0x39, 0xEF, 0x2C, 0x9C, 0xB5] };
 
 #[repr(C)]
 struct IAvnSliderVtbl {
@@ -77403,8 +79131,11 @@ struct IAvnSliderVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnSlider, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnSlider, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnSlider, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnSlider, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnSlider, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnSlider, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnSlider, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnSlider, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnSlider, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnSlider, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnSlider, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -77858,6 +79589,20 @@ impl ComPtr<IAvnSlider> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -77870,6 +79615,13 @@ impl ComPtr<IAvnSlider> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -78396,7 +80148,7 @@ impl ComPtr<IAvnSlider> {
     }
 }
 
-pub const I_AVN_SPINNER_IID: Guid = Guid { data1: 0xCF93246B, data2: 0xDA27, data3: 0x5FC8, data4: [0x83, 0x82, 0xFE, 0x60, 0x00, 0xF8, 0x3F, 0xA4] };
+pub const I_AVN_SPINNER_IID: Guid = Guid { data1: 0xB3D288E3, data2: 0x9138, data3: 0x530A, data4: [0x96, 0xBE, 0x4B, 0x27, 0x4D, 0xF1, 0x15, 0xF2] };
 
 #[repr(C)]
 struct IAvnSpinnerVtbl {
@@ -78455,8 +80207,11 @@ struct IAvnSpinnerVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnSpinner, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnSpinner, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnSpinner, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnSpinner, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnSpinner, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnSpinner, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnSpinner, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnSpinner, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnSpinner, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnSpinner, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnSpinner, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -78898,6 +80653,20 @@ impl ComPtr<IAvnSpinner> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -78910,6 +80679,13 @@ impl ComPtr<IAvnSpinner> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -79351,7 +81127,7 @@ impl ComPtr<IAvnSpinner> {
     }
 }
 
-pub const I_AVN_SPLIT_BUTTON_IID: Guid = Guid { data1: 0x88415351, data2: 0x1718, data3: 0x57DE, data4: [0x98, 0xD6, 0x5D, 0xEE, 0x17, 0x94, 0x02, 0x9C] };
+pub const I_AVN_SPLIT_BUTTON_IID: Guid = Guid { data1: 0xE162F1F5, data2: 0x7BC8, data3: 0x59CB, data4: [0x82, 0xD6, 0x9A, 0x2A, 0x47, 0xF6, 0x88, 0x84] };
 
 #[repr(C)]
 struct IAvnSplitButtonVtbl {
@@ -79410,8 +81186,11 @@ struct IAvnSplitButtonVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnSplitButton, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnSplitButton, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnSplitButton, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnSplitButton, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnSplitButton, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnSplitButton, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnSplitButton, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnSplitButton, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnSplitButton, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnSplitButton, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnSplitButton, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -79859,6 +81638,20 @@ impl ComPtr<IAvnSplitButton> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -79871,6 +81664,13 @@ impl ComPtr<IAvnSplitButton> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -80355,7 +82155,7 @@ impl ComPtr<IAvnSplitButton> {
     }
 }
 
-pub const I_AVN_SPLIT_VIEW_IID: Guid = Guid { data1: 0xCF2AF228, data2: 0xF18D, data3: 0x57E1, data4: [0xB3, 0x62, 0x6A, 0x69, 0x2F, 0xEB, 0x7A, 0xC4] };
+pub const I_AVN_SPLIT_VIEW_IID: Guid = Guid { data1: 0x5AA9070F, data2: 0xD947, data3: 0x566B, data4: [0x93, 0x1C, 0xEF, 0x80, 0x55, 0x0E, 0xE6, 0x3E] };
 
 #[repr(C)]
 struct IAvnSplitViewVtbl {
@@ -80414,8 +82214,11 @@ struct IAvnSplitViewVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnSplitView, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnSplitView, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnSplitView, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnSplitView, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnSplitView, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnSplitView, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnSplitView, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnSplitView, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnSplitView, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnSplitView, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnSplitView, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -80879,6 +82682,20 @@ impl ComPtr<IAvnSplitView> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -80891,6 +82708,13 @@ impl ComPtr<IAvnSplitView> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -81483,7 +83307,7 @@ impl ComPtr<IAvnSplitView> {
     }
 }
 
-pub const I_AVN_STACK_PANEL_IID: Guid = Guid { data1: 0x41C138FB, data2: 0xC0C9, data3: 0x579F, data4: [0xA3, 0xB9, 0x76, 0x08, 0x07, 0x32, 0xA9, 0x4C] };
+pub const I_AVN_STACK_PANEL_IID: Guid = Guid { data1: 0x6CBE349A, data2: 0xE815, data3: 0x55A1, data4: [0xBB, 0xD8, 0xB4, 0x39, 0x51, 0x56, 0x7D, 0xC1] };
 
 #[repr(C)]
 struct IAvnStackPanelVtbl {
@@ -81542,8 +83366,11 @@ struct IAvnStackPanelVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnStackPanel, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnStackPanel, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnStackPanel, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnStackPanel, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnStackPanel, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnStackPanel, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnStackPanel, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnStackPanel, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnStackPanel, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnStackPanel, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnStackPanel, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -81956,6 +83783,20 @@ impl ComPtr<IAvnStackPanel> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -81968,6 +83809,13 @@ impl ComPtr<IAvnStackPanel> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -82206,7 +84054,7 @@ impl ComPtr<IAvnStackPanel> {
     }
 }
 
-pub const I_AVN_TAB_CONTROL_IID: Guid = Guid { data1: 0x27DF6FA4, data2: 0x888C, data3: 0x53C3, data4: [0x86, 0x12, 0x18, 0x67, 0x47, 0xFD, 0x07, 0xBF] };
+pub const I_AVN_TAB_CONTROL_IID: Guid = Guid { data1: 0x08959EF6, data2: 0x348B, data3: 0x51EC, data4: [0x8B, 0xE3, 0xD3, 0xAE, 0x47, 0xB8, 0x61, 0xBF] };
 
 #[repr(C)]
 struct IAvnTabControlVtbl {
@@ -82265,8 +84113,11 @@ struct IAvnTabControlVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnTabControl, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnTabControl, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnTabControl, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnTabControl, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnTabControl, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnTabControl, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnTabControl, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnTabControl, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnTabControl, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnTabControl, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnTabControl, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -82734,6 +84585,20 @@ impl ComPtr<IAvnTabControl> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -82746,6 +84611,13 @@ impl ComPtr<IAvnTabControl> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -83371,7 +85243,7 @@ impl ComPtr<IAvnTabControl> {
     }
 }
 
-pub const I_AVN_TAB_ITEM_IID: Guid = Guid { data1: 0xDED2B477, data2: 0xBC45, data3: 0x5613, data4: [0xBA, 0x24, 0xCD, 0xBA, 0xB6, 0x35, 0xD7, 0x85] };
+pub const I_AVN_TAB_ITEM_IID: Guid = Guid { data1: 0x7FFA8FBC, data2: 0x579E, data3: 0x5152, data4: [0xA5, 0xD1, 0xAF, 0xE1, 0x28, 0xCC, 0xB4, 0x70] };
 
 #[repr(C)]
 struct IAvnTabItemVtbl {
@@ -83430,8 +85302,11 @@ struct IAvnTabItemVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnTabItem, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnTabItem, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnTabItem, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnTabItem, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnTabItem, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnTabItem, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnTabItem, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnTabItem, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnTabItem, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnTabItem, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnTabItem, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -83882,6 +85757,20 @@ impl ComPtr<IAvnTabItem> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -83894,6 +85783,13 @@ impl ComPtr<IAvnTabItem> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -84400,7 +86296,7 @@ impl ComPtr<IAvnTabItem> {
     }
 }
 
-pub const I_AVN_TABLE_VIEW_IID: Guid = Guid { data1: 0xBA62A21B, data2: 0xC26D, data3: 0x587F, data4: [0xA4, 0x1F, 0x35, 0xE6, 0x7E, 0x20, 0x0B, 0x69] };
+pub const I_AVN_TABLE_VIEW_IID: Guid = Guid { data1: 0x8653BEA5, data2: 0x66FE, data3: 0x5479, data4: [0x87, 0xD0, 0x45, 0xC9, 0xD8, 0xFD, 0xC7, 0xEC] };
 
 #[repr(C)]
 struct IAvnTableViewVtbl {
@@ -84459,8 +86355,11 @@ struct IAvnTableViewVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnTableView, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnTableView, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnTableView, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnTableView, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnTableView, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnTableView, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnTableView, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnTableView, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnTableView, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnTableView, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnTableView, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -84924,6 +86823,20 @@ impl ComPtr<IAvnTableView> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -84936,6 +86849,13 @@ impl ComPtr<IAvnTableView> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -85529,7 +87449,7 @@ impl ComPtr<IAvnTableView> {
     }
 }
 
-pub const I_AVN_TABLE_VIEW_CELL_IID: Guid = Guid { data1: 0x2B1B1C38, data2: 0x97FD, data3: 0x59A3, data4: [0x8B, 0xCD, 0x59, 0xAC, 0xBD, 0xC0, 0x33, 0x68] };
+pub const I_AVN_TABLE_VIEW_CELL_IID: Guid = Guid { data1: 0xFB82C6E3, data2: 0x9041, data3: 0x5212, data4: [0xB8, 0x97, 0xE3, 0xDE, 0xC7, 0xEA, 0x63, 0x60] };
 
 #[repr(C)]
 struct IAvnTableViewCellVtbl {
@@ -85588,8 +87508,11 @@ struct IAvnTableViewCellVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnTableViewCell, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnTableViewCell, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnTableViewCell, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnTableViewCell, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnTableViewCell, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnTableViewCell, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnTableViewCell, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnTableViewCell, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnTableViewCell, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnTableViewCell, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnTableViewCell, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -86027,6 +87950,20 @@ impl ComPtr<IAvnTableViewCell> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -86039,6 +87976,13 @@ impl ComPtr<IAvnTableViewCell> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -86805,7 +88749,7 @@ impl ComPtr<IAvnTableViewColumn> {
     }
 }
 
-pub const I_AVN_TABLE_VIEW_ROW_IID: Guid = Guid { data1: 0x8E3BA93D, data2: 0xD0BE, data3: 0x51D9, data4: [0xA0, 0x07, 0x2A, 0xF6, 0x14, 0xAC, 0x6A, 0xDB] };
+pub const I_AVN_TABLE_VIEW_ROW_IID: Guid = Guid { data1: 0x25F888AF, data2: 0x361C, data3: 0x5B20, data4: [0xAC, 0xB7, 0xCC, 0x9D, 0x17, 0x70, 0xD8, 0x98] };
 
 #[repr(C)]
 struct IAvnTableViewRowVtbl {
@@ -86864,8 +88808,11 @@ struct IAvnTableViewRowVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnTableViewRow, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnTableViewRow, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnTableViewRow, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnTableViewRow, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnTableViewRow, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnTableViewRow, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnTableViewRow, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnTableViewRow, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnTableViewRow, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnTableViewRow, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnTableViewRow, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -87305,6 +89252,20 @@ impl ComPtr<IAvnTableViewRow> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -87317,6 +89278,13 @@ impl ComPtr<IAvnTableViewRow> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -87745,7 +89713,7 @@ impl ComPtr<IAvnTableViewRow> {
     }
 }
 
-pub const I_AVN_TEXT_BLOCK_IID: Guid = Guid { data1: 0x199AE412, data2: 0xEE08, data3: 0x5BDE, data4: [0xA4, 0x98, 0x66, 0xAE, 0x02, 0x31, 0xAA, 0x3F] };
+pub const I_AVN_TEXT_BLOCK_IID: Guid = Guid { data1: 0x47E06BD1, data2: 0x10DC, data3: 0x5267, data4: [0xA5, 0x5F, 0xA5, 0xC3, 0xBB, 0x53, 0x62, 0x85] };
 
 #[repr(C)]
 struct IAvnTextBlockVtbl {
@@ -87804,8 +89772,11 @@ struct IAvnTextBlockVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnTextBlock, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnTextBlock, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnTextBlock, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnTextBlock, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnTextBlock, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnTextBlock, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnTextBlock, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnTextBlock, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnTextBlock, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnTextBlock, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnTextBlock, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -88243,6 +90214,20 @@ impl ComPtr<IAvnTextBlock> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -88255,6 +90240,13 @@ impl ComPtr<IAvnTextBlock> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -88671,7 +90663,7 @@ impl ComPtr<IAvnTextBlock> {
     }
 }
 
-pub const I_AVN_TEXT_BOX_IID: Guid = Guid { data1: 0x55D76247, data2: 0x3F6A, data3: 0x5F45, data4: [0xAC, 0x3C, 0x33, 0xB3, 0x4A, 0x38, 0x32, 0x9A] };
+pub const I_AVN_TEXT_BOX_IID: Guid = Guid { data1: 0x2CECBBEF, data2: 0x9113, data3: 0x5262, data4: [0xB4, 0x4C, 0x4C, 0xFD, 0x61, 0x37, 0x32, 0x81] };
 
 #[repr(C)]
 struct IAvnTextBoxVtbl {
@@ -88730,8 +90722,11 @@ struct IAvnTextBoxVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnTextBox, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnTextBox, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnTextBox, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnTextBox, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnTextBox, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnTextBox, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnTextBox, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnTextBox, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnTextBox, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnTextBox, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnTextBox, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -89250,6 +91245,20 @@ impl ComPtr<IAvnTextBox> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -89262,6 +91271,13 @@ impl ComPtr<IAvnTextBox> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -90238,7 +92254,7 @@ impl ComPtr<IAvnTextBox> {
     }
 }
 
-pub const I_AVN_THEME_VARIANT_SCOPE_IID: Guid = Guid { data1: 0xFF6B43AB, data2: 0xB89D, data3: 0x5574, data4: [0xBB, 0xDE, 0x9A, 0xCA, 0xCD, 0x23, 0xDB, 0xA4] };
+pub const I_AVN_THEME_VARIANT_SCOPE_IID: Guid = Guid { data1: 0x0C7665EE, data2: 0x7E88, data3: 0x5B31, data4: [0xAA, 0x6C, 0x0B, 0x7B, 0xE8, 0x8E, 0xA1, 0x4B] };
 
 #[repr(C)]
 struct IAvnThemeVariantScopeVtbl {
@@ -90297,8 +92313,11 @@ struct IAvnThemeVariantScopeVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnThemeVariantScope, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnThemeVariantScope, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnThemeVariantScope, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnThemeVariantScope, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnThemeVariantScope, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnThemeVariantScope, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnThemeVariantScope, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnThemeVariantScope, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnThemeVariantScope, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnThemeVariantScope, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnThemeVariantScope, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -90706,6 +92725,20 @@ impl ComPtr<IAvnThemeVariantScope> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -90718,6 +92751,13 @@ impl ComPtr<IAvnThemeVariantScope> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -90921,7 +92961,7 @@ impl ComPtr<IAvnThemeVariantScope> {
     }
 }
 
-pub const I_AVN_TIME_PICKER_IID: Guid = Guid { data1: 0x5E7CE65A, data2: 0xFE53, data3: 0x551C, data4: [0x9F, 0x5A, 0x23, 0x44, 0xEE, 0x09, 0xE0, 0x02] };
+pub const I_AVN_TIME_PICKER_IID: Guid = Guid { data1: 0xB5A38C06, data2: 0x2DB2, data3: 0x5199, data4: [0x83, 0xDC, 0x05, 0xC2, 0x8A, 0x15, 0xDA, 0x69] };
 
 #[repr(C)]
 struct IAvnTimePickerVtbl {
@@ -90980,8 +93020,11 @@ struct IAvnTimePickerVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnTimePicker, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnTimePicker, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnTimePicker, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnTimePicker, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnTimePicker, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnTimePicker, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnTimePicker, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnTimePicker, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnTimePicker, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnTimePicker, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnTimePicker, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -91426,6 +93469,20 @@ impl ComPtr<IAvnTimePicker> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -91438,6 +93495,13 @@ impl ComPtr<IAvnTimePicker> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -91901,7 +93965,7 @@ impl ComPtr<IAvnTimePicker> {
     }
 }
 
-pub const I_AVN_TOGGLE_SPLIT_BUTTON_IID: Guid = Guid { data1: 0x0057E49B, data2: 0xBB54, data3: 0x516F, data4: [0x8F, 0xDA, 0xB1, 0xE6, 0x46, 0xA1, 0xC8, 0x97] };
+pub const I_AVN_TOGGLE_SPLIT_BUTTON_IID: Guid = Guid { data1: 0xA8024AE3, data2: 0x3329, data3: 0x57D6, data4: [0xAE, 0x6C, 0x1E, 0x3B, 0xBA, 0xD7, 0xA7, 0xE6] };
 
 #[repr(C)]
 struct IAvnToggleSplitButtonVtbl {
@@ -91960,8 +94024,11 @@ struct IAvnToggleSplitButtonVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnToggleSplitButton, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnToggleSplitButton, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnToggleSplitButton, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnToggleSplitButton, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnToggleSplitButton, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnToggleSplitButton, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnToggleSplitButton, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnToggleSplitButton, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnToggleSplitButton, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnToggleSplitButton, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnToggleSplitButton, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -92413,6 +94480,20 @@ impl ComPtr<IAvnToggleSplitButton> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -92425,6 +94506,13 @@ impl ComPtr<IAvnToggleSplitButton> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -92936,7 +95024,7 @@ impl ComPtr<IAvnToggleSplitButton> {
     }
 }
 
-pub const I_AVN_TOGGLE_SWITCH_IID: Guid = Guid { data1: 0xB022C6CE, data2: 0x8A5D, data3: 0x5700, data4: [0xB3, 0x41, 0x11, 0x4A, 0x6A, 0x4F, 0xBC, 0xA0] };
+pub const I_AVN_TOGGLE_SWITCH_IID: Guid = Guid { data1: 0xEB2E63C7, data2: 0x1C28, data3: 0x5754, data4: [0xB2, 0x6B, 0x64, 0xBC, 0x0C, 0x26, 0x41, 0xBF] };
 
 #[repr(C)]
 struct IAvnToggleSwitchVtbl {
@@ -92995,8 +95083,11 @@ struct IAvnToggleSwitchVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnToggleSwitch, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnToggleSwitch, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnToggleSwitch, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnToggleSwitch, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnToggleSwitch, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnToggleSwitch, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnToggleSwitch, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnToggleSwitch, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnToggleSwitch, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnToggleSwitch, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnToggleSwitch, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -93465,6 +95556,20 @@ impl ComPtr<IAvnToggleSwitch> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -93477,6 +95582,13 @@ impl ComPtr<IAvnToggleSwitch> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -94108,7 +96220,7 @@ impl ComPtr<IAvnToggleSwitch> {
     }
 }
 
-pub const I_AVN_TOOL_TIP_IID: Guid = Guid { data1: 0x2B78EA6B, data2: 0xFE62, data3: 0x5508, data4: [0xAB, 0x5F, 0x58, 0x6C, 0x35, 0x23, 0xC5, 0xA1] };
+pub const I_AVN_TOOL_TIP_IID: Guid = Guid { data1: 0x04F8776B, data2: 0x9CD2, data3: 0x58D3, data4: [0x90, 0x04, 0xAA, 0x6B, 0x0C, 0x12, 0xE9, 0x02] };
 
 #[repr(C)]
 struct IAvnToolTipVtbl {
@@ -94167,8 +96279,11 @@ struct IAvnToolTipVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnToolTip, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnToolTip, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnToolTip, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnToolTip, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnToolTip, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnToolTip, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnToolTip, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnToolTip, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnToolTip, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnToolTip, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnToolTip, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -94606,6 +96721,20 @@ impl ComPtr<IAvnToolTip> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -94618,6 +96747,13 @@ impl ComPtr<IAvnToolTip> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -95032,7 +97168,7 @@ impl ComPtr<IAvnToolTip> {
     }
 }
 
-pub const I_AVN_TRANSITIONING_CONTENT_CONTROL_IID: Guid = Guid { data1: 0xFD0EB25C, data2: 0x585B, data3: 0x5EDA, data4: [0xB1, 0xED, 0xF6, 0x29, 0xA7, 0x65, 0xB5, 0xA9] };
+pub const I_AVN_TRANSITIONING_CONTENT_CONTROL_IID: Guid = Guid { data1: 0x2B88F131, data2: 0x4CA4, data3: 0x529F, data4: [0xAA, 0x60, 0xED, 0x2B, 0xE7, 0x19, 0xBE, 0x10] };
 
 #[repr(C)]
 struct IAvnTransitioningContentControlVtbl {
@@ -95091,8 +97227,11 @@ struct IAvnTransitioningContentControlVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -95534,6 +97673,20 @@ impl ComPtr<IAvnTransitioningContentControl> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -95546,6 +97699,13 @@ impl ComPtr<IAvnTransitioningContentControl> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -96121,7 +98281,7 @@ impl ComPtr<IAvnTrayIcon> {
     }
 }
 
-pub const I_AVN_TREE_VIEW_IID: Guid = Guid { data1: 0x0B60003F, data2: 0xEC3F, data3: 0x5F72, data4: [0x97, 0x63, 0x04, 0xC3, 0xC4, 0xFF, 0xE8, 0xDD] };
+pub const I_AVN_TREE_VIEW_IID: Guid = Guid { data1: 0x51F6F3E1, data2: 0x06E8, data3: 0x563F, data4: [0xA8, 0x34, 0xCA, 0x7D, 0x3C, 0x75, 0x1B, 0x4D] };
 
 #[repr(C)]
 struct IAvnTreeViewVtbl {
@@ -96180,8 +98340,11 @@ struct IAvnTreeViewVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnTreeView, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnTreeView, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnTreeView, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnTreeView, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnTreeView, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnTreeView, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnTreeView, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnTreeView, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnTreeView, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnTreeView, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnTreeView, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -96639,6 +98802,20 @@ impl ComPtr<IAvnTreeView> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -96651,6 +98828,13 @@ impl ComPtr<IAvnTreeView> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -97200,7 +99384,7 @@ impl ComPtr<IAvnTreeView> {
     }
 }
 
-pub const I_AVN_TREE_VIEW_ITEM_IID: Guid = Guid { data1: 0xF173219D, data2: 0xC63C, data3: 0x5669, data4: [0xBE, 0x7D, 0x98, 0xE9, 0x8B, 0xF1, 0xC5, 0x4B] };
+pub const I_AVN_TREE_VIEW_ITEM_IID: Guid = Guid { data1: 0x489990A9, data2: 0x1ED5, data3: 0x5772, data4: [0xAE, 0xE6, 0x25, 0xC4, 0xE8, 0xB8, 0x61, 0x2A] };
 
 #[repr(C)]
 struct IAvnTreeViewItemVtbl {
@@ -97259,8 +99443,11 @@ struct IAvnTreeViewItemVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnTreeViewItem, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnTreeViewItem, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnTreeViewItem, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnTreeViewItem, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnTreeViewItem, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnTreeViewItem, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnTreeViewItem, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnTreeViewItem, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnTreeViewItem, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnTreeViewItem, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnTreeViewItem, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -97715,6 +99902,20 @@ impl ComPtr<IAvnTreeViewItem> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -97727,6 +99928,13 @@ impl ComPtr<IAvnTreeViewItem> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -98259,7 +100467,7 @@ impl ComPtr<IAvnTreeViewItem> {
     }
 }
 
-pub const I_AVN_USER_CONTROL_IID: Guid = Guid { data1: 0x0BFF79AB, data2: 0x0D63, data3: 0x5654, data4: [0x8F, 0x44, 0xDB, 0xBD, 0xA6, 0x30, 0xFA, 0x30] };
+pub const I_AVN_USER_CONTROL_IID: Guid = Guid { data1: 0x0529D537, data2: 0x1B91, data3: 0x5234, data4: [0x84, 0x80, 0x85, 0x5B, 0x56, 0x08, 0x63, 0x22] };
 
 #[repr(C)]
 struct IAvnUserControlVtbl {
@@ -98318,8 +100526,11 @@ struct IAvnUserControlVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnUserControl, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnUserControl, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnUserControl, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnUserControl, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnUserControl, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnUserControl, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnUserControl, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnUserControl, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnUserControl, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnUserControl, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnUserControl, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -98757,6 +100968,20 @@ impl ComPtr<IAvnUserControl> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -98769,6 +100994,13 @@ impl ComPtr<IAvnUserControl> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -99183,7 +101415,7 @@ impl ComPtr<IAvnUserControl> {
     }
 }
 
-pub const I_AVN_VIEWBOX_IID: Guid = Guid { data1: 0x159B2487, data2: 0x78B8, data3: 0x5C1A, data4: [0x93, 0x2D, 0xA6, 0x7C, 0x6E, 0x2E, 0x74, 0x20] };
+pub const I_AVN_VIEWBOX_IID: Guid = Guid { data1: 0xEFA9084A, data2: 0x769B, data3: 0x55F4, data4: [0x81, 0x01, 0x3B, 0x6D, 0x4C, 0xB5, 0x24, 0xD7] };
 
 #[repr(C)]
 struct IAvnViewboxVtbl {
@@ -99242,8 +101474,11 @@ struct IAvnViewboxVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnViewbox, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnViewbox, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnViewbox, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnViewbox, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnViewbox, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnViewbox, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnViewbox, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnViewbox, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnViewbox, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnViewbox, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnViewbox, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -99651,6 +101886,20 @@ impl ComPtr<IAvnViewbox> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -99663,6 +101912,13 @@ impl ComPtr<IAvnViewbox> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -99865,7 +102121,7 @@ impl ComPtr<IAvnViewbox> {
     }
 }
 
-pub const I_AVN_WINDOW_IID: Guid = Guid { data1: 0xBF221569, data2: 0x8214, data3: 0x5478, data4: [0x95, 0x05, 0x0B, 0x21, 0xA2, 0x66, 0x35, 0x45] };
+pub const I_AVN_WINDOW_IID: Guid = Guid { data1: 0x9A01C107, data2: 0xBB12, data3: 0x5AFE, data4: [0x9D, 0xAA, 0xC5, 0xAA, 0xCE, 0xF2, 0xD8, 0x79] };
 
 #[repr(C)]
 struct IAvnWindowVtbl {
@@ -99924,8 +102180,11 @@ struct IAvnWindowVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnWindow, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnWindow, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnWindow, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnWindow, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnWindow, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnWindow, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnWindow, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnWindow, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnWindow, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnWindow, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnWindow, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -100404,6 +102663,20 @@ impl ComPtr<IAvnWindow> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -100416,6 +102689,13 @@ impl ComPtr<IAvnWindow> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
@@ -101117,7 +103397,7 @@ impl ComPtr<IAvnWindow> {
     }
 }
 
-pub const I_AVN_WRAP_PANEL_IID: Guid = Guid { data1: 0xFE3C3653, data2: 0x52AA, data3: 0x529D, data4: [0x8A, 0xCE, 0x7F, 0x54, 0xE7, 0xD7, 0x43, 0x87] };
+pub const I_AVN_WRAP_PANEL_IID: Guid = Guid { data1: 0x71831219, data2: 0xF14C, data3: 0x5D2F, data4: [0xA2, 0xF1, 0x49, 0xFB, 0x97, 0x96, 0x05, 0xD4] };
 
 #[repr(C)]
 struct IAvnWrapPanelVtbl {
@@ -101176,8 +103456,11 @@ struct IAvnWrapPanelVtbl {
     set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnWrapPanel, i32) -> i32,
     get_vertical_alignment: unsafe extern "system" fn(*mut IAvnWrapPanel, *mut i32) -> i32,
     set_vertical_alignment: unsafe extern "system" fn(*mut IAvnWrapPanel, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnWrapPanel, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnWrapPanel, i32) -> i32,
     get_is_enabled: unsafe extern "system" fn(*mut IAvnWrapPanel, *mut i32) -> i32,
     set_is_enabled: unsafe extern "system" fn(*mut IAvnWrapPanel, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnWrapPanel, i32, i32, *mut i32) -> i32,
     advise_loaded: unsafe extern "system" fn(*mut IAvnWrapPanel, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
     unadvise_loaded: unsafe extern "system" fn(*mut IAvnWrapPanel, i64) -> i32,
     advise_unloaded: unsafe extern "system" fn(*mut IAvnWrapPanel, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
@@ -101594,6 +103877,20 @@ impl ComPtr<IAvnWrapPanel> {
             hresult::check(hr)
         }
     }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
     pub fn get_is_enabled(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -101606,6 +103903,13 @@ impl ComPtr<IAvnWrapPanel> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
             hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
         }
     }
     pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {

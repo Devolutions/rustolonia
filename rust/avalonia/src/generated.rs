@@ -3077,6 +3077,14 @@ impl AutoCompleteBox {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -3085,6 +3093,7 @@ impl AutoCompleteBox {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -3942,6 +3951,14 @@ impl Border {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -3950,6 +3967,7 @@ impl Border {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -4437,6 +4455,14 @@ impl Button {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -4445,6 +4471,7 @@ impl Button {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -5115,6 +5142,14 @@ impl ButtonSpinner {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -5123,6 +5158,7 @@ impl ButtonSpinner {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -5756,6 +5792,14 @@ impl Calendar {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -5764,6 +5808,7 @@ impl Calendar {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -6470,6 +6515,14 @@ impl CalendarDatePicker {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -6478,6 +6531,7 @@ impl CalendarDatePicker {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -7249,6 +7303,14 @@ impl Canvas {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -7257,6 +7319,7 @@ impl Canvas {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -7710,6 +7773,14 @@ impl Carousel {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -7718,6 +7789,7 @@ impl Carousel {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -8386,6 +8458,14 @@ impl CheckBox {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -8394,6 +8474,7 @@ impl CheckBox {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -9093,6 +9174,14 @@ impl ComboBox {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -9101,6 +9190,7 @@ impl ComboBox {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -9847,6 +9937,14 @@ impl ComboBoxItem {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -9855,6 +9953,7 @@ impl ComboBoxItem {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -10450,6 +10549,14 @@ impl CommandBar {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -10458,6 +10565,7 @@ impl CommandBar {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -11163,6 +11271,14 @@ impl CommandBarButton {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -11171,6 +11287,7 @@ impl CommandBarButton {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -11898,6 +12015,14 @@ impl CommandBarSeparator {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -11906,6 +12031,7 @@ impl CommandBarSeparator {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -12466,6 +12592,14 @@ impl CommandBarToggleButton {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -12474,6 +12608,7 @@ impl CommandBarToggleButton {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -13230,6 +13365,14 @@ impl ContentControl {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -13238,6 +13381,7 @@ impl ContentControl {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -13825,6 +13969,14 @@ impl ContextMenu {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -13833,6 +13985,7 @@ impl ContextMenu {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -14627,6 +14780,14 @@ impl Control {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -14635,6 +14796,7 @@ impl Control {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -15034,6 +15196,14 @@ impl DatePicker {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -15042,6 +15212,7 @@ impl DatePicker {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -15699,6 +15870,14 @@ impl Decorator {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -15707,6 +15886,7 @@ impl Decorator {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -16127,6 +16307,14 @@ impl DockPanel {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -16135,6 +16323,7 @@ impl DockPanel {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -16585,6 +16774,14 @@ impl DropDownButton {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -16593,6 +16790,7 @@ impl DropDownButton {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -17263,6 +17461,14 @@ impl Expander {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -17271,6 +17477,7 @@ impl Expander {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -17946,6 +18153,14 @@ impl FlexPanel {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -17954,6 +18169,7 @@ impl FlexPanel {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -18640,6 +18856,14 @@ impl Grid {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -18648,6 +18872,7 @@ impl Grid {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -19156,6 +19381,14 @@ impl GridSplitter {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -19164,6 +19397,7 @@ impl GridSplitter {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -19787,6 +20021,14 @@ impl GroupBox {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -19795,6 +20037,7 @@ impl GroupBox {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -20403,6 +20646,14 @@ impl HyperlinkButton {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -20411,6 +20662,7 @@ impl HyperlinkButton {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -21096,6 +21348,14 @@ impl IconElement {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -21104,6 +21364,7 @@ impl IconElement {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -21648,6 +21909,14 @@ impl Image {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -21656,6 +21925,7 @@ impl Image {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -22099,6 +22369,14 @@ impl ItemsControl {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -22107,6 +22385,7 @@ impl ItemsControl {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -22691,6 +22970,14 @@ impl Label {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -22699,6 +22986,7 @@ impl Label {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -23297,6 +23585,14 @@ impl LayoutTransformControl {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -23305,6 +23601,7 @@ impl LayoutTransformControl {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -23733,6 +24030,14 @@ impl ListBox {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -23741,6 +24046,7 @@ impl ListBox {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -24400,6 +24706,14 @@ impl ListBoxItem {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -24408,6 +24722,7 @@ impl ListBoxItem {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -25003,6 +25318,14 @@ impl MaskedTextBox {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -25011,6 +25334,7 @@ impl MaskedTextBox {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -25990,6 +26314,14 @@ impl Menu {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -25998,6 +26330,7 @@ impl Menu {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -26672,6 +27005,14 @@ impl MenuBase {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -26680,6 +27021,7 @@ impl MenuBase {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -27562,6 +27904,14 @@ impl MenuItem {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -27570,6 +27920,7 @@ impl MenuItem {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -28378,6 +28729,14 @@ impl NotificationCard {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -28386,6 +28745,7 @@ impl NotificationCard {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -29007,6 +29367,14 @@ impl WindowNotificationManager {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -29015,6 +29383,7 @@ impl WindowNotificationManager {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -29583,6 +29952,14 @@ impl NumericUpDown {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -29591,6 +29968,7 @@ impl NumericUpDown {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -30343,6 +30721,14 @@ impl Panel {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -30351,6 +30737,7 @@ impl Panel {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -30768,6 +31155,14 @@ impl PathIcon {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -30776,6 +31171,7 @@ impl PathIcon {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -31331,6 +31727,14 @@ impl PipsPager {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -31339,6 +31743,7 @@ impl PipsPager {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -31998,6 +32403,14 @@ impl HeaderedContentControl {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -32006,6 +32419,7 @@ impl HeaderedContentControl {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -32614,6 +33028,14 @@ impl HeaderedItemsControl {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -32622,6 +33044,7 @@ impl HeaderedItemsControl {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -33227,6 +33650,14 @@ impl HeaderedSelectingItemsControl {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -33235,6 +33666,7 @@ impl HeaderedSelectingItemsControl {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -33905,6 +34337,14 @@ impl Popup {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -33913,6 +34353,7 @@ impl Popup {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -34679,6 +35120,14 @@ impl RangeBase {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -34687,6 +35136,7 @@ impl RangeBase {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -35282,6 +35732,14 @@ impl SelectingItemsControl {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -35290,6 +35748,7 @@ impl SelectingItemsControl {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -35939,6 +36398,14 @@ impl TemplatedControl {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -35947,6 +36414,7 @@ impl TemplatedControl {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -36491,6 +36959,14 @@ impl Thumb {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -36499,6 +36975,7 @@ impl Thumb {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -37076,6 +37553,14 @@ impl ToggleButton {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -37084,6 +37569,7 @@ impl ToggleButton {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -37783,6 +38269,14 @@ impl UniformGrid {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -37791,6 +38285,7 @@ impl UniformGrid {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -38248,6 +38743,14 @@ impl ProgressBar {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -38256,6 +38759,7 @@ impl ProgressBar {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -38890,6 +39394,14 @@ impl RadioButton {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -38898,6 +39410,7 @@ impl RadioButton {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -39608,6 +40121,14 @@ impl RefreshContainer {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -39616,6 +40137,7 @@ impl RefreshContainer {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -40236,6 +40758,14 @@ impl RelativePanel {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -40244,6 +40774,7 @@ impl RelativePanel {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -40715,6 +41246,14 @@ impl RepeatButton {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -40723,6 +41262,7 @@ impl RepeatButton {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -41409,6 +41949,14 @@ impl ScrollViewer {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -41417,6 +41965,7 @@ impl ScrollViewer {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -42170,6 +42719,14 @@ impl SelectableTextBlock {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -42178,6 +42735,7 @@ impl SelectableTextBlock {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -42814,6 +43372,14 @@ impl Separator {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -42822,6 +43388,7 @@ impl Separator {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -43366,6 +43933,14 @@ impl Arc {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -43374,6 +43949,7 @@ impl Arc {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -43879,6 +44455,14 @@ impl Ellipse {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -43887,6 +44471,7 @@ impl Ellipse {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -44376,6 +44961,14 @@ impl Line {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -44384,6 +44977,7 @@ impl Line {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -44893,6 +45487,14 @@ impl Path {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -44901,6 +45503,7 @@ impl Path {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -45401,6 +46004,14 @@ impl Polygon {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -45409,6 +46020,7 @@ impl Polygon {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -45920,6 +46532,14 @@ impl Polyline {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -45928,6 +46548,7 @@ impl Polyline {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -46439,6 +47060,14 @@ impl Rectangle {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -46447,6 +47076,7 @@ impl Rectangle {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -46952,6 +47582,14 @@ impl Sector {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -46960,6 +47598,7 @@ impl Sector {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -47461,6 +48100,14 @@ impl Shape {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -47469,6 +48116,7 @@ impl Shape {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -47958,6 +48606,14 @@ impl Slider {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -47966,6 +48622,7 @@ impl Slider {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -48614,6 +49271,14 @@ impl Spinner {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -48622,6 +49287,7 @@ impl Spinner {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -49228,6 +49894,14 @@ impl SplitButton {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -49236,6 +49910,7 @@ impl SplitButton {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -49878,6 +50553,14 @@ impl SplitView {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -49886,6 +50569,7 @@ impl SplitView {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -50607,6 +51291,14 @@ impl StackPanel {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -50615,6 +51307,7 @@ impl StackPanel {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -51067,6 +51760,14 @@ impl TabControl {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -51075,6 +51776,7 @@ impl TabControl {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -51783,6 +52485,14 @@ impl TabItem {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -51791,6 +52501,7 @@ impl TabItem {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -52441,6 +53152,14 @@ impl TableView {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -52449,6 +53168,7 @@ impl TableView {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -53126,6 +53846,14 @@ impl TableViewCell {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -53134,6 +53862,7 @@ impl TableViewCell {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -53924,6 +54653,14 @@ impl TableViewRow {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -53932,6 +54669,7 @@ impl TableViewRow {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -54527,6 +55265,14 @@ impl TextBlock {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -54535,6 +55281,7 @@ impl TextBlock {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -55113,6 +55860,14 @@ impl TextBox {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -55121,6 +55876,7 @@ impl TextBox {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -56047,6 +56803,14 @@ impl ThemeVariantScope {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -56055,6 +56819,7 @@ impl ThemeVariantScope {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -56486,6 +57251,14 @@ impl TimePicker {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -56494,6 +57267,7 @@ impl TimePicker {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -57107,6 +57881,14 @@ impl ToggleSplitButton {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -57115,6 +57897,7 @@ impl ToggleSplitButton {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -57778,6 +58561,14 @@ impl ToggleSwitch {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -57786,6 +58577,7 @@ impl ToggleSwitch {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -58527,6 +59319,14 @@ impl ToolTip {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -58535,6 +59335,7 @@ impl ToolTip {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -59204,6 +60005,14 @@ impl TransitioningContentControl {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -59212,6 +60021,7 @@ impl TransitioningContentControl {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -59895,6 +60705,14 @@ impl TreeView {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -59903,6 +60721,7 @@ impl TreeView {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -60544,6 +61363,14 @@ impl TreeViewItem {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -60552,6 +61379,7 @@ impl TreeViewItem {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -61200,6 +62028,14 @@ impl UserControl {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -61208,6 +62044,7 @@ impl UserControl {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -61795,6 +62632,14 @@ impl Viewbox {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -61803,6 +62648,7 @@ impl Viewbox {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -62235,6 +63081,14 @@ impl Window {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -62243,6 +63097,7 @@ impl Window {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
@@ -62994,6 +63849,14 @@ impl WrapPanel {
         self.set_vertical_alignment(value)?;
         Ok(self)
     }
+    pub fn get_focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn focusable(self, value: bool) -> Result<Self> {
+        self.set_focusable(value)?;
+        Ok(self)
+    }
     pub fn get_is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
     pub fn set_enabled(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_enabled(value)?)
@@ -63002,6 +63865,7 @@ impl WrapPanel {
         self.set_enabled(value)?;
         Ok(self)
     }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method, key_modifiers)? != 0) }
     pub fn subscribe_loaded(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
         let handler = sys::control_loaded_handler(move || {
             callback(());
