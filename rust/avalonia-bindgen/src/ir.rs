@@ -8,6 +8,18 @@ pub struct ProjectionIr {
     pub factory_iid: Option<String>,
     pub brush_interface_name: Option<String>,
     pub brush_interface_iid: Option<String>,
+    #[serde(default)]
+    pub gradient_brush_interface_name: Option<String>,
+    #[serde(default)]
+    pub gradient_brush_interface_iid: Option<String>,
+    #[serde(default)]
+    pub linear_gradient_brush_interface_name: Option<String>,
+    #[serde(default)]
+    pub linear_gradient_brush_interface_iid: Option<String>,
+    #[serde(default)]
+    pub radial_gradient_brush_interface_name: Option<String>,
+    #[serde(default)]
+    pub radial_gradient_brush_interface_iid: Option<String>,
     pub command_interface_name: Option<String>,
     pub command_interface_iid: Option<String>,
     #[serde(default)]

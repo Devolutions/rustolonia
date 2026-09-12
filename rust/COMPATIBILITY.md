@@ -58,6 +58,15 @@ bindgen can emit the handler interface and its CCW constructor without
 hardcoding the identity. Both fields are additive; a reader that ignores them
 sees the same vtables it always did.
 
+Version 17 adds six optional root-level members, present whenever any member
+marshals as `MarshallingKind.Brush`: `gradientBrushInterfaceName`/`Iid`,
+`linearGradientBrushInterfaceName`/`Iid` and
+`radialGradientBrushInterfaceName`/`Iid`. They are additive to
+`BrushInterfaceName`/`BrushInterfaceIid` — the solid-brush interface, IID and
+vtable are unchanged — and no `MarshallingKind` ordinal moves. A reader that
+ignores the six new fields sees the same IR it always did; only a generator
+that projects gradient brushes needs them.
+
 Version 13 adds two optional members, both host-side only. A projected property
 and an attached property may carry `stringConverterTypeName`, naming the host
 type that converts the member between its CLR type and the UTF-16 string in its
@@ -74,7 +83,7 @@ with a host from another.
 
 ## Native ABI
 
-The overlay-chrome pass widens the leaf `IAvnWindow` ABI from 7 to 8 to expose only the safe, non-nullable window work-area and dialog members. This stays local to the window leaf: `IAvnContentControl` remains at 6 and the factory remains at 13, while blockers such as `Icon`, `Position`, nullable geometry, and cancelable `Closing` payloads stay out of scope.
+The overlay-chrome pass widens the leaf `IAvnWindow` ABI from 7 to 8 to expose only the safe, non-nullable window work-area and dialog members. This stays local to the window leaf: `IAvnContentControl` remains at 6 and the factory remained at 13 as of this wave (the later gradient-brush pass below moves it again), while blockers such as `Icon`, `Position`, nullable geometry, and cancelable `Closing` payloads stay out of scope.
 
 The wave P event-payload pass grows `IAvnControl` with `KeyUp`, `GotFocus`
 and `LostFocus`, so `IAvnControl` and every interface below it republish on
@@ -88,6 +97,15 @@ old/new value pair as fields. The advise/unadvise slots on the control
 interfaces keep their signatures throughout; only the handler identities move.
 Consumers compiled against the version 1 handlers fail `QueryInterface`
 loudly (`E_NOINTERFACE`) rather than being called through a stale vtable.
+
+The gradient-brush pass adds three brand-new interfaces —
+`IAvnGradientBrush`, `IAvnLinearGradientBrush` and `IAvnRadialGradientBrush`,
+each publishing at version 1 — and grows `IAvnControlFactory` with
+`create_linear_gradient_brush`/`create_radial_gradient_brush`, so the factory
+republishes on a fresh IID (from 13). `IAvnBrush` itself is untouched: it
+keeps its published IID and vtable, and every gradient object also answers
+`QueryInterface` for it. No other interface moves.
+
 After an intentional ABI wave, regenerate the frozen snapshot with
 `pwsh ./rust/regenerate-and-build.ps1 -UpdateAbiBaseline` in the same change
 so `abi-baseline.json` stays the reviewed record of what is released.

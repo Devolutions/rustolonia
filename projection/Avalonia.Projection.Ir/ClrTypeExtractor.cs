@@ -40,6 +40,9 @@ public static class ClrTypeExtractor
         var brushInterfaceName = BrushMarshalling.QualifiedInterfaceName(policy.ProjectionNamespace);
         var usesBrush = types.Any(type =>
             type.Properties.Any(property => property.Kind == MarshallingKind.Brush));
+        var gradientBrushInterfaceName = GradientBrushMarshalling.QualifiedGradientInterfaceName(policy.ProjectionNamespace);
+        var linearGradientBrushInterfaceName = GradientBrushMarshalling.QualifiedLinearInterfaceName(policy.ProjectionNamespace);
+        var radialGradientBrushInterfaceName = GradientBrushMarshalling.QualifiedRadialInterfaceName(policy.ProjectionNamespace);
         var commandInterfaceName = CommandMarshalling.QualifiedInterfaceName(policy.ProjectionNamespace);
         var commandHandlerInterfaceName = CommandMarshalling.QualifiedHandlerInterfaceName(policy.ProjectionNamespace);
         var usesCommand = types.Any(type =>
@@ -91,6 +94,18 @@ public static class ClrTypeExtractor
                 ? CreateDeterministicIid(brushInterfaceName, policy.GetAbiVersion(brushInterfaceName))
                 : null,
             BrushAbiVersion = policy.GetAbiVersion(brushInterfaceName),
+            GradientBrushInterfaceName = usesBrush ? gradientBrushInterfaceName : null,
+            GradientBrushInterfaceIid = usesBrush
+                ? CreateDeterministicIid(gradientBrushInterfaceName, 1)
+                : null,
+            LinearGradientBrushInterfaceName = usesBrush ? linearGradientBrushInterfaceName : null,
+            LinearGradientBrushInterfaceIid = usesBrush
+                ? CreateDeterministicIid(linearGradientBrushInterfaceName, 1)
+                : null,
+            RadialGradientBrushInterfaceName = usesBrush ? radialGradientBrushInterfaceName : null,
+            RadialGradientBrushInterfaceIid = usesBrush
+                ? CreateDeterministicIid(radialGradientBrushInterfaceName, 1)
+                : null,
             CommandInterfaceName = usesCommand ? commandInterfaceName : null,
             CommandInterfaceIid = usesCommand
                 ? CreateDeterministicIid(commandInterfaceName, policy.GetAbiVersion(commandInterfaceName))

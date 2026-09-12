@@ -38,6 +38,14 @@ public static class NativeHeaderEmitter
             .Concat(types.Select(type => type.Name))
             .Concat(statics.Select(group => SimpleName(group.Key)))
             .Concat(ir.BrushInterfaceName is null ? [] : new[] { SimpleName(ir.BrushInterfaceName) })
+            .Concat(ir.GradientBrushInterfaceName is null
+                ? []
+                : new[]
+                {
+                    SimpleName(ir.GradientBrushInterfaceName),
+                    SimpleName(ir.LinearGradientBrushInterfaceName!),
+                    SimpleName(ir.RadialGradientBrushInterfaceName!),
+                })
             .Concat(ir.CommandInterfaceName is null
                 ? []
                 : new[]
@@ -107,6 +115,36 @@ public static class NativeHeaderEmitter
         sb.AppendLine("} AvnOptionalTimeSpan;");
         sb.AppendLine();
 
+        if (ir.GradientBrushInterfaceName is not null)
+        {
+            var colorAbiName = GeometryMarshalling.All
+                .Single(geometry => geometry.Kind == MarshallingKind.Color).AbiName;
+            sb.AppendLine("/* Blittable ABI mirror of Avalonia.RelativePoint. unit: 0 relative, 1 absolute. */");
+            sb.AppendLine("typedef struct AvnRelativePoint {");
+            sb.AppendLine("    double x;");
+            sb.AppendLine("    double y;");
+            sb.AppendLine("    int32_t unit;");
+            sb.AppendLine("} AvnRelativePoint;");
+            sb.AppendLine();
+            sb.AppendLine("/* Blittable ABI mirror of Avalonia.RelativeScalar. unit: 0 relative, 1 absolute. */");
+            sb.AppendLine("typedef struct AvnRelativeScalar {");
+            sb.AppendLine("    double scalar;");
+            sb.AppendLine("    int32_t unit;");
+            sb.AppendLine("} AvnRelativeScalar;");
+            sb.AppendLine();
+            sb.AppendLine("/* Blittable ABI mirror of a single gradient stop (offset plus packed colour). */");
+            sb.AppendLine("typedef struct AvnGradientStop {");
+            sb.AppendLine("    double offset;");
+            sb.AppendLine($"    {colorAbiName} color;");
+            sb.AppendLine("} AvnGradientStop;");
+            sb.AppendLine();
+            sb.AppendLine($"/* Fixed-capacity buffer of up to {GradientBrushMarshalling.MaxStops} AvnGradientStop entries. */");
+            sb.AppendLine("typedef struct AvnGradientStopBuffer {");
+            sb.AppendLine($"    AvnGradientStop stops[{GradientBrushMarshalling.MaxStops}];");
+            sb.AppendLine("} AvnGradientStopBuffer;");
+            sb.AppendLine();
+        }
+
         sb.AppendLine("/* Tagged scalar carrying object? command parameters. */");
         sb.AppendLine("/* tag: 0 none, 1 utf16, 2 i32, 3 f64, 4 bool. */");
         sb.AppendLine("typedef struct AvnVariant {");
@@ -166,6 +204,45 @@ public static class NativeHeaderEmitter
             EmitSlot(sb, 3, "get_color", brushName, [$"{colorAbiName}* value"]);
             EmitSlot(sb, 4, "get_opacity", brushName, ["double* value"]);
             EndInterface(sb, brushName, 5);
+        }
+
+        if (ir.GradientBrushInterfaceName is { } gradientBrushInterfaceName)
+        {
+            var gradientName = SimpleName(gradientBrushInterfaceName);
+            var linearName = SimpleName(ir.LinearGradientBrushInterfaceName!);
+            var radialName = SimpleName(ir.RadialGradientBrushInterfaceName!);
+
+            EmitIid(sb, gradientName, ir.GradientBrushInterfaceIid!, 1);
+            BeginInterface(sb, gradientName);
+            EmitSlot(sb, 3, "get_opacity", gradientName, ["double* value"]);
+            EmitSlot(sb, 4, "get_spread_method", gradientName, ["int32_t* value"]);
+            EmitSlot(sb, 5, "get_stop_count", gradientName, ["int32_t* value"]);
+            EmitSlot(sb, 6, "get_stops", gradientName, ["AvnGradientStopBuffer* value"]);
+            EndInterface(sb, gradientName, 7);
+
+            // Derived gradient interfaces flatten the base's four slots ahead of their own,
+            // mirroring the single-inheritance vtable layout produced for control interfaces.
+            EmitIid(sb, linearName, ir.LinearGradientBrushInterfaceIid!, 1);
+            BeginInterface(sb, linearName);
+            EmitSlot(sb, 3, "get_opacity", linearName, ["double* value"]);
+            EmitSlot(sb, 4, "get_spread_method", linearName, ["int32_t* value"]);
+            EmitSlot(sb, 5, "get_stop_count", linearName, ["int32_t* value"]);
+            EmitSlot(sb, 6, "get_stops", linearName, ["AvnGradientStopBuffer* value"]);
+            EmitSlot(sb, 7, "get_start_point", linearName, ["AvnRelativePoint* value"]);
+            EmitSlot(sb, 8, "get_end_point", linearName, ["AvnRelativePoint* value"]);
+            EndInterface(sb, linearName, 9);
+
+            EmitIid(sb, radialName, ir.RadialGradientBrushInterfaceIid!, 1);
+            BeginInterface(sb, radialName);
+            EmitSlot(sb, 3, "get_opacity", radialName, ["double* value"]);
+            EmitSlot(sb, 4, "get_spread_method", radialName, ["int32_t* value"]);
+            EmitSlot(sb, 5, "get_stop_count", radialName, ["int32_t* value"]);
+            EmitSlot(sb, 6, "get_stops", radialName, ["AvnGradientStopBuffer* value"]);
+            EmitSlot(sb, 7, "get_center", radialName, ["AvnRelativePoint* value"]);
+            EmitSlot(sb, 8, "get_gradient_origin", radialName, ["AvnRelativePoint* value"]);
+            EmitSlot(sb, 9, "get_radius_x", radialName, ["AvnRelativeScalar* value"]);
+            EmitSlot(sb, 10, "get_radius_y", radialName, ["AvnRelativeScalar* value"]);
+            EndInterface(sb, radialName, 11);
         }
 
         if (ir.CommandInterfaceName is { } commandInterfaceName)
@@ -433,6 +510,41 @@ public static class NativeHeaderEmitter
                 Snake(BrushMarshalling.FactoryMethodName),
                 "IAvnControlFactory",
                 [$"{colorAbiName} color", "double opacity", $"{brushName}** value"]);
+        }
+        if (ir.GradientBrushInterfaceName is not null)
+        {
+            var linearName = SimpleName(ir.LinearGradientBrushInterfaceName!);
+            var radialName = SimpleName(ir.RadialGradientBrushInterfaceName!);
+            EmitSlot(
+                sb,
+                factorySlot++,
+                Snake(GradientBrushMarshalling.CreateLinearFactoryMethodName),
+                "IAvnControlFactory",
+                [
+                    "double opacity",
+                    "int32_t spread_method",
+                    "int32_t stop_count",
+                    "AvnGradientStopBuffer stops",
+                    "AvnRelativePoint start_point",
+                    "AvnRelativePoint end_point",
+                    $"{linearName}** value",
+                ]);
+            EmitSlot(
+                sb,
+                factorySlot++,
+                Snake(GradientBrushMarshalling.CreateRadialFactoryMethodName),
+                "IAvnControlFactory",
+                [
+                    "double opacity",
+                    "int32_t spread_method",
+                    "int32_t stop_count",
+                    "AvnGradientStopBuffer stops",
+                    "AvnRelativePoint center",
+                    "AvnRelativePoint gradient_origin",
+                    "AvnRelativeScalar radius_x",
+                    "AvnRelativeScalar radius_y",
+                    $"{radialName}** value",
+                ]);
         }
         EndInterface(sb, "IAvnControlFactory", factorySlot);
 

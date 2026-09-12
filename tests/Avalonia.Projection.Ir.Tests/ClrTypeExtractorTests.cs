@@ -348,9 +348,9 @@ public class ClrTypeExtractorTests
         // The factory grew a creator per wave A control plus GetToolTipStatics, then one per
         // constructible wave B type, then one per constructible wave C type, so it has moved
         // three times off the version 2 IID it published for CreateSolidColorBrush.
-        Assert.Equal(13, ir.FactoryAbiVersion);
+        Assert.Equal(14, ir.FactoryAbiVersion);
         Assert.Equal(
-            ClrTypeExtractor.CreateDeterministicIid("Avalonia.Host.Com.IAvnControlFactory", 13),
+            ClrTypeExtractor.CreateDeterministicIid("Avalonia.Host.Com.IAvnControlFactory", 14),
             ir.FactoryIid);
     }
 
@@ -1275,7 +1275,7 @@ public class ClrTypeExtractorTests
             property => property.Name is "Above" or "Below" or "LeftOf" or "RightOf"
                 or "AlignLeftWith" or "Order" or "Grow" or "Shrink" or "Basis");
 
-        Assert.Equal(13, ir.FactoryAbiVersion);
+        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
@@ -1336,7 +1336,7 @@ public class ClrTypeExtractorTests
         Assert.Equal(MarshallingKind.ComCollection, items.Kind);
         Assert.Equal("Avalonia.Host.Com.IAvnItemList", items.InterfaceName);
 
-        Assert.Equal(13, ir.FactoryAbiVersion);
+        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
@@ -1381,7 +1381,7 @@ public class ClrTypeExtractorTests
         Assert.True(selectedText.CanRead);
         Assert.False(selectedText.CanWrite);
 
-        Assert.Equal(13, ir.FactoryAbiVersion);
+        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
@@ -1420,7 +1420,7 @@ public class ClrTypeExtractorTests
         Assert.Equal("Avalonia.Host.Com.AvnDateList", selectedDates.HostImplementationTypeName);
         Assert.False(selectedDates.CanWrite);
 
-        Assert.Equal(13, ir.FactoryAbiVersion);
+        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
@@ -1449,7 +1449,7 @@ public class ClrTypeExtractorTests
             Type(ir, "IAvnLayoutTransformControl").Properties,
             p => p.Name == "LayoutTransform");
 
-        Assert.Equal(13, ir.FactoryAbiVersion);
+        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
@@ -1491,7 +1491,7 @@ public class ClrTypeExtractorTests
         Assert.Equal(MarshallingKind.StringUtf16, polygonPoints.Kind);
         Assert.Equal("Avalonia.Host.Com.AvnPointList", polygonPoints.StringConverterTypeName);
 
-        Assert.Equal(13, ir.FactoryAbiVersion);
+        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
@@ -1517,7 +1517,7 @@ public class ClrTypeExtractorTests
             MarshallingKind.Command,
             Type(ir, "IAvnTrayIcon").Properties.Single(p => p.Name == "Command").Kind);
 
-        Assert.Equal(13, ir.FactoryAbiVersion);
+        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
@@ -1541,7 +1541,7 @@ public class ClrTypeExtractorTests
         var buttonIcon = Type(ir, "IAvnCommandBarButton").Properties.Single(p => p.Name == "Icon");
         Assert.Equal(MarshallingKind.Variant, buttonIcon.Kind);
 
-        Assert.Equal(13, ir.FactoryAbiVersion);
+        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
@@ -1572,7 +1572,7 @@ public class ClrTypeExtractorTests
         var width = Type(ir, "IAvnTableViewColumn").Properties.Single(p => p.Name == "Width");
         Assert.Equal(MarshallingKind.StringUtf16, width.Kind);
 
-        Assert.Equal(13, ir.FactoryAbiVersion);
+        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
@@ -1635,7 +1635,7 @@ public class ClrTypeExtractorTests
         var trimming = textBlock.Properties.Single(p => p.Name == "TextTrimming");
         Assert.Equal(MarshallingKind.StringUtf16, trimming.Kind);
         Assert.Equal("Avalonia.Host.Com.AvnTextTrimming", trimming.StringConverterTypeName);
-        Assert.Equal(13, ir.FactoryAbiVersion);
+        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
@@ -1685,7 +1685,7 @@ public class ClrTypeExtractorTests
             valueChanged.Parameters.Select(parameter => parameter.Name));
         Assert.Contains(Type(ir, "IAvnMaskedTextBox").Properties, p => p.Name == "MaskCompleted");
         Assert.Equal(15, Type(ir, "IAvnTemplatedControl").AbiVersion);
-        Assert.Equal(13, ir.FactoryAbiVersion);
+        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
@@ -1707,7 +1707,7 @@ public class ClrTypeExtractorTests
         Assert.False(scroll.Properties.Single(p => p.Name == "Extent").CanWrite);
         Assert.True(scroll.Properties.Single(p => p.Name == "Offset").CanWrite);
         Assert.Equal(16, Type(ir, "IAvnContentControl").AbiVersion);
-        Assert.Equal(13, ir.FactoryAbiVersion);
+        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
@@ -1731,7 +1731,7 @@ public class ClrTypeExtractorTests
         Assert.Contains(menu.Methods, m => m.Name == "Open");
         Assert.Contains(menu.Methods, m => m.Name == "Close");
         Assert.Equal(16, Type(ir, "IAvnContentControl").AbiVersion);
-        Assert.Equal(13, ir.FactoryAbiVersion);
+        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
@@ -1746,7 +1746,7 @@ public class ClrTypeExtractorTests
         Assert.Contains(Type(ir, "IAvnCalendarDatePicker").Methods, m => m.Name == "Clear");
         Assert.Equal(13, Type(ir, "IAvnNumericUpDown").AbiVersion);
         Assert.Contains(Type(ir, "IAvnNumericUpDown").Properties, p => p.Name == "TextAlignment");
-        Assert.Equal(13, ir.FactoryAbiVersion);
+        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
@@ -1765,7 +1765,7 @@ public class ClrTypeExtractorTests
         Assert.Contains(selecting.Properties, p => p.Name == "AutoScrollToSelectedItem");
         Assert.Equal(16, Type(ir, "IAvnContentControl").AbiVersion);
         Assert.Equal(21, Type(ir, "IAvnWindow").AbiVersion);
-        Assert.Equal(13, ir.FactoryAbiVersion);
+        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
@@ -1791,7 +1791,7 @@ public class ClrTypeExtractorTests
         Assert.Contains(lineCount.Parameters, p => p.Name == "value" && p.Direction == ParameterDirection.Out);
         Assert.Equal(MarshallingKind.CharUtf16, textBox.Properties.Single(p => p.Name == "PasswordChar").Kind);
         Assert.Equal(18, Type(ir, "IAvnMaskedTextBox").AbiVersion);
-        Assert.Equal(13, ir.FactoryAbiVersion);
+        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
@@ -1812,7 +1812,7 @@ public class ClrTypeExtractorTests
         Assert.Equal(15, Type(ir, "IAvnStackPanel").AbiVersion);
         Assert.Equal(15, Type(ir, "IAvnBorder").AbiVersion);
         Assert.Contains(Type(ir, "IAvnBorder").Properties, p => p.Name == "ClipToBoundsRadius");
-        Assert.Equal(13, ir.FactoryAbiVersion);
+        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
@@ -1845,7 +1845,7 @@ public class ClrTypeExtractorTests
         Assert.Equal("Avalonia.Host.Com.IAvnControl", openWithControl.Parameters.Single().InterfaceName);
         Assert.True(openWithControl.Parameters.Single().IsNullable);
         Assert.Contains(Type(ir, "IAvnContextMenu").Events, e => e.Name == "Opening");
-        Assert.Equal(13, ir.FactoryAbiVersion);
+        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
@@ -1866,7 +1866,7 @@ public class ClrTypeExtractorTests
         Assert.Equal(6, Type(ir, "IAvnStyledElement").AbiVersion);
         Assert.Equal(19, Type(ir, "IAvnButton").AbiVersion);
         Assert.Equal(4, Type(ir, "IAvnFlyout").AbiVersion);
-        Assert.Equal(13, ir.FactoryAbiVersion);
+        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]

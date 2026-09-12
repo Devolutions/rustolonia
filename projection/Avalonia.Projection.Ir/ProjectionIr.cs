@@ -6,7 +6,7 @@ namespace Avalonia.Projection.Ir;
 public sealed partial class ProjectionIr
 {
     public const int MinimumVersion = 1;
-    public const int CurrentVersion = 16;
+    public const int CurrentVersion = 17;
 
     public int Version { get; init; } = CurrentVersion;
     public string? SourceAssembly { get; init; }
@@ -20,6 +20,18 @@ public sealed partial class ProjectionIr
     public string? BrushInterfaceName { get; init; }
     public string? BrushInterfaceIid { get; init; }
     public int BrushAbiVersion { get; init; } = 1;
+
+    /// <summary>
+    /// The projected gradient-brush capability interfaces (version 17), present only when a
+    /// member marshals as <see cref="MarshallingKind.Brush"/>. Additive to
+    /// <see cref="BrushInterfaceName"/>: the solid-brush interface, IID and vtable are unchanged.
+    /// </summary>
+    public string? GradientBrushInterfaceName { get; init; }
+    public string? GradientBrushInterfaceIid { get; init; }
+    public string? LinearGradientBrushInterfaceName { get; init; }
+    public string? LinearGradientBrushInterfaceIid { get; init; }
+    public string? RadialGradientBrushInterfaceName { get; init; }
+    public string? RadialGradientBrushInterfaceIid { get; init; }
 
     /// <summary>
     /// The projected command interface, present only when a member marshals as

@@ -116,7 +116,7 @@ fn widened_interfaces_publish_abi_version_five() {
         "#define I_AVN_AVALONIA_OBJECT_ABI_VERSION 2",
         // The factory gained a creator per wave A control plus get_tool_tip_statics at version
         // 3, and a creator per constructible wave B type at version 4.
-        "#define I_AVN_CONTROL_FACTORY_ABI_VERSION 13",
+        "#define I_AVN_CONTROL_FACTORY_ABI_VERSION 14",
     ] {
         assert!(HEADER.contains(expected), "header is missing `{expected}`");
     }

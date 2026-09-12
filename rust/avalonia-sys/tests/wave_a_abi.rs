@@ -80,7 +80,7 @@ fn wave_a_interfaces_publish_abi_version_one_and_nothing_else_moved() {
         "#define I_AVN_HEADERED_CONTENT_CONTROL_ABI_VERSION 16",
         // Only the factory grew slots. Wave B moved it again, from 3 to 4, for its own
         // creators; every wave A interface still publishes at version 1.
-        "#define I_AVN_CONTROL_FACTORY_ABI_VERSION 13",
+        "#define I_AVN_CONTROL_FACTORY_ABI_VERSION 14",
     ] {
         assert!(HEADER.contains(expected), "header is missing `{expected}`");
     }

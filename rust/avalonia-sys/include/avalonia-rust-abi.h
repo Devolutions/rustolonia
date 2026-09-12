@@ -125,6 +125,30 @@ typedef struct AvnOptionalTimeSpan {
     int64_t ticks;
 } AvnOptionalTimeSpan;
 
+/* Blittable ABI mirror of Avalonia.RelativePoint. unit: 0 relative, 1 absolute. */
+typedef struct AvnRelativePoint {
+    double x;
+    double y;
+    int32_t unit;
+} AvnRelativePoint;
+
+/* Blittable ABI mirror of Avalonia.RelativeScalar. unit: 0 relative, 1 absolute. */
+typedef struct AvnRelativeScalar {
+    double scalar;
+    int32_t unit;
+} AvnRelativeScalar;
+
+/* Blittable ABI mirror of a single gradient stop (offset plus packed colour). */
+typedef struct AvnGradientStop {
+    double offset;
+    AvnColor color;
+} AvnGradientStop;
+
+/* Fixed-capacity buffer of up to 8 AvnGradientStop entries. */
+typedef struct AvnGradientStopBuffer {
+    AvnGradientStop stops[8];
+} AvnGradientStopBuffer;
+
 /* Tagged scalar carrying object? command parameters. */
 /* tag: 0 none, 1 utf16, 2 i32, 3 f64, 4 bool. */
 typedef struct AvnVariant {
@@ -302,6 +326,8 @@ typedef struct IAvnFlyoutBaseClosedHandler IAvnFlyoutBaseClosedHandler;
 typedef struct IAvnFlyoutBaseClosedHandlerVtbl IAvnFlyoutBaseClosedHandlerVtbl;
 typedef struct IAvnFlyoutBaseOpenedHandler IAvnFlyoutBaseOpenedHandler;
 typedef struct IAvnFlyoutBaseOpenedHandlerVtbl IAvnFlyoutBaseOpenedHandlerVtbl;
+typedef struct IAvnGradientBrush IAvnGradientBrush;
+typedef struct IAvnGradientBrushVtbl IAvnGradientBrushVtbl;
 typedef struct IAvnGrid IAvnGrid;
 typedef struct IAvnGridVtbl IAvnGridVtbl;
 typedef struct IAvnGridSplitter IAvnGridSplitter;
@@ -332,6 +358,8 @@ typedef struct IAvnLayoutTransformControl IAvnLayoutTransformControl;
 typedef struct IAvnLayoutTransformControlVtbl IAvnLayoutTransformControlVtbl;
 typedef struct IAvnLine IAvnLine;
 typedef struct IAvnLineVtbl IAvnLineVtbl;
+typedef struct IAvnLinearGradientBrush IAvnLinearGradientBrush;
+typedef struct IAvnLinearGradientBrushVtbl IAvnLinearGradientBrushVtbl;
 typedef struct IAvnListBox IAvnListBox;
 typedef struct IAvnListBoxVtbl IAvnListBoxVtbl;
 typedef struct IAvnListBoxItem IAvnListBoxItem;
@@ -392,6 +420,8 @@ typedef struct IAvnPopupOpenedHandler IAvnPopupOpenedHandler;
 typedef struct IAvnPopupOpenedHandlerVtbl IAvnPopupOpenedHandlerVtbl;
 typedef struct IAvnProgressBar IAvnProgressBar;
 typedef struct IAvnProgressBarVtbl IAvnProgressBarVtbl;
+typedef struct IAvnRadialGradientBrush IAvnRadialGradientBrush;
+typedef struct IAvnRadialGradientBrushVtbl IAvnRadialGradientBrushVtbl;
 typedef struct IAvnRadioButton IAvnRadioButton;
 typedef struct IAvnRadioButtonVtbl IAvnRadioButtonVtbl;
 typedef struct IAvnRangeBase IAvnRangeBase;
@@ -2115,6 +2145,69 @@ struct IAvnBrushVtbl {
 };
 struct IAvnBrush { const IAvnBrushVtbl* vtbl; };
 #define I_AVN_BRUSH_VTABLE_SLOTS 5
+
+static const AvnGuid I_AVN_GRADIENT_BRUSH_IID = {
+    0xFDAA2353,
+    0xBC44,
+    0x5012,
+    { 0xA5, 0xBE, 0xA1, 0x7C, 0x7C, 0x01, 0xF4, 0x1A }
+};
+#define I_AVN_GRADIENT_BRUSH_ABI_VERSION 1
+struct IAvnGradientBrushVtbl {
+    AvnHResult (AVN_CALL *query_interface)(IAvnGradientBrush* self, const AvnGuid* iid, void** result); /* slot 0 */
+    uint32_t (AVN_CALL *add_ref)(IAvnGradientBrush* self); /* slot 1 */
+    uint32_t (AVN_CALL *release)(IAvnGradientBrush* self); /* slot 2 */
+    AvnHResult (AVN_CALL *get_opacity)(IAvnGradientBrush* self, double* value); /* slot 3 */
+    AvnHResult (AVN_CALL *get_spread_method)(IAvnGradientBrush* self, int32_t* value); /* slot 4 */
+    AvnHResult (AVN_CALL *get_stop_count)(IAvnGradientBrush* self, int32_t* value); /* slot 5 */
+    AvnHResult (AVN_CALL *get_stops)(IAvnGradientBrush* self, AvnGradientStopBuffer* value); /* slot 6 */
+};
+struct IAvnGradientBrush { const IAvnGradientBrushVtbl* vtbl; };
+#define I_AVN_GRADIENT_BRUSH_VTABLE_SLOTS 7
+
+static const AvnGuid I_AVN_LINEAR_GRADIENT_BRUSH_IID = {
+    0x40B3D53D,
+    0x330E,
+    0x5D63,
+    { 0xA0, 0x40, 0x37, 0xF1, 0xFF, 0x71, 0x7F, 0xF8 }
+};
+#define I_AVN_LINEAR_GRADIENT_BRUSH_ABI_VERSION 1
+struct IAvnLinearGradientBrushVtbl {
+    AvnHResult (AVN_CALL *query_interface)(IAvnLinearGradientBrush* self, const AvnGuid* iid, void** result); /* slot 0 */
+    uint32_t (AVN_CALL *add_ref)(IAvnLinearGradientBrush* self); /* slot 1 */
+    uint32_t (AVN_CALL *release)(IAvnLinearGradientBrush* self); /* slot 2 */
+    AvnHResult (AVN_CALL *get_opacity)(IAvnLinearGradientBrush* self, double* value); /* slot 3 */
+    AvnHResult (AVN_CALL *get_spread_method)(IAvnLinearGradientBrush* self, int32_t* value); /* slot 4 */
+    AvnHResult (AVN_CALL *get_stop_count)(IAvnLinearGradientBrush* self, int32_t* value); /* slot 5 */
+    AvnHResult (AVN_CALL *get_stops)(IAvnLinearGradientBrush* self, AvnGradientStopBuffer* value); /* slot 6 */
+    AvnHResult (AVN_CALL *get_start_point)(IAvnLinearGradientBrush* self, AvnRelativePoint* value); /* slot 7 */
+    AvnHResult (AVN_CALL *get_end_point)(IAvnLinearGradientBrush* self, AvnRelativePoint* value); /* slot 8 */
+};
+struct IAvnLinearGradientBrush { const IAvnLinearGradientBrushVtbl* vtbl; };
+#define I_AVN_LINEAR_GRADIENT_BRUSH_VTABLE_SLOTS 9
+
+static const AvnGuid I_AVN_RADIAL_GRADIENT_BRUSH_IID = {
+    0xAEC23FCE,
+    0x9FEA,
+    0x506C,
+    { 0xAB, 0xC4, 0x77, 0x41, 0x43, 0xBE, 0x80, 0xC8 }
+};
+#define I_AVN_RADIAL_GRADIENT_BRUSH_ABI_VERSION 1
+struct IAvnRadialGradientBrushVtbl {
+    AvnHResult (AVN_CALL *query_interface)(IAvnRadialGradientBrush* self, const AvnGuid* iid, void** result); /* slot 0 */
+    uint32_t (AVN_CALL *add_ref)(IAvnRadialGradientBrush* self); /* slot 1 */
+    uint32_t (AVN_CALL *release)(IAvnRadialGradientBrush* self); /* slot 2 */
+    AvnHResult (AVN_CALL *get_opacity)(IAvnRadialGradientBrush* self, double* value); /* slot 3 */
+    AvnHResult (AVN_CALL *get_spread_method)(IAvnRadialGradientBrush* self, int32_t* value); /* slot 4 */
+    AvnHResult (AVN_CALL *get_stop_count)(IAvnRadialGradientBrush* self, int32_t* value); /* slot 5 */
+    AvnHResult (AVN_CALL *get_stops)(IAvnRadialGradientBrush* self, AvnGradientStopBuffer* value); /* slot 6 */
+    AvnHResult (AVN_CALL *get_center)(IAvnRadialGradientBrush* self, AvnRelativePoint* value); /* slot 7 */
+    AvnHResult (AVN_CALL *get_gradient_origin)(IAvnRadialGradientBrush* self, AvnRelativePoint* value); /* slot 8 */
+    AvnHResult (AVN_CALL *get_radius_x)(IAvnRadialGradientBrush* self, AvnRelativeScalar* value); /* slot 9 */
+    AvnHResult (AVN_CALL *get_radius_y)(IAvnRadialGradientBrush* self, AvnRelativeScalar* value); /* slot 10 */
+};
+struct IAvnRadialGradientBrush { const IAvnRadialGradientBrushVtbl* vtbl; };
+#define I_AVN_RADIAL_GRADIENT_BRUSH_VTABLE_SLOTS 11
 
 static const AvnGuid I_AVN_COMMAND_CAN_EXECUTE_CHANGED_HANDLER_IID = {
     0x13E58040,
@@ -16239,12 +16332,12 @@ struct IAvnToolTipStatics { const IAvnToolTipStaticsVtbl* vtbl; };
 #define I_AVN_TOOL_TIP_STATICS_VTABLE_SLOTS 21
 
 static const AvnGuid I_AVN_CONTROL_FACTORY_IID = {
-    0x15778134,
-    0x9E9F,
-    0x5BAF,
-    { 0x98, 0xFF, 0x55, 0x10, 0x77, 0x80, 0x94, 0xBA }
+    0xC8BCE8E8,
+    0x62C7,
+    0x5E0E,
+    { 0x80, 0x66, 0x69, 0x00, 0x59, 0xF5, 0x5D, 0xFF }
 };
-#define I_AVN_CONTROL_FACTORY_ABI_VERSION 13
+#define I_AVN_CONTROL_FACTORY_ABI_VERSION 14
 struct IAvnControlFactoryVtbl {
     AvnHResult (AVN_CALL *query_interface)(IAvnControlFactory* self, const AvnGuid* iid, void** result); /* slot 0 */
     uint32_t (AVN_CALL *add_ref)(IAvnControlFactory* self); /* slot 1 */
@@ -16352,8 +16445,10 @@ struct IAvnControlFactoryVtbl {
     AvnHResult (AVN_CALL *get_relative_panel_statics)(IAvnControlFactory* self, IAvnRelativePanelStatics** value); /* slot 103 */
     AvnHResult (AVN_CALL *get_tool_tip_statics)(IAvnControlFactory* self, IAvnToolTipStatics** value); /* slot 104 */
     AvnHResult (AVN_CALL *create_solid_color_brush)(IAvnControlFactory* self, AvnColor color, double opacity, IAvnBrush** value); /* slot 105 */
+    AvnHResult (AVN_CALL *create_linear_gradient_brush)(IAvnControlFactory* self, double opacity, int32_t spread_method, int32_t stop_count, AvnGradientStopBuffer stops, AvnRelativePoint start_point, AvnRelativePoint end_point, IAvnLinearGradientBrush** value); /* slot 106 */
+    AvnHResult (AVN_CALL *create_radial_gradient_brush)(IAvnControlFactory* self, double opacity, int32_t spread_method, int32_t stop_count, AvnGradientStopBuffer stops, AvnRelativePoint center, AvnRelativePoint gradient_origin, AvnRelativeScalar radius_x, AvnRelativeScalar radius_y, IAvnRadialGradientBrush** value); /* slot 107 */
 };
 struct IAvnControlFactory { const IAvnControlFactoryVtbl* vtbl; };
-#define I_AVN_CONTROL_FACTORY_VTABLE_SLOTS 106
+#define I_AVN_CONTROL_FACTORY_VTABLE_SLOTS 108
 
 #endif /* AVALONIA_RUST_ABI_H */

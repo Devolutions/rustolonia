@@ -67,7 +67,7 @@
     },
     {
       "path": "IAvnBrush.g.cs",
-      "sha256": "bfd7909175af4e1acf287a6b1fd5a0ef61da1f1a4909bc4b19275b285c107a35"
+      "sha256": "093b672724613ce967c1caaf525b1fbcd0d299c3c45f52238d27f69e034305f6"
     },
     {
       "path": "IAvnButton.g.cs",
@@ -211,7 +211,7 @@
     },
     {
       "path": "IAvnControlFactory.g.cs",
-      "sha256": "0b16561747ebc843651c90574e80d5b5d4047ed1de15580b1017579f521a3d0d"
+      "sha256": "07be8008a7c14ec38af1880e95e298db3d99e04842f58fd2f46504c591fb0cc7"
     },
     {
       "path": "IAvnControlGotFocusHandler.g.cs",
@@ -336,6 +336,10 @@
     {
       "path": "IAvnFlyoutBaseOpenedHandler.g.cs",
       "sha256": "c1cf785f23a37d4a3ce5855a5df4bdff1442b7a7674713f4e52bc110537b1234"
+    },
+    {
+      "path": "IAvnGradientBrush.g.cs",
+      "sha256": "01ffe32aea0231c96b18f33edf4e8555e5750690df40b3495a2527a6dcdd16b7"
     },
     {
       "path": "IAvnGrid.g.cs",
@@ -855,7 +859,7 @@
     },
     {
       "path": "ProjectionAotRoots.g.cs",
-      "sha256": "849532b0244176520ffc5b3fd818e753cb461fd7370adc9a4a2106c4a6cb3293"
+      "sha256": "d20f7a57fa84c816ab3b8913217378172da893efa5470a710a323e05d740cfbc"
     },
     {
       "path": "ProjectionRuntime.g.cs",
@@ -863,7 +867,7 @@
     },
     {
       "path": "ProjectionStructs.g.cs",
-      "sha256": "e3179d44738612e7815e2c6823b7a5c7c3aabc9ea609bfca05cfee5cb16d0b56"
+      "sha256": "0be6a5d527ac6b2ae728fe016e4372b88bc09ecf6f3bf30b8bb34725b05bfb85"
     }
   ]
 }

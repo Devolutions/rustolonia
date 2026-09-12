@@ -11,7 +11,7 @@ fn numeric_up_down_decimals_are_utf16_strings() {
         "*set_increment)(IAvnNumericUpDown* self, const uint16_t* value)",
         "*create_numeric_up_down)(IAvnControlFactory* self, IAvnNumericUpDown** value)",
         "#define I_AVN_NUMERIC_UP_DOWN_ABI_VERSION 13",
-        "#define I_AVN_CONTROL_FACTORY_ABI_VERSION 13",
+        "#define I_AVN_CONTROL_FACTORY_ABI_VERSION 14",
     ] {
         assert!(HEADER.contains(expected), "header is missing `{expected}`");
     }

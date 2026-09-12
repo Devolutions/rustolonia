@@ -13,7 +13,7 @@ fn calendar_days_are_yyyy_mm_dd_strings() {
         "*create_calendar_date_picker)(IAvnControlFactory* self, IAvnCalendarDatePicker** value)",
         "#define I_AVN_CALENDAR_ABI_VERSION 15",
         "#define I_AVN_CALENDAR_DATE_PICKER_ABI_VERSION 14",
-        "#define I_AVN_CONTROL_FACTORY_ABI_VERSION 13",
+        "#define I_AVN_CONTROL_FACTORY_ABI_VERSION 14",
     ] {
         assert!(HEADER.contains(expected), "header is missing `{expected}`");
     }

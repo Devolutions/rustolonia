@@ -30,7 +30,6 @@ fn brush_publishes_a_read_only_colour_and_opacity_vtable() {
     for forbidden in [
         "*set_color)(IAvnBrush*",
         "*set_opacity)(IAvnBrush*",
-        "IAvnGradientBrush",
         "IAvnDrawingBrush",
         "IAvnVisualBrush",
     ] {
@@ -78,8 +77,10 @@ fn chrome_wave_interfaces_publish_abi_version_four() {
         "#define I_AVN_TEMPLATED_CONTROL_ABI_VERSION 15",
         "#define I_AVN_TEXT_BLOCK_ABI_VERSION 17",
         // The factory grew create_solid_color_brush at version 2, a creator per wave A control
-        // at version 3, and a creator per constructible wave B type at version 4.
-        "#define I_AVN_CONTROL_FACTORY_ABI_VERSION 13",
+        // at version 3, a creator per constructible wave B type at version 4, and the gradient
+        // brush creators (create_linear_gradient_brush/create_radial_gradient_brush) moved it
+        // to version 14.
+        "#define I_AVN_CONTROL_FACTORY_ABI_VERSION 14",
         // Nothing was added to StyledElement, Control or Decorator, and none of their bases
         // moved, so their flattened vtables are byte-identical to version 3.
         "#define I_AVN_STYLED_ELEMENT_ABI_VERSION 6",

@@ -7,7 +7,7 @@ using System.Runtime.InteropServices.Marshalling;
 namespace Avalonia.Host.Com;
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("15778134-9E9F-5BAF-98FF-5510778094BA")]
+[Guid("C8BCE8E8-62C7-5E0E-8066-690059F55DFF")]
 public partial interface IAvnControlFactory
 {
     [PreserveSig]
@@ -318,6 +318,12 @@ public partial interface IAvnControlFactory
 
     [PreserveSig]
     int CreateSolidColorBrush(AvnColor color, double opacity, out IAvnBrush? value);
+
+    [PreserveSig]
+    int CreateLinearGradientBrush(double opacity, int spreadMethod, int stopCount, AvnGradientStopBuffer stops, AvnRelativePoint startPoint, AvnRelativePoint endPoint, out IAvnLinearGradientBrush? value);
+
+    [PreserveSig]
+    int CreateRadialGradientBrush(double opacity, int spreadMethod, int stopCount, AvnGradientStopBuffer stops, AvnRelativePoint center, AvnRelativePoint gradientOrigin, AvnRelativeScalar radiusX, AvnRelativeScalar radiusY, out IAvnRadialGradientBrush? value);
 
 }
 
@@ -1812,6 +1818,24 @@ public sealed partial class AvnControlFactory : IAvnControlFactory
     public int CreateSolidColorBrush(AvnColor color, double opacity, out IAvnBrush? value)
     {
         value = new AvnBrush(color, opacity);
+        return global::Avalonia.Host.HResults.S_OK;
+    }
+
+    public int CreateLinearGradientBrush(double opacity, int spreadMethod, int stopCount, AvnGradientStopBuffer stops, AvnRelativePoint startPoint, AvnRelativePoint endPoint, out IAvnLinearGradientBrush? value)
+    {
+        value = null;
+        if (stopCount < 0 || stopCount > 8)
+            return global::Avalonia.Host.HResults.E_INVALIDARG;
+        value = new AvnLinearGradientBrush(opacity, spreadMethod, stopCount, stops, startPoint, endPoint);
+        return global::Avalonia.Host.HResults.S_OK;
+    }
+
+    public int CreateRadialGradientBrush(double opacity, int spreadMethod, int stopCount, AvnGradientStopBuffer stops, AvnRelativePoint center, AvnRelativePoint gradientOrigin, AvnRelativeScalar radiusX, AvnRelativeScalar radiusY, out IAvnRadialGradientBrush? value)
+    {
+        value = null;
+        if (stopCount < 0 || stopCount > 8)
+            return global::Avalonia.Host.HResults.E_INVALIDARG;
+        value = new AvnRadialGradientBrush(opacity, spreadMethod, stopCount, stops, center, gradientOrigin, radiusX, radiusY);
         return global::Avalonia.Host.HResults.S_OK;
     }
 

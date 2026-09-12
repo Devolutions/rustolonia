@@ -305,6 +305,256 @@ impl ComPtr<IAvnBrush> {
     }
 }
 
+/// Blittable ABI mirror of Avalonia.RelativePoint. unit: 0 relative, 1 absolute.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct AvnRelativePoint {
+    pub x: f64,
+    pub y: f64,
+    pub unit: i32,
+}
+
+/// Blittable ABI mirror of Avalonia.RelativeScalar. unit: 0 relative, 1 absolute.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct AvnRelativeScalar {
+    pub scalar: f64,
+    pub unit: i32,
+}
+
+/// Blittable ABI mirror of a single gradient stop (offset plus packed colour).
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct AvnGradientStop {
+    pub offset: f64,
+    pub color: AvnColor,
+}
+
+/// Fixed-capacity buffer of up to 8 `AvnGradientStop` entries.
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+pub struct AvnGradientStopBuffer {
+    pub stops: [AvnGradientStop; 8],
+}
+
+impl Default for AvnGradientStopBuffer {
+    fn default() -> Self {
+        Self { stops: [AvnGradientStop::default(); 8] }
+    }
+}
+
+/// Capability shared by every gradient brush kind projected across the ABI.
+pub const I_AVN_GRADIENT_BRUSH_IID: Guid = Guid { data1: 0xFDAA2353, data2: 0xBC44, data3: 0x5012, data4: [0xA5, 0xBE, 0xA1, 0x7C, 0x7C, 0x01, 0xF4, 0x1A] };
+
+#[repr(C)]
+struct IAvnGradientBrushVtbl {
+    query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
+    add_ref: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    release: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    get_opacity: unsafe extern "system" fn(*mut IAvnGradientBrush, *mut f64) -> i32,
+    get_spread_method: unsafe extern "system" fn(*mut IAvnGradientBrush, *mut i32) -> i32,
+    get_stop_count: unsafe extern "system" fn(*mut IAvnGradientBrush, *mut i32) -> i32,
+    get_stops: unsafe extern "system" fn(*mut IAvnGradientBrush, *mut AvnGradientStopBuffer) -> i32,
+}
+
+#[repr(C)]
+pub struct IAvnGradientBrush {
+    vtbl: *const IAvnGradientBrushVtbl,
+}
+
+unsafe impl ComInterface for IAvnGradientBrush {
+    const IID: Guid = I_AVN_GRADIENT_BRUSH_IID;
+}
+
+impl ComPtr<IAvnGradientBrush> {
+    pub fn opacity(&self) -> Result<f64> {
+        unsafe {
+            let mut value = 0.0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_opacity)(self.as_raw(), &mut value);
+            hresult::check(hr).map(|_| value)
+        }
+    }
+    /// 0 = Pad, 1 = Reflect, 2 = Repeat.
+    pub fn spread_method(&self) -> Result<i32> {
+        unsafe {
+            let mut value = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_spread_method)(self.as_raw(), &mut value);
+            hresult::check(hr).map(|_| value)
+        }
+    }
+    pub fn stop_count(&self) -> Result<i32> {
+        unsafe {
+            let mut value = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_stop_count)(self.as_raw(), &mut value);
+            hresult::check(hr).map(|_| value)
+        }
+    }
+    pub fn stops(&self) -> Result<AvnGradientStopBuffer> {
+        unsafe {
+            let mut value = AvnGradientStopBuffer::default();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_stops)(self.as_raw(), &mut value);
+            hresult::check(hr).map(|_| value)
+        }
+    }
+}
+
+#[repr(C)]
+struct IAvnLinearGradientBrushVtbl {
+    query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
+    add_ref: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    release: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    get_opacity: unsafe extern "system" fn(*mut IAvnLinearGradientBrush, *mut f64) -> i32,
+    get_spread_method: unsafe extern "system" fn(*mut IAvnLinearGradientBrush, *mut i32) -> i32,
+    get_stop_count: unsafe extern "system" fn(*mut IAvnLinearGradientBrush, *mut i32) -> i32,
+    get_stops: unsafe extern "system" fn(*mut IAvnLinearGradientBrush, *mut AvnGradientStopBuffer) -> i32,
+    get_start_point: unsafe extern "system" fn(*mut IAvnLinearGradientBrush, *mut AvnRelativePoint) -> i32,
+    get_end_point: unsafe extern "system" fn(*mut IAvnLinearGradientBrush, *mut AvnRelativePoint) -> i32,
+}
+
+#[repr(C)]
+pub struct IAvnLinearGradientBrush {
+    vtbl: *const IAvnLinearGradientBrushVtbl,
+}
+
+unsafe impl ComInterface for IAvnLinearGradientBrush {
+    const IID: Guid = I_AVN_LINEAR_GRADIENT_BRUSH_IID;
+}
+
+pub const I_AVN_LINEAR_GRADIENT_BRUSH_IID: Guid = Guid { data1: 0x40B3D53D, data2: 0x330E, data3: 0x5D63, data4: [0xA0, 0x40, 0x37, 0xF1, 0xFF, 0x71, 0x7F, 0xF8] };
+
+impl ComPtr<IAvnLinearGradientBrush> {
+    pub fn opacity(&self) -> Result<f64> {
+        unsafe {
+            let mut value = 0.0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_opacity)(self.as_raw(), &mut value);
+            hresult::check(hr).map(|_| value)
+        }
+    }
+    /// 0 = Pad, 1 = Reflect, 2 = Repeat.
+    pub fn spread_method(&self) -> Result<i32> {
+        unsafe {
+            let mut value = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_spread_method)(self.as_raw(), &mut value);
+            hresult::check(hr).map(|_| value)
+        }
+    }
+    pub fn stop_count(&self) -> Result<i32> {
+        unsafe {
+            let mut value = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_stop_count)(self.as_raw(), &mut value);
+            hresult::check(hr).map(|_| value)
+        }
+    }
+    pub fn stops(&self) -> Result<AvnGradientStopBuffer> {
+        unsafe {
+            let mut value = AvnGradientStopBuffer::default();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_stops)(self.as_raw(), &mut value);
+            hresult::check(hr).map(|_| value)
+        }
+    }
+    pub fn start_point(&self) -> Result<AvnRelativePoint> {
+        unsafe {
+            let mut value = AvnRelativePoint::default();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_start_point)(self.as_raw(), &mut value);
+            hresult::check(hr).map(|_| value)
+        }
+    }
+    pub fn end_point(&self) -> Result<AvnRelativePoint> {
+        unsafe {
+            let mut value = AvnRelativePoint::default();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_end_point)(self.as_raw(), &mut value);
+            hresult::check(hr).map(|_| value)
+        }
+    }
+}
+
+#[repr(C)]
+struct IAvnRadialGradientBrushVtbl {
+    query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
+    add_ref: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    release: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    get_opacity: unsafe extern "system" fn(*mut IAvnRadialGradientBrush, *mut f64) -> i32,
+    get_spread_method: unsafe extern "system" fn(*mut IAvnRadialGradientBrush, *mut i32) -> i32,
+    get_stop_count: unsafe extern "system" fn(*mut IAvnRadialGradientBrush, *mut i32) -> i32,
+    get_stops: unsafe extern "system" fn(*mut IAvnRadialGradientBrush, *mut AvnGradientStopBuffer) -> i32,
+    get_center: unsafe extern "system" fn(*mut IAvnRadialGradientBrush, *mut AvnRelativePoint) -> i32,
+    get_gradient_origin: unsafe extern "system" fn(*mut IAvnRadialGradientBrush, *mut AvnRelativePoint) -> i32,
+    get_radius_x: unsafe extern "system" fn(*mut IAvnRadialGradientBrush, *mut AvnRelativeScalar) -> i32,
+    get_radius_y: unsafe extern "system" fn(*mut IAvnRadialGradientBrush, *mut AvnRelativeScalar) -> i32,
+}
+
+#[repr(C)]
+pub struct IAvnRadialGradientBrush {
+    vtbl: *const IAvnRadialGradientBrushVtbl,
+}
+
+unsafe impl ComInterface for IAvnRadialGradientBrush {
+    const IID: Guid = I_AVN_RADIAL_GRADIENT_BRUSH_IID;
+}
+
+pub const I_AVN_RADIAL_GRADIENT_BRUSH_IID: Guid = Guid { data1: 0xAEC23FCE, data2: 0x9FEA, data3: 0x506C, data4: [0xAB, 0xC4, 0x77, 0x41, 0x43, 0xBE, 0x80, 0xC8] };
+
+impl ComPtr<IAvnRadialGradientBrush> {
+    pub fn opacity(&self) -> Result<f64> {
+        unsafe {
+            let mut value = 0.0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_opacity)(self.as_raw(), &mut value);
+            hresult::check(hr).map(|_| value)
+        }
+    }
+    /// 0 = Pad, 1 = Reflect, 2 = Repeat.
+    pub fn spread_method(&self) -> Result<i32> {
+        unsafe {
+            let mut value = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_spread_method)(self.as_raw(), &mut value);
+            hresult::check(hr).map(|_| value)
+        }
+    }
+    pub fn stop_count(&self) -> Result<i32> {
+        unsafe {
+            let mut value = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_stop_count)(self.as_raw(), &mut value);
+            hresult::check(hr).map(|_| value)
+        }
+    }
+    pub fn stops(&self) -> Result<AvnGradientStopBuffer> {
+        unsafe {
+            let mut value = AvnGradientStopBuffer::default();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_stops)(self.as_raw(), &mut value);
+            hresult::check(hr).map(|_| value)
+        }
+    }
+    pub fn center(&self) -> Result<AvnRelativePoint> {
+        unsafe {
+            let mut value = AvnRelativePoint::default();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_center)(self.as_raw(), &mut value);
+            hresult::check(hr).map(|_| value)
+        }
+    }
+    pub fn gradient_origin(&self) -> Result<AvnRelativePoint> {
+        unsafe {
+            let mut value = AvnRelativePoint::default();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_gradient_origin)(self.as_raw(), &mut value);
+            hresult::check(hr).map(|_| value)
+        }
+    }
+    pub fn radius_x(&self) -> Result<AvnRelativeScalar> {
+        unsafe {
+            let mut value = AvnRelativeScalar::default();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_radius_x)(self.as_raw(), &mut value);
+            hresult::check(hr).map(|_| value)
+        }
+    }
+    pub fn radius_y(&self) -> Result<AvnRelativeScalar> {
+        unsafe {
+            let mut value = AvnRelativeScalar::default();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_radius_y)(self.as_raw(), &mut value);
+            hresult::check(hr).map(|_| value)
+        }
+    }
+}
+
+
 pub const I_AVN_COMMAND_IID: Guid = Guid { data1: 0xE6F7AAF7, data2: 0xD5E7, data3: 0x503F, data4: [0x9B, 0xE6, 0x5A, 0xF8, 0xDB, 0x5B, 0x52, 0x73] };
 
 #[repr(C)]
@@ -104862,7 +105112,7 @@ impl ComPtr<IAvnToolTipStatics> {
     }
 }
 
-pub const IAVN_CONTROL_FACTORY_IID: Guid = Guid { data1: 0x15778134, data2: 0x9E9F, data3: 0x5BAF, data4: [0x98, 0xFF, 0x55, 0x10, 0x77, 0x80, 0x94, 0xBA] };
+pub const IAVN_CONTROL_FACTORY_IID: Guid = Guid { data1: 0xC8BCE8E8, data2: 0x62C7, data3: 0x5E0E, data4: [0x80, 0x66, 0x69, 0x00, 0x59, 0xF5, 0x5D, 0xFF] };
 
 #[repr(C)]
 struct IAvnControlFactoryVtbl {
@@ -104972,6 +105222,8 @@ struct IAvnControlFactoryVtbl {
     get_relative_panel_statics: unsafe extern "system" fn(*mut IAvnControlFactory, *mut *mut IAvnRelativePanelStatics) -> i32,
     get_tool_tip_statics: unsafe extern "system" fn(*mut IAvnControlFactory, *mut *mut IAvnToolTipStatics) -> i32,
     create_solid_color_brush: unsafe extern "system" fn(*mut IAvnControlFactory, AvnColor, f64, *mut *mut IAvnBrush) -> i32,
+    create_linear_gradient_brush: unsafe extern "system" fn(*mut IAvnControlFactory, f64, i32, i32, AvnGradientStopBuffer, AvnRelativePoint, AvnRelativePoint, *mut *mut IAvnLinearGradientBrush) -> i32,
+    create_radial_gradient_brush: unsafe extern "system" fn(*mut IAvnControlFactory, f64, i32, i32, AvnGradientStopBuffer, AvnRelativePoint, AvnRelativePoint, AvnRelativeScalar, AvnRelativeScalar, *mut *mut IAvnRadialGradientBrush) -> i32,
 }
 
 #[repr(C)]
@@ -105804,6 +106056,46 @@ impl ComPtr<IAvnControlFactory> {
         unsafe {
             let mut value = ptr::null_mut();
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().create_solid_color_brush)(self.as_raw(), color, opacity, &mut value);
+            hresult::check(hr)?;
+            ComPtr::from_raw(value).ok_or(Error(hresult::E_POINTER))
+        }
+    }
+    #[allow(clippy::too_many_arguments)]
+    pub fn create_linear_gradient_brush(
+        &self,
+        opacity: f64,
+        spread_method: i32,
+        stop_count: i32,
+        stops: AvnGradientStopBuffer,
+        start_point: AvnRelativePoint,
+        end_point: AvnRelativePoint,
+    ) -> Result<ComPtr<IAvnLinearGradientBrush>> {
+        unsafe {
+            let mut value = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().create_linear_gradient_brush)(
+                self.as_raw(), opacity, spread_method, stop_count, stops, start_point, end_point, &mut value,
+            );
+            hresult::check(hr)?;
+            ComPtr::from_raw(value).ok_or(Error(hresult::E_POINTER))
+        }
+    }
+    #[allow(clippy::too_many_arguments)]
+    pub fn create_radial_gradient_brush(
+        &self,
+        opacity: f64,
+        spread_method: i32,
+        stop_count: i32,
+        stops: AvnGradientStopBuffer,
+        center: AvnRelativePoint,
+        gradient_origin: AvnRelativePoint,
+        radius_x: AvnRelativeScalar,
+        radius_y: AvnRelativeScalar,
+    ) -> Result<ComPtr<IAvnRadialGradientBrush>> {
+        unsafe {
+            let mut value = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().create_radial_gradient_brush)(
+                self.as_raw(), opacity, spread_method, stop_count, stops, center, gradient_origin, radius_x, radius_y, &mut value,
+            );
             hresult::check(hr)?;
             ComPtr::from_raw(value).ok_or(Error(hresult::E_POINTER))
         }

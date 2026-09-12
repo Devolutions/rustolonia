@@ -18,7 +18,7 @@ fn content_chrome_publishes_at_version_one() {
         "*create_group_box)(IAvnControlFactory* self, IAvnGroupBox** value)",
         "*create_user_control)(IAvnControlFactory* self, IAvnUserControl** value)",
         "#define I_AVN_CAROUSEL_ABI_VERSION 16",
-        "#define I_AVN_CONTROL_FACTORY_ABI_VERSION 13",
+        "#define I_AVN_CONTROL_FACTORY_ABI_VERSION 14",
     ] {
         assert!(HEADER.contains(expected), "header is missing `{expected}`");
     }

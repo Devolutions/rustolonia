@@ -150,9 +150,9 @@ on. Inbound, every brush is materialised as
 always a solid brush by construction and anything a source brush carried beyond
 colour and opacity (transforms, gradient stops) is dropped rather than guessed.
 
-Gradients, `DrawingBrush` and `VisualBrush` are out of scope for this ABI. A
-future wave that needs them must add a separately named, separately versioned
-interface rather than widening `IAvnBrush`.
+`DrawingBrush` and `VisualBrush` remain out of scope for this ABI. A future wave
+that needs them must add a separately named, separately versioned interface
+rather than widening `IAvnBrush`, following the pattern gradients use below.
 
 In safe Rust the brush is a plain value; only crossing the ABI needs the factory:
 
@@ -171,6 +171,75 @@ Getters return `Result<Option<Brush>>` and setters take `impl Into<Option<Brush>
 so `None` clears the property and a `Brush` needs no `Some`. `Color::rgb` is a
 `const` opaque-colour constructor, so a consumer can define a palette as
 constants.
+
+## Gradient brushes
+
+Linear and radial gradients follow the sibling-interface pattern rather than
+widening `IAvnBrush`: `IAvnGradientBrush` carries the members every gradient
+shares (`Opacity`, `SpreadMethod`, `StopCount`, `Stops`), and
+`IAvnLinearGradientBrush`/`IAvnRadialGradientBrush` each derive from it and add
+their own geometry (`StartPoint`/`EndPoint`, or `Center`/`GradientOrigin`/
+`RadiusX`/`RadiusY`). Every gradient object also answers `QueryInterface` for
+plain `IAvnBrush`, so it can be assigned anywhere a solid brush could be —
+reading `Color` back off it is what returns `AVN_E_NONSOLIDBRUSH`.
+
+Stops cross the ABI as a fixed-capacity buffer rather than a COM collection:
+
+```c
+struct AvnGradientStop { double offset; AvnColor color; };
+struct AvnGradientStopBuffer { AvnGradientStop stops[8]; };
+```
+
+Eight stops is enough for chrome gradients without a heap-allocated
+marshalled array; `StopCount` says how many of the eight slots are populated,
+so a wrapper must always read count and buffer together and never assume all
+eight are meaningful. `IAvnControlFactory` mints both shapes:
+
+```c
+AvnHResult (AVN_CALL *create_linear_gradient_brush)(
+    IAvnControlFactory* self, double opacity, int32_t spreadMethod,
+    int32_t stopCount, AvnGradientStopBuffer stops,
+    AvnRelativePoint startPoint, AvnRelativePoint endPoint,
+    IAvnLinearGradientBrush** value);
+
+AvnHResult (AVN_CALL *create_radial_gradient_brush)(
+    IAvnControlFactory* self, double opacity, int32_t spreadMethod,
+    int32_t stopCount, AvnGradientStopBuffer stops,
+    AvnRelativePoint center, AvnRelativePoint gradientOrigin,
+    AvnRelativeScalar radiusX, AvnRelativeScalar radiusY,
+    IAvnRadialGradientBrush** value);
+```
+
+`AvnRelativePoint`/`AvnRelativeScalar` carry a `RelativeUnit` ordinal
+(`Relative = 0`, `Absolute = 1`) alongside their coordinates, mirroring
+`Avalonia.RelativePoint`/`RelativeUnit`. Growing `IAvnControlFactory` to add
+these two slots required minting a new IID for it (the ABI-baseline check
+treats any slot-list change under a published IID as a break, even an
+additive one) — see [Versioning of the widened vtables](#versioning-of-the-widened-vtables)
+for the general rule.
+
+In safe Rust, `LinearGradientBrush` and `RadialGradientBrush` are plain values
+alongside `Brush`, and `Paint` is the enum that spans all three shapes a
+control property can hold:
+
+```rust
+let sunset = LinearGradientBrush::new(
+    vec![
+        GradientStop::new(0.0, Color::rgb(0xFF, 0x45, 0x00)),
+        GradientStop::new(1.0, Color::rgb(0xFF, 0xD7, 0x00)),
+    ],
+    RelativePoint::new(0.0, 0.0, RelativeUnit::Relative),
+    RelativePoint::new(1.0, 1.0, RelativeUnit::Relative),
+);
+let paint: Paint = sunset.into();
+```
+
+`Paint`, `LinearGradientBrush` and `RadialGradientBrush` are additive: no
+existing `Brush`-typed property getter or setter was rewired to accept or
+return `Paint`. Reading `Background`/`BorderBrush`/`Foreground` off a
+gradient-backed control still fails with `AVN_E_NONSOLIDBRUSH` today, matching
+"reads fail rather than degrade" above; wiring chrome properties to accept a
+`Paint` is left to a future wave.
 
 ## Chrome members
 
@@ -630,6 +699,12 @@ moves to 4. Wave C gives it a creator per constructible new type — `WrapPanel`
 by `query_interface` only. `IAvnBrush` is brand new, so it starts at version 1.
 The collection interfaces and the event handler interfaces are unchanged, because
 they carry interface pointers rather than the widened layouts.
+
+The gradient wave grows `IAvnControlFactory` again, for
+`create_linear_gradient_brush` and `create_radial_gradient_brush`, so it
+publishes another new IID. `IAvnGradientBrush`, `IAvnLinearGradientBrush` and
+`IAvnRadialGradientBrush` are brand new, so each starts at version 1; `IAvnBrush`
+itself is untouched and keeps the IID it published with.
 
 `Decorator` sits between `Control` and `Border`. The chrome wave added members to
 `Border`, not to `Decorator`, and nothing was added to `Decorator`'s bases either,
