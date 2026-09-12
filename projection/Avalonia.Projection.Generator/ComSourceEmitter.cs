@@ -658,13 +658,6 @@ public static class ComSourceEmitter
         sb.AppendLine("            return null;");
         sb.AppendLine($"        if (value is global::{BrushMarshalling.SolidManagedTypeName} solid)");
         sb.AppendLine($"            return new {className}({colorAbiName}.FromAvalonia(solid.Color), solid.Opacity);");
-        if (ir.GradientBrushInterfaceName is not null)
-        {
-            sb.AppendLine($"        if (value is global::{GradientBrushMarshalling.LinearManagedTypeName} linear)");
-            sb.AppendLine($"            return ({interfaceName}){SimpleName(ir.LinearGradientBrushInterfaceName!)[1..]}.FromLinearGradientBrush(linear);");
-            sb.AppendLine($"        if (value is global::{GradientBrushMarshalling.RadialManagedTypeName} radial)");
-            sb.AppendLine($"            return ({interfaceName}){SimpleName(ir.RadialGradientBrushInterfaceName!)[1..]}.FromRadialGradientBrush(radial);");
-        }
         sb.AppendLine("        throw new global::System.NotSupportedException(");
         sb.AppendLine("            $\"Brush '{value.GetType().FullName}' is not a solid colour brush, so it cannot cross the ABI.\")");
         sb.AppendLine("        {");
@@ -677,13 +670,6 @@ public static class ComSourceEmitter
         sb.AppendLine("    {");
         sb.AppendLine("        if (value is null)");
         sb.AppendLine("            return null;");
-        if (ir.GradientBrushInterfaceName is not null)
-        {
-            sb.AppendLine($"        if (value is {SimpleName(ir.LinearGradientBrushInterfaceName!)} linear)");
-            sb.AppendLine($"            return {SimpleName(ir.LinearGradientBrushInterfaceName!)[1..]}.ToLinearGradientBrush(linear);");
-            sb.AppendLine($"        if (value is {SimpleName(ir.RadialGradientBrushInterfaceName!)} radial)");
-            sb.AppendLine($"            return {SimpleName(ir.RadialGradientBrushInterfaceName!)[1..]}.ToRadialGradientBrush(radial);");
-        }
         sb.AppendLine("        var hr = value.GetColor(out var color);");
         sb.AppendLine("        if (hr < 0)");
         sb.AppendLine("            global::System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(hr);");

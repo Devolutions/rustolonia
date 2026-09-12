@@ -86,12 +86,6 @@ fn a_gradient_brush_converts_into_the_matching_paint_variant() {
         RelativeScalar::new(0.5, RelativeUnit::Relative),
     );
 
-    assert_eq!(
-        Paint::from(linear.clone()),
-        Paint::LinearGradient(linear)
-    );
-    assert_eq!(
-        Paint::from(radial.clone()),
-        Paint::RadialGradient(radial)
-    );
+    assert_eq!(Paint::from(linear.clone()), Paint::LinearGradient(linear));
+    assert_eq!(Paint::from(radial.clone()), Paint::RadialGradient(radial));
 }
