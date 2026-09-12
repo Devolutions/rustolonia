@@ -54,7 +54,8 @@ pub use filters::{item_filter, text_filter, ItemFilter, TextFilter};
 pub use generated::*;
 pub use guid::Guid;
 pub use hresult::{
-    Error, Result, AVN_E_FIXTURE, E_FAIL, E_INVALIDARG, E_NOINTERFACE, E_NOTIMPL, E_POINTER, S_OK,
+    Error, Result, AVN_E_FIXTURE, AVN_E_NONSOLIDBRUSH, E_FAIL, E_INVALIDARG, E_NOINTERFACE,
+    E_NOTIMPL, E_POINTER, S_OK,
 };
 pub use notification::{notification, Notification, NotificationSpec};
 pub use popup_placement::{popup_placement, PopupPlacement, PopupPlacementResult};

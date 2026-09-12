@@ -10,7 +10,7 @@
     }
   ],
   "schemas": {
-    "projectionIr": 16,
+    "projectionIr": 17,
     "viewModelIr": 5,
     "abiBaseline": 3,
     "consumerAppManifest": 1

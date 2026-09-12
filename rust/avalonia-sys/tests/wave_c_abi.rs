@@ -73,7 +73,7 @@ fn viewbox_child_is_a_control_and_grid_splitter_sits_on_thumb() {
         "*advise_drag_delta)(IAvnThumb* self, IAvnThumbDragDeltaHandler* handler, int64_t* subscription_id)",
         "*create_thumb)(IAvnControlFactory* self, IAvnThumb** value)",
         "*create_grid_splitter)(IAvnControlFactory* self, IAvnGridSplitter** value)",
-        "#define I_AVN_CONTROL_FACTORY_ABI_VERSION 13",
+        "#define I_AVN_CONTROL_FACTORY_ABI_VERSION 14",
     ] {
         assert!(HEADER.contains(expected), "header is missing `{expected}`");
     }

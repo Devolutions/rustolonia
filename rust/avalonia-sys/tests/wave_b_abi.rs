@@ -151,7 +151,7 @@ fn the_factory_gains_a_creator_per_constructible_wave_b_type() {
         "*create_date_picker)(IAvnControlFactory* self, IAvnDatePicker** value)",
         "*create_time_picker)(IAvnControlFactory* self, IAvnTimePicker** value)",
         "*create_headered_selecting_items_control)(IAvnControlFactory* self, IAvnHeaderedSelectingItemsControl** value)",
-        "#define I_AVN_CONTROL_FACTORY_ABI_VERSION 13",
+        "#define I_AVN_CONTROL_FACTORY_ABI_VERSION 14",
     ] {
         assert!(HEADER.contains(expected), "header is missing `{expected}`");
     }

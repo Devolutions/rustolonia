@@ -4,11 +4,14 @@ namespace Avalonia.Projection.Ir;
 /// The object-model projection of <c>Avalonia.Media.IBrush</c>.
 /// </summary>
 /// <remarks>
-/// A brush crosses nano-COM as a <b>solid colour</b> only: the ABI interface carries a packed
-/// <c>AvnColor</c> plus the brush opacity and nothing else. Gradient brushes,
-/// <c>DrawingBrush</c> and <c>VisualBrush</c> are deliberately not projected — reading one
+/// <c>IAvnBrush</c> itself still carries a <b>solid colour</b> only: a packed <c>AvnColor</c>
+/// plus the brush opacity and nothing else, unchanged since it first shipped. Linear and radial
+/// gradient brushes are projected as an additive sibling capability (see
+/// <see cref="GradientBrushMarshalling"/>) that a gradient brush object also implements;
+/// <c>DrawingBrush</c>, <c>VisualBrush</c>, <c>ImageBrush</c> and conic gradients remain out of
+/// scope — reading any of those, or calling <c>IAvnBrush.GetColor</c> on a real gradient object,
 /// fails with <c>AVN_E_NONSOLIDBRUSH</c> rather than silently degrading to a nearest colour.
-/// The interface is read-only because the managed side hands out immutable brushes; new
+/// The interface is read-only because the managed side hands out immutable brushes; new solid
 /// brushes are minted through <c>IAvnControlFactory.CreateSolidColorBrush</c>.
 /// </remarks>
 public static class BrushMarshalling

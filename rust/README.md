@@ -35,6 +35,12 @@ only; a control-valued tip reads back as `null`. See
 `RefreshContainer` are projected too.
 Shapes (`Rectangle`, `Ellipse`, `Line`, `Path`, `Polygon`, `Polyline`, `Arc`,
 `Sector`) are projected too. Fill/Stroke are brushes; `Path.Data` is path markup.
+`LinearGradientBrush` and `RadialGradientBrush` are projected as additive,
+directly-constructible safe types built on the `IAvnControlFactory` creators
+`create_linear_gradient_brush`/`create_radial_gradient_brush`; a `Paint` enum
+spans solid and gradient shapes. Existing `Brush`-typed properties
+(`Background`, `BorderBrush`, `Foreground`) are unchanged and stay solid-only;
+see [Gradient brushes](MARSHALLING.md#gradient-brushes).
 `Carousel`, `TransitioningContentControl`, `Label`, `Separator`, `GroupBox`,
 `UserControl` and `LayoutTransformControl` are projected too.
 `Calendar` and `CalendarDatePicker` are projected too. Calendar days cross as

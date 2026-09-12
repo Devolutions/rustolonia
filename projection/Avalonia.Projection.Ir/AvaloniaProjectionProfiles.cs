@@ -137,7 +137,9 @@ public static class AvaloniaProjectionProfiles
             ["Avalonia.Host.Com.IAvnSector"] = 11,
             ["Avalonia.Host.Com.IAvnLayoutTransformControl"] = 11,
             ["Avalonia.Host.Com.IAvnThemeVariantScope"] = 11,
-            ["Avalonia.Host.Com.IAvnControlFactory"] = 13,
+            ["Avalonia.Host.Com.IAvnControlFactory"] = 14,
+            // Gradient brush wave: the factory grows CreateLinearGradientBrush/
+            // CreateRadialGradientBrush slots, so it republishes at version 14.
             // Wave P. Payload-carrying replacements for the previously payload-less
             // handlers: the handler Invoke slots change shape, so each handler mints a
             // new IID at version 2. The advise/unadvise slots on the control interfaces

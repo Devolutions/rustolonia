@@ -37,6 +37,8 @@ public static class ComSourceEmitter
             files["ProjectionStructs.g.cs"] = EmitGeometryStructs(ir);
             if (ir.BrushInterfaceName is not null)
                 files[SimpleName(ir.BrushInterfaceName) + ".g.cs"] = EmitBrush(ir);
+            if (ir.GradientBrushInterfaceName is not null)
+                files[SimpleName(ir.GradientBrushInterfaceName) + ".g.cs"] = EmitGradientBrush(ir);
             if (ir.CommandInterfaceName is not null)
                 files[SimpleName(ir.CommandInterfaceName) + ".g.cs"] = EmitCommand(ir);
             if (ir.TemplateInterfaceName is not null)
@@ -437,6 +439,19 @@ public static class ComSourceEmitter
                 $"    int {BrushMarshalling.FactoryMethodName}({colorAbiName} color, double opacity, out {brushName}? value);");
             sb.AppendLine();
         }
+        if (ir.GradientBrushInterfaceName is not null)
+        {
+            var linearName = SimpleName(ir.LinearGradientBrushInterfaceName!);
+            var radialName = SimpleName(ir.RadialGradientBrushInterfaceName!);
+            sb.AppendLine("    [PreserveSig]");
+            sb.AppendLine(
+                $"    int {GradientBrushMarshalling.CreateLinearFactoryMethodName}(double opacity, int spreadMethod, int stopCount, AvnGradientStopBuffer stops, AvnRelativePoint startPoint, AvnRelativePoint endPoint, out {linearName}? value);");
+            sb.AppendLine();
+            sb.AppendLine("    [PreserveSig]");
+            sb.AppendLine(
+                $"    int {GradientBrushMarshalling.CreateRadialFactoryMethodName}(double opacity, int spreadMethod, int stopCount, AvnGradientStopBuffer stops, AvnRelativePoint center, AvnRelativePoint gradientOrigin, AvnRelativeScalar radiusX, AvnRelativeScalar radiusY, out {radialName}? value);");
+            sb.AppendLine();
+        }
         sb.AppendLine("}");
         sb.AppendLine();
         sb.AppendLine("[GeneratedComClass]");
@@ -488,6 +503,31 @@ public static class ComSourceEmitter
             sb.AppendLine("    }");
             sb.AppendLine();
         }
+        if (ir.GradientBrushInterfaceName is not null)
+        {
+            var linearName = SimpleName(ir.LinearGradientBrushInterfaceName!);
+            var radialName = SimpleName(ir.RadialGradientBrushInterfaceName!);
+            sb.AppendLine(
+                $"    public int {GradientBrushMarshalling.CreateLinearFactoryMethodName}(double opacity, int spreadMethod, int stopCount, AvnGradientStopBuffer stops, AvnRelativePoint startPoint, AvnRelativePoint endPoint, out {linearName}? value)");
+            sb.AppendLine("    {");
+            sb.AppendLine("        value = null;");
+            sb.AppendLine($"        if (stopCount < 0 || stopCount > {GradientBrushMarshalling.MaxStops})");
+            sb.AppendLine("            return global::Avalonia.Host.HResults.E_INVALIDARG;");
+            sb.AppendLine($"        value = new {linearName[1..]}(opacity, spreadMethod, stopCount, stops, startPoint, endPoint);");
+            sb.AppendLine("        return global::Avalonia.Host.HResults.S_OK;");
+            sb.AppendLine("    }");
+            sb.AppendLine();
+            sb.AppendLine(
+                $"    public int {GradientBrushMarshalling.CreateRadialFactoryMethodName}(double opacity, int spreadMethod, int stopCount, AvnGradientStopBuffer stops, AvnRelativePoint center, AvnRelativePoint gradientOrigin, AvnRelativeScalar radiusX, AvnRelativeScalar radiusY, out {radialName}? value)");
+            sb.AppendLine("    {");
+            sb.AppendLine("        value = null;");
+            sb.AppendLine($"        if (stopCount < 0 || stopCount > {GradientBrushMarshalling.MaxStops})");
+            sb.AppendLine("            return global::Avalonia.Host.HResults.E_INVALIDARG;");
+            sb.AppendLine($"        value = new {radialName[1..]}(opacity, spreadMethod, stopCount, stops, center, gradientOrigin, radiusX, radiusY);");
+            sb.AppendLine("        return global::Avalonia.Host.HResults.S_OK;");
+            sb.AppendLine("    }");
+            sb.AppendLine();
+        }
         sb.AppendLine("}");
         return sb.ToString();
     }
@@ -506,6 +546,11 @@ public static class ComSourceEmitter
         if (ir.BrushInterfaceName is { } brushInterfaceName)
         {
             sb.AppendLine($"    [global::System.Diagnostics.CodeAnalysis.DynamicDependency(global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All, typeof({SimpleName(brushInterfaceName)[1..]}))]");
+        }
+        if (ir.GradientBrushInterfaceName is not null)
+        {
+            sb.AppendLine($"    [global::System.Diagnostics.CodeAnalysis.DynamicDependency(global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All, typeof({SimpleName(ir.LinearGradientBrushInterfaceName!)[1..]}))]");
+            sb.AppendLine($"    [global::System.Diagnostics.CodeAnalysis.DynamicDependency(global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All, typeof({SimpleName(ir.RadialGradientBrushInterfaceName!)[1..]}))]");
         }
         if (ir.CommandInterfaceName is { } commandInterfaceName)
         {
@@ -648,6 +693,246 @@ public static class ComSourceEmitter
         sb.AppendLine("}");
         return sb.ToString();
     }
+
+    public static string EmitGradientBrush(ProjectionIr ir)
+    {
+        var gradientName = SimpleName(ir.GradientBrushInterfaceName
+            ?? throw new InvalidOperationException("The IR declares no projected gradient brush interface."));
+        var linearName = SimpleName(ir.LinearGradientBrushInterfaceName!);
+        var radialName = SimpleName(ir.RadialGradientBrushInterfaceName!);
+        var linearClassName = linearName[1..];
+        var radialClassName = radialName[1..];
+        var colorAbiName = GeometryMarshalling.All
+            .Single(geometry => geometry.Kind == MarshallingKind.Color).AbiName;
+        var sb = new StringBuilder();
+        sb.AppendLine("// <auto-generated />");
+        sb.AppendLine("#nullable enable");
+        sb.AppendLine("using System.Runtime.InteropServices;");
+        sb.AppendLine("using System.Runtime.InteropServices.Marshalling;");
+        sb.AppendLine();
+        sb.AppendLine($"namespace {NamespaceOf(ir.GradientBrushInterfaceName)};");
+        sb.AppendLine();
+        sb.AppendLine("/// <summary>Capability shared by every gradient brush kind projected across the ABI.</summary>");
+        sb.AppendLine("/// <remarks>");
+        sb.AppendLine("/// A gradient brush object also implements <c>IAvnBrush</c> so it satisfies every");
+        sb.AppendLine("/// brush-typed slot, but its <c>GetColor</c> still fails with <c>AVN_E_NONSOLIDBRUSH</c>;");
+        sb.AppendLine("/// callers must query for this interface (or a derived one) to read the gradient.");
+        sb.AppendLine("/// Stops beyond the fixed capacity of <see cref=\"AvnGradientStopBuffer\"/> are rejected");
+        sb.AppendLine("/// when the brush is minted for the ABI.");
+        sb.AppendLine("/// </remarks>");
+        sb.AppendLine("[GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]");
+        sb.AppendLine($"[Guid(\"{ir.GradientBrushInterfaceIid}\")]");
+        sb.AppendLine($"public partial interface {gradientName}");
+        sb.AppendLine("{");
+        sb.AppendLine("    [PreserveSig]");
+        sb.AppendLine("    int GetOpacity(out double value);");
+        sb.AppendLine();
+        sb.AppendLine("    /// <summary>0 = Pad, 1 = Reflect, 2 = Repeat (mirrors <c>Avalonia.Media.GradientSpreadMethod</c>).</summary>");
+        sb.AppendLine("    [PreserveSig]");
+        sb.AppendLine("    int GetSpreadMethod(out int value);");
+        sb.AppendLine();
+        sb.AppendLine("    [PreserveSig]");
+        sb.AppendLine("    int GetStopCount(out int value);");
+        sb.AppendLine();
+        sb.AppendLine("    [PreserveSig]");
+        sb.AppendLine("    int GetStops(out AvnGradientStopBuffer value);");
+        sb.AppendLine("}");
+        sb.AppendLine();
+        sb.AppendLine("/// <summary>A brush that draws with a linear gradient.</summary>");
+        sb.AppendLine("[GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]");
+        sb.AppendLine($"[Guid(\"{ir.LinearGradientBrushInterfaceIid}\")]");
+        sb.AppendLine($"public partial interface {linearName} : {gradientName}");
+        sb.AppendLine("{");
+        sb.AppendLine("    [PreserveSig]");
+        sb.AppendLine("    int GetStartPoint(out AvnRelativePoint value);");
+        sb.AppendLine();
+        sb.AppendLine("    [PreserveSig]");
+        sb.AppendLine("    int GetEndPoint(out AvnRelativePoint value);");
+        sb.AppendLine("}");
+        sb.AppendLine();
+        sb.AppendLine("/// <summary>A brush that draws with a radial gradient.</summary>");
+        sb.AppendLine("[GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]");
+        sb.AppendLine($"[Guid(\"{ir.RadialGradientBrushInterfaceIid}\")]");
+        sb.AppendLine($"public partial interface {radialName} : {gradientName}");
+        sb.AppendLine("{");
+        sb.AppendLine("    [PreserveSig]");
+        sb.AppendLine("    int GetCenter(out AvnRelativePoint value);");
+        sb.AppendLine();
+        sb.AppendLine("    [PreserveSig]");
+        sb.AppendLine("    int GetGradientOrigin(out AvnRelativePoint value);");
+        sb.AppendLine();
+        sb.AppendLine("    [PreserveSig]");
+        sb.AppendLine("    int GetRadiusX(out AvnRelativeScalar value);");
+        sb.AppendLine();
+        sb.AppendLine("    [PreserveSig]");
+        sb.AppendLine("    int GetRadiusY(out AvnRelativeScalar value);");
+        sb.AppendLine("}");
+        sb.AppendLine();
+
+        EmitGradientBrushClass(
+            sb,
+            className: linearClassName,
+            interfaceName: linearName,
+            gradientInterfaceName: gradientName,
+            managedTypeName: GradientBrushMarshalling.LinearManagedTypeName,
+            immutableManagedTypeName: GradientBrushMarshalling.ImmutableLinearManagedTypeName,
+            colorAbiName: colorAbiName,
+            shapeFields:
+            [
+                ("AvnRelativePoint", "StartPoint", "StartPoint"),
+                ("AvnRelativePoint", "EndPoint", "EndPoint"),
+            ]);
+        EmitGradientBrushClass(
+            sb,
+            className: radialClassName,
+            interfaceName: radialName,
+            gradientInterfaceName: gradientName,
+            managedTypeName: GradientBrushMarshalling.RadialManagedTypeName,
+            immutableManagedTypeName: GradientBrushMarshalling.ImmutableRadialManagedTypeName,
+            colorAbiName: colorAbiName,
+            shapeFields:
+            [
+                ("AvnRelativePoint", "Center", "Center"),
+                ("AvnRelativePoint", "GradientOrigin", "GradientOrigin"),
+                ("AvnRelativeScalar", "RadiusX", "RadiusX"),
+                ("AvnRelativeScalar", "RadiusY", "RadiusY"),
+            ]);
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// Emits one gradient-kind CCW class (linear or radial). <paramref name="shapeFields"/> lists
+    /// the kind-specific geometry members as (abi struct type, ABI accessor suffix, managed
+    /// property name) tuples, in addition to the opacity/spread-method/stops shared by every
+    /// gradient brush.
+    /// </summary>
+    private static void EmitGradientBrushClass(
+        StringBuilder sb,
+        string className,
+        string interfaceName,
+        string gradientInterfaceName,
+        string managedTypeName,
+        string immutableManagedTypeName,
+        string colorAbiName,
+        (string AbiType, string Accessor, string ManagedProperty)[] shapeFields)
+    {
+        sb.AppendLine("[GeneratedComClass]");
+        sb.AppendLine($"public sealed partial class {className} : global::Avalonia.Host.Com.IAvnBrush, {interfaceName}");
+        sb.AppendLine("{");
+        sb.AppendLine("    private readonly double _opacity;");
+        sb.AppendLine("    private readonly int _spreadMethod;");
+        sb.AppendLine("    private readonly int _stopCount;");
+        sb.AppendLine("    private readonly AvnGradientStopBuffer _stops;");
+        foreach (var (abiType, accessor, _) in shapeFields)
+            sb.AppendLine($"    private readonly {abiType} _{FirstLower(accessor)};");
+        sb.AppendLine();
+        var ctorParams = string.Join(", ", new[] { "double opacity", "int spreadMethod", "int stopCount", "AvnGradientStopBuffer stops" }
+            .Concat(shapeFields.Select(f => $"{f.AbiType} {FirstLower(f.Accessor)}")));
+        sb.AppendLine($"    internal {className}({ctorParams})");
+        sb.AppendLine("    {");
+        sb.AppendLine("        _opacity = opacity;");
+        sb.AppendLine("        _spreadMethod = spreadMethod;");
+        sb.AppendLine("        _stopCount = stopCount;");
+        sb.AppendLine("        _stops = stops;");
+        foreach (var (_, accessor, _) in shapeFields)
+            sb.AppendLine($"        _{FirstLower(accessor)} = {FirstLower(accessor)};");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+        sb.AppendLine($"    public int GetColor(out {colorAbiName} value)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        value = default;");
+        sb.AppendLine("        return global::Avalonia.Host.HResults.AVN_E_NONSOLIDBRUSH;");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+        sb.AppendLine("    public int GetOpacity(out double value)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        value = _opacity;");
+        sb.AppendLine("        return global::Avalonia.Host.HResults.S_OK;");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+        sb.AppendLine("    public int GetSpreadMethod(out int value)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        value = _spreadMethod;");
+        sb.AppendLine("        return global::Avalonia.Host.HResults.S_OK;");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+        sb.AppendLine("    public int GetStopCount(out int value)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        value = _stopCount;");
+        sb.AppendLine("        return global::Avalonia.Host.HResults.S_OK;");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+        sb.AppendLine("    public int GetStops(out AvnGradientStopBuffer value)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        value = _stops;");
+        sb.AppendLine("        return global::Avalonia.Host.HResults.S_OK;");
+        sb.AppendLine("    }");
+        foreach (var (abiType, accessor, _) in shapeFields)
+        {
+            sb.AppendLine();
+            sb.AppendLine($"    public int Get{accessor}(out {abiType} value)");
+            sb.AppendLine("    {");
+            sb.AppendLine($"        value = _{FirstLower(accessor)};");
+            sb.AppendLine("        return global::Avalonia.Host.HResults.S_OK;");
+            sb.AppendLine("    }");
+        }
+        sb.AppendLine();
+        sb.AppendLine($"    /// <summary>Projects a managed {className[3..].ToLowerInvariant()}, minting the fixed-capacity stop buffer.</summary>");
+        sb.AppendLine($"    public static {interfaceName} From{className[3..]}(global::{managedTypeName} value)");
+        sb.AppendLine("    {");
+        sb.AppendLine($"        var stops = value.GradientStops;");
+        sb.AppendLine($"        if (stops.Count > {GradientBrushMarshalling.MaxStops})");
+        sb.AppendLine("        {");
+        sb.AppendLine("            throw new global::System.NotSupportedException(");
+        sb.AppendLine($"                $\"Gradient brush has {{stops.Count}} stops, more than the {GradientBrushMarshalling.MaxStops} supported across the ABI.\")");
+        sb.AppendLine("            {");
+        sb.AppendLine("                HResult = global::Avalonia.Host.HResults.AVN_E_NONSOLIDBRUSH,");
+        sb.AppendLine("            };");
+        sb.AppendLine("        }");
+        sb.AppendLine("        var buffer = new AvnGradientStopBuffer();");
+        sb.AppendLine("        for (var i = 0; i < stops.Count; i++)");
+        sb.AppendLine("            buffer[i] = AvnGradientStop.FromAvalonia(stops[i]);");
+        var fromArgs = string.Join(", ", new[] { "value.Opacity", "(int)value.SpreadMethod", "stops.Count", "buffer" }
+            .Concat(shapeFields.Select(f => $"{f.AbiType}.FromAvalonia(value.{f.ManagedProperty})")));
+        sb.AppendLine($"        return new {className}({fromArgs});");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+        sb.AppendLine($"    /// <summary>Materialises an immutable {className[3..].ToLowerInvariant()} from the members carried across.</summary>");
+        sb.AppendLine($"    public static global::{BrushMarshalling.ManagedTypeName}? To{className[3..]}({interfaceName}? value)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        if (value is null)");
+        sb.AppendLine("            return null;");
+        sb.AppendLine("        var hr = value.GetOpacity(out var opacity);");
+        sb.AppendLine("        if (hr < 0)");
+        sb.AppendLine("            global::System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(hr);");
+        sb.AppendLine("        hr = value.GetSpreadMethod(out var spreadMethod);");
+        sb.AppendLine("        if (hr < 0)");
+        sb.AppendLine("            global::System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(hr);");
+        sb.AppendLine("        hr = value.GetStopCount(out var stopCount);");
+        sb.AppendLine("        if (hr < 0)");
+        sb.AppendLine("            global::System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(hr);");
+        sb.AppendLine("        hr = value.GetStops(out var stops);");
+        sb.AppendLine("        if (hr < 0)");
+        sb.AppendLine("            global::System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(hr);");
+        sb.AppendLine($"        var managedStops = new global::{GradientBrushMarshalling.ImmutableGradientStopManagedTypeName}[stopCount];");
+        sb.AppendLine("        for (var i = 0; i < stopCount; i++)");
+        sb.AppendLine($"            managedStops[i] = new global::{GradientBrushMarshalling.ImmutableGradientStopManagedTypeName}(stops[i].Offset, stops[i].Color.ToAvalonia());");
+        foreach (var (abiType, accessor, _) in shapeFields)
+        {
+            sb.AppendLine($"        hr = value.Get{accessor}(out var {FirstLower(accessor)});");
+            sb.AppendLine("        if (hr < 0)");
+            sb.AppendLine("            global::System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(hr);");
+        }
+        var toArgs = string.Join(", ", new[] { "managedStops", "opacity", "transform: null", "transformOrigin: null", "(global::Avalonia.Media.GradientSpreadMethod)spreadMethod" }
+            .Concat(shapeFields.Select(f => $"{FirstLower(f.Accessor)}.ToAvalonia()")));
+        sb.AppendLine($"        return new global::{immutableManagedTypeName}({toArgs});");
+        sb.AppendLine("    }");
+        sb.AppendLine("}");
+        sb.AppendLine();
+    }
+
+    private static string FirstLower(string value) =>
+        value.Length == 0 ? value : char.ToLowerInvariant(value[0]) + value[1..];
 
     public static string EmitCommand(ProjectionIr ir)
     {
@@ -1594,7 +1879,69 @@ public static class ComSourceEmitter
         sb.AppendLine("    };");
         sb.AppendLine("}");
         sb.AppendLine();
+        if (ir.GradientBrushInterfaceName is not null)
+            EmitGradientStructs(sb);
         return sb.ToString().TrimEnd() + Environment.NewLine;
+    }
+
+    private static void EmitGradientStructs(StringBuilder sb)
+    {
+        var colorAbiName = GeometryMarshalling.All
+            .Single(geometry => geometry.Kind == MarshallingKind.Color).AbiName;
+
+        sb.AppendLine("/// <summary>Blittable ABI mirror of <c>Avalonia.RelativePoint</c>.</summary>");
+        sb.AppendLine("/// <remarks><c>Unit</c> mirrors <c>Avalonia.RelativeUnit</c>: 0 relative, 1 absolute.</remarks>");
+        sb.AppendLine("[StructLayout(LayoutKind.Sequential)]");
+        sb.AppendLine("public struct AvnRelativePoint");
+        sb.AppendLine("{");
+        sb.AppendLine("    public double X;");
+        sb.AppendLine("    public double Y;");
+        sb.AppendLine("    public int Unit;");
+        sb.AppendLine();
+        sb.AppendLine("    public static AvnRelativePoint FromAvalonia(global::Avalonia.RelativePoint value) =>");
+        sb.AppendLine("        new AvnRelativePoint { X = value.Point.X, Y = value.Point.Y, Unit = (int)value.Unit };");
+        sb.AppendLine();
+        sb.AppendLine("    public readonly global::Avalonia.RelativePoint ToAvalonia() =>");
+        sb.AppendLine("        new global::Avalonia.RelativePoint(X, Y, (global::Avalonia.RelativeUnit)Unit);");
+        sb.AppendLine("}");
+        sb.AppendLine();
+        sb.AppendLine("/// <summary>Blittable ABI mirror of <c>Avalonia.RelativeScalar</c>.</summary>");
+        sb.AppendLine("/// <remarks><c>Unit</c> mirrors <c>Avalonia.RelativeUnit</c>: 0 relative, 1 absolute.</remarks>");
+        sb.AppendLine("[StructLayout(LayoutKind.Sequential)]");
+        sb.AppendLine("public struct AvnRelativeScalar");
+        sb.AppendLine("{");
+        sb.AppendLine("    public double Scalar;");
+        sb.AppendLine("    public int Unit;");
+        sb.AppendLine();
+        sb.AppendLine("    public static AvnRelativeScalar FromAvalonia(global::Avalonia.RelativeScalar value) =>");
+        sb.AppendLine("        new AvnRelativeScalar { Scalar = value.Scalar, Unit = (int)value.Unit };");
+        sb.AppendLine();
+        sb.AppendLine("    public readonly global::Avalonia.RelativeScalar ToAvalonia() =>");
+        sb.AppendLine("        new global::Avalonia.RelativeScalar(Scalar, (global::Avalonia.RelativeUnit)Unit);");
+        sb.AppendLine("}");
+        sb.AppendLine();
+        sb.AppendLine("/// <summary>Blittable ABI mirror of a single gradient stop (offset plus packed colour).</summary>");
+        sb.AppendLine("[StructLayout(LayoutKind.Sequential)]");
+        sb.AppendLine("public struct AvnGradientStop");
+        sb.AppendLine("{");
+        sb.AppendLine("    public double Offset;");
+        sb.AppendLine($"    public {colorAbiName} Color;");
+        sb.AppendLine();
+        sb.AppendLine($"    public static AvnGradientStop FromAvalonia(global::{GradientBrushMarshalling.GradientStopManagedTypeName} value) =>");
+        sb.AppendLine($"        new AvnGradientStop {{ Offset = value.Offset, Color = {colorAbiName}.FromAvalonia(value.Color) }};");
+        sb.AppendLine("}");
+        sb.AppendLine();
+        sb.AppendLine($"/// <summary>Fixed-capacity buffer of up to {GradientBrushMarshalling.MaxStops} <see cref=\"AvnGradientStop\"/> entries.</summary>");
+        sb.AppendLine("/// <remarks>");
+        sb.AppendLine("/// Gradient brushes with more stops than this cannot cross the ABI; the count actually in");
+        sb.AppendLine("/// use is carried separately by <c>IAvnGradientBrush.GetStopCount</c>.");
+        sb.AppendLine("/// </remarks>");
+        sb.AppendLine($"[System.Runtime.CompilerServices.InlineArray({GradientBrushMarshalling.MaxStops})]");
+        sb.AppendLine("public struct AvnGradientStopBuffer");
+        sb.AppendLine("{");
+        sb.AppendLine("    private AvnGradientStop _element0;");
+        sb.AppendLine("}");
+        sb.AppendLine();
     }
 
     public static string EmitCollection(ProjectionIr ir, ProjectedProperty collection)

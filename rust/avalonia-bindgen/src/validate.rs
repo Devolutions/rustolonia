@@ -5,7 +5,7 @@ use crate::ir::{
 };
 
 pub const MINIMUM_VERSION: i32 = 1;
-pub const CURRENT_VERSION: i32 = 16;
+pub const CURRENT_VERSION: i32 = 17;
 
 const SUPPORTED_MARSHALLING_KINDS: &[&str] = &[
     "Void",

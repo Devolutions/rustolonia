@@ -134,6 +134,10 @@ pub(crate) fn emit_sys_module(ir: &ProjectionIr) -> String {
         out.push_str(&emit_brush(ir));
         out.push('\n');
     }
+    if ir.gradient_brush_interface_name.is_some() {
+        out.push_str(&emit_gradient_brush(ir));
+        out.push('\n');
+    }
     if ir.command_interface_name.is_some() {
         out.push_str(&emit_command(ir));
         out.push('\n');
@@ -412,6 +416,211 @@ fn emit_brush(ir: &ProjectionIr) -> String {
          }}\n",
         iid_literal = guid_literal(iid)
     )
+}
+
+fn emit_gradient_brush(ir: &ProjectionIr) -> String {
+    let gradient_name = simple_name(
+        ir.gradient_brush_interface_name
+            .as_deref()
+            .expect("gradientBrushInterfaceName"),
+    );
+    let gradient_iid = ir
+        .gradient_brush_interface_iid
+        .as_deref()
+        .expect("gradientBrushInterfaceIid for a projected gradient brush");
+    let linear_name = simple_name(
+        ir.linear_gradient_brush_interface_name
+            .as_deref()
+            .expect("linearGradientBrushInterfaceName"),
+    );
+    let linear_iid = ir
+        .linear_gradient_brush_interface_iid
+        .as_deref()
+        .expect("linearGradientBrushInterfaceIid");
+    let radial_name = simple_name(
+        ir.radial_gradient_brush_interface_name
+            .as_deref()
+            .expect("radialGradientBrushInterfaceName"),
+    );
+    let radial_iid = ir
+        .radial_gradient_brush_interface_iid
+        .as_deref()
+        .expect("radialGradientBrushInterfaceIid");
+    let color = geometry::find("Color")
+        .expect("Color geometry struct")
+        .abi_name;
+
+    let mut out = String::from(
+        "/// Blittable ABI mirror of Avalonia.RelativePoint. unit: 0 relative, 1 absolute.\n\
+         #[repr(C)]\n\
+         #[derive(Clone, Copy, Debug, Default, PartialEq)]\n\
+         pub struct AvnRelativePoint {\n\
+         \x20   pub x: f64,\n\
+         \x20   pub y: f64,\n\
+         \x20   pub unit: i32,\n\
+         }\n\n\
+         /// Blittable ABI mirror of Avalonia.RelativeScalar. unit: 0 relative, 1 absolute.\n\
+         #[repr(C)]\n\
+         #[derive(Clone, Copy, Debug, Default, PartialEq)]\n\
+         pub struct AvnRelativeScalar {\n\
+         \x20   pub scalar: f64,\n\
+         \x20   pub unit: i32,\n\
+         }\n\n",
+    );
+    out.push_str(&format!(
+        "/// Blittable ABI mirror of a single gradient stop (offset plus packed colour).\n\
+         #[repr(C)]\n\
+         #[derive(Clone, Copy, Debug, Default, PartialEq)]\n\
+         pub struct AvnGradientStop {{\n\
+         \x20   pub offset: f64,\n\
+         \x20   pub color: {color},\n\
+         }}\n\n\
+         /// Fixed-capacity buffer of up to {max_stops} `AvnGradientStop` entries.\n\
+         #[repr(C)]\n\
+         #[derive(Clone, Copy, Debug)]\n\
+         pub struct AvnGradientStopBuffer {{\n\
+         \x20   pub stops: [AvnGradientStop; {max_stops}],\n\
+         }}\n\n\
+         impl Default for AvnGradientStopBuffer {{\n\
+         \x20   fn default() -> Self {{\n\
+         \x20       Self {{ stops: [AvnGradientStop::default(); {max_stops}] }}\n\
+         \x20   }}\n\
+         }}\n\n",
+        max_stops = GRADIENT_MAX_STOPS
+    ));
+
+    out.push_str(&format!(
+        "/// Capability shared by every gradient brush kind projected across the ABI.\n\
+         pub const {gradient_shouty}_IID: Guid = {gradient_iid_literal};\n\n\
+         #[repr(C)]\n\
+         struct {gradient_name}Vtbl {{\n\
+         \x20   query_interface: unsafe extern \"system\" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,\n\
+         \x20   add_ref: unsafe extern \"system\" fn(*mut IUnknown) -> u32,\n\
+         \x20   release: unsafe extern \"system\" fn(*mut IUnknown) -> u32,\n\
+         \x20   get_opacity: unsafe extern \"system\" fn(*mut {gradient_name}, *mut f64) -> i32,\n\
+         \x20   get_spread_method: unsafe extern \"system\" fn(*mut {gradient_name}, *mut i32) -> i32,\n\
+         \x20   get_stop_count: unsafe extern \"system\" fn(*mut {gradient_name}, *mut i32) -> i32,\n\
+         \x20   get_stops: unsafe extern \"system\" fn(*mut {gradient_name}, *mut AvnGradientStopBuffer) -> i32,\n\
+         }}\n\n\
+         #[repr(C)]\n\
+         pub struct {gradient_name} {{\n\
+         \x20   vtbl: *const {gradient_name}Vtbl,\n\
+         }}\n\n\
+         unsafe impl ComInterface for {gradient_name} {{\n\
+         \x20   const IID: Guid = {gradient_shouty}_IID;\n\
+         }}\n\n\
+         impl ComPtr<{gradient_name}> {{\n\
+         {gradient_getters}\
+         }}\n\n",
+        gradient_shouty = to_shouty(gradient_name),
+        gradient_iid_literal = guid_literal(gradient_iid),
+        gradient_getters = emit_gradient_getters(gradient_name),
+    ));
+
+    out.push_str(&emit_gradient_shape(
+        linear_name,
+        linear_iid,
+        &[
+            ("get_start_point", "start_point", "AvnRelativePoint"),
+            ("get_end_point", "end_point", "AvnRelativePoint"),
+        ],
+    ));
+    out.push_str(&emit_gradient_shape(
+        radial_name,
+        radial_iid,
+        &[
+            ("get_center", "center", "AvnRelativePoint"),
+            ("get_gradient_origin", "gradient_origin", "AvnRelativePoint"),
+            ("get_radius_x", "radius_x", "AvnRelativeScalar"),
+            ("get_radius_y", "radius_y", "AvnRelativeScalar"),
+        ],
+    ));
+    out
+}
+
+/// The fixed capacity of `AvnGradientStopBuffer`; must match `GradientBrushMarshalling.MaxStops`
+/// on the C# projection side.
+const GRADIENT_MAX_STOPS: usize = 8;
+
+fn emit_gradient_getters(gradient_name: &str) -> String {
+    format!(
+        "\x20   pub fn opacity(&self) -> Result<f64> {{\n\
+         \x20       unsafe {{\n\
+         \x20           let mut value = 0.0;\n\
+         \x20           let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_opacity)(self.as_raw(), &mut value);\n\
+         \x20           hresult::check(hr).map(|_| value)\n\
+         \x20       }}\n\
+         \x20   }}\n\
+         \x20   /// 0 = Pad, 1 = Reflect, 2 = Repeat.\n\
+         \x20   pub fn spread_method(&self) -> Result<i32> {{\n\
+         \x20       unsafe {{\n\
+         \x20           let mut value = 0;\n\
+         \x20           let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_spread_method)(self.as_raw(), &mut value);\n\
+         \x20           hresult::check(hr).map(|_| value)\n\
+         \x20       }}\n\
+         \x20   }}\n\
+         \x20   pub fn stop_count(&self) -> Result<i32> {{\n\
+         \x20       unsafe {{\n\
+         \x20           let mut value = 0;\n\
+         \x20           let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_stop_count)(self.as_raw(), &mut value);\n\
+         \x20           hresult::check(hr).map(|_| value)\n\
+         \x20       }}\n\
+         \x20   }}\n\
+         \x20   pub fn stops(&self) -> Result<AvnGradientStopBuffer> {{\n\
+         \x20       unsafe {{\n\
+         \x20           let mut value = AvnGradientStopBuffer::default();\n\
+         \x20           let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_stops)(self.as_raw(), &mut value);\n\
+         \x20           hresult::check(hr).map(|_| value)\n\
+         \x20       }}\n\
+         \x20   }}\n",
+    )
+    .replace("{gradient_name}", gradient_name)
+}
+
+/// Emits one derived gradient-kind interface (linear or radial). The vtable flattens the
+/// four base `IAvnGradientBrush` slots ahead of the kind-specific slots, mirroring the
+/// single-inheritance layout produced for the native header and the generated C# interface.
+fn emit_gradient_shape(name: &str, iid: &str, accessors: &[(&str, &str, &str)]) -> String {
+    let mut vtbl = format!(
+        "#[repr(C)]\nstruct {name}Vtbl {{\n\
+         \x20   query_interface: unsafe extern \"system\" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,\n\
+         \x20   add_ref: unsafe extern \"system\" fn(*mut IUnknown) -> u32,\n\
+         \x20   release: unsafe extern \"system\" fn(*mut IUnknown) -> u32,\n\
+         \x20   get_opacity: unsafe extern \"system\" fn(*mut {name}, *mut f64) -> i32,\n\
+         \x20   get_spread_method: unsafe extern \"system\" fn(*mut {name}, *mut i32) -> i32,\n\
+         \x20   get_stop_count: unsafe extern \"system\" fn(*mut {name}, *mut i32) -> i32,\n\
+         \x20   get_stops: unsafe extern \"system\" fn(*mut {name}, *mut AvnGradientStopBuffer) -> i32,\n"
+    );
+    for (accessor, _field_name, field_type) in accessors {
+        vtbl.push_str(&format!(
+            "    {accessor}: unsafe extern \"system\" fn(*mut {name}, *mut {field_type}) -> i32,\n"
+        ));
+    }
+    vtbl.push_str("}\n\n");
+
+    let mut out = format!(
+        "{vtbl}#[repr(C)]\npub struct {name} {{\n\x20   vtbl: *const {name}Vtbl,\n}}\n\n\
+         unsafe impl ComInterface for {name} {{\n\x20   const IID: Guid = {shouty}_IID;\n}}\n\n\
+         pub const {shouty}_IID: Guid = {iid_literal};\n\n\
+         impl ComPtr<{name}> {{\n\
+         {getters}",
+        shouty = to_shouty(name),
+        iid_literal = guid_literal(iid),
+        getters = emit_gradient_getters(name),
+    );
+    for (accessor, field_name, field_type) in accessors {
+        out.push_str(&format!(
+            "    pub fn {field_name}(&self) -> Result<{field_type}> {{\n\
+             \x20       unsafe {{\n\
+             \x20           let mut value = {field_type}::default();\n\
+             \x20           let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().{accessor})(self.as_raw(), &mut value);\n\
+             \x20           hresult::check(hr).map(|_| value)\n\
+             \x20       }}\n\
+             \x20   }}\n"
+        ));
+    }
+    out.push_str("}\n\n");
+    out
 }
 
 fn emit_command(ir: &ProjectionIr) -> String {
@@ -1472,6 +1681,18 @@ fn emit_factory(ir: &ProjectionIr) -> String {
             "    create_solid_color_brush: unsafe extern \"system\" fn(*mut IAvnControlFactory, {color}, f64, *mut *mut {brush}) -> i32,\n"
         ));
     }
+    if let Some(linear) = ir.linear_gradient_brush_interface_name.as_deref() {
+        let linear = simple_name(linear);
+        let radial = simple_name(
+            ir.radial_gradient_brush_interface_name
+                .as_deref()
+                .expect("radialGradientBrushInterfaceName"),
+        );
+        out.push_str(&format!(
+            "    create_linear_gradient_brush: unsafe extern \"system\" fn(*mut IAvnControlFactory, f64, i32, i32, AvnGradientStopBuffer, AvnRelativePoint, AvnRelativePoint, *mut *mut {linear}) -> i32,\n\
+             \x20   create_radial_gradient_brush: unsafe extern \"system\" fn(*mut IAvnControlFactory, f64, i32, i32, AvnGradientStopBuffer, AvnRelativePoint, AvnRelativePoint, AvnRelativeScalar, AvnRelativeScalar, *mut *mut {radial}) -> i32,\n"
+        ));
+    }
     out.push_str("}\n\n#[repr(C)]\npub struct IAvnControlFactory {\n    vtbl: *const IAvnControlFactoryVtbl,\n}\n\n");
     out.push_str("unsafe impl ComInterface for IAvnControlFactory {\n    const IID: Guid = IAVN_CONTROL_FACTORY_IID;\n}\n\n");
     out.push_str("impl ComPtr<IAvnControlFactory> {\n");
@@ -1516,6 +1737,56 @@ fn emit_factory(ir: &ProjectionIr) -> String {
              \x20       unsafe {{\n\
              \x20           let mut value = ptr::null_mut();\n\
              \x20           let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().create_solid_color_brush)(self.as_raw(), color, opacity, &mut value);\n\
+             \x20           hresult::check(hr)?;\n\
+             \x20           ComPtr::from_raw(value).ok_or(Error(hresult::E_POINTER))\n\
+             \x20       }}\n\
+             \x20   }}\n"
+        ));
+    }
+    if let Some(linear) = ir.linear_gradient_brush_interface_name.as_deref() {
+        let linear = simple_name(linear);
+        let radial = simple_name(
+            ir.radial_gradient_brush_interface_name
+                .as_deref()
+                .expect("radialGradientBrushInterfaceName"),
+        );
+        out.push_str(&format!(
+            "    #[allow(clippy::too_many_arguments)]\n\
+             \x20   pub fn create_linear_gradient_brush(\n\
+             \x20       &self,\n\
+             \x20       opacity: f64,\n\
+             \x20       spread_method: i32,\n\
+             \x20       stop_count: i32,\n\
+             \x20       stops: AvnGradientStopBuffer,\n\
+             \x20       start_point: AvnRelativePoint,\n\
+             \x20       end_point: AvnRelativePoint,\n\
+             \x20   ) -> Result<ComPtr<{linear}>> {{\n\
+             \x20       unsafe {{\n\
+             \x20           let mut value = ptr::null_mut();\n\
+             \x20           let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().create_linear_gradient_brush)(\n\
+             \x20               self.as_raw(), opacity, spread_method, stop_count, stops, start_point, end_point, &mut value,\n\
+             \x20           );\n\
+             \x20           hresult::check(hr)?;\n\
+             \x20           ComPtr::from_raw(value).ok_or(Error(hresult::E_POINTER))\n\
+             \x20       }}\n\
+             \x20   }}\n\
+             \x20   #[allow(clippy::too_many_arguments)]\n\
+             \x20   pub fn create_radial_gradient_brush(\n\
+             \x20       &self,\n\
+             \x20       opacity: f64,\n\
+             \x20       spread_method: i32,\n\
+             \x20       stop_count: i32,\n\
+             \x20       stops: AvnGradientStopBuffer,\n\
+             \x20       center: AvnRelativePoint,\n\
+             \x20       gradient_origin: AvnRelativePoint,\n\
+             \x20       radius_x: AvnRelativeScalar,\n\
+             \x20       radius_y: AvnRelativeScalar,\n\
+             \x20   ) -> Result<ComPtr<{radial}>> {{\n\
+             \x20       unsafe {{\n\
+             \x20           let mut value = ptr::null_mut();\n\
+             \x20           let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().create_radial_gradient_brush)(\n\
+             \x20               self.as_raw(), opacity, spread_method, stop_count, stops, center, gradient_origin, radius_x, radius_y, &mut value,\n\
+             \x20           );\n\
              \x20           hresult::check(hr)?;\n\
              \x20           ComPtr::from_raw(value).ok_or(Error(hresult::E_POINTER))\n\
              \x20       }}\n\

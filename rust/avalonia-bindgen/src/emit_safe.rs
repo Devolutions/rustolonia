@@ -57,6 +57,9 @@ pub(crate) fn emit_safe_module(ir: &ProjectionIr) -> String {
     if ir.brush_interface_name.is_some() {
         out.push_str(&emit_brush());
     }
+    if ir.gradient_brush_interface_name.is_some() {
+        out.push_str(&emit_gradient_brush());
+    }
 
     let flags_enums: std::collections::HashSet<&str> = ir
         .enums
@@ -193,6 +196,276 @@ fn emit_brush() -> String {
          impl From<Color> for Brush {\n\
          \x20   fn from(color: Color) -> Self {\n\
          \x20       Self::solid(color)\n\
+         \x20   }\n\
+         }\n\n",
+    )
+}
+
+fn emit_gradient_brush() -> String {
+    String::from(
+        "/// Spread behaviour for a gradient outside its `[0, 1]` stop range.\n\
+         /// Mirrors `Avalonia.Media.GradientSpreadMethod`.\n\
+         #[repr(i32)]\n\
+         #[derive(Clone, Copy, Debug, PartialEq, Eq)]\n\
+         pub enum SpreadMethod {\n\
+         \x20   Pad = 0,\n\
+         \x20   Reflect = 1,\n\
+         \x20   Repeat = 2,\n\
+         }\n\n\
+         impl TryFrom<i32> for SpreadMethod {\n\
+         \x20   type Error = crate::Error;\n\
+         \x20   fn try_from(value: i32) -> Result<Self> {\n\
+         \x20       match value {\n\
+         \x20           0 => Ok(Self::Pad),\n\
+         \x20           1 => Ok(Self::Reflect),\n\
+         \x20           2 => Ok(Self::Repeat),\n\
+         \x20           _ => Err(crate::Error::InvalidEnumValue(value)),\n\
+         \x20       }\n\
+         \x20   }\n\
+         }\n\n\
+         /// Whether a gradient coordinate is relative to the shape's bounding box or an\n\
+         /// absolute value. Mirrors `Avalonia.RelativeUnit`.\n\
+         #[repr(i32)]\n\
+         #[derive(Clone, Copy, Debug, PartialEq, Eq)]\n\
+         pub enum RelativeUnit {\n\
+         \x20   Relative = 0,\n\
+         \x20   Absolute = 1,\n\
+         }\n\n\
+         impl TryFrom<i32> for RelativeUnit {\n\
+         \x20   type Error = crate::Error;\n\
+         \x20   fn try_from(value: i32) -> Result<Self> {\n\
+         \x20       match value {\n\
+         \x20           0 => Ok(Self::Relative),\n\
+         \x20           1 => Ok(Self::Absolute),\n\
+         \x20           _ => Err(crate::Error::InvalidEnumValue(value)),\n\
+         \x20       }\n\
+         \x20   }\n\
+         }\n\n\
+         /// A point whose X/Y may each be relative to the shape's bounding box.\n\
+         #[derive(Clone, Copy, Debug, PartialEq)]\n\
+         pub struct RelativePoint {\n\
+         \x20   pub x: f64,\n\
+         \x20   pub y: f64,\n\
+         \x20   pub unit: RelativeUnit,\n\
+         }\n\n\
+         impl RelativePoint {\n\
+         \x20   pub const fn new(x: f64, y: f64, unit: RelativeUnit) -> Self {\n\
+         \x20       Self { x, y, unit }\n\
+         \x20   }\n\n\
+         \x20   pub(crate) fn to_abi(self) -> sys::AvnRelativePoint {\n\
+         \x20       sys::AvnRelativePoint { x: self.x, y: self.y, unit: self.unit as i32 }\n\
+         \x20   }\n\n\
+         \x20   pub(crate) fn from_abi(value: sys::AvnRelativePoint) -> Result<Self> {\n\
+         \x20       Ok(Self { x: value.x, y: value.y, unit: RelativeUnit::try_from(value.unit)? })\n\
+         \x20   }\n\
+         }\n\n\
+         /// A scalar (for example a radius) that may be relative to the shape's bounding box.\n\
+         #[derive(Clone, Copy, Debug, PartialEq)]\n\
+         pub struct RelativeScalar {\n\
+         \x20   pub scalar: f64,\n\
+         \x20   pub unit: RelativeUnit,\n\
+         }\n\n\
+         impl RelativeScalar {\n\
+         \x20   pub const fn new(scalar: f64, unit: RelativeUnit) -> Self {\n\
+         \x20       Self { scalar, unit }\n\
+         \x20   }\n\n\
+         \x20   pub(crate) fn to_abi(self) -> sys::AvnRelativeScalar {\n\
+         \x20       sys::AvnRelativeScalar { scalar: self.scalar, unit: self.unit as i32 }\n\
+         \x20   }\n\n\
+         \x20   pub(crate) fn from_abi(value: sys::AvnRelativeScalar) -> Result<Self> {\n\
+         \x20       Ok(Self { scalar: value.scalar, unit: RelativeUnit::try_from(value.unit)? })\n\
+         \x20   }\n\
+         }\n\n\
+         /// A single colour stop along a gradient, at `offset` in `[0, 1]`.\n\
+         #[derive(Clone, Copy, Debug, PartialEq)]\n\
+         pub struct GradientStop {\n\
+         \x20   pub offset: f64,\n\
+         \x20   pub color: Color,\n\
+         }\n\n\
+         impl GradientStop {\n\
+         \x20   pub const fn new(offset: f64, color: Color) -> Self {\n\
+         \x20       Self { offset, color }\n\
+         \x20   }\n\n\
+         \x20   fn to_abi(self) -> sys::AvnGradientStop {\n\
+         \x20       sys::AvnGradientStop { offset: self.offset, color: self.color.into() }\n\
+         \x20   }\n\n\
+         \x20   fn from_abi(value: sys::AvnGradientStop) -> Self {\n\
+         \x20       Self { offset: value.offset, color: value.color.into() }\n\
+         \x20   }\n\
+         }\n\n\
+         /// Packs up to the ABI's fixed capacity of stops into an `AvnGradientStopBuffer`.\n\
+         /// Fails if `stops` carries more entries than the buffer can hold.\n\
+         fn gradient_stops_to_abi(stops: &[GradientStop]) -> Result<sys::AvnGradientStopBuffer> {\n\
+         \x20   let mut buffer = sys::AvnGradientStopBuffer::default();\n\
+         \x20   if stops.len() > buffer.stops.len() {\n\
+         \x20       return Err(crate::Error::Abi(sys::Error(sys::E_INVALIDARG)));\n\
+         \x20   }\n\
+         \x20   for (slot, stop) in buffer.stops.iter_mut().zip(stops) {\n\
+         \x20       *slot = stop.to_abi();\n\
+         \x20   }\n\
+         \x20   Ok(buffer)\n\
+         }\n\n\
+         fn gradient_stops_from_abi(buffer: sys::AvnGradientStopBuffer, count: i32) -> Vec<GradientStop> {\n\
+         \x20   let count = usize::try_from(count).unwrap_or(0).min(buffer.stops.len());\n\
+         \x20   buffer.stops[..count].iter().copied().map(GradientStop::from_abi).collect()\n\
+         }\n\n\
+         /// A linear gradient brush: colour stops interpolated along a line from\n\
+         /// `start_point` to `end_point`.\n\
+         #[derive(Clone, Debug, PartialEq)]\n\
+         pub struct LinearGradientBrush {\n\
+         \x20   pub opacity: f64,\n\
+         \x20   pub spread_method: SpreadMethod,\n\
+         \x20   pub stops: Vec<GradientStop>,\n\
+         \x20   pub start_point: RelativePoint,\n\
+         \x20   pub end_point: RelativePoint,\n\
+         }\n\n\
+         impl LinearGradientBrush {\n\
+         \x20   /// A fully opaque linear gradient with `SpreadMethod::Pad`.\n\
+         \x20   pub fn new(stops: Vec<GradientStop>, start_point: RelativePoint, end_point: RelativePoint) -> Self {\n\
+         \x20       Self {\n\
+         \x20           opacity: 1.0,\n\
+         \x20           spread_method: SpreadMethod::Pad,\n\
+         \x20           stops,\n\
+         \x20           start_point,\n\
+         \x20           end_point,\n\
+         \x20       }\n\
+         \x20   }\n\n\
+         \x20   pub(crate) fn to_raw(&self) -> Result<sys::ComPtr<sys::IAvnLinearGradientBrush>> {\n\
+         \x20       let buffer = gradient_stops_to_abi(&self.stops)?;\n\
+         \x20       let stop_count = i32::try_from(self.stops.len()).unwrap_or(i32::MAX);\n\
+         \x20       with_factory(|factory| {\n\
+         \x20           factory.create_linear_gradient_brush(\n\
+         \x20               self.opacity,\n\
+         \x20               self.spread_method as i32,\n\
+         \x20               stop_count,\n\
+         \x20               buffer,\n\
+         \x20               self.start_point.to_abi(),\n\
+         \x20               self.end_point.to_abi(),\n\
+         \x20           )\n\
+         \x20       })\n\
+         \x20   }\n\n\
+         \x20   pub(crate) fn from_raw(raw: &sys::ComPtr<sys::IAvnLinearGradientBrush>) -> Result<Self> {\n\
+         \x20       let count = raw.stop_count()?;\n\
+         \x20       Ok(Self {\n\
+         \x20           opacity: raw.opacity()?,\n\
+         \x20           spread_method: SpreadMethod::try_from(raw.spread_method()?)?,\n\
+         \x20           stops: gradient_stops_from_abi(raw.stops()?, count),\n\
+         \x20           start_point: RelativePoint::from_abi(raw.start_point()?)?,\n\
+         \x20           end_point: RelativePoint::from_abi(raw.end_point()?)?,\n\
+         \x20       })\n\
+         \x20   }\n\
+         }\n\n\
+         /// A radial gradient brush: colour stops interpolated outward from\n\
+         /// `gradient_origin` through an ellipse centred at `center` with radii\n\
+         /// `radius_x`/`radius_y`.\n\
+         #[derive(Clone, Debug, PartialEq)]\n\
+         pub struct RadialGradientBrush {\n\
+         \x20   pub opacity: f64,\n\
+         \x20   pub spread_method: SpreadMethod,\n\
+         \x20   pub stops: Vec<GradientStop>,\n\
+         \x20   pub center: RelativePoint,\n\
+         \x20   pub gradient_origin: RelativePoint,\n\
+         \x20   pub radius_x: RelativeScalar,\n\
+         \x20   pub radius_y: RelativeScalar,\n\
+         }\n\n\
+         impl RadialGradientBrush {\n\
+         \x20   /// A fully opaque radial gradient with `SpreadMethod::Pad`.\n\
+         \x20   pub fn new(\n\
+         \x20       stops: Vec<GradientStop>,\n\
+         \x20       center: RelativePoint,\n\
+         \x20       gradient_origin: RelativePoint,\n\
+         \x20       radius_x: RelativeScalar,\n\
+         \x20       radius_y: RelativeScalar,\n\
+         \x20   ) -> Self {\n\
+         \x20       Self {\n\
+         \x20           opacity: 1.0,\n\
+         \x20           spread_method: SpreadMethod::Pad,\n\
+         \x20           stops,\n\
+         \x20           center,\n\
+         \x20           gradient_origin,\n\
+         \x20           radius_x,\n\
+         \x20           radius_y,\n\
+         \x20       }\n\
+         \x20   }\n\n\
+         \x20   pub(crate) fn to_raw(&self) -> Result<sys::ComPtr<sys::IAvnRadialGradientBrush>> {\n\
+         \x20       let buffer = gradient_stops_to_abi(&self.stops)?;\n\
+         \x20       let stop_count = i32::try_from(self.stops.len()).unwrap_or(i32::MAX);\n\
+         \x20       with_factory(|factory| {\n\
+         \x20           factory.create_radial_gradient_brush(\n\
+         \x20               self.opacity,\n\
+         \x20               self.spread_method as i32,\n\
+         \x20               stop_count,\n\
+         \x20               buffer,\n\
+         \x20               self.center.to_abi(),\n\
+         \x20               self.gradient_origin.to_abi(),\n\
+         \x20               self.radius_x.to_abi(),\n\
+         \x20               self.radius_y.to_abi(),\n\
+         \x20           )\n\
+         \x20       })\n\
+         \x20   }\n\n\
+         \x20   pub(crate) fn from_raw(raw: &sys::ComPtr<sys::IAvnRadialGradientBrush>) -> Result<Self> {\n\
+         \x20       let count = raw.stop_count()?;\n\
+         \x20       Ok(Self {\n\
+         \x20           opacity: raw.opacity()?,\n\
+         \x20           spread_method: SpreadMethod::try_from(raw.spread_method()?)?,\n\
+         \x20           stops: gradient_stops_from_abi(raw.stops()?, count),\n\
+         \x20           center: RelativePoint::from_abi(raw.center()?)?,\n\
+         \x20           gradient_origin: RelativePoint::from_abi(raw.gradient_origin()?)?,\n\
+         \x20           radius_x: RelativeScalar::from_abi(raw.radius_x()?)?,\n\
+         \x20           radius_y: RelativeScalar::from_abi(raw.radius_y()?)?,\n\
+         \x20       })\n\
+         \x20   }\n\
+         }\n\n\
+         /// Any brush shape that can be assigned to a `Brush`-typed control property: a\n\
+         /// solid colour, or one of the two projected gradient shapes.\n\
+         #[derive(Clone, Debug, PartialEq)]\n\
+         pub enum Paint {\n\
+         \x20   Solid(Brush),\n\
+         \x20   LinearGradient(LinearGradientBrush),\n\
+         \x20   RadialGradient(RadialGradientBrush),\n\
+         }\n\n\
+         impl Paint {\n\
+         \x20   pub(crate) fn to_raw(&self) -> Result<sys::ComPtr<sys::IAvnBrush>> {\n\
+         \x20       match self {\n\
+         \x20           Self::Solid(brush) => brush.to_raw(),\n\
+         \x20           Self::LinearGradient(brush) => Ok(brush.to_raw()?.query_interface()?),\n\
+         \x20           Self::RadialGradient(brush) => Ok(brush.to_raw()?.query_interface()?),\n\
+         \x20       }\n\
+         \x20   }\n\n\
+         \x20   pub(crate) fn from_raw(raw: &sys::ComPtr<sys::IAvnBrush>) -> Result<Self> {\n\
+         \x20       match raw.color() {\n\
+         \x20           Ok(color) => Ok(Self::Solid(Brush::new(color.into(), raw.opacity()?))),\n\
+         \x20           Err(sys::Error(sys::AVN_E_NONSOLIDBRUSH)) => {\n\
+         \x20               if let Ok(linear) = raw.query_interface::<sys::IAvnLinearGradientBrush>() {\n\
+         \x20                   return Ok(Self::LinearGradient(LinearGradientBrush::from_raw(&linear)?));\n\
+         \x20               }\n\
+         \x20               if let Ok(radial) = raw.query_interface::<sys::IAvnRadialGradientBrush>() {\n\
+         \x20                   return Ok(Self::RadialGradient(RadialGradientBrush::from_raw(&radial)?));\n\
+         \x20               }\n\
+         \x20               Err(crate::Error::Abi(sys::Error(sys::AVN_E_NONSOLIDBRUSH)))\n\
+         \x20           }\n\
+         \x20           Err(error) => Err(error.into()),\n\
+         \x20       }\n\
+         \x20   }\n\
+         }\n\n\
+         impl From<Brush> for Paint {\n\
+         \x20   fn from(brush: Brush) -> Self {\n\
+         \x20       Self::Solid(brush)\n\
+         \x20   }\n\
+         }\n\n\
+         impl From<Color> for Paint {\n\
+         \x20   fn from(color: Color) -> Self {\n\
+         \x20       Self::Solid(Brush::solid(color))\n\
+         \x20   }\n\
+         }\n\n\
+         impl From<LinearGradientBrush> for Paint {\n\
+         \x20   fn from(brush: LinearGradientBrush) -> Self {\n\
+         \x20       Self::LinearGradient(brush)\n\
+         \x20   }\n\
+         }\n\n\
+         impl From<RadialGradientBrush> for Paint {\n\
+         \x20   fn from(brush: RadialGradientBrush) -> Self {\n\
+         \x20       Self::RadialGradient(brush)\n\
          \x20   }\n\
          }\n\n",
     )

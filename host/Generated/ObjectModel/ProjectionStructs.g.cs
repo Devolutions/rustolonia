@@ -362,3 +362,56 @@ public struct AvnVariant
         _ => false,
     };
 }
+
+/// <summary>Blittable ABI mirror of <c>Avalonia.RelativePoint</c>.</summary>
+/// <remarks><c>Unit</c> mirrors <c>Avalonia.RelativeUnit</c>: 0 relative, 1 absolute.</remarks>
+[StructLayout(LayoutKind.Sequential)]
+public struct AvnRelativePoint
+{
+    public double X;
+    public double Y;
+    public int Unit;
+
+    public static AvnRelativePoint FromAvalonia(global::Avalonia.RelativePoint value) =>
+        new AvnRelativePoint { X = value.Point.X, Y = value.Point.Y, Unit = (int)value.Unit };
+
+    public readonly global::Avalonia.RelativePoint ToAvalonia() =>
+        new global::Avalonia.RelativePoint(X, Y, (global::Avalonia.RelativeUnit)Unit);
+}
+
+/// <summary>Blittable ABI mirror of <c>Avalonia.RelativeScalar</c>.</summary>
+/// <remarks><c>Unit</c> mirrors <c>Avalonia.RelativeUnit</c>: 0 relative, 1 absolute.</remarks>
+[StructLayout(LayoutKind.Sequential)]
+public struct AvnRelativeScalar
+{
+    public double Scalar;
+    public int Unit;
+
+    public static AvnRelativeScalar FromAvalonia(global::Avalonia.RelativeScalar value) =>
+        new AvnRelativeScalar { Scalar = value.Scalar, Unit = (int)value.Unit };
+
+    public readonly global::Avalonia.RelativeScalar ToAvalonia() =>
+        new global::Avalonia.RelativeScalar(Scalar, (global::Avalonia.RelativeUnit)Unit);
+}
+
+/// <summary>Blittable ABI mirror of a single gradient stop (offset plus packed colour).</summary>
+[StructLayout(LayoutKind.Sequential)]
+public struct AvnGradientStop
+{
+    public double Offset;
+    public AvnColor Color;
+
+    public static AvnGradientStop FromAvalonia(global::Avalonia.Media.IGradientStop value) =>
+        new AvnGradientStop { Offset = value.Offset, Color = AvnColor.FromAvalonia(value.Color) };
+}
+
+/// <summary>Fixed-capacity buffer of up to 8 <see cref="AvnGradientStop"/> entries.</summary>
+/// <remarks>
+/// Gradient brushes with more stops than this cannot cross the ABI; the count actually in
+/// use is carried separately by <c>IAvnGradientBrush.GetStopCount</c>.
+/// </remarks>
+[System.Runtime.CompilerServices.InlineArray(8)]
+public struct AvnGradientStopBuffer
+{
+    private AvnGradientStop _element0;
+}

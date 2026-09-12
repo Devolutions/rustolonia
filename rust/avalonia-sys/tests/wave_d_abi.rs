@@ -36,7 +36,7 @@ fn split_button_carries_click_and_command() {
         "*create_menu_flyout)(IAvnControlFactory* self, IAvnMenuFlyout** value)",
         "#define I_AVN_SPLIT_BUTTON_ABI_VERSION 15",
         "#define I_AVN_TOGGLE_SPLIT_BUTTON_ABI_VERSION 15",
-        "#define I_AVN_CONTROL_FACTORY_ABI_VERSION 13",
+        "#define I_AVN_CONTROL_FACTORY_ABI_VERSION 14",
     ] {
         assert!(HEADER.contains(expected), "header is missing `{expected}`");
     }
