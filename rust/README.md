@@ -1,4 +1,4 @@
-﻿# Avalonia for Rust
+# Avalonia for Rust
 
 This experimental workspace provides an idiomatic Rust API over an Avalonia
 .NET 10 NativeAOT shared library. Both the managed nano-COM wrappers and Rust
@@ -281,8 +281,9 @@ volume) and the default RID matches the current OS and architecture.
 
 `Avalonia.Host`, `Avalonia.Rust`, `Avalonia.Rust.Interop`, and the projection
 tool/generator projects are currently non-packable, and the `rust/*` crates
-are source-only (`publish = false`). None of this stage's new artifacts are
-published as NuGet packages; see
+are published to crates.io in lockstep with per-RID host tarballs on GitHub
+Releases (see [PRODUCTIZATION.md#crate-publishing](PRODUCTIZATION.md#crate-publishing)).
+None of this stage's new artifacts are published as NuGet packages; see
 [PRODUCTIZATION.md#sbom-eu-cra-scope](PRODUCTIZATION.md#sbom-eu-cra-scope)
 for why that keeps them outside the repository's CycloneDX SBOM generation,
 and what would need to change first if that ever changes.

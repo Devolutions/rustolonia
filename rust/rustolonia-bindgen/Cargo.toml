@@ -5,7 +5,11 @@ edition = "2021"
 license = "MIT"
 description = "Code generator that emits rustolonia-sys/rustolonia from projection.ir.json"
 repository = "https://github.com/Devolutions/rustolonia"
-publish = false
+readme = "README.md"
+rust-version = "1.88"
+keywords = ["avalonia", "codegen", "bindings", "ffi"]
+categories = ["development-tools::ffi"]
+include = ["/src/**", "/README.md", "/LICENSE"]
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }

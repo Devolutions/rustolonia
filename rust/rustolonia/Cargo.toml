@@ -6,7 +6,10 @@ license = "MIT"
 description = "Idiomatic Rust API for Avalonia"
 repository = "https://github.com/Devolutions/rustolonia"
 readme = "README.md"
-publish = false
+rust-version = "1.88"
+keywords = ["avalonia", "gui", "ui", "desktop", "xaml"]
+categories = ["gui", "api-bindings"]
+include = ["/src/**", "/README.md", "/LICENSE"]
 
 [features]
 default = ["dev-host-path"]
@@ -16,7 +19,11 @@ no-download = ["rustolonia-sys/no-download"]
 dev-host-path = ["rustolonia-sys/dev-host-path"]
 
 [dependencies]
-rustolonia-sys = { path = "../rustolonia-sys", default-features = false }
+rustolonia-sys = { version = "=0.1.0", path = "../rustolonia-sys", default-features = false }
 
 [dev-dependencies]
 avalonia-sample = { path = "../avalonia-sample" }
+
+[package.metadata.docs.rs]
+features = ["no-download"]
+no-default-features = true

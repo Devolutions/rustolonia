@@ -1,10 +1,10 @@
-﻿# Productizing the Rust application workflow
+# Productizing the Rust application workflow
 
 This documents the reusable, scripted path from "empty directory" to a
 packaged Rust Avalonia application: the copyable project template, the
 one-command regeneration/build loop, native host discovery, the deterministic
 per-runtime-identifier (RID) artifact layout with checksums and an optional
-signing hook, source-only crate packaging readiness, and the EU CRA CycloneDX
+signing hook, crates.io packaging, and the EU CRA CycloneDX
 SBOM scope decision for everything this workflow ships.
 
 Nothing here changes the generated ABI, the ownership contract, or the
@@ -329,20 +329,23 @@ The entrypoints explicitly identify the application executable, including
 extensionless Linux/macOS binaries. Licensing files and ownership markers are
 not signing inputs. Missing explicitly requested signing inputs fail the build.
 
-## Source-only crate packaging
+## Crate publishing
 
-`rustolonia`, `rustolonia-sys`, and `rustolonia-bindgen` all set `publish = false`:
-they are pinned to a matching `Avalonia.Host` build from the same checkout,
-not to a versioned ABI contract suitable for crates.io. That is a deliberate
-choice, not a gap -- but the crates are kept in a state where `cargo package`
-would succeed if that ever changed: each has `description`, `license`,
-`repository`, and (for the two application-facing crates) a `readme`
-pointing at a real `README.md`. This is checked with:
+`rustolonia`, `rustolonia-sys`, and `rustolonia-bindgen` are published to
+crates.io at the same version as the NativeAOT host tarballs attached to the
+GitHub release `v<version>`. `rustolonia` pins `rustolonia-sys = "=<version>"`,
+and `rustolonia-sys` embeds `host-checksums.txt` (the SHA-256 of every RID
+tarball), so a published crate can only ever load the host it was released
+with. `avalonia-sample` stays `publish = false`.
+
+Each crate has an explicit `include` allow-list (sources, `build.rs`,
+`build_support/`, the ABI header, `host-checksums.txt`, README, LICENSE).
+Integration tests and repository-relative fixtures are not packaged. MSRV is
+`rust-version = "1.88"`. docs.rs builds with `no-download` and never fetches a
+host. Packaging is checked with:
 
 ```bash
-cargo package --list -p rustolonia-sys --allow-dirty
-cargo package --list -p rustolonia --allow-dirty
-cargo package --list -p rustolonia-bindgen --allow-dirty
+cargo package --workspace --exclude avalonia-sample --allow-dirty
 ```
 
 ## SBOM (EU CRA) scope
@@ -352,10 +355,10 @@ Rustolonia does not carry the upstream Avalonia producer's NUKE build or its
 repository. Rustolonia is not a NuGet package producer at all: every managed
 project in this repository (`Avalonia.Host`, `Avalonia.Rust`,
 `Avalonia.Rust.Interop`, `Avalonia.Projection.*`,
-`Avalonia.ViewModelProjection.Tool`) is `IsPackable=false`, and the `rust/*`
-crates are `publish = false` (see [Source-only crate
-packaging](#source-only-crate-packaging) above). There is no shipped `.nupkg`
-or published crate for a package-level SBOM generator to cover.
+`Avalonia.ViewModelProjection.Tool`) is `IsPackable=false`, so there is no
+shipped `.nupkg` for a package-level SBOM generator to cover. The published
+crates (see [Crate publishing](#crate-publishing)) are covered by the Cargo
+graph in the release SBOM.
 
 What Rustolonia does ship is the packaged NativeAOT bundle produced by
 [`package.ps1`](#deterministic-per-rid-artifact-layout) or `build-app.ps1`
@@ -388,8 +391,9 @@ process consumes, not as the whole of that process.
   external consumer and generates its sources before compile-checking it as a
   standalone crate. The checked-in template contains placeholders and should
   not be compiled directly.
-- `cargo package --list` (see [Source-only crate packaging](#source-only-crate-packaging))
-  is the packaging-readiness check for all three workspace crates.
+- `cargo package --workspace --exclude avalonia-sample` (see
+  [Crate publishing](#crate-publishing)) is the packaging check for all three
+  published crates.
 - `package.ps1` self-verify their own output shape (the
   publish step fails the script if the host file is missing, the cargo build
   step fails it if the binary is missing) and were run end to end for
