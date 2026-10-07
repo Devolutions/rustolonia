@@ -440,9 +440,14 @@ Rust setup follows the checked-in toolchain/runner-rustup pattern in
 [picky-rs](https://github.com/Devolutions/picky-rs/blob/407d5c146dacc6e840eb5141ca729d39c5e722c4/rust-toolchain.toml),
 and [Gateway](https://github.com/Devolutions/devolutions-gateway/blob/62de985e3ef9dfc7077ea738ec693503d80388e1/rust-toolchain.toml).
 Rustolonia keeps the existing stable-channel choice rather than adopting those
-projects' version pins. The local `.github/actions/setup-rust` action installs
-the root `rust-toolchain.toml` selection through `rustup show`, verifies Cargo
-and rustc, and adds the cross-build target when requested. It also follows
+projects' version pins. Workflow steps invoke rustup directly, without a local
+wrapper or external toolchain action: `rustup show` installs the root
+`rust-toolchain.toml` selection, followed by Cargo and rustc version checks.
+Cross-builds invoke `rustup target add` for their matrix target, as in Gateway.
+Direct rustup setup is also used by
+[SSPI](https://github.com/Devolutions/sspi-rs/blob/21359c1e145758301a6b5fa3a55a2ed1c7bf627f/rust-toolchain.toml)
+and [cirup](https://github.com/Devolutions/cirup/blob/28ae91e0c5c075beddffe426b7dd512a8aca00eb/.github/workflows/ci.yml#L22-L28).
+Jobs on macOS also follow
 [Gateway's macOS shim repair](https://github.com/Devolutions/devolutions-gateway/blob/62de985e3ef9dfc7077ea738ec693503d80388e1/.github/workflows/ci.yml#L365-L379):
 replace the hosted runner's broken Homebrew shims with the official rustup
 installer and add its bin directory to `GITHUB_PATH`.

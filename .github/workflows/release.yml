@@ -123,7 +123,25 @@ jobs:
         with:
           dotnet-version: 10.0.201
 
-      - uses: ./.github/actions/setup-rust
+      - name: Repair Rust shims (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "$HOME/.cargo/bin"
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+            | bash -s -- -y --default-toolchain none --no-modify-path --profile minimal
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+
+      - name: Set up Rust
+        shell: pwsh
+        run: |
+          rustup show
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          rustc --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Install Linux smoke-test display
         if: runner.os == 'Linux'
@@ -225,7 +243,15 @@ jobs:
           ref: v${{ inputs.version }}
           fetch-depth: 0
 
-      - uses: ./.github/actions/setup-rust
+      - name: Set up Rust
+        shell: pwsh
+        run: |
+          rustup show
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          rustc --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Install Linux smoke-test display
         run: sudo apt-get update && sudo apt-get install --yes xvfb
@@ -297,7 +323,15 @@ jobs:
         with:
           ref: v${{ inputs.version }}
 
-      - uses: ./.github/actions/setup-rust
+      - name: Set up Rust
+        shell: pwsh
+        run: |
+          rustup show
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          rustc --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Package the crates
         working-directory: rust
