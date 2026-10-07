@@ -1,5 +1,5 @@
-use rustolonia_sys::{ComPtr, Host, IUnknown, AVN_E_FIXTURE, E_NOINTERFACE};
 use libloading::Library;
+use rustolonia_sys::{ComPtr, Host, IUnknown, AVN_E_FIXTURE, E_NOINTERFACE};
 use std::ffi::c_void;
 use std::path::PathBuf;
 

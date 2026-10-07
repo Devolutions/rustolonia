@@ -96,7 +96,10 @@ fn expected() -> Expected<'static> {
 /// number of requests served so far.
 fn serve(body: Vec<u8>) -> (String, std::sync::Arc<AtomicUsize>) {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
-    let base = format!("http://{}/releases/download", listener.local_addr().unwrap());
+    let base = format!(
+        "http://{}/releases/download",
+        listener.local_addr().unwrap()
+    );
     let hits = std::sync::Arc::new(AtomicUsize::new(0));
     let counter = hits.clone();
     std::thread::spawn(move || {
@@ -105,7 +108,8 @@ fn serve(body: Vec<u8>) -> (String, std::sync::Arc<AtomicUsize>) {
             let mut reader = BufReader::new(stream.try_clone().unwrap());
             let mut request_line = String::new();
             reader.read_line(&mut request_line).unwrap();
-            let expected_path = format!("/releases/download/v{VERSION}/{}", asset_name(VERSION, RID));
+            let expected_path =
+                format!("/releases/download/v{VERSION}/{}", asset_name(VERSION, RID));
             let found = request_line.split_whitespace().nth(1) == Some(expected_path.as_str());
             loop {
                 let mut line = String::new();
@@ -124,7 +128,9 @@ fn serve(body: Vec<u8>) -> (String, std::sync::Arc<AtomicUsize>) {
                 stream.write_all(&body).unwrap();
             } else {
                 stream
-                    .write_all(b"HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+                    .write_all(
+                        b"HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+                    )
                     .unwrap();
             }
         }

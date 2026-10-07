@@ -1,5 +1,5 @@
-use rustolonia_sys::{app_handler, button_click_handler, Error, Host, AVN_E_FIXTURE};
 use libloading::Library;
+use rustolonia_sys::{app_handler, button_click_handler, Error, Host, AVN_E_FIXTURE};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;

@@ -32,7 +32,10 @@ fn main() {
         Ok(host::Resolution::Found { dir, .. }) => {
             println!("cargo:host_dir={}", dir.display());
             if env::var_os("CARGO_FEATURE_DEV_HOST_PATH").is_some() {
-                println!("cargo:rustc-env=RUSTOLONIA_BUILD_HOST_DIR={}", dir.display());
+                println!(
+                    "cargo:rustc-env=RUSTOLONIA_BUILD_HOST_DIR={}",
+                    dir.display()
+                );
             }
         }
         Ok(host::Resolution::Skipped(_)) => {}
@@ -50,7 +53,10 @@ fn env_var(name: &str) -> Option<String> {
 }
 
 fn is_truthy(value: &str) -> bool {
-    !matches!(value.to_ascii_lowercase().as_str(), "0" | "false" | "no" | "off")
+    !matches!(
+        value.to_ascii_lowercase().as_str(),
+        "0" | "false" | "no" | "off"
+    )
 }
 
 fn cache_root() -> PathBuf {

@@ -51,15 +51,16 @@ fn main() -> ExitCode {
     }
 
     if check {
-        let report =
-            match rustolonia_bindgen::check_outputs(rustolonia_bindgen::BINDGEN_GENERATOR_ID, &outputs)
-            {
-                Ok(value) => value,
-                Err(error) => {
-                    eprintln!("Failed to check generated Rust: {error}");
-                    return ExitCode::FAILURE;
-                }
-            };
+        let report = match rustolonia_bindgen::check_outputs(
+            rustolonia_bindgen::BINDGEN_GENERATOR_ID,
+            &outputs,
+        ) {
+            Ok(value) => value,
+            Err(error) => {
+                eprintln!("Failed to check generated Rust: {error}");
+                return ExitCode::FAILURE;
+            }
+        };
         if report.success() {
             println!(
                 "Generation check passed for {} output file(s).",

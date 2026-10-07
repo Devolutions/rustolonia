@@ -17,12 +17,12 @@
 //! control declared inside the compiled AXAML. Dropping anywhere in the window
 //! is therefore accepted, and the panel reports what happened.
 
+use avalonia_sample::{SampleViewModelSink, SAMPLE_VIEW_MODEL_RECENT_FILES_CAPACITY};
 use rustolonia::{
     ActivationEvent, AppScope, ClipboardData, DragDropEffects, FileDropEvent, FileTypeFilter,
     FolderPickerOptions, OpenFilePickerOptions, PickerOutcome, RecentFileList,
     SaveFilePickerOptions, StorageItem, Window,
 };
-use avalonia_sample::{SampleViewModelSink, SAMPLE_VIEW_MODEL_RECENT_FILES_CAPACITY};
 use std::sync::{Arc, Mutex};
 
 /// Conservative accepted effects for the sample's drop target. The host answers
