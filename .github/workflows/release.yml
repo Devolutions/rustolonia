@@ -123,7 +123,7 @@ jobs:
         with:
           dotnet-version: 10.0.201
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: ./.github/actions/setup-rust
 
       - name: Install Linux smoke-test display
         if: runner.os == 'Linux'
@@ -225,7 +225,7 @@ jobs:
           ref: v${{ inputs.version }}
           fetch-depth: 0
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: ./.github/actions/setup-rust
 
       - name: Install Linux smoke-test display
         run: sudo apt-get update && sudo apt-get install --yes xvfb
@@ -297,12 +297,13 @@ jobs:
         with:
           ref: v${{ inputs.version }}
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: ./.github/actions/setup-rust
 
       - name: Package the crates
         working-directory: rust
         run: cargo package --locked -p rustolonia-sys -p rustolonia-bindgen -p rustolonia
 
+      # Verified Marketplace publisher; also used by IronRDP and picky-rs.
       - uses: rust-lang/crates-io-auth-action@v1
         id: crates-io-auth
 

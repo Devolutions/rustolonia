@@ -27,6 +27,7 @@ jobs:
         os: [windows-latest, ubuntu-latest, macos-14]
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-rust
       - name: Run helper and scaffold regressions without native builds
         shell: pwsh
         run: ./rust/tests/test-build-app.ps1
@@ -78,7 +79,7 @@ jobs:
         with:
           dotnet-version: 10.0.201
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: ./.github/actions/setup-rust
 
       - name: Install Linux smoke-test display
         if: runner.os == 'Linux'
@@ -312,7 +313,7 @@ jobs:
         with:
           dotnet-version: 10.0.201
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: ./.github/actions/setup-rust
         with:
           targets: ${{ matrix.rust-target }}
 

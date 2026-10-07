@@ -1,0 +1,36 @@
+name: Set up Rust
+description: Select the checked-in toolchain using the hosted runner's rustup.
+inputs:
+  targets:
+    description: Additional Rust target to install for cross-compilation.
+    required: false
+    default: ''
+runs:
+  using: composite
+  steps:
+    # Gateway uses the official installer to replace broken Homebrew Rust shims.
+    - name: Repair Rust shims (macOS)
+      if: runner.os == 'macOS'
+      shell: bash
+      run: |
+        set -euo pipefail
+        rm -rf "$HOME/.cargo/bin"
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+          | bash -s -- -y --default-toolchain none --no-modify-path --profile minimal
+        echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+
+    - name: Install and verify the selected Rust toolchain
+      shell: pwsh
+      env:
+        RUST_TARGET: ${{ inputs.targets }}
+      run: |
+        rustup show
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        if ($env:RUST_TARGET) {
+          rustup target add $env:RUST_TARGET
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        }
+        cargo --version
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        rustc --version
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

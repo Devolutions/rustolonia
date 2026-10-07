@@ -11,6 +11,12 @@ Use Git with recursive submodules, PowerShell 7, the .NET SDK selected by
 needs the platform's native compiler/linker; see `rust/PLATFORMS.md` and
 `rust/PRODUCTIZATION.md` for platform details.
 
+The root `rust-toolchain.toml` selects stable Rust with `rustfmt`, including in CI.
+Workflows use the local `.github/actions/setup-rust` action and the runner's
+rustup, not a third-party toolchain action. See
+[CI action policy](rust/PRODUCTIZATION.md#ci-action-policy) before adding action
+dependencies.
+
 ```powershell
 git submodule update --init --recursive
 pwsh .\avalonia-patches\apply-avalonia-patches.ps1 -AvaloniaRoot .\avalonia-src
