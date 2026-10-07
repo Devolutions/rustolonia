@@ -10,6 +10,11 @@ tree, points rustolonia-sys at it with checksums taken from the `.sha256`
 sidecars, builds the example with an empty download cache and no
 RUSTOLONIA_HOST_DIR, asserts the host was cached, and launches the example
 (under xvfb-run on Linux) for a few seconds.
+
+With -AppManifest, builds that standalone Cargo package (binary -AppName)
+instead of a repository example. -ShipHost copies the cached host next to the
+executable before launching, as a distributable build without the
+`dev-host-path` feature requires.
 #>
 param(
     [Parameter(Mandatory)]
@@ -19,7 +24,10 @@ param(
     [string]$Example = 'hello_world',
     [string]$RustoloniaRoot = (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)),
     [string]$WorkDirectory = (Join-Path ([IO.Path]::GetTempPath()) "rustolonia-host-download-$Rid"),
-    [int]$LaunchSeconds = 5
+    [int]$LaunchSeconds = 5,
+    [string]$AppManifest,
+    [string]$AppName,
+    [switch]$ShipHost
 )
 
 Set-StrictMode -Version Latest
@@ -55,15 +63,27 @@ foreach ($name in $overrides.Keys) {
 }
 try {
     $targetDir = Join-Path $WorkDirectory 'target'
-    cargo build --locked --manifest-path (Join-Path $RustoloniaRoot 'rust' 'Cargo.toml') `
-        -p rustolonia --example $Example --release --target-dir $targetDir
+    $exeSuffix = if ($IsWindows) { '.exe' } else { '' }
+    if ($AppManifest) {
+        if (-not $AppName) { throw '-AppName is required with -AppManifest.' }
+        cargo build --manifest-path $AppManifest --release --target-dir $targetDir
+        $exe = Join-Path $targetDir 'release' ($AppName + $exeSuffix)
+        $Example = $AppName
+    } else {
+        cargo build --locked --manifest-path (Join-Path $RustoloniaRoot 'rust' 'Cargo.toml') `
+            -p rustolonia --example $Example --release --target-dir $targetDir
+        $exe = Join-Path $targetDir 'release' 'examples' ($Example + $exeSuffix)
+    }
 
     $hostFile = Join-Path $cache $version $Rid (Get-RidTargetInfo -Rid $Rid).HostFileName
     if (-not (Test-Path -LiteralPath $hostFile -PathType Leaf)) {
         throw "The downloaded host was not cached at $hostFile."
     }
-
-    $exe = Join-Path $targetDir 'release' 'examples' ($Example + $(if ($IsWindows) { '.exe' } else { '' }))
+    if ($ShipHost) {
+        Copy-Item -Path (Join-Path (Split-Path -Parent $hostFile) '*') -Destination (Split-Path -Parent $exe) -Recurse -Force
+        # Prove the copy beside the executable is what loads.
+        Remove-Item -LiteralPath $cache -Recurse -Force
+    }
     $process = if ($IsLinux) {
         Start-Process xvfb-run -ArgumentList '-a', $exe -PassThru
     } else {

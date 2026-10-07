@@ -164,11 +164,11 @@ jobs:
         shell: pwsh
         run: ./rust/build.ps1 -Architecture ${{ matrix.architecture }}
 
-      - name: Build and launch an example through the rustolonia-sys download path
+      - name: Build and launch a standalone app against the packaged crates and host tarball
         shell: pwsh
         run: |
           ./rust/package-host.ps1 -Rid ${{ matrix.rid }} -PublishDirectory rust/target/dotnet-${{ matrix.rid }}/publish/Avalonia.Host/release_${{ matrix.rid }} -OutputRoot rust/artifacts/host
-          ./rust/tests/test-host-download.ps1 -Rid ${{ matrix.rid }} -TarballDirectory rust/artifacts/host -WorkDirectory "$env:RUNNER_TEMP/host-download"
+          ./rust/tests/test-standalone-app.ps1 -Rid ${{ matrix.rid }} -TarballDirectory rust/artifacts/host -WorkDirectory "$env:RUNNER_TEMP/standalone-app"
 
       - name: Build flagship Rust view-model samples
         shell: pwsh

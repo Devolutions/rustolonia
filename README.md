@@ -111,7 +111,7 @@ Linux native smoke execution needs a display, for example
 `xvfb-run -a pwsh ./rust/tests/test-build-app.ps1 -RunNativeSmoke`.
 
 Native jobs also archive their host as a release tarball and build and launch
-`hello_world` through the `rustolonia-sys` download path
-(`rust/tests/test-host-download.ps1`). `.github/workflows/release.yml` builds
+a standalone app that depends on the packaged crates through the
+`rustolonia-sys` download path (`rust/tests/test-standalone-app.ps1`). `.github/workflows/release.yml` builds
 the release host tarballs from a `v*` tag and publishes the crates; see
 [rust/PRODUCTIZATION.md](rust/PRODUCTIZATION.md#releasing).

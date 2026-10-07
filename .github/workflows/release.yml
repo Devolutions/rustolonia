@@ -114,9 +114,9 @@ jobs:
           AVALONIA_RUST_SIGN_COMMAND: ${{ vars.AVALONIA_RUST_SIGN_COMMAND }}
         run: ./rust/package-host.ps1 -Rid ${{ matrix.rid }} -OutputRoot rust/artifacts/host
 
-      - name: Build and launch an example through the rustolonia-sys download path
+      - name: Build and launch a standalone app against the packaged crates and this tarball
         shell: pwsh
-        run: ./rust/tests/test-host-download.ps1 -Rid ${{ matrix.rid }} -TarballDirectory rust/artifacts/host -WorkDirectory "$env:RUNNER_TEMP/host-download"
+        run: ./rust/tests/test-standalone-app.ps1 -Rid ${{ matrix.rid }} -TarballDirectory rust/artifacts/host -WorkDirectory "$env:RUNNER_TEMP/standalone-app"
 
       - uses: actions/upload-artifact@v4
         with:

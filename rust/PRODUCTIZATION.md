@@ -368,6 +368,31 @@ modes, and an mtime from `SOURCE_DATE_EPOCH` (or the HEAD commit time). The
 version comes from `release-manifest.json` and must match all three crates.
 Platform floors for release builds are listed in [PLATFORMS.md](PLATFORMS.md#prebuilt-host-platform-floors).
 
+### Testing the published experience locally
+
+To check that a standalone application can use the crates and the prebuilt
+host before anything is tagged, released, or published, build the host for the
+current platform and run the standalone test:
+
+```powershell
+pwsh rust/build.ps1                          # -Architecture arm64 on arm64
+pwsh rust/tests/test-standalone-app.ps1      # add -Distributable to ship the host
+```
+
+The script packs the published host into the release tarball
+(`package-host.ps1`), runs `cargo package` on the three crates, and generates a
+new Cargo project outside the repository that depends on
+`rustolonia = "=X.Y.Z"`. A `[patch.crates-io]` section points that dependency
+at the extracted `.crate` files, which are exactly what crates.io would serve.
+The app is built with an empty download cache: `rustolonia-sys` downloads the
+tarball from a local `file://` release tree, verifies it against the tarball's
+`.sha256`, and caches it. The app is then launched for a few seconds. With
+`-Distributable`, the app uses `default-features = false`, the host is copied
+next to the executable, and the cache is deleted before launch.
+`-KeepWorkDirectory` keeps the generated app for inspection, and
+`-TarballDirectory` reuses an existing tarball. CI runs the same script on
+every native runner, and the tag build runs it too.
+
 ### Releasing
 
 Releases are driven by `.github/workflows/release.yml` and
@@ -378,8 +403,9 @@ Releases are driven by `.github/workflows/release.yml` and
    `build/SharedVersion.props`, clears `host-checksums.txt`, and refreshes
    `Cargo.lock`. Commit, then push the tag `vX.Y.Z`.
 2. The tag build checks that the tag matches every version, packages the
-   default host on native runners for all six RIDs, builds and launches
-   `hello_world` through the `rustolonia-sys` download path, and creates a
+   default host on native runners for all six RIDs, builds and launches a
+   standalone app against the packaged crates through the `rustolonia-sys`
+   download path (`rust/tests/test-standalone-app.ps1`), and creates a
    **draft** release `vX.Y.Z` with the tarballs, their symbols, `SHA256SUMS`,
    and build provenance attestations. A version containing `-` is marked as a
    prerelease. The job fails if the release already exists; delete the draft
