@@ -1,4 +1,4 @@
-﻿# Value-type and solid brush marshalling
+# Value-type and solid brush marshalling
 
 Avalonia geometry value types cross the nano-COM ABI **by value** as blittable,
 sequential structs instead of as COM objects. This keeps `Margin`, `Padding`,
@@ -693,7 +693,7 @@ stayed at 2; wave A gives it a creator per new control plus
 constructible new type — `Flyout`, `Menu`, `MenuItem`,
 `HeaderedSelectingItemsControl`, `SplitView`, `DatePicker` and `TimePicker` — so it
 moves to 4. Wave C gives it a creator per constructible new type — `WrapPanel`,
-`UniformGrid`, `RelativePanel`, `Viewbox`, `FlexPanel`, `Thumb` and `GridSplitter`
+`UniformGrid`, `RelativePanel`, `Viewbox`, `Thumb` and `GridSplitter`
 — plus `get_relative_panel_statics`, so it moves to 5. The abstract bases
 (`FlyoutBase`, `PopupFlyoutBase`, `MenuBase`) get no creator; they are reachable
 by `query_interface` only. `IAvnBrush` is brand new, so it starts at version 1.

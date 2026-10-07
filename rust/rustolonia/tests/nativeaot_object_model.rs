@@ -1,11 +1,10 @@
-﻿use rustolonia::{
+use rustolonia::{
     selection_mode, App, Border, Brush, Button, ClickMode, Color, ComboBox, ComboBoxItem,
     ContextMenu, CornerRadius, DatePicker, Dock, DockPanel, DropDownButton, ExpandDirection,
-    Expander, FlexAlignItems, FlexDirection, FlexJustifyContent, FlexPanel, FlexWrap, Flyout,
-    FlyoutShowMode, FontWeight, Grid, GridResizeBehavior, GridResizeDirection, GridSplitter,
-    HorizontalAlignment, HyperlinkButton, Image, ListBox, ListBoxItem, Menu, MenuFlyout, MenuItem,
-    MenuItemToggleType, Orientation, PlacementMode, ProgressBar, RadioButton, RelativePanel,
-    RepeatButton, ScrollViewer, SplitButton, SplitView, SplitViewDisplayMode,
+    Expander, Flyout, FlyoutShowMode, FontWeight, Grid, GridResizeBehavior, GridResizeDirection,
+    GridSplitter, HorizontalAlignment, HyperlinkButton, Image, ListBox, ListBoxItem, Menu,
+    MenuFlyout, MenuItem, MenuItemToggleType, Orientation, PlacementMode, ProgressBar, RadioButton,
+    RelativePanel, RepeatButton, ScrollViewer, SplitButton, SplitView, SplitViewDisplayMode,
     SplitViewPanePlacement, StackPanel, Stretch, StretchDirection, TabControl, TabItem,
     TextAlignment, TextBlock, TextBox, ThemeVariant, Thickness, TimePicker, ToggleSplitButton,
     ToggleSwitch, ToolTip, TreeView, TreeViewItem, UniformGrid, VerticalAlignment, Viewbox, Window,
@@ -559,17 +558,6 @@ fn builders_create_a_real_window_through_nativeaot() {
         assert_eq!(viewbox.get_stretch()?, Stretch::Uniform);
         assert!(viewbox.get_child()?.is_some());
 
-        let flex = FlexPanel::new()?
-            .direction(FlexDirection::Column)?
-            .justify_content(FlexJustifyContent::Center)?
-            .align_items(FlexAlignItems::FlexStart)?
-            .wrap(FlexWrap::Wrap)?
-            .column_spacing(10.0)?
-            .row_spacing(6.0)?
-            .child(TextBlock::new()?.text("Flex")?)?;
-        assert_eq!(flex.get_direction()?, FlexDirection::Column);
-        assert_eq!(flex.get_justify_content()?, FlexJustifyContent::Center);
-
         let splitter = GridSplitter::new()?
             .resize_direction(GridResizeDirection::Columns)?
             .resize_behavior(GridResizeBehavior::PreviousAndNext)?
@@ -627,7 +615,6 @@ fn builders_create_a_real_window_through_nativeaot() {
             .child(uniform)?
             .child(relative)?
             .child(viewbox)?
-            .child(flex)?
             .child(splitter)?
             .child(repeat)?
             .child(hyperlink)?
@@ -636,7 +623,7 @@ fn builders_create_a_real_window_through_nativeaot() {
             .child(split)?
             .child(drop_down)?
             .child(button)?;
-        assert_eq!(panel.children()?.len()?, 31);
+        assert_eq!(panel.children()?.len()?, 30);
         assert_eq!(panel.get_orientation()?, Orientation::Vertical);
         assert_eq!(panel.get_spacing()?, 8.0);
         assert_eq!(

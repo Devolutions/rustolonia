@@ -1,15 +1,15 @@
 //! ABI guarantees for the wave C layout panels: `WrapPanel`, `UniformGrid`,
-//! `RelativePanel`, `Viewbox`, `FlexPanel`, `Thumb` and `GridSplitter`.
+//! `RelativePanel`, `Viewbox`, `Thumb` and `GridSplitter`.
 //!
 //! Wave C only *adds* interfaces. Nothing above or beside the new types gained a slot, so every
-//! interface that shipped before keeps the exact IID it last published and the seven new ones
+//! interface that shipped before keeps the exact IID it last published and the six new ones
 //! publish at version 1. The one thing that does move is the factory, which gains a creator per
 //! constructible wave C type plus `get_relative_panel_statics`.
 
 use rustolonia_sys::{
-    I_AVN_CONTROL_IID, I_AVN_FLEX_PANEL_IID, I_AVN_GRID_SPLITTER_IID, I_AVN_PANEL_IID,
-    I_AVN_RELATIVE_PANEL_IID, I_AVN_TEMPLATED_CONTROL_IID, I_AVN_THUMB_IID, I_AVN_UNIFORM_GRID_IID,
-    I_AVN_VIEWBOX_IID, I_AVN_WRAP_PANEL_IID,
+    I_AVN_CONTROL_IID, I_AVN_GRID_SPLITTER_IID, I_AVN_PANEL_IID, I_AVN_RELATIVE_PANEL_IID,
+    I_AVN_TEMPLATED_CONTROL_IID, I_AVN_THUMB_IID, I_AVN_UNIFORM_GRID_IID, I_AVN_VIEWBOX_IID,
+    I_AVN_WRAP_PANEL_IID,
 };
 
 const HEADER: &str = include_str!("../include/avalonia-rust-abi.h");
@@ -69,7 +69,6 @@ fn viewbox_child_is_a_control_and_grid_splitter_sits_on_thumb() {
         "*create_uniform_grid)(IAvnControlFactory* self, IAvnUniformGrid** value)",
         "*create_relative_panel)(IAvnControlFactory* self, IAvnRelativePanel** value)",
         "*create_viewbox)(IAvnControlFactory* self, IAvnViewbox** value)",
-        "*create_flex_panel)(IAvnControlFactory* self, IAvnFlexPanel** value)",
         "*advise_drag_delta)(IAvnThumb* self, IAvnThumbDragDeltaHandler* handler, int64_t* subscription_id)",
         "*create_thumb)(IAvnControlFactory* self, IAvnThumb** value)",
         "*create_grid_splitter)(IAvnControlFactory* self, IAvnGridSplitter** value)",
@@ -91,7 +90,6 @@ fn wave_c_interfaces_publish_abi_version_one_and_nothing_else_moved() {
         "#define I_AVN_UNIFORM_GRID_ABI_VERSION 11",
         "#define I_AVN_RELATIVE_PANEL_ABI_VERSION 11",
         "#define I_AVN_VIEWBOX_ABI_VERSION 11",
-        "#define I_AVN_FLEX_PANEL_ABI_VERSION 11",
         "#define I_AVN_THUMB_ABI_VERSION 13",
         "#define I_AVN_GRID_SPLITTER_ABI_VERSION 13",
         "#define I_AVN_AVALONIA_OBJECT_ABI_VERSION 2",
@@ -112,7 +110,6 @@ fn wave_c_iids_are_fresh_and_distinct_from_every_shipped_one() {
         I_AVN_UNIFORM_GRID_IID,
         I_AVN_RELATIVE_PANEL_IID,
         I_AVN_VIEWBOX_IID,
-        I_AVN_FLEX_PANEL_IID,
         I_AVN_THUMB_IID,
         I_AVN_GRID_SPLITTER_IID,
     ];

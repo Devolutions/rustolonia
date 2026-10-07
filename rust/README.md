@@ -50,10 +50,10 @@ invariant strings.
 `RepeatButton`, `DropDownButton`, `SplitButton`, `ToggleSplitButton`,
 `HyperlinkButton`, `ContextMenu` and `MenuFlyout` are projected too.
 `HyperlinkButton.NavigateUri` is a URI string; `SplitButton.Flyout` is not.
-`WrapPanel`, `UniformGrid`, `RelativePanel`, `Viewbox`, `FlexPanel` and
+`WrapPanel`, `UniformGrid`, `RelativePanel`, `Viewbox` and
 `GridSplitter` (plus its `Thumb` base) are projected too. RelativePanel's
 `Align*WithPanel` bools cross as attached properties; object-valued `Above`/`LeftOf`
-and Flex's attached `Order`/`Grow`/`Shrink` stay gaps.
+stay gaps. `FlexPanel` is newer than the pinned Avalonia 12.1.x line.
 `Flyout`, the imperative `Menu`/`MenuItem` pair, `SplitView`, `DatePicker` and
 `TimePicker` are projected too. A flyout is an `AvaloniaObject` rather than a
 `Control`, and it reaches a control through `flyout.show_at_with_control(&button)?`

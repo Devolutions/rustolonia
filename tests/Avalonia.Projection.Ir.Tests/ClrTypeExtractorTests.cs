@@ -60,7 +60,6 @@ public class ClrTypeExtractorTests
         typeof(UniformGrid),
         typeof(RelativePanel),
         typeof(Viewbox),
-        typeof(FlexPanel),
         typeof(Thumb),
         typeof(GridSplitter),
         typeof(RepeatButton),
@@ -1169,7 +1168,6 @@ public class ClrTypeExtractorTests
             new[]
             {
                 "IAvnWrapPanel", "IAvnUniformGrid", "IAvnRelativePanel", "IAvnViewbox",
-                "IAvnFlexPanel",
             },
             name =>
             {
@@ -1192,7 +1190,6 @@ public class ClrTypeExtractorTests
         Assert.Equal("Avalonia.Host.Com.IAvnPanel", Type(ir, "IAvnWrapPanel").BaseFullName);
         Assert.Equal("Avalonia.Host.Com.IAvnPanel", Type(ir, "IAvnUniformGrid").BaseFullName);
         Assert.Equal("Avalonia.Host.Com.IAvnPanel", Type(ir, "IAvnRelativePanel").BaseFullName);
-        Assert.Equal("Avalonia.Host.Com.IAvnPanel", Type(ir, "IAvnFlexPanel").BaseFullName);
         Assert.Equal("Avalonia.Host.Com.IAvnControl", Type(ir, "IAvnViewbox").BaseFullName);
         Assert.Equal("Avalonia.Host.Com.IAvnTemplatedControl", Type(ir, "IAvnThumb").BaseFullName);
         Assert.Equal("Avalonia.Host.Com.IAvnThumb", Type(ir, "IAvnGridSplitter").BaseFullName);
@@ -1233,14 +1230,6 @@ public class ClrTypeExtractorTests
         Assert.Equal(MarshallingKind.ComInterface, child.Kind);
         Assert.Equal("Avalonia.Host.Com.IAvnControl", child.InterfaceName);
         Assert.True(child.IsNullable);
-
-        var flex = Type(ir, "IAvnFlexPanel");
-        Assert.All(
-            new[] { "Direction", "JustifyContent", "AlignItems", "AlignContent", "Wrap" },
-            name => Assert.Equal(
-                MarshallingKind.I32,
-                flex.Properties.Single(property => property.Name == name).Kind));
-        Assert.Contains(ir.Enums, projected => projected.Name == nameof(FlexDirection));
 
         var splitter = Type(ir, "IAvnGridSplitter");
         Assert.All(
@@ -1741,7 +1730,7 @@ public class ClrTypeExtractorTests
         Assert.Equal(19, Type(ir, "IAvnAutoCompleteBox").AbiVersion);
         Assert.Contains(Type(ir, "IAvnAutoCompleteBox").Properties, p => p.Name == "SearchText");
         Assert.Equal(15, Type(ir, "IAvnCalendar").AbiVersion);
-        Assert.Contains(Type(ir, "IAvnCalendar").Properties, p => p.Name == "IsWeekNumberVisible");
+        Assert.Contains(Type(ir, "IAvnCalendar").Properties, p => p.Name == "IsTodayHighlighted");
         Assert.Equal(14, Type(ir, "IAvnCalendarDatePicker").AbiVersion);
         Assert.Contains(Type(ir, "IAvnCalendarDatePicker").Methods, m => m.Name == "Clear");
         Assert.Equal(13, Type(ir, "IAvnNumericUpDown").AbiVersion);

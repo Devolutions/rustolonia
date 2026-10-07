@@ -1563,7 +1563,7 @@ public static class ComSourceEmitter
         sb.AppendLine("        {");
         sb.AppendLine("            var size = new global::Avalonia.Size(popupWidth, popupHeight);");
         sb.AppendLine("            var anchorRect = new global::Avalonia.Rect(anchorX, anchorY, anchorWidth, anchorHeight);");
-        sb.AppendLine("            var parameters = new global::Avalonia.Controls.Primitives.PopupPositioning.CustomPopupPlacement(size, null!)");
+        sb.AppendLine("            var parameters = new global::Avalonia.Controls.Primitives.PopupPositioning.CustomPopupPlacement(size, default, null!)");
         sb.AppendLine("            {");
         sb.AppendLine("                AnchorRectangle = anchorRect,");
         sb.AppendLine("            };");

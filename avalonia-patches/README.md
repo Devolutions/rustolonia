@@ -37,6 +37,11 @@ Rustolonia's compatibility work.
   regenerate the patch with `git diff --cached` in the submodule, and update
   `rust/release-manifest.json` (`producerPin`, patch `sha256`) and the
   upstreaming tracker below.
+- The projection follows the pinned API surface. Moving from `main` to `12.1.3`
+  dropped master-only API (`FlexPanel`, `Calendar.IsWeekNumberVisible`/`WeekNumberRule`)
+  from `AvaloniaProjectionProfiles`; re-add them when the pin reaches a release that
+  ships them, then run `rust/regenerate-and-build.ps1 -UpdateAbiBaseline` (before the
+  first crates.io release) or a normal ABI wave (after).
 - The goal is for this directory to shrink to nothing as the changes are
   merged upstream.
 

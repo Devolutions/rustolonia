@@ -123,7 +123,6 @@ internal static class ProjectionRuntime
         global::Avalonia.Controls.ContentControl typed => new AvnContentControl(typed),
         global::Avalonia.Controls.DatePicker typed => new AvnDatePicker(typed),
         global::Avalonia.Controls.DockPanel typed => new AvnDockPanel(typed),
-        global::Avalonia.Controls.FlexPanel typed => new AvnFlexPanel(typed),
         global::Avalonia.Controls.Grid typed => new AvnGrid(typed),
         global::Avalonia.Controls.IconElement typed => new AvnIconElement(typed),
         global::Avalonia.Controls.ItemsControl typed => new AvnItemsControl(typed),

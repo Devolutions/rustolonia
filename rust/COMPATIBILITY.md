@@ -1,4 +1,4 @@
-﻿# Rust host compatibility policy
+# Rust host compatibility policy
 
 `Avalonia.Host`, the generated managed projection, and all crates in this
 workspace are released in semver lockstep from one source revision.
@@ -211,7 +211,7 @@ goes from 3 to 4; the abstract bases get no creator and are reachable by
 `query_interface` only. Again, only the factory has to be requeried.
 
 Wave C is the same shape again. `IAvnWrapPanel`, `IAvnUniformGrid`,
-`IAvnRelativePanel`, `IAvnViewbox`, `IAvnFlexPanel`, `IAvnThumb` and
+`IAvnRelativePanel`, `IAvnViewbox`, `IAvnThumb` and
 `IAvnGridSplitter` are all brand new and publish at version 1.
 `IAvnControlFactory` gains a creator per constructible wave C type plus
 `get_relative_panel_statics` and goes from 4 to 5. RelativePanel's object-valued

@@ -15,7 +15,7 @@ namespace Avalonia.Host.Tests;
 /// <summary>
 /// Covers the wave C layout panels: <see cref="WrapPanel"/>, <see cref="UniformGrid"/>,
 /// <see cref="RelativePanel"/> (bool attached Align*WithPanel only), <see cref="Viewbox"/>,
-/// <see cref="FlexPanel"/>, <see cref="Thumb"/> and <see cref="GridSplitter"/>. Every assertion
+/// <see cref="Thumb"/> and <see cref="GridSplitter"/>. Every assertion
 /// goes through a real CCW/RCW round trip and then reads the Avalonia object.
 /// </summary>
 public unsafe class WaveCControlComTests
@@ -137,33 +137,6 @@ public unsafe class WaveCControlComTests
         Assert.Equal("scaled", Assert.IsType<TextBlock>(value.Child).Text);
         Assert.Equal(Stretch.UniformToFill, value.Stretch);
         Assert.Equal(StretchDirection.DownOnly, value.StretchDirection);
-    }
-
-    [Fact]
-    public void Flex_panel_direction_and_alignment_reach_the_avalonia_object()
-    {
-        using var app = UnitTestApplication.Start(TestServices.MockPlatformRenderInterface);
-        var factory = new AvnControlFactory();
-        Assert.Equal(0, factory.CreateFlexPanel(out var projected));
-        Assert.NotNull(projected);
-
-        Through<IAvnFlexPanel>(projected, panel =>
-        {
-            Assert.Equal(0, panel.SetDirection((int)FlexDirection.Column));
-            Assert.Equal(0, panel.SetJustifyContent((int)FlexJustifyContent.Center));
-            Assert.Equal(0, panel.SetAlignItems((int)FlexAlignItems.FlexStart));
-            Assert.Equal(0, panel.SetWrap((int)FlexWrap.Wrap));
-            Assert.Equal(0, panel.SetColumnSpacing(10));
-            Assert.Equal(0, panel.SetRowSpacing(6));
-        });
-
-        var value = Target<FlexPanel>(projected);
-        Assert.Equal(FlexDirection.Column, value.Direction);
-        Assert.Equal(FlexJustifyContent.Center, value.JustifyContent);
-        Assert.Equal(FlexAlignItems.FlexStart, value.AlignItems);
-        Assert.Equal(FlexWrap.Wrap, value.Wrap);
-        Assert.Equal(10, value.ColumnSpacing);
-        Assert.Equal(6, value.RowSpacing);
     }
 
     [Fact]
