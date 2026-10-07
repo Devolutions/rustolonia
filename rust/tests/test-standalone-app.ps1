@@ -21,6 +21,9 @@ published:
 
 Build the host first with `rust/build.ps1`.
 
+With -GitRepository and -GitTag, skip packaging and use a git dependency
+without registry patches. -UseCommittedChecksums verifies the tagged hashes.
+
 .EXAMPLE
 ./rust/build.ps1
 ./rust/tests/test-standalone-app.ps1
@@ -39,6 +42,10 @@ param(
     [string]$WorkDirectory = (Join-Path ([IO.Path]::GetTempPath()) 'rustolonia-standalone-app'),
     # Build with default-features = false and ship the host beside the executable.
     [switch]$Distributable,
+    # Exercise Cargo's git source and its transitive path dependency, without registry patches.
+    [string]$GitRepository,
+    [string]$GitTag,
+    [switch]$UseCommittedChecksums,
     [switch]$KeepWorkDirectory,
     [int]$LaunchSeconds = 5
 )
@@ -50,6 +57,8 @@ $PSNativeCommandUseErrorActionPreference = $true
 
 if (-not $Rid) { $Rid = Get-DefaultConsumerRid }
 $version = Get-RustoloniaReleaseVersion -RustoloniaRoot $RustoloniaRoot
+if ([bool]$GitRepository -ne [bool]$GitTag) { throw 'Pass both -GitRepository and -GitTag.' }
+if ($UseCommittedChecksums -and -not $GitRepository) { throw '-UseCommittedChecksums requires a git consumer.' }
 $rustDir = Join-Path $RustoloniaRoot 'rust'
 $WorkDirectory = [IO.Path]::GetFullPath($WorkDirectory)
 if ($WorkDirectory.StartsWith([IO.Path]::GetFullPath($RustoloniaRoot), [StringComparison]::OrdinalIgnoreCase)) {
@@ -74,24 +83,34 @@ if (-not $TarballDirectory) {
 # --no-verify: verification would build rustolonia-sys outside the repository
 # and try to download the not-yet-released host from GitHub. The app build
 # below is the real verification.
-$packageTarget = Join-Path $WorkDirectory 'package-target'
-cargo package --locked --allow-dirty --no-verify --manifest-path (Join-Path $rustDir 'Cargo.toml') `
-    -p rustolonia-sys -p rustolonia-bindgen -p rustolonia --target-dir $packageTarget
+$patchSection = ''
+if (-not $GitRepository) {
+    $packageTarget = Join-Path $WorkDirectory 'package-target'
+    cargo package --locked --allow-dirty --no-verify --manifest-path (Join-Path $rustDir 'Cargo.toml') `
+        -p rustolonia-sys -p rustolonia-bindgen -p rustolonia --target-dir $packageTarget
 
-$cratesDir = Join-Path $WorkDirectory 'crates'
-New-Item -ItemType Directory -Force -Path $cratesDir | Out-Null
-$patches = foreach ($crate in @('rustolonia-sys', 'rustolonia-bindgen', 'rustolonia')) {
-    $crateFile = Join-Path $packageTarget 'package' "$crate-$version.crate"
-    if (-not (Test-Path -LiteralPath $crateFile -PathType Leaf)) { throw "Packaged crate not found: $crateFile" }
-    tar -xzf $crateFile -C $cratesDir
-    $path = (Join-Path $cratesDir "$crate-$version").Replace('\', '/')
-    "$crate = { path = `"$path`" }"
+    $cratesDir = Join-Path $WorkDirectory 'crates'
+    New-Item -ItemType Directory -Force -Path $cratesDir | Out-Null
+    $patches = foreach ($crate in @('rustolonia-sys', 'rustolonia-bindgen', 'rustolonia')) {
+        $crateFile = Join-Path $packageTarget 'package' "$crate-$version.crate"
+        if (-not (Test-Path -LiteralPath $crateFile -PathType Leaf)) { throw "Packaged crate not found: $crateFile" }
+        tar -xzf $crateFile -C $cratesDir
+        $path = (Join-Path $cratesDir "$crate-$version").Replace('\', '/')
+        "$crate = { path = `"$path`" }"
+    }
+    $patchSection = "[patch.crates-io]`n$($patches -join "`n")"
 }
 
 $appDir = Join-Path $WorkDirectory 'app'
 $appName = 'standalone_app'
 New-Item -ItemType Directory -Force -Path (Join-Path $appDir 'src') | Out-Null
 $features = if ($Distributable) { ', default-features = false' } else { '' }
+$dependency = if ($GitRepository) {
+    # JSON strings are also valid TOML basic strings, including escaped Windows paths.
+    "git = $($GitRepository | ConvertTo-Json -Compress), tag = $($GitTag | ConvertTo-Json -Compress)"
+} else {
+    "version = `"=$version`""
+}
 @"
 [package]
 name = "$appName"
@@ -100,11 +119,9 @@ edition = "2021"
 publish = false
 
 [dependencies]
-rustolonia = { version = "=$version"$features }
+rustolonia = { $dependency$features }
 
-# Stand-in for crates.io: the exact .crate contents that would be published.
-[patch.crates-io]
-$($patches -join "`n")
+$patchSection
 
 [workspace]
 "@ | Set-Content -LiteralPath (Join-Path $appDir 'Cargo.toml')
@@ -130,8 +147,10 @@ try {
     & (Join-Path $PSScriptRoot 'test-host-download.ps1') -Rid $Rid -TarballDirectory $TarballDirectory `
         -RustoloniaRoot $RustoloniaRoot -WorkDirectory (Join-Path $WorkDirectory 'download') `
         -AppManifest (Join-Path $appDir 'Cargo.toml') -AppName $appName -ShipHost:$Distributable `
+        -UseCommittedChecksums:$UseCommittedChecksums `
         -LaunchSeconds $LaunchSeconds
-    Write-Host "Standalone app built from packaged rustolonia $version crates and the $Rid host tarball."
+    $source = if ($GitRepository) { "git tag $GitTag" } else { "packaged crates" }
+    Write-Host "Standalone app built from rustolonia $version $source and the $Rid host tarball."
 }
 finally {
     if (-not $KeepWorkDirectory) {

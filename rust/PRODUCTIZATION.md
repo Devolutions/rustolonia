@@ -329,10 +329,35 @@ The entrypoints explicitly identify the application executable, including
 extensionless Linux/macOS binaries. Licensing files and ownership markers are
 not signing inputs. Missing explicitly requested signing inputs fail the build.
 
-## Crate publishing
+## Releases and crate publishing
 
-`rustolonia`, `rustolonia-sys`, and `rustolonia-bindgen` are published to
-crates.io at the same version as the NativeAOT host tarballs attached to the
+The first release is **12.1.0**, backed by upstream Avalonia **12.1.3**.
+Keep all three crates and the native host at that version. Major/minor
+identify the Avalonia line; the patch starts at zero and counts Rustolonia
+releases independently, not upstream patches. The exact upstream revision
+remains recorded in `release-manifest.json` and the producer submodule.
+The API is still experimental; consumers should pin an exact tag/version.
+Cargo interprets these numbers as SemVer regardless of this naming convention,
+so breaking Rust API changes must not be shipped as patch updates.
+Use `12.1.0-rc.1` instead if a separately versioned preview is desired, and
+build new host artifacts for `12.1.0` rather than reusing the RC's bytes.
+
+A standalone Cargo project can consume the final git tag without any crates
+being published to crates.io:
+
+```toml
+[dependencies]
+rustolonia = { git = "https://github.com/Devolutions/rustolonia", tag = "v12.1.0" }
+```
+
+Cargo discovers `rustolonia` in the nested workspace and resolves its
+`rustolonia-sys` path dependency from the same git source. Commit the app's
+`Cargo.lock` and use `cargo build --locked` thereafter. No .NET SDK is needed
+for code-first apps; compiled AXAML/view-model apps still build their own host.
+Release tags and host assets must remain immutable after publication.
+
+Optionally, `rustolonia`, `rustolonia-sys`, and `rustolonia-bindgen` can be
+published to crates.io at the same version as the NativeAOT host tarballs attached to the
 GitHub release `v<version>`. `rustolonia` pins `rustolonia-sys = "=<version>"`,
 and `rustolonia-sys` embeds `host-checksums.txt` (the SHA-256 of every RID
 tarball), so a published crate can only ever load the host it was released
@@ -393,6 +418,14 @@ next to the executable, and the cache is deleted before launch.
 `-TarballDirectory` reuses an existing tarball. CI runs the same script on
 every native runner, and the tag build runs it too.
 
+To exercise a tagged git dependency instead of packaged crates, pass
+`-GitRepository <git-url> -GitTag vX.Y.Z`. This mode has no registry patches
+and skips `cargo package`. Add `-UseCommittedChecksums` to verify the hashes
+embedded in that tag, rather than overriding them with local sidecars.
+The release publication gate uses this mode with `-Distributable`, an empty
+host cache, and the final tag from its local git checkout. Only the host
+download base URL is redirected while the GitHub release is still a draft.
+
 ### Releasing
 
 Releases are driven by `.github/workflows/release.yml` and
@@ -401,29 +434,67 @@ Releases are driven by `.github/workflows/release.yml` and
 1. `pwsh rust/prepare-release.ps1 -Version X.Y.Z` sets the version of the
    three crates, the exact `rustolonia-sys` pin, `release-manifest.json`, and
    `build/SharedVersion.props`, clears `host-checksums.txt`, and refreshes
-   `Cargo.lock`. Commit, then push the tag `vX.Y.Z`.
+   `Cargo.lock`. Commit, then push the build tag `host-vX.Y.Z`.
 2. The tag build checks that the tag matches every version, packages the
    default host on native runners for all six RIDs, builds and launches a
    standalone app against the packaged crates through the `rustolonia-sys`
    download path (`rust/tests/test-standalone-app.ps1`), and creates a
-   **draft** release `vX.Y.Z` with the tarballs, their symbols, `SHA256SUMS`,
+   **draft** release `host-vX.Y.Z` with the tarballs, their symbols, `SHA256SUMS`,
    and build provenance attestations. A version containing `-` is marked as a
-   prerelease. The job fails if the release already exists; delete the draft
-   to rebuild.
+   prerelease. The job fails if either the build or final release already
+   exists. Do not rebuild or replace artifacts once published.
 3. `pwsh rust/prepare-release.ps1 -Checksums -FromRelease` (or
    `-SumsFile <SHA256SUMS>`) writes the default tarball hashes into
-   `host-checksums.txt`. Commit to `master`. NativeAOT output is not
+   `host-checksums.txt`. Commit only this file to `master`, then push the
+   final consumer tag `vX.Y.Z` on that commit. NativeAOT output is not
    guaranteed to be bit-for-bit reproducible, so the hashes always come from
    the release build itself.
-4. Run the **Release** workflow manually with `version = X.Y.Z` from
-   `master`. After approval in the `crates-io` environment, it checks that
-   `host-checksums.txt` matches `SHA256SUMS` and that the crate sources differ
-   from the tag only in `host-checksums.txt`, packages the crates, builds and
-   launches a fresh application that depends on the packaged crates through
-   `[patch.crates-io]` (downloading the host with the committed checksums),
-   publishes the GitHub release, and runs `cargo publish` for
-   `rustolonia-sys`, `rustolonia-bindgen`, and `rustolonia` with crates.io
-   trusted publishing.
+4. Run the **Release** workflow manually with `phase = publish` and `version = X.Y.Z` from
+   `master`, leaving `publish_crates = false` for a GitHub-only release.
+   It checks out the final tag, verifies all assets against `SHA256SUMS`,
+   checks that the committed host hashes match, and requires the final tag
+   to descend from the build tag with no changes other than
+   `host-checksums.txt` anywhere in the repository. It builds and launches a
+   fresh git-dependent application with the tag's committed checksums, then
+   promotes the draft to the final `vX.Y.Z` GitHub release without rebuilding
+   the host. This path needs no crates.io credentials or environment approval.
+5. To also publish crates, select `publish_crates = true`. The separate
+   `publish-crates` job requires approval in the `crates-io` environment and
+   configured crates.io trusted publishing for all three crates. It packages
+   and publishes `rustolonia-sys`, `rustolonia-bindgen`, and `rustolonia`.
+   This option can also be selected on a later manual run for an already
+   published GitHub release; its assets and source are reverified first.
+
+For the first GitHub-only release, this PR already prepares version `12.1.0`.
+After merging it, start **Release** from `master` with `phase = build`,
+`version = 12.1.0`, and `publish_crates = false`. The build phase validates
+the version and creates the immutable `host-v12.1.0` tag, then runs the six
+host builds in the same workflow. Tags pushed with `GITHUB_TOKEN` do not
+trigger a second workflow. Equivalently:
+
+```powershell
+gh workflow run release.yml --ref master -f phase=build -f version=12.1.0 -f publish_crates=false
+# Wait for the host build and draft release to finish successfully.
+# In an up-to-date master checkout:
+pwsh ./rust/prepare-release.ps1 -Checksums -FromRelease
+git add rust/rustolonia-sys/host-checksums.txt
+git commit -m "Pin rustolonia 12.1.0 host checksums"
+git tag -a v12.1.0 -m "rustolonia 12.1.0"
+git push origin master v12.1.0
+gh workflow run release.yml --ref master -f phase=publish -f version=12.1.0 -f publish_crates=false
+```
+
+Do not push `v12.1.0` before committing the actual six host hashes: Cargo
+downloads the source at the tag, not later commits on `master`. Wait for the
+manual publication gate before telling consumers to use that tag. If any
+source change is needed after the host build, start a new version/build tag
+instead of mixing changed source with the existing artifacts.
+
+The repository must allow GitHub Actions and the workflow's
+`contents: write` permission to create the build tag and publish the release.
+All six native runner labels must be available to the repository. No
+additional secret is required for a GitHub-only release. The provenance step
+uses GitHub's `id-token: write` and `attestations: write` permissions.
 
 Signing is enabled by setting the `AVALONIA_RUST_SIGN_COMMAND` repository
 variable (see [Signing hook](#signing-hook)).

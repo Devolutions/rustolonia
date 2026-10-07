@@ -1,4 +1,4 @@
 # SHA-256 of the prebuilt rustolonia host tarballs for this rustolonia-sys
 # version, in `sha256sum` format. build.rs refuses to use a downloaded host
 # whose hash is not listed here. rust/prepare-release.ps1 fills this in from
-# the release build before the crates are published.
+# the release build before the consumer tag or crates are published.

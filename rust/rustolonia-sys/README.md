@@ -4,9 +4,10 @@ Raw nano-COM bindings for the Avalonia NativeAOT host (`Avalonia.Host`).
 
 This crate is handwritten plus IR-generated vtables/GUIDs (see
 `../projection.ir.json` and `rustolonia-bindgen`), and is consumed almost
-exclusively through the safe `rustolonia` crate. It is published to crates.io
-in lockstep with the prebuilt `rustolonia_host` release assets of the same
-version (see "Prebuilt host" below). The crate and host must match exactly;
+exclusively through the safe `rustolonia` crate. It can be consumed from the
+same git release tag as `rustolonia`, before either crate is published to
+crates.io. Prebuilt `rustolonia_host` release assets use the same version
+(see "Prebuilt host" below). The crate and host must match exactly;
 `rustolonia` pins this crate with `=x.y.z`.
 
 See [`../PRODUCTIZATION.md`](../PRODUCTIZATION.md) and

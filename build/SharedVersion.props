@@ -2,7 +2,7 @@
   xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Product>Rustolonia</Product>
-    <Version>0.1.0</Version>
+    <Version>12.1.0</Version>
     <Authors>Rustolonia contributors</Authors>
     <Copyright>Copyright $([System.DateTime]::Now.ToString(`yyyy`)) Rustolonia contributors. Upstream Avalonia material retains its original copyright notices.</Copyright>
     <PackageProjectUrl>https://github.com/Devolutions/rustolonia</PackageProjectUrl>

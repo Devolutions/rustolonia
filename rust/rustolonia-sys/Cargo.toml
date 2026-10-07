@@ -1,6 +1,6 @@
 [package]
 name = "rustolonia-sys"
-version = "0.1.0"
+version = "12.1.0"
 edition = "2021"
 license = "MIT"
 description = "Raw nano-COM bindings for the Avalonia NativeAOT host"
