@@ -390,7 +390,8 @@ fn find_host(dirs: &[PathBuf]) -> std::result::Result<PathBuf, String> {
 /// does, without loading it.
 ///
 /// `RUSTOLONIA_HOST_LIB` ([`HOST_NATIVE_LIB_ENV_VAR`]) is an explicit override
-/// and always wins when set -- even to a path that does not exist yet, so
+/// and always wins when set to a non-empty value (an empty value counts as
+/// unset) -- even to a path that does not exist yet, so
 /// [`sys::Host::load`] can surface a precise loader error instead of this
 /// function silently falling back. Otherwise the platform host library
 /// (`rustolonia_host.dll` / `.so` / `.dylib`) is searched for:
@@ -404,7 +405,8 @@ fn find_host(dirs: &[PathBuf]) -> std::result::Result<PathBuf, String> {
 ///
 /// See `rust/PRODUCTIZATION.md#host-discovery`.
 pub fn discover_host_path() -> Result<PathBuf> {
-    if let Some(value) = std::env::var_os(HOST_NATIVE_LIB_ENV_VAR) {
+    if let Some(value) = std::env::var_os(HOST_NATIVE_LIB_ENV_VAR).filter(|value| !value.is_empty())
+    {
         return Ok(PathBuf::from(value));
     }
     let exe = std::env::current_exe().ok();

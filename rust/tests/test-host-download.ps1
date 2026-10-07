@@ -57,9 +57,18 @@ $overrides = @{
     RUSTOLONIA_HOST_DIR       = $null
     RUSTOLONIA_HOST_LIB       = $null
 }
+# pwsh 7 turns [Environment]::SetEnvironmentVariable(name, $null) into an
+# empty-but-defined variable, which child processes still see; remove instead.
+function Set-ProcessEnvironment([string]$Name, [AllowNull()][string]$Value) {
+    if ([string]::IsNullOrEmpty($Value)) {
+        Remove-Item -LiteralPath "env:$Name" -ErrorAction SilentlyContinue
+    } else {
+        Set-Item -LiteralPath "env:$Name" -Value $Value
+    }
+}
 foreach ($name in $overrides.Keys) {
     $saved[$name] = [Environment]::GetEnvironmentVariable($name)
-    [Environment]::SetEnvironmentVariable($name, $overrides[$name])
+    Set-ProcessEnvironment -Name $name -Value $overrides[$name]
 }
 try {
     $targetDir = Join-Path $WorkDirectory 'target'
@@ -84,16 +93,22 @@ try {
         # Prove the copy beside the executable is what loads.
         Remove-Item -LiteralPath $cache -Recurse -Force
     }
+    $stdout = Join-Path $WorkDirectory "$Example.stdout.log"
+    $stderr = Join-Path $WorkDirectory "$Example.stderr.log"
+    $redirect = @{ PassThru = $true; RedirectStandardOutput = $stdout; RedirectStandardError = $stderr }
     $process = if ($IsLinux) {
-        Start-Process xvfb-run -ArgumentList '-a', $exe -PassThru
+        Start-Process xvfb-run -ArgumentList '-a', $exe @redirect
     } else {
-        Start-Process $exe -PassThru
+        Start-Process $exe @redirect
     }
     Start-Sleep -Seconds $LaunchSeconds
-    if ($process.HasExited) { throw "$Example exited during startup with code $($process.ExitCode)." }
+    if ($process.HasExited) {
+        Get-Content -LiteralPath $stdout, $stderr -ErrorAction SilentlyContinue | Write-Host
+        throw "$Example exited during startup with code $($process.ExitCode)."
+    }
     Stop-Process -Id $process.Id
     Write-Host "$Example built and launched with the downloaded $Rid host ($hostFile)."
 }
 finally {
-    foreach ($name in $saved.Keys) { [Environment]::SetEnvironmentVariable($name, $saved[$name]) }
+    foreach ($name in $saved.Keys) { Set-ProcessEnvironment -Name $name -Value $saved[$name] }
 }

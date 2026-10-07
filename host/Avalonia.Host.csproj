@@ -30,8 +30,8 @@
   </PropertyGroup>
   <!--
     The published NativeAOT library is named rustolonia_host.dll (Windows),
-    librustolonia_host.so (Linux) and librustolonia_host.dylib (macOS) -- the
-    platform library naming convention also used by Rust cdylibs. The managed
+    librustolonia_host.so (Linux) and librustolonia_host.dylib (macOS), following
+        the platform library naming convention also used by Rust cdylibs. The managed
     assembly identity stays Avalonia.Host so projection metadata and friend
     assemblies are unaffected; only the published native file is renamed.
   -->
