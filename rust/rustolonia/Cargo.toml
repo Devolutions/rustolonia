@@ -8,8 +8,15 @@ repository = "https://github.com/Devolutions/rustolonia"
 readme = "README.md"
 publish = false
 
+[features]
+default = ["dev-host-path"]
+# See rustolonia-sys: never download the prebuilt host at build time.
+no-download = ["rustolonia-sys/no-download"]
+# See rustolonia-sys: remember the staged host directory as a runtime fallback.
+dev-host-path = ["rustolonia-sys/dev-host-path"]
+
 [dependencies]
-rustolonia-sys = { path = "../rustolonia-sys" }
+rustolonia-sys = { path = "../rustolonia-sys", default-features = false }
 
 [dev-dependencies]
 avalonia-sample = { path = "../avalonia-sample" }

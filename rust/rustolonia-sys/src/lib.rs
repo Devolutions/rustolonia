@@ -508,3 +508,5 @@ mod host_info_tests {
         assert!(unsafe { query_host_info(failing_host_info) }.is_none());
     }
 }
+#[cfg(test)]
+mod build_host_tests;

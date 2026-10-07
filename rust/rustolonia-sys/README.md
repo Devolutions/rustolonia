@@ -21,6 +21,35 @@ loaded for the process lifetime because returned ABI strings can outlive a
 `Host` value. A later load whose `avn_free` or `avn_alloc_utf16` exports differ
 is rejected, preserving the single allocator-host invariant.
 
+## Prebuilt host
+
+`build.rs` stages the NativeAOT host (`rustolonia_host.dll`,
+`librustolonia_host.dylib` or `librustolonia_host.so`) for the target, in this
+order:
+
+1. `RUSTOLONIA_HOST_DIR`: use this directory as-is (local builds, CI,
+   vendored or distro-packaged hosts).
+2. Skip staging when building on docs.rs, with the `no-download` feature, or
+   with `RUSTOLONIA_NO_DOWNLOAD` set to a truthy value. The application must
+   then ship the host itself.
+3. The cache: `RUSTOLONIA_CACHE_DIR`, or `<user cache dir>/rustolonia/host`,
+   keyed by `<version>/<rid>`.
+4. Download `rustolonia-host-<version>-<rid>.tar.gz` from the GitHub release
+   (`RUSTOLONIA_HOST_BASE_URL` overrides the base URL; `file://` works), verify
+   it against `host-checksums.txt` (or the file named by
+   `RUSTOLONIA_HOST_CHECKSUMS`), then cache it. `CARGO_NET_OFFLINE` forbids the
+   download. Proxies come from the standard proxy environment variables.
+
+Prebuilt hosts exist for `x86_64`/`aarch64` `windows-msvc`, `apple-darwin` and
+`linux-gnu`. The staged directory is exported to dependent build scripts as
+`DEP_RUSTOLONIA_HOST_HOST_DIR`. With the default `dev-host-path` feature it is
+also baked into the binary as a last-resort runtime search path, so `cargo run`
+works without copying files; disable it for distributable builds.
+
+Builds inside this repository default to `RUSTOLONIA_NO_DOWNLOAD=1` through
+the repo-root `.cargo/config.toml`, since the matching release does not exist
+yet.
+
 ## Host compatibility check
 
 Before resolving any other export, `Host::load` calls `avn_get_host_info`,

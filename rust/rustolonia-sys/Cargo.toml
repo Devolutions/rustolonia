@@ -8,9 +8,29 @@ repository = "https://github.com/Devolutions/rustolonia"
 readme = "README.md"
 publish = false
 build = "build.rs"
+links = "rustolonia_host"
+
+[features]
+default = ["dev-host-path"]
+# Never download the prebuilt host; the application provides it at run time.
+no-download = []
+# Bake the staged host directory into the binary as a last-resort runtime
+# search path, so `cargo run` and `cargo test` work without setup.
+dev-host-path = []
 
 [dependencies]
 libloading = "0.8"
 
 [build-dependencies]
+dirs = "6"
+flate2 = "1"
 sha2 = "0.10"
+tar = { version = "0.4", default-features = false }
+ureq = { version = "2.12", default-features = false, features = ["tls"] }
+
+# build_support/host.rs is also compiled into the unit tests.
+[dev-dependencies]
+flate2 = "1"
+sha2 = "0.10"
+tar = { version = "0.4", default-features = false }
+ureq = { version = "2.12", default-features = false, features = ["tls"] }
