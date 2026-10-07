@@ -1,9 +1,13 @@
-﻿# Rust host compatibility policy
+# Rust host compatibility policy
 
 `Avalonia.Host`, the generated managed projection, and all crates in this
-workspace are released in semver lockstep from one source revision. The crates
-are `publish = false`; consumers must not mix a host or generated bindings from
-one release with crates from another release.
+workspace are released in semver lockstep from one source revision.
+`rustolonia`, `rustolonia-sys` and `rustolonia-bindgen` are published to
+crates.io with the same version as the `rustolonia-host-<version>-<rid>.tar.gz`
+assets of the GitHub release `v<version>` (see
+[Crates.io and prebuilt hosts](#cratesio-and-prebuilt-hosts)); consumers must
+not mix a host or generated bindings from one release with crates from another
+release.
 
 [`rust/release-manifest.json`](release-manifest.json) is the single
 machine-readable record tying that lockstep release together: the Rustolonia
@@ -21,7 +25,7 @@ updating the manifest is caught rather than silently accepted.
 `rust/avalonia-sample/view-model.ir.json` (sample/application schema) are
 versioned schemas. A generator change must regenerate all checked-in managed,
 Rust, and contract outputs in the same change. Sample-only Rust API that used
-to be reexported from `avalonia` now lives in `avalonia-sample`. Additive, optional schema fields require a schema
+to be reexported from `rustolonia` now lives in `avalonia-sample`. Additive, optional schema fields require a schema
 version bump and readers that reject unsupported future versions clearly.
 Removing or changing the meaning, type, ordering, or requiredness of an
 existing field is breaking and requires a coordinated major release.
@@ -77,11 +81,19 @@ previously published ordinal moves.
 Consumer application manifests are independently versioned by
 `consumer-app-manifest.schema.json`; version 1 is validated before any build
 command runs. A consumer must pin the producer checkout/submodule commit that
-provides its `avalonia` crate, projection tool, and `Avalonia.Host`. Do not mix
+provides its `rustolonia` crate, projection tool, and `Avalonia.Host`. Do not mix
 consumer-generated registry/adapters or Rust API from one producer revision
 with a host from another.
 
 ## Native ABI
+
+`rustolonia-sys` refuses to load a host built against a different ABI. The
+host's `avn_get_host_info` export reports the SHA-256 of
+`rustolonia-sys/include/avalonia-rust-abi.h` it was built with, and
+`Host::load` compares it with the hash `rustolonia-sys` computed at build
+time. Any change to the generated header therefore requires a matching host;
+a mismatch (or a host without `avn_get_host_info`) fails with
+`HostLoadError::IncompatibleHost` instead of reaching a stale vtable.
 
 The overlay-chrome pass widens the leaf `IAvnWindow` ABI from 7 to 8 to expose only the safe, non-nullable window work-area and dialog members. This stays local to the window leaf: `IAvnContentControl` remains at 6 and the factory remained at 13 as of this wave (the later gradient-brush pass below moves it again), while blockers such as `Icon`, `Position`, nullable geometry, and cancelable `Closing` payloads stay out of scope.
 
@@ -199,7 +211,7 @@ goes from 3 to 4; the abstract bases get no creator and are reachable by
 `query_interface` only. Again, only the factory has to be requeried.
 
 Wave C is the same shape again. `IAvnWrapPanel`, `IAvnUniformGrid`,
-`IAvnRelativePanel`, `IAvnViewbox`, `IAvnFlexPanel`, `IAvnThumb` and
+`IAvnRelativePanel`, `IAvnViewbox`, `IAvnThumb` and
 `IAvnGridSplitter` are all brand new and publish at version 1.
 `IAvnControlFactory` gains a creator per constructible wave C type plus
 `get_relative_panel_statics` and goes from 4 to 5. RelativePanel's object-valued
@@ -365,7 +377,7 @@ no CommandParameter). Button and descendants 8 to 9 (or 4 to 5 for the wave D
 leaves), MenuItem 5 to 6, SplitButton/ToggleSplitButton 4 to 5, TrayIcon 1 to 2.
 Factory 13.
 
-Inbound commands close the loop: `avalonia_sys::command(execute, can_execute)`
+Inbound commands close the loop: `rustolonia_sys::command(execute, can_execute)`
 builds a Rust CCW implementing `IAvnCommand` (ref-counted, panic-safe closures,
 QI for IUnknown/IAvnCommand), and `Command::notify()` fires every live
 subscription when the Rust side re-queries `CanExecute`. The host's
@@ -484,8 +496,8 @@ Wave U19 projects data templates, closing the templating family.
 `match(AvnVariant data)` reports whether the template builds for an item
 and `build` hands back the control. The host's `AvnDataTemplate` wraps a
 managed template; a foreign `IAvnDataTemplate` converts back through the
-`DataTemplateAdapter`, so a Rust CCW — `avalonia_sys::data_template(
-matches, build)` or the safe `avalonia::data_template` — really renders
+`DataTemplateAdapter`, so a Rust CCW — `rustolonia_sys::data_template(
+matches, build)` or the safe `rustolonia::data_template` — really renders
 items. ItemTemplate crosses on ItemsControl, MenuFlyout, AutoCompleteBox
 and ComboBox (SelectionBoxItemTemplate); HeaderTemplate on
 HeaderedContentControl, HeaderedItemsControl, HeaderedSelectingItemsControl
@@ -543,7 +555,7 @@ whose invoke takes the search text and the item variant; `TextFilter`
 (ordinal 27) wraps the string predicate as `IAvnTextFilter` over two
 borrowed UTF-16 buffers. The host's `AvnItemFilter`/`AvnTextFilter` wrap
 managed delegates; a foreign interface converts back into the delegate, so
-the Rust CCWs — `avalonia_sys::item_filter`/`text_filter` — really filter
+the Rust CCWs — `rustolonia_sys::item_filter`/`text_filter` — really filter
 items (AutoCompleteBox 11 to 12). The selector delegates and the async
 populator stay gaps: selectors add another callback shape and the
 populator needs the async-completion transport. CCWs now free variant
@@ -578,7 +590,7 @@ the host's `AvnNotification` wraps a foreign interface as a managed
 `INotification`, reading the handlers through getter slots into managed
 actions. The bindgen emits the handler CCW through the event-callback
 pattern and RCW getters on `IAvnWindowNotificationManager`, and the
-Rust side grows a ref-counted `avalonia_sys::notification` CCW whose
+Rust side grows a ref-counted `rustolonia_sys::notification` CCW whose
 string getters allocate through the host's UTF-16 provider. The INotification
 content overloads and the Action-carrying Show overload cross through
 the notification CCW's handler slots; every remaining gap in the report
@@ -619,7 +631,7 @@ display text as a host-allocated UTF-16 buffer; `TextSelector` (ordinal 30)
 wraps the string selector as `IAvnTextSelector` over two borrowed buffers.
 The host's `AvnItemSelector`/`AvnTextSelector` wrap managed delegates; a
 foreign interface converts back into the delegate, so the Rust CCWs —
-`avalonia_sys::item_selector`/`text_selector` — really format items
+`rustolonia_sys::item_selector`/`text_selector` — really format items
 (AutoCompleteBox 13 to 14). The CCWs allocate their returned string through
 the host's UTF-16 provider and report E_NOTIMPL without a host, exactly as
 the notification CCW's string getters do. The gap report drops to 177
@@ -689,7 +701,7 @@ placement record through the new Avalonia.Host InternalsVisibleTo entry,
 calls it, and reads the mutations back), and Popup, ContextMenu and
 PopupFlyoutBase's CustomPopupPlacementCallback properties cross (the
 flyout base republishes at 6, Popup at 8, ContextMenu at 15). The Rust
-CCW — `avalonia_sys::popup_placement` — returns a
+CCW — `rustolonia_sys::popup_placement` — returns a
 `PopupPlacementResult`. The gap report drops to 160 entries. Factory
 stays 13.
 
@@ -703,7 +715,7 @@ bridges both directions: a managed delegate runs under
 `AvnPopulatorBridge` and reports through a host-built completion CCW,
 while a foreign CCW converts into the delegate through a
 `TaskCompletionSource` the completion resolves (AutoCompleteBox 15 to
-16). The Rust CCW — `avalonia_sys::async_populator` — hands the closure a
+16). The Rust CCW — `rustolonia_sys::async_populator` — hands the closure a
 `PopulateCompletion` reporter. ShowDialog stays by-design with an
 accurate reason: its modal completion needs the dialog-owner lifetime the
 projected Show overloads do not carry. The gap report drops to 159
@@ -727,8 +739,8 @@ no difference.
 ## RID artifacts
 
 Release artifacts are per RID and retain their exact names:
-`Avalonia.Host.dll` (`win-*`), `Avalonia.Host.so` (`linux-*`), and
-`Avalonia.Host.dylib` (`osx-*`). Each artifact directory contains the matching
+`rustolonia_host.dll` (`win-*`), `librustolonia_host.so` (`linux-*`), and
+`librustolonia_host.dylib` (`osx-*`). Each artifact directory contains the matching
 native dependencies, `licence.md`, a deterministic `sbom.cdx.json` delivery
 inventory, and a `checksums.sha256` manifest covering every delivered file
 except the manifest itself. Verify it before distribution or launch. Every RID
@@ -751,6 +763,25 @@ The Rust host and standalone Rust artifacts are not NuGet packages, so
 is instead represented by `rust/generate-sbom.ps1` in `sbom.cdx.json`, including
 the host, Rust executable, bundled native binaries, and licence with SHA-256
 hashes after signing.
+
+## Crates.io and prebuilt hosts
+
+- `rustolonia` depends on `rustolonia-sys` with an exact `=X.Y.Z` requirement,
+  so a dependency graph can contain only one release of the bindings.
+- `rustolonia-sys` downloads only the host tarball of its own version and
+  verifies it against the SHA-256 recorded in its packaged
+  `host-checksums.txt`. A crate version is never re-pointed at a different
+  host build; a new host means a new crate version.
+- The host reports its release version and the SHA-256 of
+  `avalonia-rust-abi.h` through `avn_get_host_info`. `Host::load` fails with
+  `HostLoadError::IncompatibleHost` when the fingerprint differs from the one
+  `rustolonia-sys` was built against, or when the export is missing (a host
+  older than this check). A host found through `RUSTOLONIA_HOST_LIB`,
+  `RUSTOLONIA_HOST_DIR` or next to the executable is subject to the same
+  check.
+- Until 1.0, a minor version bump (`0.Y`) may break the Rust API and the ABI;
+  a patch bump (`0.Y.Z`) is reserved for compatible fixes. Every release still
+  ships its own host, whatever the bump.
 
 ## File type associations
 

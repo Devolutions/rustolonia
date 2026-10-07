@@ -28,6 +28,26 @@
     <DefineConstants Condition="'$(AvaloniaRustHostPlatform)' == 'X11'">$(DefineConstants);AVN_HOST_X11</DefineConstants>
     <DefineConstants Condition="'$(AvaloniaRustHostPlatform)' == 'OSX'">$(DefineConstants);AVN_HOST_OSX</DefineConstants>
   </PropertyGroup>
+  <!--
+    The published NativeAOT library is named rustolonia_host.dll (Windows),
+    librustolonia_host.so (Linux) and librustolonia_host.dylib (macOS), following
+        the platform library naming convention also used by Rust cdylibs. The managed
+    assembly identity stays Avalonia.Host so projection metadata and friend
+    assemblies are unaffected; only the published native file is renamed.
+  -->
+  <PropertyGroup>
+    <RustoloniaHostBaseName>rustolonia_host</RustoloniaHostBaseName>
+    <SharedLibraryInstallName Condition="'$(SharedLibraryInstallName)' == '' and '$(AvaloniaRustHostPlatform)' == 'OSX'">@rpath/lib$(RustoloniaHostBaseName).dylib</SharedLibraryInstallName>
+  </PropertyGroup>
+  <Target Name="RenameRustoloniaHostNativeBinary" AfterTargets="CopyNativeBinary" Condition="'$(PublishAot)' == 'true' and '$(NativeLib)' == 'Shared'">
+    <PropertyGroup>
+      <_RustoloniaHostPrefix Condition="'$(NativeBinaryExt)' != '.dll'">lib</_RustoloniaHostPrefix>
+      <_RustoloniaHostSource>$(PublishDir)$(TargetName)$(NativeBinaryExt)</_RustoloniaHostSource>
+      <_RustoloniaHostFile>$(PublishDir)$(_RustoloniaHostPrefix)$(RustoloniaHostBaseName)$(NativeBinaryExt)</_RustoloniaHostFile>
+    </PropertyGroup>
+    <Copy SourceFiles="$(_RustoloniaHostSource)" DestinationFiles="$(_RustoloniaHostFile)" />
+    <Delete Files="$(_RustoloniaHostSource)" />
+  </Target>
   <Target Name="ValidateAvaloniaRustHostPlatform" BeforeTargets="PrepareForBuild">
     <Error Condition="'$(AvaloniaRustHostPlatform)' != 'Win32' and '$(AvaloniaRustHostPlatform)' != 'X11' and '$(AvaloniaRustHostPlatform)' != 'OSX'"
            Text="AvaloniaRustHostPlatform must be Win32, X11, or OSX for runtime identifier '$(RuntimeIdentifier)'." />
@@ -89,4 +109,5 @@
   <Import Project="..\build\NullableEnable.props" />
   <Import Project="..\build\TrimmingEnable.props" />
   <Import Project="..\build\MicroCOM.props" />
+  <Import Project="HostBuildInfo.targets" />
 </Project>

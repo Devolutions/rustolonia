@@ -10,7 +10,7 @@ namespace Avalonia.Rust;
 
 /// <summary>
 /// Tag for the scalar values carried across the Rust value-converter ABI.
-/// Kept in sync with <c>ScalarKind</c> in <c>avalonia-sys::value_converter</c>.
+/// Kept in sync with <c>ScalarKind</c> in <c>rustolonia-sys::value_converter</c>.
 /// </summary>
 public enum AvnValueKind
 {

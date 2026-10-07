@@ -1,4 +1,4 @@
-﻿# Avalonia for Rust
+# Avalonia for Rust
 
 This experimental workspace provides an idiomatic Rust API over an Avalonia
 .NET 10 NativeAOT shared library. Both the managed nano-COM wrappers and Rust
@@ -50,10 +50,10 @@ invariant strings.
 `RepeatButton`, `DropDownButton`, `SplitButton`, `ToggleSplitButton`,
 `HyperlinkButton`, `ContextMenu` and `MenuFlyout` are projected too.
 `HyperlinkButton.NavigateUri` is a URI string; `SplitButton.Flyout` is not.
-`WrapPanel`, `UniformGrid`, `RelativePanel`, `Viewbox`, `FlexPanel` and
+`WrapPanel`, `UniformGrid`, `RelativePanel`, `Viewbox` and
 `GridSplitter` (plus its `Thumb` base) are projected too. RelativePanel's
 `Align*WithPanel` bools cross as attached properties; object-valued `Above`/`LeftOf`
-and Flex's attached `Order`/`Grow`/`Shrink` stay gaps.
+stay gaps. `FlexPanel` is newer than the pinned Avalonia 12.1.x line.
 `Flyout`, the imperative `Menu`/`MenuItem` pair, `SplitView`, `DatePicker` and
 `TimePicker` are projected too. A flyout is an `AvaloniaObject` rather than a
 `Control`, and it reaches a control through `flyout.show_at_with_control(&button)?`
@@ -80,6 +80,11 @@ Release compatibility and versioning rules are documented in
 
 ## Prerequisites
 
+Code-first applications that depend on the published `rustolonia` crate need
+only a Rust toolchain; the prebuilt host is downloaded at build time (see
+[rustolonia/README.md](rustolonia/README.md)). Working in this repository, or
+building an application with compiled AXAML and view-models, needs:
+
 - Windows 10 or later, Linux with X11, or macOS
 - PowerShell 7 (`pwsh`)
 - .NET SDK 10
@@ -94,7 +99,7 @@ pwsh ./rust/build.ps1
 ```
 
 The script publishes the NativeAOT host for this OS, points
-`AVN_HOST_NATIVE_LIB` at it, and runs the complete Rust workspace tests.
+`RUSTOLONIA_HOST_LIB` at it, and runs the complete Rust workspace tests.
 Use `-Architecture arm64` on a matching ARM64 runner.
 
 On Linux, initialize DBus sources first:
@@ -107,9 +112,9 @@ pwsh ./rust/build.ps1
 To run an example:
 
 ```powershell
-$env:AVN_HOST_NATIVE_LIB = (Resolve-Path `
-  .\host\bin\Release\net10.0\win-x64\publish\Avalonia.Host.dll)
-cargo run --manifest-path .\rust\Cargo.toml -p avalonia --example hello_world
+$env:RUSTOLONIA_HOST_LIB = (Resolve-Path `
+  .\host\bin\Release\net10.0\win-x64\publish\rustolonia_host.dll)
+cargo run --manifest-path .\rust\Cargo.toml -p rustolonia --example hello_world
 ```
 
 The examples progress from a basic window (`hello_world`) through a port of
@@ -163,13 +168,13 @@ are what it runs, spelled out for anyone changing the pipeline itself:
 dotnet run --project .\projection\Avalonia.Projection.Tool `
   -- .\rust\projection.ir.json `
   .\host\Generated\ObjectModel `
-  .\rust\avalonia-sys\include\avalonia-rust-abi.h
+  .\rust\rustolonia-sys\include\avalonia-rust-abi.h
 
 Push-Location .\rust
-cargo run -p avalonia-bindgen -- `
+cargo run -p rustolonia-bindgen -- `
   .\projection.ir.json `
-  .\avalonia-sys\src\generated.rs `
-  .\avalonia\src\generated.rs
+  .\rustolonia-sys\src\generated.rs `
+  .\rustolonia\src\generated.rs
 cargo fmt --all
 Pop-Location
 
@@ -281,8 +286,9 @@ volume) and the default RID matches the current OS and architecture.
 
 `Avalonia.Host`, `Avalonia.Rust`, `Avalonia.Rust.Interop`, and the projection
 tool/generator projects are currently non-packable, and the `rust/*` crates
-are source-only (`publish = false`). None of this stage's new artifacts are
-published as NuGet packages; see
+are published to crates.io in lockstep with per-RID host tarballs on GitHub
+Releases (see [PRODUCTIZATION.md#crate-publishing](PRODUCTIZATION.md#crate-publishing)).
+None of this stage's new artifacts are published as NuGet packages; see
 [PRODUCTIZATION.md#sbom-eu-cra-scope](PRODUCTIZATION.md#sbom-eu-cra-scope)
 for why that keeps them outside the repository's CycloneDX SBOM generation,
 and what would need to change first if that ever changes.

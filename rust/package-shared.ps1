@@ -22,12 +22,12 @@ function Invoke-Logged {
 }
 
 $script:RidTargets = @{
-    'win-x64'     = @{ Triple = 'x86_64-pc-windows-msvc'; Platform = 'Win32'; HostExtension = '.dll'; ExeExtension = '.exe'; OS = 'Windows'; Arch = 'x64' }
-    'win-arm64'   = @{ Triple = 'aarch64-pc-windows-msvc'; Platform = 'Win32'; HostExtension = '.dll'; ExeExtension = '.exe'; OS = 'Windows'; Arch = 'arm64' }
-    'linux-x64'   = @{ Triple = 'x86_64-unknown-linux-gnu'; Platform = 'X11'; HostExtension = '.so'; ExeExtension = ''; OS = 'Linux'; Arch = 'x64' }
-    'linux-arm64' = @{ Triple = 'aarch64-unknown-linux-gnu'; Platform = 'X11'; HostExtension = '.so'; ExeExtension = ''; OS = 'Linux'; Arch = 'arm64' }
-    'osx-x64'     = @{ Triple = 'x86_64-apple-darwin'; Platform = 'OSX'; HostExtension = '.dylib'; ExeExtension = ''; OS = 'macOS'; Arch = 'x64' }
-    'osx-arm64'   = @{ Triple = 'aarch64-apple-darwin'; Platform = 'OSX'; HostExtension = '.dylib'; ExeExtension = ''; OS = 'macOS'; Arch = 'arm64' }
+    'win-x64'     = @{ Triple = 'x86_64-pc-windows-msvc'; Platform = 'Win32'; HostExtension = '.dll'; HostFileName = 'rustolonia_host.dll'; ExeExtension = '.exe'; OS = 'Windows'; Arch = 'x64' }
+    'win-arm64'   = @{ Triple = 'aarch64-pc-windows-msvc'; Platform = 'Win32'; HostExtension = '.dll'; HostFileName = 'rustolonia_host.dll'; ExeExtension = '.exe'; OS = 'Windows'; Arch = 'arm64' }
+    'linux-x64'   = @{ Triple = 'x86_64-unknown-linux-gnu'; Platform = 'X11'; HostExtension = '.so'; HostFileName = 'librustolonia_host.so'; ExeExtension = ''; OS = 'Linux'; Arch = 'x64' }
+    'linux-arm64' = @{ Triple = 'aarch64-unknown-linux-gnu'; Platform = 'X11'; HostExtension = '.so'; HostFileName = 'librustolonia_host.so'; ExeExtension = ''; OS = 'Linux'; Arch = 'arm64' }
+    'osx-x64'     = @{ Triple = 'x86_64-apple-darwin'; Platform = 'OSX'; HostExtension = '.dylib'; HostFileName = 'librustolonia_host.dylib'; ExeExtension = ''; OS = 'macOS'; Arch = 'x64' }
+    'osx-arm64'   = @{ Triple = 'aarch64-apple-darwin'; Platform = 'OSX'; HostExtension = '.dylib'; HostFileName = 'librustolonia_host.dylib'; ExeExtension = ''; OS = 'macOS'; Arch = 'arm64' }
 }
 
 function Get-RidTargetInfo {
@@ -730,4 +730,146 @@ function New-IsolatedPackageStagingRoot {
     New-Item -ItemType Directory -Force -Path $stagingRoot | Out-Null
     Set-Content -LiteralPath (Join-Path $stagingRoot '.rustolonia-staging-owner') -Value "rustolonia staging for $Rid" -Encoding utf8
     return $stagingRoot
+}
+
+function Get-RustoloniaReleaseVersion {
+    param([Parameter(Mandatory)][string]$RustoloniaRoot)
+
+    $release = Get-Content -LiteralPath (Join-Path $RustoloniaRoot 'rust' 'release-manifest.json') -Raw | ConvertFrom-Json
+    $version = [string]$release.rustoloniaVersion
+    foreach ($crate in @('rustolonia-sys', 'rustolonia', 'rustolonia-bindgen')) {
+        $manifest = Join-Path $RustoloniaRoot 'rust' $crate 'Cargo.toml'
+        $match = Select-String -LiteralPath $manifest -Pattern '^version\s*=\s*"([^"]+)"' | Select-Object -First 1
+        if (-not $match -or $match.Matches[0].Groups[1].Value -ne $version) {
+            throw "$crate version does not match release-manifest.json rustoloniaVersion '$version'."
+        }
+    }
+    return $version
+}
+
+function Get-AbiFingerprint {
+    param([Parameter(Mandatory)][string]$RustoloniaRoot)
+
+    # Raw bytes, exactly like rustolonia-sys/build.rs (the header is checked out with eol=lf).
+    $header = Join-Path $RustoloniaRoot 'rust' 'rustolonia-sys' 'include' 'avalonia-rust-abi.h'
+    return (Get-FileHash -LiteralPath $header -Algorithm SHA256).Hash.ToLowerInvariant()
+}
+
+function Get-HostAssetName {
+    param(
+        [Parameter(Mandatory)][string]$Version,
+        [Parameter(Mandatory)][string]$Rid,
+        [ValidateSet('default', 'devtools')][string]$Flavor = 'default',
+        [switch]$Symbols
+    )
+
+    $null = Get-RidTargetInfo -Rid $Rid
+    $name = "rustolonia-host-$Version-$Rid"
+    if ($Flavor -ne 'default') { $name += "-$Flavor" }
+    if ($Symbols) { $name += '-symbols' }
+    return "$name.tar.gz"
+}
+
+function Write-HostManifest {
+    param(
+        [Parameter(Mandatory)][string]$Directory,
+        [Parameter(Mandatory)][string]$Version,
+        [Parameter(Mandatory)][string]$Rid,
+        [Parameter(Mandatory)][string]$AbiFingerprint,
+        [Parameter(Mandatory)][string]$RustoloniaRoot,
+        [ValidateSet('default', 'devtools')][string]$Flavor = 'default',
+        [string]$SourceRevision
+    )
+
+    $target = Get-RidTargetInfo -Rid $Rid
+    $release = Get-Content -LiteralPath (Join-Path $RustoloniaRoot 'rust' 'release-manifest.json') -Raw | ConvertFrom-Json
+    $files = @(Get-ChildItem -LiteralPath $Directory -File -Force |
+        Where-Object { $_.Name -ne 'host-manifest.json' } |
+        Sort-Object Name |
+        ForEach-Object {
+            [ordered]@{ name = $_.Name; sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
+        })
+    # version, rid and abiFingerprint come first and are flat strings: rustolonia-sys
+    # reads them with a minimal parser.
+    $manifest = [ordered]@{
+        version        = $Version
+        rid            = $Rid
+        abiFingerprint = $AbiFingerprint
+        hostFile       = $target.HostFileName
+        flavor         = $Flavor
+        schemaVersion  = 1
+        sourceRevision = $SourceRevision
+        producerPin    = [string]$release.producerPin
+        producerRemote = [string]$release.producerRemote
+        patches        = @($release.patches | ForEach-Object { [ordered]@{ path = $_.path; sha256 = $_.sha256 } })
+        files          = $files
+    }
+    $json = ($manifest | ConvertTo-Json -Depth 6) -replace "`r`n", "`n"
+    [IO.File]::WriteAllText((Join-Path $Directory 'host-manifest.json'), "$json`n", [Text.UTF8Encoding]::new($false))
+}
+
+function Get-HostSymbolFiles {
+    param([Parameter(Mandatory)][string]$PublishDirectory)
+
+    # NativeAOT symbols: .pdb (Windows), .dbg (Linux), .dSYM bundles (macOS).
+    $root = (Resolve-Path -LiteralPath $PublishDirectory).Path
+    $items = @(Get-ChildItem -LiteralPath $root -File | Where-Object { $_.Extension -in @('.pdb', '.dbg') })
+    foreach ($bundle in @(Get-ChildItem -LiteralPath $root -Directory -Filter '*.dSYM')) {
+        $items += @(Get-ChildItem -LiteralPath $bundle.FullName -File -Recurse)
+    }
+    return @($items | ForEach-Object { [IO.Path]::GetRelativePath($root, $_.FullName) } | Sort-Object -CaseSensitive)
+}
+
+function New-DeterministicTarGz {
+    param(
+        [Parameter(Mandatory)][string]$SourceDirectory,
+        [Parameter(Mandatory)][string[]]$RelativePaths,
+        [Parameter(Mandatory)][string]$Destination,
+        [long]$Timestamp = 0
+    )
+
+    # Fixed order, owner, mode and mtime, and no gzip timestamp, so identical inputs
+    # produce byte-identical archives.
+    $root = (Resolve-Path -LiteralPath $SourceDirectory).Path
+    $mtime = [DateTimeOffset]::FromUnixTimeSeconds($Timestamp)
+    $executable = [IO.UnixFileMode]'UserRead, UserWrite, UserExecute, GroupRead, GroupExecute, OtherRead, OtherExecute'
+    $regular = [IO.UnixFileMode]'UserRead, UserWrite, GroupRead, OtherRead'
+    $file = [IO.File]::Create($Destination)
+    try {
+        $gzip = [IO.Compression.GZipStream]::new($file, [IO.Compression.CompressionLevel]::SmallestSize)
+        try {
+            $writer = [Formats.Tar.TarWriter]::new($gzip, [Formats.Tar.TarEntryFormat]::Ustar, $false)
+            try {
+                foreach ($relative in @($RelativePaths | Sort-Object -CaseSensitive -Unique)) {
+                    $entryName = $relative.Replace('\', '/')
+                    if ($entryName.StartsWith('/') -or $entryName -match '(^|/)\.\.(/|$)') {
+                        throw "Archive entry must be a relative path inside the source directory: $relative"
+                    }
+                    $path = Join-Path $root $relative
+                    $entry = [Formats.Tar.UstarTarEntry]::new([Formats.Tar.TarEntryType]::RegularFile, $entryName)
+                    $entry.ModificationTime = $mtime
+                    $entry.Uid = 0
+                    $entry.Gid = 0
+                    $entry.Mode = if ($entryName -match '\.(dll|so|dylib|exe)$|\.so\.|\.dSYM/Contents/Resources/DWARF/') { $executable } else { $regular }
+                    $stream = [IO.File]::OpenRead($path)
+                    try {
+                        $entry.DataStream = $stream
+                        $writer.WriteEntry($entry)
+                    }
+                    finally { $stream.Dispose() }
+                }
+            }
+            finally { $writer.Dispose() }
+        }
+        finally { $gzip.Dispose() }
+    }
+    finally { $file.Dispose() }
+}
+
+function Write-AssetChecksum {
+    param([Parameter(Mandatory)][string]$Asset)
+
+    $hash = (Get-FileHash -LiteralPath $Asset -Algorithm SHA256).Hash.ToLowerInvariant()
+    [IO.File]::WriteAllText("$Asset.sha256", "$hash  $([IO.Path]::GetFileName($Asset))`n", [Text.UTF8Encoding]::new($false))
+    return $hash
 }

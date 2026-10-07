@@ -7,4 +7,4 @@ description = "Sample-owned Rust view-model API generated from the flagship view
 publish = false
 
 [dependencies]
-avalonia = { path = "../avalonia" }
+rustolonia = { path = "../rustolonia" }

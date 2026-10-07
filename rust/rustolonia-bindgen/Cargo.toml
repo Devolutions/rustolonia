@@ -1,0 +1,17 @@
+[package]
+name = "rustolonia-bindgen"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Code generator that emits rustolonia-sys/rustolonia from projection.ir.json"
+repository = "https://github.com/Devolutions/rustolonia"
+readme = "README.md"
+rust-version = "1.88"
+keywords = ["avalonia", "codegen", "bindings", "ffi"]
+categories = ["development-tools::ffi"]
+include = ["/src/**", "/README.md", "/LICENSE"]
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"

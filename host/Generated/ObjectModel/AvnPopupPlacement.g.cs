@@ -85,7 +85,7 @@ public sealed partial class AvnPopupPlacementCallback : IAvnPopupPlacementCallba
         {
             var size = new global::Avalonia.Size(popupWidth, popupHeight);
             var anchorRect = new global::Avalonia.Rect(anchorX, anchorY, anchorWidth, anchorHeight);
-            var parameters = new global::Avalonia.Controls.Primitives.PopupPositioning.CustomPopupPlacement(size, null!)
+            var parameters = new global::Avalonia.Controls.Primitives.PopupPositioning.CustomPopupPlacement(size, default, null!)
             {
                 AnchorRectangle = anchorRect,
             };

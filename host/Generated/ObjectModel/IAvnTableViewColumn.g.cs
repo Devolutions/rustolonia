@@ -11,6 +11,12 @@ namespace Avalonia.Host.Com;
 public partial interface IAvnTableViewColumn : IAvnStyledElement
 {
     [PreserveSig]
+    int GetIsVisible(out int value);
+
+    [PreserveSig]
+    int SetIsVisible(int value);
+
+    [PreserveSig]
     int GetHeaderTemplate(out IAvnDataTemplate? value);
 
     [PreserveSig]
@@ -39,12 +45,6 @@ public partial interface IAvnTableViewColumn : IAvnStyledElement
 
     [PreserveSig]
     int SetMaxWidth(double value);
-
-    [PreserveSig]
-    int GetIsVisible(out int value);
-
-    [PreserveSig]
-    int SetIsVisible(int value);
 
     [PreserveSig]
     int GetCanUserResize(out int value);
@@ -539,6 +539,37 @@ public sealed partial class AvnTableViewColumn : IAvnTableViewColumn
         }
     }
 
+    public int GetIsVisible(out int value)
+    {
+        value = default;
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            value = _value.IsVisible ? 1 : 0;
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int SetIsVisible(int value)
+    {
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            _value.IsVisible = value != 0;
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
     public int GetHeaderTemplate(out IAvnDataTemplate? value)
     {
         value = default;
@@ -686,37 +717,6 @@ public sealed partial class AvnTableViewColumn : IAvnTableViewColumn
             using var call = _state.EnterCall();
             _value.VerifyAccess();
             _value.MaxWidth = value;
-            return global::Avalonia.Host.HResults.S_OK;
-        }
-        catch (global::System.Exception e)
-        {
-            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
-        }
-    }
-
-    public int GetIsVisible(out int value)
-    {
-        value = default;
-        try
-        {
-            using var call = _state.EnterCall();
-            _value.VerifyAccess();
-            value = _value.IsVisible ? 1 : 0;
-            return global::Avalonia.Host.HResults.S_OK;
-        }
-        catch (global::System.Exception e)
-        {
-            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
-        }
-    }
-
-    public int SetIsVisible(int value)
-    {
-        try
-        {
-            using var call = _state.EnterCall();
-            _value.VerifyAccess();
-            _value.IsVisible = value != 0;
             return global::Avalonia.Host.HResults.S_OK;
         }
         catch (global::System.Exception e)

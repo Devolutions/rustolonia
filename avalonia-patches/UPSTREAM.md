@@ -2,8 +2,7 @@
 
 Everything else in the branch lives under `rustolonia/` and is ours alone.
 This is the complete list of changes touching shared Avalonia framework
-files (`git diff <merge-base> HEAD -- src/Avalonia.Controls
-tests/Avalonia.Controls.UnitTests`: 558 insertions across 11 files), and the
+files (rebased onto upstream `12.1.3`: ~517 insertions across 11 files), and the
 shape each piece would take as an upstream PR.
 
 ## 1. `IViewportRangeSource` + TableView viewport hook (framework-generic, easy sell)
@@ -15,14 +14,15 @@ shape each piece would take as an upstream PR.
 - Why upstream should want it: it is the standard hook virtualized windowed
   collections need, additive, control-local, no behavior change otherwise.
 
-## 2. `TableViewColumn` width limits + visibility (standalone control feature)
-- **`TableViewColumn.cs`** (+89): `MinWidth`/`MaxWidth` styled properties with
-  validation, `IsVisible` (column-level hide; column is not a `Visual` so
-  `Visual.IsVisible` is unavailable), internal `ClampWidth`.
-- **`Presenters/TableViewLayoutHelper.cs`** (+27), **`TableViewColumnHeader.cs`**
-  (+4), **`TableViewRow.cs`** (+15): layout clamps widths, hides render the
-  column at zero width, disables the resize thumb, and rows consult
-  visibility/limits.
+## 2. `TableViewColumn` width limits (standalone control feature)
+- **`TableViewColumn.cs`**: `MinWidth`/`MaxWidth` styled properties with
+  validation, internal `ClampWidth`. (Column `IsVisible` was previously part
+  of this patch; upstream shipped an equivalent in AvaloniaUI/Avalonia#22162 /
+  12.1.3, so it was dropped.)
+- **`Presenters/TableViewLayoutHelper.cs`**, **`TableViewColumnHeader.cs`**:
+  layout and interactive resizing clamp widths to the limits.
+- **`TableViewRow.cs`** (+15): exposes the cells presenter to the row
+  automation peer (section 3).
 - Upstream shape: a self-contained TableView feature PR.
 
 ## 3. `TableViewRowAutomationPeer` (accessibility)

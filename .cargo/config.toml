@@ -1,0 +1,6 @@
+# Builds from this checkout use a host built from the same checkout
+# (rust/build.ps1, rust/build.sh or RUSTOLONIA_HOST_DIR), never a downloaded
+# release host. Set RUSTOLONIA_NO_DOWNLOAD=0 in the environment to exercise
+# the download path.
+[env]
+RUSTOLONIA_NO_DOWNLOAD = "1"

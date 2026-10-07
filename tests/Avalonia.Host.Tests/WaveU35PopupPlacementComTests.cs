@@ -33,7 +33,7 @@ public class WaveU35PopupPlacementComTests
 
         var size = new Avalonia.Size(100, 50);
         var anchor = new Avalonia.Rect(10, 20, 30, 40);
-        var parameters = new CustomPopupPlacement(size, null!)
+        var parameters = new CustomPopupPlacement(size, default, null!)
         {
             AnchorRectangle = anchor,
         };

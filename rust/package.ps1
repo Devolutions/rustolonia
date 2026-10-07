@@ -63,7 +63,7 @@ Invoke-Logged -Command $publishCommand
 $hostAssets = Get-PublishedProjectAssetsFile -Project $hostProject -Configuration $Configuration -Rid $Rid -ArtifactsPath $artifactsRoot -AdditionalProperties $publishProperties
 
 $publishDir = Join-Path $artifactsRoot 'publish' 'Avalonia.Host' "$($Configuration.ToLowerInvariant())_$Rid"
-$hostFile = Join-Path $publishDir "Avalonia.Host$($target.HostExtension)"
+$hostFile = Join-Path $publishDir $target.HostFileName
 if (-not (Test-Path -LiteralPath $hostFile -PathType Leaf)) {
     throw "NativeAOT host was not produced at $hostFile"
 }
@@ -86,7 +86,7 @@ if (-not $SkipCargoBuild -and -not $env:AVN_PACKAGE_SKIP_CARGO_BUILD) {
     [Environment]::SetEnvironmentVariable('CARGO_TARGET_DIR', $cargoTarget, 'Process')
     try {
         Set-WindowsStaticCrt -Triple $target.Triple
-        $cargoCommand = New-CargoBuildCommand -ManifestPath (Join-Path $resolvedRustoloniaRoot 'rust' 'Cargo.toml') -PackageName 'avalonia' -TargetTriple $target.Triple -Configuration $Configuration -Example $Example
+        $cargoCommand = New-CargoBuildCommand -ManifestPath (Join-Path $resolvedRustoloniaRoot 'rust' 'Cargo.toml') -PackageName 'rustolonia' -TargetTriple $target.Triple -Configuration $Configuration -Example $Example
         Invoke-Logged -Command $cargoCommand
     }
     finally {

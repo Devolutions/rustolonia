@@ -1,0 +1,29 @@
+[package]
+name = "rustolonia"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Idiomatic Rust API for Avalonia"
+repository = "https://github.com/Devolutions/rustolonia"
+readme = "README.md"
+rust-version = "1.88"
+keywords = ["avalonia", "gui", "ui", "desktop", "xaml"]
+categories = ["gui", "api-bindings"]
+include = ["/src/**", "/README.md", "/LICENSE"]
+
+[features]
+default = ["dev-host-path"]
+# See rustolonia-sys: never download the prebuilt host at build time.
+no-download = ["rustolonia-sys/no-download"]
+# See rustolonia-sys: remember the staged host directory as a runtime fallback.
+dev-host-path = ["rustolonia-sys/dev-host-path"]
+
+[dependencies]
+rustolonia-sys = { version = "=0.1.0", path = "../rustolonia-sys", default-features = false }
+
+[dev-dependencies]
+avalonia-sample = { path = "../avalonia-sample" }
+
+[package.metadata.docs.rs]
+features = ["no-download"]
+no-default-features = true

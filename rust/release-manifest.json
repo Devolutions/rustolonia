@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "rustoloniaVersion": "0.1.0",
-  "producerPin": "9654332a79f637473da96054f75b2a16deaa557e",
-  "producerRemote": "https://github.com/mamoreau-devolutions/Avalonia",
+  "producerPin": "8eeda4f6f546165b3f72e63c9f42247abb306905",
+  "producerRemote": "https://github.com/AvaloniaUI/Avalonia",
   "patches": [
     {
       "path": "avalonia-patches/avalonia-controls.patch",
-      "sha256": "a1f051d24183c68745d7354ad1d5403fb58924533e79001c5234611d2a149839"
+      "sha256": "a59128da0f391a0257ebd32cb3ddee6c8513560af4cdabd4909bbb04fbfae04b"
     }
   ],
   "schemas": {

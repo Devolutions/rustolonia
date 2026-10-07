@@ -125,7 +125,6 @@ public static class AvaloniaProjectionProfiles
             ["Avalonia.Host.Com.IAvnUniformGrid"] = 11,
             ["Avalonia.Host.Com.IAvnRelativePanel"] = 11,
             ["Avalonia.Host.Com.IAvnViewbox"] = 11,
-            ["Avalonia.Host.Com.IAvnFlexPanel"] = 11,
             ["Avalonia.Host.Com.IAvnShape"] = 11,
             ["Avalonia.Host.Com.IAvnRectangle"] = 11,
             ["Avalonia.Host.Com.IAvnEllipse"] = 11,
@@ -203,13 +202,12 @@ public static class AvaloniaProjectionProfiles
             // Wave C. Remaining layout panels plus the Thumb base GridSplitter needs.
             // RelativePanel's object-valued attached properties (Above/LeftOf/…) stay gaps:
             // a COM-valued attached property has no ABI shape. The Align*WithPanel bools do
-            // cross. Flex's attached properties live on the static Flex class, which is not
-            // an AvaloniaObject, so Order/Grow/Shrink/Basis/AlignSelf stay gaps too.
+            // cross. FlexPanel is not in the pinned 12.1.x line (it ships in a later upstream
+            // minor), so it is not projected yet.
             "Avalonia.Controls.WrapPanel",
             "Avalonia.Controls.Primitives.UniformGrid",
             "Avalonia.Controls.RelativePanel",
             "Avalonia.Controls.Viewbox",
-            "Avalonia.Controls.FlexPanel",
             "Avalonia.Controls.Primitives.Thumb",
             "Avalonia.Controls.GridSplitter",
             // Wave D. Button family plus context menus. Flyout on SplitButton/Button stays a
@@ -442,11 +440,6 @@ public static class AvaloniaProjectionProfiles
                 ["Rows", "Columns", "FirstColumn", "RowSpacing", "ColumnSpacing"],
             ["Avalonia.Controls.RelativePanel"] = [],
             ["Avalonia.Controls.Viewbox"] = ["Child", "Stretch", "StretchDirection"],
-            ["Avalonia.Controls.FlexPanel"] =
-            [
-                "Direction", "JustifyContent", "AlignItems", "AlignContent", "Wrap",
-                "ColumnSpacing", "RowSpacing",
-            ],
             ["Avalonia.Controls.Primitives.Thumb"] =
                 ["DragStarted", "DragDelta", "DragCompleted"],
             ["Avalonia.Controls.GridSplitter"] =
@@ -505,7 +498,7 @@ public static class AvaloniaProjectionProfiles
             [
                 "SelectedDate", "DisplayDate", "DisplayDateStart", "DisplayDateEnd",
                 "DisplayMode", "SelectionMode", "IsTodayHighlighted", "FirstDayOfWeek",
-                "HeaderBackground", "IsWeekNumberVisible", "WeekNumberRule",
+                "HeaderBackground",
                 "AllowTapRangeSelection", "DisplayModeChanged", "DisplayDateChanged",
                 "SelectedDates", "BlackoutDates", "SelectedDatesChanged",
             ],
@@ -513,10 +506,10 @@ public static class AvaloniaProjectionProfiles
             [
                 "SelectedDate", "DisplayDate", "DisplayDateStart", "DisplayDateEnd",
                 "IsDropDownOpen", "IsTodayHighlighted", "SelectedDateFormat",
-                "CustomDateFormatString", "Text", "PlaceholderText", "IsWeekNumberVisible",
+                "CustomDateFormatString", "Text", "PlaceholderText",
                 "FirstDayOfWeek", "UseFloatingPlaceholder", "PlaceholderForeground",
                 "DateValidationError",
-                "HorizontalContentAlignment", "VerticalContentAlignment", "WeekNumberRule",
+                "HorizontalContentAlignment", "VerticalContentAlignment",
                 "CalendarOpened", "CalendarClosed", "Clear", "BlackoutDates", "SelectedDateChanged",
             ],
             ["Avalonia.Controls.Carousel"] =

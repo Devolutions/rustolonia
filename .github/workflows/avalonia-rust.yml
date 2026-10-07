@@ -31,6 +31,11 @@ jobs:
         shell: pwsh
         run: ./rust/tests/test-build-app.ps1
 
+      - name: Check the publishable crates package and build standalone
+        if: runner.os == 'Linux'
+        working-directory: rust
+        run: cargo package --locked -p rustolonia-sys -p rustolonia-bindgen -p rustolonia
+
   release-gate:
     name: ${{ matrix.rid }}
     runs-on: ${{ matrix.os }}
@@ -159,12 +164,18 @@ jobs:
         shell: pwsh
         run: ./rust/build.ps1 -Architecture ${{ matrix.architecture }}
 
+      - name: Build and launch a standalone app against the packaged crates and host tarball
+        shell: pwsh
+        run: |
+          ./rust/package-host.ps1 -Rid ${{ matrix.rid }} -PublishDirectory rust/target/dotnet-${{ matrix.rid }}/publish/Avalonia.Host/release_${{ matrix.rid }} -OutputRoot rust/artifacts/host
+          ./rust/tests/test-standalone-app.ps1 -Rid ${{ matrix.rid }} -TarballDirectory rust/artifacts/host -WorkDirectory "$env:RUNNER_TEMP/standalone-app"
+
       - name: Build flagship Rust view-model samples
         shell: pwsh
         run: |
-          cargo build --manifest-path rust/Cargo.toml -p avalonia --example rust_vm_axaml --release
+          cargo build --manifest-path rust/Cargo.toml -p rustolonia --example rust_vm_axaml --release
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          cargo build --manifest-path rust/Cargo.toml -p avalonia --example rust_dynamic_vm_axaml --release
+          cargo build --manifest-path rust/Cargo.toml -p rustolonia --example rust_dynamic_vm_axaml --release
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Test in-repository system monitor

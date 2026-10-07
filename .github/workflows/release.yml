@@ -1,0 +1,250 @@
+name: Release
+
+# Release procedure (see rust/PRODUCTIZATION.md#releasing):
+#   1. rust/prepare-release.ps1 -Version X.Y.Z, commit, push tag vX.Y.Z.
+#      -> the `build` jobs publish the host tarballs to a draft release vX.Y.Z.
+#   2. rust/prepare-release.ps1 -Checksums -FromRelease, commit to master.
+#   3. Run this workflow manually with version X.Y.Z.
+#      -> `publish` verifies the checksums, builds a fresh crates.io-style app
+#         against the packaged crates, publishes the GitHub release and the
+#         crates (approval through the `crates-io` environment).
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to publish (without the leading v); its draft release must exist
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref_name }}-${{ inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  version:
+    name: check version
+    if: github.event_name == 'push'
+    runs-on: ubuntu-22.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: version
+        name: Tag must match the crate, manifest and SharedVersion.props versions
+        shell: pwsh
+        run: |
+          . ./rust/package-shared.ps1
+          $version = Get-RustoloniaReleaseVersion -RustoloniaRoot $PWD
+          if ('${{ github.ref_name }}' -ne "v$version") { throw "Tag ${{ github.ref_name }} does not match version $version." }
+          if ((Get-Content build/SharedVersion.props -Raw) -notmatch "<Version>$([regex]::Escape($version))</Version>") {
+            throw "build/SharedVersion.props does not match version $version."
+          }
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "prerelease=$($version.Contains('-').ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+
+  build:
+    name: host (${{ matrix.rid }})
+    needs: version
+    runs-on: ${{ matrix.os }}
+    env:
+      RestoreConfigFile: ${{ github.workspace }}/avalonia-src/NuGet.Config
+      VERSION: ${{ needs.version.outputs.version }}
+      # Oldest supported macOS; see rust/PLATFORMS.md.
+      MACOSX_DEPLOYMENT_TARGET: '12.0'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, rid: win-x64 }
+          - { os: windows-11-arm, rid: win-arm64 }
+          # The oldest runner image sets the glibc floor (2.35).
+          - { os: ubuntu-22.04, rid: linux-x64 }
+          - { os: ubuntu-22.04-arm, rid: linux-arm64 }
+          - { os: macos-15-intel, rid: osx-x64 }
+          - { os: macos-14, rid: osx-arm64 }
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Apply Avalonia source patches
+        shell: pwsh
+        run: ./avalonia-patches/apply-avalonia-patches.ps1 -AvaloniaRoot ./avalonia-src
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.201
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Linux smoke-test display
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install --yes xvfb
+
+      - name: Restore producer packages (retries on NuGet flakes)
+        shell: pwsh
+        run: |
+          $project = 'avalonia-src/src/Avalonia.Build.Tasks/Avalonia.Build.Tasks.csproj'
+          $delays = @(15, 30, 60, 90, 120)
+          $attempt = 0
+          while ($true) {
+            $attempt++
+            dotnet restore $project
+            if ($LASTEXITCODE -eq 0) { break }
+            if ($attempt -gt $delays.Length) { throw "restore failed after $attempt attempts: $project" }
+            $delay = $delays[$attempt - 1]
+            Write-Host "restore of $project failed (attempt $attempt); retrying in ${delay}s"
+            Start-Sleep -Seconds $delay
+          }
+
+      - name: Build the producer's build tasks
+        shell: pwsh
+        run: dotnet build avalonia-src/src/Avalonia.Build.Tasks/Avalonia.Build.Tasks.csproj -c Release --no-restore
+
+      - name: Package the host tarball
+        shell: pwsh
+        env:
+          AVALONIA_RUST_SIGN_COMMAND: ${{ vars.AVALONIA_RUST_SIGN_COMMAND }}
+        run: ./rust/package-host.ps1 -Rid ${{ matrix.rid }} -OutputRoot rust/artifacts/host
+
+      - name: Build and launch a standalone app against the packaged crates and this tarball
+        shell: pwsh
+        run: ./rust/tests/test-standalone-app.ps1 -Rid ${{ matrix.rid }} -TarballDirectory rust/artifacts/host -WorkDirectory "$env:RUNNER_TEMP/standalone-app"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rustolonia-host-${{ matrix.rid }}
+          path: rust/artifacts/host/*.tar.gz
+          if-no-files-found: error
+
+  draft-release:
+    name: draft GitHub release
+    needs: [version, build]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: rustolonia-host-*
+          path: dist
+          merge-multiple: true
+
+      - name: Write SHA256SUMS
+        working-directory: dist
+        run: sha256sum *.tar.gz > SHA256SUMS && cat SHA256SUMS
+
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/*.tar.gz
+
+      - name: Create the draft release
+        run: |
+          if gh release view "v$VERSION" > /dev/null 2>&1; then
+            echo "Release v$VERSION already exists; delete it to rebuild." >&2
+            exit 1
+          fi
+          flags=(--draft --verify-tag --title "rustolonia $VERSION" --notes "Prebuilt rustolonia hosts for rustolonia-sys $VERSION.")
+          if [ '${{ needs.version.outputs.prerelease }}' = 'true' ]; then flags+=(--prerelease); fi
+          gh release create "v$VERSION" "${flags[@]}" dist/*
+
+  publish:
+    name: publish ${{ inputs.version }}
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-22.04
+    environment: crates-io
+    permissions:
+      contents: write
+      id-token: write
+    env:
+      VERSION: ${{ inputs.version }}
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Linux smoke-test display
+        run: sudo apt-get update && sudo apt-get install --yes xvfb
+
+      - name: Download the draft release
+        shell: pwsh
+        run: |
+          $release = Join-Path $env:RUNNER_TEMP 'release' "v$env:VERSION"
+          gh release download "v$env:VERSION" --dir $release
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Push-Location $release
+          sha256sum --check --strict SHA256SUMS
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Pop-Location
+
+      - name: Verify the version and committed host checksums
+        shell: pwsh
+        run: |
+          . ./rust/package-shared.ps1
+          $version = Get-RustoloniaReleaseVersion -RustoloniaRoot $PWD
+          if ($version -ne $env:VERSION) { throw "The checkout is at version $version, not $env:VERSION." }
+          ./rust/prepare-release.ps1 -Checksums -SumsFile (Join-Path $env:RUNNER_TEMP 'release' "v$env:VERSION" 'SHA256SUMS')
+          git diff --exit-code -- rust/rustolonia-sys/host-checksums.txt
+          if ($LASTEXITCODE -ne 0) { throw 'host-checksums.txt does not match the release; run rust/prepare-release.ps1 -Checksums -FromRelease and commit.' }
+          $changed = @(git diff --name-only "v$env:VERSION" HEAD -- rust/rustolonia rust/rustolonia-sys rust/rustolonia-bindgen |
+            Where-Object { $_ -ne 'rust/rustolonia-sys/host-checksums.txt' })
+          if ($changed.Count -gt 0) { throw "Crate sources changed since v$($env:VERSION): $($changed -join ', ')" }
+
+      - name: Package the crates
+        working-directory: rust
+        run: cargo package --locked -p rustolonia-sys -p rustolonia-bindgen -p rustolonia
+
+      - name: Build and launch a fresh app against the packaged crates
+        shell: pwsh
+        run: |
+          $app = Join-Path $env:RUNNER_TEMP 'consumer'
+          cargo new --vcs none --name consumer $app
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $package = (Resolve-Path rust/target/package).Path.Replace('\', '/')
+          Add-Content -LiteralPath (Join-Path $app 'Cargo.toml') -Value @"
+          rustolonia = "=$env:VERSION"
+
+          [patch.crates-io]
+          rustolonia = { path = "$package/rustolonia-$env:VERSION" }
+          rustolonia-sys = { path = "$package/rustolonia-sys-$env:VERSION" }
+          "@
+          Copy-Item rust/rustolonia/examples/hello_world.rs (Join-Path $app 'src' 'main.rs') -Force
+          # The real checksums from the packaged rustolonia-sys; only the base URL is local
+          # because the release is still a draft.
+          $env:RUSTOLONIA_HOST_BASE_URL = [Uri]::new((Join-Path $env:RUNNER_TEMP 'release')).AbsoluteUri
+          $env:RUSTOLONIA_CACHE_DIR = Join-Path $env:RUNNER_TEMP 'host-cache'
+          cargo build --release --manifest-path (Join-Path $app 'Cargo.toml')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $process = Start-Process xvfb-run -ArgumentList '-a', (Join-Path $app 'target' 'release' 'consumer') -PassThru
+          Start-Sleep -Seconds 5
+          if ($process.HasExited) { throw "The consumer exited during startup with code $($process.ExitCode)." }
+          Stop-Process -Id $process.Id
+
+      - name: Publish the GitHub release
+        run: gh release edit "v$VERSION" --draft=false
+
+      - uses: rust-lang/crates-io-auth-action@v1
+        id: crates-io-auth
+
+      - name: Publish the crates
+        working-directory: rust
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.crates-io-auth.outputs.token }}
+        run: cargo publish --locked -p rustolonia-sys -p rustolonia-bindgen -p rustolonia

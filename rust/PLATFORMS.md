@@ -1,4 +1,4 @@
-﻿# Platform hosts
+# Platform hosts
 
 The Rust ABI and generated view-model pipeline are platform-neutral. The
 NativeAOT host selects one Avalonia windowing backend at publish time:
@@ -16,7 +16,7 @@ backend setup and the Win32 OLE thread scope.
 
 Linux publishes the host with a `$ORIGIN` runpath. Consequently
 `libSkiaSharp.so` and `libHarfBuzzSharp.so` are resolved beside
-`Avalonia.Host.so` without requiring a process-wide `LD_LIBRARY_PATH`.
+`librustolonia_host.so` without requiring a process-wide `LD_LIBRARY_PATH`.
 
 macOS publishes against `Avalonia.Native` and loads
 `libAvaloniaNative.dylib` from `@loader_path`. `build.ps1`, `package.ps1`,
@@ -81,6 +81,21 @@ pwsh ./rust/build.ps1
 
 The X11 host requires the standard Avalonia Linux runtime libraries, including
 X11, fontconfig, and OpenGL/EGL or software-rendering dependencies.
+
+## Prebuilt host platform floors
+
+Release tarballs (`rust/package-host.ps1`) define the minimum OS a published
+`rustolonia-sys` supports:
+
+| RID | Build environment | Floor |
+| --- | --- | --- |
+| `win-x64`, `win-arm64` | `windows-latest` / `windows-11-arm` runners | Windows 10 1607 / Server 2016 (.NET 10 support floor) |
+| `linux-x64`, `linux-arm64` | `ubuntu-22.04` / `ubuntu-22.04-arm` runners | glibc 2.35 |
+| `osx-x64`, `osx-arm64` | `macos-15-intel` / `macos-14` runners, `MACOSX_DEPLOYMENT_TARGET=12.0` | macOS 12 |
+
+Linux hosts are glibc-only; musl RIDs are not published. They need an X11
+display (XWayland works), the X11 client libraries (`libX11`, `libICE`,
+`libSM`) and fontconfig at runtime.
 
 ## Cross-platform gate result
 

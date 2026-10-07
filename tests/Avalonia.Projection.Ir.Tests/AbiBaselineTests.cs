@@ -20,7 +20,7 @@ public class AbiBaselineTests
         Assert.Equal(3, snapshot.GetProperty("schemaVersion").GetInt32());
         Assert.Equal("released", snapshot.GetProperty("kind").GetString());
         Assert.Equal(
-            "9654332a79f637473da96054f75b2a16deaa557e",
+            "8eeda4f6f546165b3f72e63c9f42247abb306905",
             snapshot.GetProperty("producerPin").GetString());
         Assert.Equal("int32_t", snapshot.GetProperty("abiDefinitions").GetProperty("hresult").GetString());
         Assert.Equal("__stdcall", snapshot.GetProperty("abiDefinitions").GetProperty("callWin32").GetString());

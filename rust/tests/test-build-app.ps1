@@ -60,7 +60,7 @@ function Test-NativeConsumer {
     $bundle = Join-Path $consumer 'artifacts' $rid
     $executable = Join-Path $bundle "smoke_app$($target.ExeExtension)"
     Assert-True (Test-Path -LiteralPath $executable -PathType Leaf) "Packaged executable is missing: $executable"
-    Assert-True (Test-Path -LiteralPath (Join-Path $bundle "Avalonia.Host$($target.HostExtension)") -PathType Leaf) 'Packaged host is missing.'
+    Assert-True (Test-Path -LiteralPath (Join-Path $bundle $target.HostFileName) -PathType Leaf) 'Packaged host is missing.'
     $inventory = Get-Content -LiteralPath (Join-Path $bundle 'sbom.cdx.json') -Raw | ConvertFrom-Json
     Assert-True (@($inventory.components | Where-Object { $_.type -eq 'library' -and $_.purl -like 'pkg:nuget/*' }).Count -gt 0) 'Packaged inventory must contain the published host dependencies.'
     foreach ($line in Get-Content -LiteralPath (Join-Path $bundle 'checksums.sha256')) {
@@ -69,16 +69,16 @@ function Test-NativeConsumer {
         Assert-True ($actual -eq $expected) "Checksum mismatch for $file"
     }
 
-    $previousHost = $env:AVN_HOST_NATIVE_LIB
+    $previousHost = $env:RUSTOLONIA_HOST_LIB
     $process = $null
     try {
-        Remove-Item Env:AVN_HOST_NATIVE_LIB -ErrorAction SilentlyContinue
+        Remove-Item Env:RUSTOLONIA_HOST_LIB -ErrorAction SilentlyContinue
         $process = Start-Process -FilePath $executable -WorkingDirectory $bundle -PassThru
         Assert-True (-not $process.WaitForExit(5000)) "Packaged consumer exited during startup."
     }
     finally {
-        if ($null -ne $previousHost) { $env:AVN_HOST_NATIVE_LIB = $previousHost }
-        else { Remove-Item Env:AVN_HOST_NATIVE_LIB -ErrorAction SilentlyContinue }
+        if ($null -ne $previousHost) { $env:RUSTOLONIA_HOST_LIB = $previousHost }
+        else { Remove-Item Env:RUSTOLONIA_HOST_LIB -ErrorAction SilentlyContinue }
         if ($null -ne $process) {
             try {
                 if (-not $process.HasExited) {
@@ -183,7 +183,7 @@ try {
     Assert-True ($firstStaging -ne $secondStaging -and (Test-Path -LiteralPath $firstStaging) -and (Test-Path -LiteralPath $secondStaging)) 'Staging must not remove another active invocation.'
     $sourceBundle = Join-Path $scratch 'source-bundle'
     New-Item -ItemType Directory -Path $sourceBundle | Out-Null
-    $sourceHost = Join-Path $sourceBundle 'Avalonia.Host.dll'
+    $sourceHost = Join-Path $sourceBundle 'rustolonia_host.dll'
     Set-Content -LiteralPath $sourceHost -Value 'stub host'
     Set-Content -LiteralPath (Join-Path $sourceBundle 'libexample.so.1') -Value 'versioned native library'
     $copyBundle = Join-Path $scratch 'source-bundle-copy'
@@ -322,7 +322,7 @@ Add-Content -LiteralPath (Join-Path $PSScriptRoot 'signatures.log') -Value $Arti
     Assert-True ($scriptText.Contains($expectedCommand)) 'Printed build arguments must preserve exact spaced paths.'
     $cargoText = Get-Content -LiteralPath (Join-Path $consumer 'Cargo.toml') -Raw
     $relativeRustolonia = [IO.Path]::GetRelativePath($consumer, $root).Replace('\', '/')
-    Assert-True ($cargoText.Contains("path = `"$relativeRustolonia/rust/avalonia`"")) 'Cargo must reference Rustolonia relatively rather than the producer.'
+    Assert-True ($cargoText.Contains("path = `"$relativeRustolonia/rust/rustolonia`"")) 'Cargo must reference Rustolonia relatively rather than the producer.'
     $projectText = Get-Content -LiteralPath (Join-Path $consumer 'managed' 'Consumer.Presentation.csproj') -Raw
     $managedRoot = Join-Path $consumer 'managed'
     Assert-True ($projectText.Contains([IO.Path]::GetRelativePath($managedRoot, $fakeProducer).Replace('\', '/')) -and
@@ -389,10 +389,10 @@ Add-Content -LiteralPath (Join-Path $PSScriptRoot 'signatures.log') -Value $Arti
     # A tiny local dependency exercises real Cargo lock and relocation behavior without network access.
     $layout = Join-Path $scratch 'portable layout'
     $portableRoot = Join-Path $layout 'rustolonia'
-    $portableCrate = Join-Path $portableRoot 'rust' 'avalonia'
+    $portableCrate = Join-Path $portableRoot 'rust' 'rustolonia'
     New-Item -ItemType Directory (Join-Path $portableCrate 'src') -Force | Out-Null
     Copy-Item (Join-Path $root 'global.json') (Join-Path $portableRoot 'global.json')
-    Set-Content (Join-Path $portableCrate 'Cargo.toml') "[package]`nname = `"avalonia`"`nversion = `"0.1.0`"`nedition = `"2021`""
+    Set-Content (Join-Path $portableCrate 'Cargo.toml') "[package]`nname = `"rustolonia`"`nversion = `"0.1.0`"`nedition = `"2021`""
     Set-Content (Join-Path $portableCrate 'src' 'lib.rs') ''
     $portableConsumer = Join-Path $layout 'consumer'
     & (Join-Path $root 'rust' 'new-app.ps1') -Name portable_app -Destination $portableConsumer -ProducerRoot $portableRoot -RustoloniaRoot $portableRoot | Out-Null
@@ -414,7 +414,7 @@ Add-Content -LiteralPath (Join-Path $PSScriptRoot 'signatures.log') -Value $Arti
         Assert-True ($relocatedProject.Project.PropertyGroup.$property.Condition -eq "'`$($property)' == ''") "Explicit $property overrides must not be overwritten."
     }
     Assert-True ((Get-FileHash (Join-Path $portableConsumer 'Cargo.lock')).Hash -eq $lockHash) 'Locked metadata must not change the dependency lock.'
-    Set-Content (Join-Path $movedLayout 'rustolonia' 'rust' 'avalonia' 'Cargo.toml') "[package]`nname = `"avalonia`"`nversion = `"0.2.0`"`nedition = `"2021`""
+    Set-Content (Join-Path $movedLayout 'rustolonia' 'rust' 'rustolonia' 'Cargo.toml') "[package]`nname = `"rustolonia`"`nversion = `"0.2.0`"`nedition = `"2021`""
     Assert-Throws { Invoke-Logged -Command @('cargo', 'metadata', '--offline', '--locked', '--format-version', '1', '--manifest-path', $portableManifest) } 'exit code'
 
     $badManifest = Get-Content -LiteralPath (Join-Path $consumer 'avalonia-app.json') -Raw | ConvertFrom-Json -AsHashtable
@@ -529,7 +529,7 @@ Add-Content -LiteralPath (Join-Path $PSScriptRoot 'signatures.log') -Value $Arti
             $publish = if ($publishOverride.Count) { $publishOverride[0].Substring('-p:PublishDir='.Length) }
                 else { Join-Path $mockArtifacts 'publish' 'Avalonia.Host' "release_$nativeRid" }
             New-Item -ItemType Directory -Force -Path $publish | Out-Null
-            Set-Content -LiteralPath (Join-Path $publish "Avalonia.Host$($nativeTarget.HostExtension)") -Value 'new host'
+            Set-Content -LiteralPath (Join-Path $publish $nativeTarget.HostFileName) -Value 'new host'
             if ($IsMacOS) { Set-Content -LiteralPath (Join-Path $publish 'libAvaloniaNative.dylib') -Value 'native library' }
         }
         function cargo {
@@ -646,7 +646,7 @@ version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
-name = "avalonia"
+name = "rustolonia"
 version = "0.1.0"
 '@
     & (Join-Path $root 'rust' 'generate-sbom.ps1') -Rid win-x64 -Bundle $depsInventory -CargoLockPath $fakeCargoLock -ProjectAssetsJsonPath $fakeAssets -ProducerPin 'deadbeef'
@@ -654,7 +654,7 @@ version = "0.1.0"
     Assert-True (@($depsSbom.components | Where-Object { $_.type -eq 'library' -and $_.purl -eq 'pkg:nuget/Some.Package@1.2.3' }).Count -eq 1) 'SBOM must include resolved NuGet package dependencies.'
     Assert-True (@($depsSbom.components | Where-Object { $_.type -eq 'library' -and $_.name -eq 'local-project' }).Count -eq 0) 'SBOM must not list local project references as third-party dependencies.'
     Assert-True (@($depsSbom.components | Where-Object { $_.type -eq 'library' -and $_.purl -eq 'pkg:cargo/third-party-crate@0.4.1' }).Count -eq 1) 'SBOM must include resolved Cargo dependencies.'
-    Assert-True (@($depsSbom.components | Where-Object { $_.type -eq 'library' -and $_.name -eq 'avalonia' -and $_.version -eq '0.1.0' }).Count -eq 0) 'SBOM must not list workspace-local crates without a [source] as third-party dependencies.'
+    Assert-True (@($depsSbom.components | Where-Object { $_.type -eq 'library' -and $_.name -eq 'rustolonia' -and $_.version -eq '0.1.0' }).Count -eq 0) 'SBOM must not list workspace-local crates without a [source] as third-party dependencies.'
     Assert-True (@($depsSbom.metadata.properties | Where-Object { $_.name -eq 'avalonia:producer-pin' -and $_.value -eq 'deadbeef' }).Count -eq 1) 'SBOM must record the producer pin used to build the bundle.'
     & (Join-Path $root 'rust' 'generate-sbom.ps1') -Rid win-x64 -Bundle $depsInventory -CargoLockPath (Join-Path $scratch 'missing.lock') -ProjectAssetsJsonPath (Join-Path $scratch 'missing.assets.json')
     $missingSbom = Get-Content -LiteralPath (Join-Path $depsInventory 'sbom.cdx.json') -Raw | ConvertFrom-Json
@@ -662,6 +662,72 @@ version = "0.1.0"
         $source = @($missingSbom.metadata.properties | Where-Object { $_.name -eq "avalonia:$ecosystem-dependency-source" })
         Assert-True ($source.Count -eq 1 -and $source[0].value -like 'unavailable:*does not exist') 'Missing supplied dependency files must not be reported as available.'
     }
+
+    # Prebuilt host release assets consumed by rustolonia-sys/build.rs.
+    Assert-True ((Get-HostAssetName -Version '1.2.3' -Rid linux-arm64) -eq 'rustolonia-host-1.2.3-linux-arm64.tar.gz') 'Host asset names must match rustolonia-sys/build.rs.'
+    Assert-True ((Get-HostAssetName -Version '1.2.3' -Rid osx-x64 -Flavor devtools -Symbols) -eq 'rustolonia-host-1.2.3-osx-x64-devtools-symbols.tar.gz') 'Host asset names must encode flavor and symbols.'
+    Assert-Throws { Get-HostAssetName -Version '1.2.3' -Rid 'freebsd-x64' } 'Unsupported RID'
+    $releaseVersion = Get-RustoloniaReleaseVersion -RustoloniaRoot $root
+    Assert-True ($releaseVersion -match '^\d+\.\d+\.\d+') 'The release version must come from release-manifest.json.'
+    $abiFingerprint = Get-AbiFingerprint -RustoloniaRoot $root
+    Assert-True ($abiFingerprint -match '^[0-9a-f]{64}$') 'The ABI fingerprint must be a lowercase SHA-256.'
+
+    $hostStage = Join-Path $scratch 'host-stage'
+    New-Item -ItemType Directory -Path $hostStage | Out-Null
+    Set-Content -LiteralPath (Join-Path $hostStage 'rustolonia_host.dll') -Value 'host' -NoNewline
+    Set-Content -LiteralPath (Join-Path $hostStage 'LICENSE') -Value 'license' -NoNewline
+    Write-HostManifest -Directory $hostStage -Version $releaseVersion -Rid win-x64 -AbiFingerprint $abiFingerprint -RustoloniaRoot $root -SourceRevision 'abc'
+    $hostManifestText = [IO.File]::ReadAllText((Join-Path $hostStage 'host-manifest.json'))
+    Assert-True (-not $hostManifestText.Contains("`r")) 'host-manifest.json must use LF line endings.'
+    # rustolonia-sys reads the first occurrence of each key, so these keys must be unique.
+    foreach ($key in @('version', 'rid', 'abiFingerprint')) {
+        Assert-True (([regex]::Matches($hostManifestText, "`"$key`"\s*:")).Count -eq 1) "host-manifest.json must contain '$key' exactly once."
+    }
+    $hostManifest = $hostManifestText | ConvertFrom-Json
+    Assert-True ($hostManifest.version -eq $releaseVersion -and $hostManifest.rid -eq 'win-x64' -and $hostManifest.abiFingerprint -eq $abiFingerprint) 'host-manifest.json must record version, RID and ABI fingerprint.'
+    Assert-True ($hostManifest.hostFile -eq 'rustolonia_host.dll') 'host-manifest.json must name the host library.'
+    Assert-True ((@($hostManifest.files.name) -join ',') -eq 'LICENSE,rustolonia_host.dll') 'host-manifest.json must hash every other bundle file.'
+
+    $archiveFiles = @('rustolonia_host.dll', 'LICENSE', 'host-manifest.json')
+    $archiveA = Join-Path $scratch 'host-a.tar.gz'
+    $archiveB = Join-Path $scratch 'host-b.tar.gz'
+    New-DeterministicTarGz -SourceDirectory $hostStage -RelativePaths $archiveFiles -Destination $archiveA -Timestamp 1700000000
+    (Get-Item -LiteralPath (Join-Path $hostStage 'LICENSE')).LastWriteTimeUtc = [datetime]::UtcNow.AddDays(-3)
+    New-DeterministicTarGz -SourceDirectory $hostStage -RelativePaths @($archiveFiles[2], $archiveFiles[1], $archiveFiles[0]) -Destination $archiveB -Timestamp 1700000000
+    Assert-True ((Get-FileHash $archiveA).Hash -eq (Get-FileHash $archiveB).Hash) 'Host tarballs must be byte-identical for identical inputs.'
+    $extracted = Join-Path $scratch 'host-extracted'
+    New-Item -ItemType Directory -Path $extracted | Out-Null
+    $archiveStream = [IO.Compression.GZipStream]::new([IO.File]::OpenRead($archiveA), [IO.Compression.CompressionMode]::Decompress)
+    try { [Formats.Tar.TarFile]::ExtractToDirectory($archiveStream, $extracted, $false) }
+    finally { $archiveStream.Dispose() }
+    Assert-True (((@(Get-ChildItem -LiteralPath $extracted -File).Name | Sort-Object) -join ',') -eq 'host-manifest.json,LICENSE,rustolonia_host.dll') 'Host tarballs must have a flat root.'
+    Assert-Throws { New-DeterministicTarGz -SourceDirectory $hostStage -RelativePaths @('../escape.txt') -Destination (Join-Path $scratch 'bad.tar.gz') } 'relative path inside'
+    $assetHash = Write-AssetChecksum -Asset $archiveA
+    Assert-True ((Get-Content -LiteralPath "$archiveA.sha256" -Raw) -eq "$assetHash  host-a.tar.gz`n") 'Checksum sidecars must use sha256sum format.'
+
+    $releaseRoot = Join-Path $scratch 'release-root'
+    foreach ($relative in @('rust/rustolonia/Cargo.toml', 'rust/rustolonia-sys/Cargo.toml', 'rust/rustolonia-bindgen/Cargo.toml', 'rust/release-manifest.json', 'build/SharedVersion.props', 'rust/rustolonia-sys/host-checksums.txt')) {
+        $destination = Join-Path $releaseRoot $relative
+        New-Item -ItemType Directory -Force -Path (Split-Path -Parent $destination) | Out-Null
+        Copy-Item -LiteralPath (Join-Path $root $relative) -Destination $destination
+    }
+    $prepareRelease = Join-Path $root 'rust' 'prepare-release.ps1'
+    & $prepareRelease -Version 9.8.7-rc.1 -SkipCargoUpdate -RustoloniaRoot $releaseRoot | Out-Null
+    Assert-True ((Get-RustoloniaReleaseVersion -RustoloniaRoot $releaseRoot) -eq '9.8.7-rc.1') 'prepare-release must bump every crate version.'
+    Assert-True ((Get-Content -LiteralPath (Join-Path $releaseRoot 'rust/rustolonia/Cargo.toml') -Raw) -match 'rustolonia-sys = \{ version = "=9\.8\.7-rc\.1"') 'prepare-release must bump the exact rustolonia-sys pin.'
+    Assert-True ((Get-Content -LiteralPath (Join-Path $releaseRoot 'build/SharedVersion.props') -Raw) -match '<Version>9\.8\.7-rc\.1</Version>') 'prepare-release must bump SharedVersion.props.'
+    $sumsLines = foreach ($rid in @('win-x64', 'win-arm64', 'linux-x64', 'linux-arm64', 'osx-x64', 'osx-arm64')) {
+        "$('a' * 64)  $(Get-HostAssetName -Version '9.8.7-rc.1' -Rid $rid)"
+        "$('b' * 64)  $(Get-HostAssetName -Version '9.8.7-rc.1' -Rid $rid -Symbols)"
+    }
+    $sumsFile = Join-Path $scratch 'SHA256SUMS'
+    [IO.File]::WriteAllLines($sumsFile, [string[]]$sumsLines)
+    & $prepareRelease -Checksums -SumsFile $sumsFile -RustoloniaRoot $releaseRoot | Out-Null
+    $checksumLines = @(Get-Content -LiteralPath (Join-Path $releaseRoot 'rust/rustolonia-sys/host-checksums.txt') | Where-Object { $_ -and -not $_.StartsWith('#') })
+    Assert-True ($checksumLines.Count -eq 6) 'host-checksums.txt must list every default host tarball.'
+    Assert-True (@($checksumLines | Where-Object { $_ -like '*symbols*' }).Count -eq 0) 'host-checksums.txt must not list symbol tarballs.'
+    [IO.File]::WriteAllLines($sumsFile, [string[]]($sumsLines | Select-Object -Skip 2))
+    Assert-Throws { & $prepareRelease -Checksums -SumsFile $sumsFile -RustoloniaRoot $releaseRoot } 'no entry for rustolonia-host-9\.8\.7-rc\.1-win-x64'
 
     if ($RunNativeSmoke) {
         $nativeTempRoot = [IO.Path]::GetTempPath()

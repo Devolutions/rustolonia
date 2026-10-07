@@ -223,7 +223,7 @@ function Invoke-ConsumerPackage {
             $consumerHostAssets = Get-PublishedProjectAssetsFile -Project $hostProject -Configuration $Document.configuration -Rid $rid -AdditionalProperties $publishProperties
         }
         finally { Pop-Location }
-        $hostFile = Join-Path $staging "Avalonia.Host$($target.HostExtension)"
+        $hostFile = Join-Path $staging $target.HostFileName
         if (-not (Test-Path -LiteralPath $hostFile -PathType Leaf)) {
             throw "NativeAOT host was not produced: $hostFile"
         }

@@ -3,16 +3,16 @@
 First-class Rust bindings for [Avalonia](https://avaloniaui.net/), projected
 over a nano-COM ABI served by a NativeAOT host. This repository contains the
 complete bindings effort; the Avalonia framework itself is consumed from the
-pinned `avalonia-src` producer submodule at commit
-`9654332a79f637473da96054f75b2a16deaa557e`.
+pinned `avalonia-src` producer submodule at upstream Avalonia `12.1.3` (commit
+`8eeda4f6f546165b3f72e63c9f42247abb306905`).
 
 ## Layout
 
 | Directory | Contents |
 |---|---|
-| `avalonia-src/` | Avalonia producer pinned to `9654332a79f637473da96054f75b2a16deaa557e`, currently cloned from the `mamoreau-devolutions/Avalonia` fork |
+| `avalonia-src/` | Avalonia producer pinned to the upstream `12.1.3` tag (`8eeda4f6f546165b3f72e63c9f42247abb306905`), cloned from `AvaloniaUI/Avalonia` |
 | `avalonia-patches/` | Additive framework patches applied onto the pinned checkout (see its README + UPSTREAM.md) |
-| `rust/` | The Rust workspace: `avalonia` (safe bindings), `avalonia-sys` (ABI bindings), `avalonia-bindgen` (IR to Rust generator), `avalonia-sample` (flagship sample's application-owned view-model API), templates, build scripts, and the checked-in IR |
+| `rust/` | The Rust workspace: `rustolonia` (safe bindings), `rustolonia-sys` (ABI bindings), `rustolonia-bindgen` (IR to Rust generator), `avalonia-sample` (flagship sample's application-owned view-model API), templates, build scripts, and the checked-in IR |
 | `host/` | `Avalonia.Host` - the C# NativeAOT host that serves the ABI, plus its generated object model |
 | `projection/` | The projection pipeline: IR extraction, C#/header emitters, and the generator tools |
 | `interop/` | `Avalonia.Rust` and `Avalonia.Rust.Interop` - the managed-side view-model interop layer |
@@ -24,10 +24,30 @@ pinned `avalonia-src` producer submodule at commit
 | `samples/` | `RustViewModelSample.Managed` - the sample presentation project the host consumes |
 | `build/` | Vendored MSBuild configuration (versioning, signing, analyzers, xunit) |
 
+## Quick start (crates.io)
+
+Code-first applications need only Cargo; no .NET SDK or source checkout:
+
+```toml
+[dependencies]
+rustolonia = "0.1"
+```
+
+On the first build, `rustolonia-sys` downloads the prebuilt NativeAOT host for
+your target (Windows, macOS and Linux glibc, x64 and arm64) from the matching
+[GitHub release](https://github.com/Devolutions/rustolonia/releases), verifies
+its SHA-256, and caches it. See [rust/rustolonia/README.md](rust/rustolonia/README.md)
+for a hello-world and how to ship the host with your application, and
+[rust/rustolonia-sys/README.md](rust/rustolonia-sys/README.md) for offline,
+mirrored and locally built hosts.
+
+Applications with compiled AXAML and Rust view-models still build their own
+host from a source checkout, as described below.
+
 ## Getting started
 
 ```pwsh
-git clone --recurse-submodules https://github.com/mamoreau-devolutions/rustolonia
+git clone --recurse-submodules https://github.com/Devolutions/rustolonia
 cd rustolonia
 pwsh ./avalonia-patches/apply-avalonia-patches.ps1 -AvaloniaRoot ./avalonia-src
 pwsh ./rust/regenerate-and-build.ps1 -Configuration Release
@@ -89,3 +109,9 @@ pwsh ./rust/tests/test-build-app.ps1 -RunNativeSmoke
 
 Linux native smoke execution needs a display, for example
 `xvfb-run -a pwsh ./rust/tests/test-build-app.ps1 -RunNativeSmoke`.
+
+Native jobs also archive their host as a release tarball and build and launch
+a standalone app that depends on the packaged crates through the
+`rustolonia-sys` download path (`rust/tests/test-standalone-app.ps1`). `.github/workflows/release.yml` builds
+the release host tarballs from a `v*` tag and publishes the crates; see
+[rust/PRODUCTIZATION.md](rust/PRODUCTIZATION.md#releasing).

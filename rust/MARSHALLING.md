@@ -1,4 +1,4 @@
-﻿# Value-type and solid brush marshalling
+# Value-type and solid brush marshalling
 
 Avalonia geometry value types cross the nano-COM ABI **by value** as blittable,
 sequential structs instead of as COM objects. This keeps `Margin`, `Padding`,
@@ -55,10 +55,10 @@ Everything is generated from the shared projection IR by
   `FromAvalonia`/`ToAvalonia` helpers, and the brush interface plus its
   `AvnBrush` wrapper into `IAvnBrush.g.cs`.
 - `NativeHeaderEmitter` writes the `typedef struct Avn*` declarations into
-  `rust/avalonia-sys/include/avalonia-rust-abi.h`.
-- `rust/avalonia-bindgen/src/geometry.rs` is the Rust-side source of truth; it
-  emits the `#[repr(C)]` structs into `avalonia-sys` and the ergonomic structs
-  with `From`/`Into` bridges into the safe `avalonia` crate.
+  `rust/rustolonia-sys/include/avalonia-rust-abi.h`.
+- `rust/rustolonia-bindgen/src/geometry.rs` is the Rust-side source of truth; it
+  emits the `#[repr(C)]` structs into `rustolonia-sys` and the ergonomic structs
+  with `From`/`Into` bridges into the safe `rustolonia` crate.
 
 ## ABI shape in vtables
 
@@ -102,7 +102,7 @@ readout.set_margin(Thickness::uniform(8.0))?;
 ```
 
 `Thickness::uniform`, `Thickness::symmetric` and `CornerRadius::uniform` are
-emitted from the `helpers` column of `avalonia-bindgen`'s geometry table, so a
+emitted from the `helpers` column of `rustolonia-bindgen`'s geometry table, so a
 new geometry struct opts into them declaratively.
 
 ## Solid brushes
@@ -693,7 +693,7 @@ stayed at 2; wave A gives it a creator per new control plus
 constructible new type — `Flyout`, `Menu`, `MenuItem`,
 `HeaderedSelectingItemsControl`, `SplitView`, `DatePicker` and `TimePicker` — so it
 moves to 4. Wave C gives it a creator per constructible new type — `WrapPanel`,
-`UniformGrid`, `RelativePanel`, `Viewbox`, `FlexPanel`, `Thumb` and `GridSplitter`
+`UniformGrid`, `RelativePanel`, `Viewbox`, `Thumb` and `GridSplitter`
 — plus `get_relative_panel_statics`, so it moves to 5. The abstract bases
 (`FlyoutBase`, `PopupFlyoutBase`, `MenuBase`) get no creator; they are reachable
 by `query_interface` only. `IAvnBrush` is brand new, so it starts at version 1.

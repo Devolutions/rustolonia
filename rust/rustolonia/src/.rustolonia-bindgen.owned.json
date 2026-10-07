@@ -1,0 +1,9 @@
+{
+  "generator": "rustolonia-bindgen",
+  "files": [
+    {
+      "path": "generated.rs",
+      "sha256": "d1bc058c9d2e78336025223b90c3c74d484e7b9c1c73155121953f7bac740666"
+    }
+  ]
+}

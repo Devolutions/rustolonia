@@ -125,7 +125,7 @@ function Get-CargoPackageComponents {
 function New-CargoComponent {
     param([string]$Name, [string]$Version, [string]$Source)
 
-    # Workspace-local crates (avalonia, avalonia-sys, avalonia-bindgen, ...)
+    # Workspace-local crates (rustolonia, rustolonia-sys, rustolonia-bindgen, ...)
     # have no [source] entry; they are not third-party dependencies.
     if ([string]::IsNullOrWhiteSpace($Source)) {
         return $null

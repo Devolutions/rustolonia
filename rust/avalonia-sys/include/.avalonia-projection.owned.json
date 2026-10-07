@@ -1,9 +1,0 @@
-{
-  "generator": "avalonia-projection",
-  "files": [
-    {
-      "path": "avalonia-rust-abi.h",
-      "sha256": "d9046a8786e5917a3c205a4b773fe0e73252ca79f2e52020d6a9188ba5b105d2"
-    }
-  ]
-}

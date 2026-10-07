@@ -16,7 +16,7 @@ public static class OwnedOutputs
 {
     public const string ProjectionGeneratorId = "avalonia-projection";
     public const string ViewModelGeneratorId = "avalonia-viewmodel";
-    public const string BindgenGeneratorId = "avalonia-bindgen";
+    public const string BindgenGeneratorId = "rustolonia-bindgen";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {

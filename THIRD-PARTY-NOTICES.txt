@@ -8,7 +8,7 @@ Original upstream project:
   MIT License terms apply to the upstream source tree.
 
 This repository keeps the producer pin at:
-  9654332a79f637473da96054f75b2a16deaa557e
+  8eeda4f6f546165b3f72e63c9f42247abb306905
 
 Rustolonia-specific changes, generated output, and build tooling are repository-
 local additions. They are attributed to the Rustolonia project in the repository

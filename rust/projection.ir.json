@@ -685,24 +685,6 @@
           "isNullable": true
         },
         {
-          "name": "IsWeekNumberVisible",
-          "kind": "Bool",
-          "canRead": true,
-          "canWrite": true,
-          "interfaceAbiVersion": 1,
-          "managedTypeName": "System.Boolean",
-          "isNullable": false
-        },
-        {
-          "name": "WeekNumberRule",
-          "kind": "I32",
-          "canRead": true,
-          "canWrite": true,
-          "interfaceAbiVersion": 1,
-          "managedTypeName": "System.Globalization.CalendarWeekRule",
-          "isNullable": false
-        },
-        {
           "name": "DisplayMode",
           "kind": "I32",
           "canRead": true,
@@ -1045,24 +1027,6 @@
           "interfaceAbiVersion": 1,
           "managedTypeName": "Avalonia.Layout.VerticalAlignment",
           "isNullable": false
-        },
-        {
-          "name": "IsWeekNumberVisible",
-          "kind": "Bool",
-          "canRead": true,
-          "canWrite": true,
-          "interfaceAbiVersion": 1,
-          "managedTypeName": "System.Boolean",
-          "isNullable": false
-        },
-        {
-          "name": "WeekNumberRule",
-          "kind": "I32",
-          "canRead": true,
-          "canWrite": true,
-          "interfaceAbiVersion": 1,
-          "managedTypeName": "System.Globalization.CalendarWeekRule",
-          "isNullable": false
         }
       ],
       "events": [
@@ -1368,7 +1332,7 @@
           "interfaceAbiVersion": 1,
           "elementInterfaceName": "Avalonia.Host.Com.IAvnControl",
           "elementKind": "ComInterface",
-          "managedTypeName": "System.Collections.ObjectModel.ReadOnlyObservableCollection\u00601[[Avalonia.Controls.ICommandBarElement, Avalonia.Controls, Version=12.2.999.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
+          "managedTypeName": "System.Collections.ObjectModel.ReadOnlyObservableCollection\u00601[[Avalonia.Controls.ICommandBarElement, Avalonia.Controls, Version=12.1.3.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
           "isNullable": false,
           "hostImplementationTypeName": "Avalonia.Host.Com.AvnControlList"
         },
@@ -1382,7 +1346,7 @@
           "interfaceAbiVersion": 1,
           "elementInterfaceName": "Avalonia.Host.Com.IAvnControl",
           "elementKind": "ComInterface",
-          "managedTypeName": "System.Collections.ObjectModel.ReadOnlyObservableCollection\u00601[[Avalonia.Controls.ICommandBarElement, Avalonia.Controls, Version=12.2.999.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
+          "managedTypeName": "System.Collections.ObjectModel.ReadOnlyObservableCollection\u00601[[Avalonia.Controls.ICommandBarElement, Avalonia.Controls, Version=12.1.3.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
           "isNullable": false,
           "hostImplementationTypeName": "Avalonia.Host.Com.AvnControlList"
         },
@@ -1396,7 +1360,7 @@
           "interfaceAbiVersion": 1,
           "elementInterfaceName": "Avalonia.Host.Com.IAvnControl",
           "elementKind": "ComInterface",
-          "managedTypeName": "System.Collections.Generic.IList\u00601[[Avalonia.Controls.ICommandBarElement, Avalonia.Controls, Version=12.2.999.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
+          "managedTypeName": "System.Collections.Generic.IList\u00601[[Avalonia.Controls.ICommandBarElement, Avalonia.Controls, Version=12.1.3.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
           "isNullable": false,
           "hostImplementationTypeName": "Avalonia.Host.Com.AvnControlList"
         },
@@ -1410,7 +1374,7 @@
           "interfaceAbiVersion": 1,
           "elementInterfaceName": "Avalonia.Host.Com.IAvnControl",
           "elementKind": "ComInterface",
-          "managedTypeName": "System.Collections.Generic.IList\u00601[[Avalonia.Controls.ICommandBarElement, Avalonia.Controls, Version=12.2.999.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
+          "managedTypeName": "System.Collections.Generic.IList\u00601[[Avalonia.Controls.ICommandBarElement, Avalonia.Controls, Version=12.1.3.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
           "isNullable": false,
           "hostImplementationTypeName": "Avalonia.Host.Com.AvnControlList"
         },
@@ -1871,7 +1835,7 @@
           "canRead": true,
           "canWrite": true,
           "interfaceAbiVersion": 1,
-          "managedTypeName": "System.Nullable\u00601[[Avalonia.Rect, Avalonia.Base, Version=12.2.999.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
+          "managedTypeName": "System.Nullable\u00601[[Avalonia.Rect, Avalonia.Base, Version=12.1.3.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
           "isNullable": true
         },
         {
@@ -2692,83 +2656,6 @@
           ]
         }
       ]
-    },
-    {
-      "name": "IAvnFlexPanel",
-      "fullName": "Avalonia.Host.Com.IAvnFlexPanel",
-      "kind": "Class",
-      "iid": "82049C23-F315-5A82-86D9-845D8B82BA59",
-      "abiVersion": 11,
-      "baseFullName": "Avalonia.Host.Com.IAvnPanel",
-      "managedFullName": "Avalonia.Controls.FlexPanel",
-      "isConstructible": true,
-      "methods": [],
-      "properties": [
-        {
-          "name": "Direction",
-          "kind": "I32",
-          "canRead": true,
-          "canWrite": true,
-          "interfaceAbiVersion": 1,
-          "managedTypeName": "Avalonia.Controls.FlexDirection",
-          "isNullable": false
-        },
-        {
-          "name": "JustifyContent",
-          "kind": "I32",
-          "canRead": true,
-          "canWrite": true,
-          "interfaceAbiVersion": 1,
-          "managedTypeName": "Avalonia.Controls.FlexJustifyContent",
-          "isNullable": false
-        },
-        {
-          "name": "AlignItems",
-          "kind": "I32",
-          "canRead": true,
-          "canWrite": true,
-          "interfaceAbiVersion": 1,
-          "managedTypeName": "Avalonia.Controls.FlexAlignItems",
-          "isNullable": false
-        },
-        {
-          "name": "AlignContent",
-          "kind": "I32",
-          "canRead": true,
-          "canWrite": true,
-          "interfaceAbiVersion": 1,
-          "managedTypeName": "Avalonia.Controls.FlexAlignContent",
-          "isNullable": false
-        },
-        {
-          "name": "Wrap",
-          "kind": "I32",
-          "canRead": true,
-          "canWrite": true,
-          "interfaceAbiVersion": 1,
-          "managedTypeName": "Avalonia.Controls.FlexWrap",
-          "isNullable": false
-        },
-        {
-          "name": "ColumnSpacing",
-          "kind": "F64",
-          "canRead": true,
-          "canWrite": true,
-          "interfaceAbiVersion": 1,
-          "managedTypeName": "System.Double",
-          "isNullable": false
-        },
-        {
-          "name": "RowSpacing",
-          "kind": "F64",
-          "canRead": true,
-          "canWrite": true,
-          "interfaceAbiVersion": 1,
-          "managedTypeName": "System.Double",
-          "isNullable": false
-        }
-      ],
-      "events": []
     },
     {
       "name": "IAvnFlyout",
@@ -4523,7 +4410,7 @@
           "canRead": true,
           "canWrite": true,
           "interfaceAbiVersion": 1,
-          "managedTypeName": "System.Nullable\u00601[[Avalonia.Rect, Avalonia.Base, Version=12.2.999.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
+          "managedTypeName": "System.Nullable\u00601[[Avalonia.Rect, Avalonia.Base, Version=12.1.3.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
           "isNullable": true
         },
         {
@@ -6020,7 +5907,7 @@
           "canRead": true,
           "canWrite": true,
           "interfaceAbiVersion": 1,
-          "managedTypeName": "System.Collections.Generic.IList\u00601[[Avalonia.Point, Avalonia.Base, Version=12.2.999.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
+          "managedTypeName": "System.Collections.Generic.IList\u00601[[Avalonia.Point, Avalonia.Base, Version=12.1.3.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
           "isNullable": false,
           "stringConverterTypeName": "Avalonia.Host.Com.AvnPointList"
         },
@@ -6053,7 +5940,7 @@
           "canRead": true,
           "canWrite": true,
           "interfaceAbiVersion": 1,
-          "managedTypeName": "System.Collections.Generic.IList\u00601[[Avalonia.Point, Avalonia.Base, Version=12.2.999.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
+          "managedTypeName": "System.Collections.Generic.IList\u00601[[Avalonia.Point, Avalonia.Base, Version=12.1.3.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
           "isNullable": false,
           "stringConverterTypeName": "Avalonia.Host.Com.AvnPointList"
         },
@@ -6711,7 +6598,7 @@
           "canRead": true,
           "canWrite": false,
           "interfaceAbiVersion": 1,
-          "managedTypeName": "System.Nullable\u00601[[Avalonia.Controls.Dock, Avalonia.Controls, Version=12.2.999.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
+          "managedTypeName": "System.Nullable\u00601[[Avalonia.Controls.Dock, Avalonia.Controls, Version=12.1.3.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
           "isNullable": true,
           "stringConverterTypeName": "Avalonia.Host.Com.AvnDock"
         },
@@ -6777,7 +6664,7 @@
           "interfaceAbiVersion": 1,
           "elementInterfaceName": "Avalonia.Host.Com.IAvnControl",
           "elementKind": "ComInterface",
-          "managedTypeName": "Avalonia.Collections.AvaloniaList\u00601[[Avalonia.Controls.TableViewColumn, Avalonia.Controls, Version=12.2.999.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
+          "managedTypeName": "Avalonia.Collections.AvaloniaList\u00601[[Avalonia.Controls.TableViewColumn, Avalonia.Controls, Version=12.1.3.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
           "isNullable": true,
           "hostImplementationTypeName": "Avalonia.Host.Com.AvnControlList"
         },
@@ -6817,6 +6704,15 @@
       "isConstructible": true,
       "methods": [],
       "properties": [
+        {
+          "name": "IsVisible",
+          "kind": "Bool",
+          "canRead": true,
+          "canWrite": true,
+          "interfaceAbiVersion": 1,
+          "managedTypeName": "System.Boolean",
+          "isNullable": false
+        },
         {
           "name": "HeaderTemplate",
           "kind": "DataTemplate",
@@ -6862,15 +6758,6 @@
           "canWrite": true,
           "interfaceAbiVersion": 1,
           "managedTypeName": "System.Double",
-          "isNullable": false
-        },
-        {
-          "name": "IsVisible",
-          "kind": "Bool",
-          "canRead": true,
-          "canWrite": true,
-          "interfaceAbiVersion": 1,
-          "managedTypeName": "System.Boolean",
           "isNullable": false
         },
         {
@@ -8941,137 +8828,6 @@
       ]
     },
     {
-      "name": "FlexAlignContent",
-      "fullName": "Avalonia.Controls.FlexAlignContent",
-      "isFlags": false,
-      "values": [
-        {
-          "name": "FlexStart",
-          "value": 0
-        },
-        {
-          "name": "FlexEnd",
-          "value": 1
-        },
-        {
-          "name": "Center",
-          "value": 2
-        },
-        {
-          "name": "Stretch",
-          "value": 3
-        },
-        {
-          "name": "SpaceBetween",
-          "value": 4
-        },
-        {
-          "name": "SpaceAround",
-          "value": 5
-        },
-        {
-          "name": "SpaceEvenly",
-          "value": 6
-        }
-      ]
-    },
-    {
-      "name": "FlexAlignItems",
-      "fullName": "Avalonia.Controls.FlexAlignItems",
-      "isFlags": false,
-      "values": [
-        {
-          "name": "FlexStart",
-          "value": 0
-        },
-        {
-          "name": "FlexEnd",
-          "value": 1
-        },
-        {
-          "name": "Center",
-          "value": 2
-        },
-        {
-          "name": "Stretch",
-          "value": 3
-        }
-      ]
-    },
-    {
-      "name": "FlexDirection",
-      "fullName": "Avalonia.Controls.FlexDirection",
-      "isFlags": false,
-      "values": [
-        {
-          "name": "Row",
-          "value": 0
-        },
-        {
-          "name": "RowReverse",
-          "value": 1
-        },
-        {
-          "name": "Column",
-          "value": 2
-        },
-        {
-          "name": "ColumnReverse",
-          "value": 3
-        }
-      ]
-    },
-    {
-      "name": "FlexJustifyContent",
-      "fullName": "Avalonia.Controls.FlexJustifyContent",
-      "isFlags": false,
-      "values": [
-        {
-          "name": "FlexStart",
-          "value": 0
-        },
-        {
-          "name": "FlexEnd",
-          "value": 1
-        },
-        {
-          "name": "Center",
-          "value": 2
-        },
-        {
-          "name": "SpaceBetween",
-          "value": 3
-        },
-        {
-          "name": "SpaceAround",
-          "value": 4
-        },
-        {
-          "name": "SpaceEvenly",
-          "value": 5
-        }
-      ]
-    },
-    {
-      "name": "FlexWrap",
-      "fullName": "Avalonia.Controls.FlexWrap",
-      "isFlags": false,
-      "values": [
-        {
-          "name": "NoWrap",
-          "value": 0
-        },
-        {
-          "name": "Wrap",
-          "value": 1
-        },
-        {
-          "name": "WrapReverse",
-          "value": 2
-        }
-      ]
-    },
-    {
       "name": "FlyoutShowMode",
       "fullName": "Avalonia.Controls.FlyoutShowMode",
       "isFlags": false,
@@ -9757,18 +9513,6 @@
         {
           "name": "End",
           "value": 2
-        },
-        {
-          "name": "Justify",
-          "value": 3
-        },
-        {
-          "name": "Stretch",
-          "value": 4
-        },
-        {
-          "name": "StretchAll",
-          "value": 5
         }
       ]
     },
@@ -11932,25 +11676,6 @@
         {
           "name": "Saturday",
           "value": 6
-        }
-      ]
-    },
-    {
-      "name": "CalendarWeekRule",
-      "fullName": "System.Globalization.CalendarWeekRule",
-      "isFlags": false,
-      "values": [
-        {
-          "name": "FirstDay",
-          "value": 0
-        },
-        {
-          "name": "FirstFullWeek",
-          "value": 1
-        },
-        {
-          "name": "FirstFourDayWeek",
-          "value": 2
         }
       ]
     }

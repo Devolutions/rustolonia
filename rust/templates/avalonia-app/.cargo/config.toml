@@ -3,3 +3,8 @@ rustflags = ["-C", "target-feature=+crt-static"]
 
 [target.aarch64-pc-windows-msvc]
 rustflags = ["-C", "target-feature=+crt-static"]
+
+# This template builds against a rustolonia checkout and its locally built
+# host; never download a release host.
+[env]
+RUSTOLONIA_NO_DOWNLOAD = "1"

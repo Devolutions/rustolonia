@@ -235,9 +235,9 @@ launches the executable with a path, that path arrives through
 | Effect negotiation and payload capture | `tests/Avalonia.Host.Tests/Desktop/DesktopFileDropTests.cs` |
 | Routed-event wiring, synchronous effect vs. asynchronous delivery, ordering, unsubscribe | `tests/Avalonia.Host.Tests/Desktop/DesktopFileDropRegistryTests.cs` |
 | ABI surface: option marshalling, item lists, completion exactly once, cancel/abort/error | `tests/Avalonia.Host.Tests/Desktop/DesktopFileAbiTests.cs` |
-| Raw nano-COM vtable conformance against the published host, including null-pointer rejection for every picker start | `rust/avalonia-sys/tests/nativeaot_desktop_files.rs` |
-| Safe API decoding, outcomes, effect masks, event kinds | `rust/avalonia/src/storage.rs` unit tests |
-| End-to-end capability discovery, subscriptions, activation, thread-affinity error mapping | `rust/avalonia/tests/desktop_files.rs`, `rust/avalonia/tests/desktop_files_without_arguments.rs` |
+| Raw nano-COM vtable conformance against the published host, including null-pointer rejection for every picker start | `rust/rustolonia-sys/tests/nativeaot_desktop_files.rs` |
+| Safe API decoding, outcomes, effect masks, event kinds | `rust/rustolonia/src/storage.rs` unit tests |
+| End-to-end capability discovery, subscriptions, activation, thread-affinity error mapping | `rust/rustolonia/tests/desktop_files.rs`, `rust/rustolonia/tests/desktop_files_without_arguments.rs` |
 
 The flagship sample stays automation safe: the only thing that opens a platform
 dialog is an explicit button click, so UI automation can drive the drop panel,

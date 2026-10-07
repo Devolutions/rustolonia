@@ -6,13 +6,13 @@ Requires Windows PowerShell 5.1 Desktop, .NET Framework UIAutomationClient/
 UIAutomationTypes, and an unlocked interactive Windows desktop in the same user
 session and integrity level as the app. Headless/service CI sessions are not
 supported. No winapp, SDK, installed package, or screenshots are required.
-Run with powershell.exe -NoProfile -STA -File .\avalonia\tests\test-bundle.ps1.
+Run with powershell.exe -NoProfile -STA -File .\rustolonia\tests\test-bundle.ps1.
 Other hosts/apartment states fail before launch; there is no implicit relaunch.
 If local execution policy blocks scripts, add -ExecutionPolicy Bypass to that
 invocation after reviewing this file (process-local only; no policy is changed).
 
 The bundle must already be built. This script does not build or modify it.
-AVN_HOST_NATIVE_LIB is removed only from ProcessStartInfo.EnvironmentVariables;
+RUSTOLONIA_HOST_LIB is removed only from ProcessStartInfo.EnvironmentVariables;
 the calling process environment is never changed. Only the newly started process
 and its window are targeted. No process inventory, command lines, environment
 values, or full UI trees are printed. No process termination is ever attempted:
@@ -32,7 +32,7 @@ Deadline for each readiness/transition assertion (default 30 seconds).
 .PARAMETER CloseTimeoutSeconds
 Maximum normal-exit wait after requesting window close (default 15 seconds).
 .EXAMPLE
-powershell.exe -NoProfile -STA -File .\avalonia\tests\test-bundle.ps1
+powershell.exe -NoProfile -STA -File .\rustolonia\tests\test-bundle.ps1
 #>
 [CmdletBinding()]
 param(
@@ -171,7 +171,7 @@ try {
     $start.FileName = $exe
     $start.WorkingDirectory = Split-Path -Parent $exe
     $start.UseShellExecute = $false
-    $start.EnvironmentVariables.Remove('AVN_HOST_NATIVE_LIB')
+    $start.EnvironmentVariables.Remove('RUSTOLONIA_HOST_LIB')
     $script:app = [Diagnostics.Process]::Start($start)
     Write-Host "Started bundle PID $($script:app.Id)."
     $script:window = Wait-Smoke 'main window' {

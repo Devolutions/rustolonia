@@ -1,10 +1,10 @@
-﻿# Productizing the Rust application workflow
+# Productizing the Rust application workflow
 
 This documents the reusable, scripted path from "empty directory" to a
 packaged Rust Avalonia application: the copyable project template, the
 one-command regeneration/build loop, native host discovery, the deterministic
 per-runtime-identifier (RID) artifact layout with checksums and an optional
-signing hook, source-only crate packaging readiness, and the EU CRA CycloneDX
+signing hook, crates.io packaging, and the EU CRA CycloneDX
 SBOM scope decision for everything this workflow ships.
 
 Nothing here changes the generated ABI, the ownership contract, or the
@@ -17,7 +17,7 @@ requirements are defined in [COMPATIBILITY.md](COMPATIBILITY.md).
 ## Application template
 
 [`templates/avalonia-app`](templates/avalonia-app) is a minimal, copyable
-Cargo project (a `Cargo.toml` with a path dependency on `avalonia`, plus a
+Cargo project (a `Cargo.toml` with a path dependency on `rustolonia`, plus a
 `src/main.rs` that opens a window) meant to be copied outside this repository
 to bootstrap a new application. `new-app.ps1` performs the copy and
 package rename:
@@ -102,7 +102,7 @@ compiled statically into NativeAOT; no application-specific ABI is introduced.
 Normal consumer builds never run `cargo fmt` or rewrite handwritten Rust.
 External Rust output uses a crate-root compatibility bridge. Consumers must
 re-export `DynamicViewModel`, `ViewModelSink`, `ViewModelBatch`, and
-`BatchCompletion` from `avalonia::view_model`; the shipped template already
+`BatchCompletion` from `rustolonia::view_model`; the shipped template already
 does so.
 Finally it writes the host, published native DLLs/shared libraries, consumer
 executable, the producer's `licence.md`, Rustolonia's `LICENSE` and
@@ -138,8 +138,8 @@ previously separate, manually copy-pasted commands from README.md's
 1. Regenerate the object-model projection IR, generated C# COM sources, and
    the native ABI header from the current `AvaloniaObject`/`Control`
    assemblies (`Avalonia.Projection.Tool`).
-2. Regenerate the Rust `avalonia-sys`/`avalonia` bindings from that IR
-   (`avalonia-bindgen`), then `cargo fmt --all`.
+2. Regenerate the Rust `rustolonia-sys`/`rustolonia` bindings from that IR
+   (`rustolonia-bindgen`), then `cargo fmt --all`.
 3. Regenerate the managed adapters, application view registry, Rust
    view-model API, and `view-model.contract.md` from the sample-owned
    `rust/avalonia-sample/view-model.ir.json` (`Avalonia.ViewModelProjection.Tool`
@@ -180,7 +180,7 @@ Useful switches (the same PowerShell arguments work on Windows, Linux, and macOS
 | --- | --- |
 | `-Configuration Debug` | Build configuration for the .NET regeneration tools and managed build (default `Release`). |
 | `-SkipManagedBuild` | Skip the code-first and sample-composed `dotnet build` calls; generation and the Rust workspace build still run. |
-| `-Test` | Run `cargo test --workspace` instead of `cargo build --workspace`. Requires a host discoverable per [Host discovery](#host-discovery) below (`rust/build.ps1` publishes one; set `AVN_HOST_NATIVE_LIB` otherwise). |
+| `-Test` | Run `cargo test --workspace` instead of `cargo build --workspace`. Requires a host discoverable per [Host discovery](#host-discovery) below (`rust/build.ps1` publishes one; set `RUSTOLONIA_HOST_LIB` otherwise). |
 | `-ValidateTemplate` | Scaffold a temporary external consumer, generate its view-model sources, run `cargo check`, and remove it on success. |
 | `-PackageRid <rid>` | Additionally run [`package.ps1`](#deterministic-per-rid-artifact-layout) for that RID. |
 
@@ -198,10 +198,10 @@ real NativeAOT publish.
 
 ## Host discovery
 
-`avalonia::App::load_from_env()` (used by every example and the template)
-resolves the native `Avalonia.Host` library through `avalonia::discover_host_path()`:
+`rustolonia::App::load_from_env()` (used by every example and the template)
+resolves the native `Avalonia.Host` library through `rustolonia::discover_host_path()`:
 
-1. **`AVN_HOST_NATIVE_LIB`** (the `avalonia::HOST_NATIVE_LIB_ENV_VAR` constant) -- an explicit
+1. **`RUSTOLONIA_HOST_LIB`** (the `rustolonia::HOST_NATIVE_LIB_ENV_VAR` constant) -- an explicit
    override. If set, its value is used as-is, even if nothing exists at that
    path yet, so `Host::load` can surface a precise loader error instead of
    this function silently falling back to the next mechanism. This remains
@@ -209,18 +209,27 @@ resolves the native `Avalonia.Host` library through `avalonia::discover_host_pat
    freshly published host, and how you point a running app at a different
    host during development.
 2. **Adjacent to the executable** -- otherwise, the platform host file name
-   (`Avalonia.Host.dll` on Windows, `Avalonia.Host.so` on Linux,
-   `Avalonia.Host.dylib` on macOS) is looked up next to
+   (`rustolonia_host.dll` on Windows, `librustolonia_host.so` on Linux,
+   `librustolonia_host.dylib` on macOS) is looked up next to
    `std::env::current_exe()`. This is what lets a packaged application run
    with no environment variable at all: [`package.ps1`](#deterministic-per-rid-artifact-layout)
    copy the host and the application binary into the same directory.
+3. **macOS app bundle** -- on macOS, `<exe dir>/../Frameworks`, i.e.
+   `Contents/Frameworks` of an `.app` bundle.
+4. **Build-time host directory** -- with the `dev-host-path` feature (on by
+   default), the directory where `rustolonia-sys`'s build script staged the
+   host (`RUSTOLONIA_HOST_DIR` or the download cache) is baked into the
+   binary as `rustolonia_sys::BUILD_HOST_DIR`. This makes `cargo run` and
+   `cargo test` work without copying files. It points at the build machine,
+   so distributable builds should disable `dev-host-path` and ship the host
+   beside the executable.
 
-If neither resolves, the error names both the environment variable and the
-host file name it looked for next to the executable's directory. See
-`rust/avalonia/src/runtime.rs` (`discover_host_path`, `HOST_NATIVE_LIB_ENV_VAR`)
-for the implementation, `rust/avalonia/src/runtime.rs`'s
-`host_discovery_tests` module for unit tests of the override/adjacent-lookup
-precedence and error message, and `rust/avalonia/tests/host_discovery.rs` for
+If nothing resolves, the error names the environment variable, the host file
+name, and every directory searched. See
+`rust/rustolonia/src/runtime.rs` (`discover_host_path`, `HOST_NATIVE_LIB_ENV_VAR`)
+for the implementation, `rust/rustolonia/src/runtime.rs`'s
+`host_discovery_tests` module for unit tests of the search order and error
+message, and `rust/rustolonia/tests/host_discovery.rs` for
 the same behavior exercised through the crate's public API.
 
 ## Deterministic per-RID artifact layout
@@ -268,7 +277,7 @@ Both produce, for every supported RID:
   NuGet packages from the host's already-restored `project.assets.json` (no
   network access; `type: "project"` entries such as in-repo project
   references are excluded) and Cargo crates from `Cargo.lock` (workspace-local
-  crates with no `[source]`, like `avalonia`, are excluded as not third-party).
+  crates with no `[source]`, like `rustolonia`, are excluded as not third-party).
   Each resolved dependency is a CycloneDX `library` component with a `purl`
   (`pkg:nuget/...`/`pkg:cargo/...`). `metadata.properties` records the producer
   git pin used for the build and, when a dependency source path could not be
@@ -320,21 +329,104 @@ The entrypoints explicitly identify the application executable, including
 extensionless Linux/macOS binaries. Licensing files and ownership markers are
 not signing inputs. Missing explicitly requested signing inputs fail the build.
 
-## Source-only crate packaging
+## Crate publishing
 
-`avalonia`, `avalonia-sys`, and `avalonia-bindgen` all set `publish = false`:
-they are pinned to a matching `Avalonia.Host` build from the same checkout,
-not to a versioned ABI contract suitable for crates.io. That is a deliberate
-choice, not a gap -- but the crates are kept in a state where `cargo package`
-would succeed if that ever changed: each has `description`, `license`,
-`repository`, and (for the two application-facing crates) a `readme`
-pointing at a real `README.md`. This is checked with:
+`rustolonia`, `rustolonia-sys`, and `rustolonia-bindgen` are published to
+crates.io at the same version as the NativeAOT host tarballs attached to the
+GitHub release `v<version>`. `rustolonia` pins `rustolonia-sys = "=<version>"`,
+and `rustolonia-sys` embeds `host-checksums.txt` (the SHA-256 of every RID
+tarball), so a published crate can only ever load the host it was released
+with. `avalonia-sample` stays `publish = false`.
+
+Each crate has an explicit `include` allow-list (sources, `build.rs`,
+`build_support/`, the ABI header, `host-checksums.txt`, README, LICENSE).
+Integration tests and repository-relative fixtures are not packaged. MSRV is
+`rust-version = "1.88"`. docs.rs builds with `no-download` and never fetches a
+host. Packaging is checked in CI with:
 
 ```bash
-cargo package --list -p avalonia-sys --allow-dirty
-cargo package --list -p avalonia --allow-dirty
-cargo package --list -p avalonia-bindgen --allow-dirty
+cargo package --locked -p rustolonia-sys -p rustolonia-bindgen -p rustolonia
 ```
+
+### Prebuilt host tarballs
+
+`rust/package-host.ps1 -Rid <rid> [-Flavor default|devtools]` publishes the
+NativeAOT host (or packages an existing `-PublishDirectory`) into
+`rust/artifacts/host/`:
+
+| Asset | Contents |
+| --- | --- |
+| `rustolonia-host-<v>-<rid>[-devtools].tar.gz` | Flat root: host library, native dependencies, notices, `sbom.cdx.json`, `host-manifest.json` |
+| `…tar.gz.sha256` | `sha256sum` sidecar |
+| `rustolonia-host-<v>-<rid>[-devtools]-symbols.tar.gz` | `.pdb` / `.dbg` / `.dSYM` symbols, never downloaded by `build.rs` |
+
+`host-manifest.json` begins with `version`, `rid`, and `abiFingerprint` (the
+SHA-256 of `avalonia-rust-abi.h`), which `rustolonia-sys` checks after
+extraction; it also records the source revision, producer pin, patches, and
+per-file hashes. Archives are deterministic: sorted entries, uid/gid 0, fixed
+modes, and an mtime from `SOURCE_DATE_EPOCH` (or the HEAD commit time). The
+version comes from `release-manifest.json` and must match all three crates.
+Platform floors for release builds are listed in [PLATFORMS.md](PLATFORMS.md#prebuilt-host-platform-floors).
+
+### Testing the published experience locally
+
+To check that a standalone application can use the crates and the prebuilt
+host before anything is tagged, released, or published, build the host for the
+current platform and run the standalone test:
+
+```powershell
+pwsh rust/build.ps1                          # -Architecture arm64 on arm64
+pwsh rust/tests/test-standalone-app.ps1      # add -Distributable to ship the host
+```
+
+The script packs the published host into the release tarball
+(`package-host.ps1`), runs `cargo package` on the three crates, and generates a
+new Cargo project outside the repository that depends on
+`rustolonia = "=X.Y.Z"`. A `[patch.crates-io]` section points that dependency
+at the extracted `.crate` files, which are exactly what crates.io would serve.
+The app is built with an empty download cache: `rustolonia-sys` downloads the
+tarball from a local `file://` release tree, verifies it against the tarball's
+`.sha256`, and caches it. The app is then launched for a few seconds. With
+`-Distributable`, the app uses `default-features = false`, the host is copied
+next to the executable, and the cache is deleted before launch.
+`-KeepWorkDirectory` keeps the generated app for inspection, and
+`-TarballDirectory` reuses an existing tarball. CI runs the same script on
+every native runner, and the tag build runs it too.
+
+### Releasing
+
+Releases are driven by `.github/workflows/release.yml` and
+`rust/prepare-release.ps1`:
+
+1. `pwsh rust/prepare-release.ps1 -Version X.Y.Z` sets the version of the
+   three crates, the exact `rustolonia-sys` pin, `release-manifest.json`, and
+   `build/SharedVersion.props`, clears `host-checksums.txt`, and refreshes
+   `Cargo.lock`. Commit, then push the tag `vX.Y.Z`.
+2. The tag build checks that the tag matches every version, packages the
+   default host on native runners for all six RIDs, builds and launches a
+   standalone app against the packaged crates through the `rustolonia-sys`
+   download path (`rust/tests/test-standalone-app.ps1`), and creates a
+   **draft** release `vX.Y.Z` with the tarballs, their symbols, `SHA256SUMS`,
+   and build provenance attestations. A version containing `-` is marked as a
+   prerelease. The job fails if the release already exists; delete the draft
+   to rebuild.
+3. `pwsh rust/prepare-release.ps1 -Checksums -FromRelease` (or
+   `-SumsFile <SHA256SUMS>`) writes the default tarball hashes into
+   `host-checksums.txt`. Commit to `master`. NativeAOT output is not
+   guaranteed to be bit-for-bit reproducible, so the hashes always come from
+   the release build itself.
+4. Run the **Release** workflow manually with `version = X.Y.Z` from
+   `master`. After approval in the `crates-io` environment, it checks that
+   `host-checksums.txt` matches `SHA256SUMS` and that the crate sources differ
+   from the tag only in `host-checksums.txt`, packages the crates, builds and
+   launches a fresh application that depends on the packaged crates through
+   `[patch.crates-io]` (downloading the host with the committed checksums),
+   publishes the GitHub release, and runs `cargo publish` for
+   `rustolonia-sys`, `rustolonia-bindgen`, and `rustolonia` with crates.io
+   trusted publishing.
+
+Signing is enabled by setting the `AVALONIA_RUST_SIGN_COMMAND` repository
+variable (see [Signing hook](#signing-hook)).
 
 ## SBOM (EU CRA) scope
 
@@ -343,10 +435,10 @@ Rustolonia does not carry the upstream Avalonia producer's NUKE build or its
 repository. Rustolonia is not a NuGet package producer at all: every managed
 project in this repository (`Avalonia.Host`, `Avalonia.Rust`,
 `Avalonia.Rust.Interop`, `Avalonia.Projection.*`,
-`Avalonia.ViewModelProjection.Tool`) is `IsPackable=false`, and the `rust/*`
-crates are `publish = false` (see [Source-only crate
-packaging](#source-only-crate-packaging) above). There is no shipped `.nupkg`
-or published crate for a package-level SBOM generator to cover.
+`Avalonia.ViewModelProjection.Tool`) is `IsPackable=false`, so there is no
+shipped `.nupkg` for a package-level SBOM generator to cover. The published
+crates (see [Crate publishing](#crate-publishing)) are covered by the Cargo
+graph in the release SBOM.
 
 What Rustolonia does ship is the packaged NativeAOT bundle produced by
 [`package.ps1`](#deterministic-per-rid-artifact-layout) or `build-app.ps1`
@@ -370,8 +462,8 @@ process consumes, not as the whole of that process.
   `xvfb-run -a pwsh ./rust/tests/test-build-app.ps1 -RunNativeSmoke`. Smoke builds
   do not invoke a user-configured signing service and clear the host override
   when launching so that the adjacent packaged host is exercised.
-- `rust/avalonia/src/runtime.rs` (`host_discovery_tests` module) and
-  `rust/avalonia/tests/host_discovery.rs` cover `discover_host_path`: the
+- `rust/rustolonia/src/runtime.rs` (`host_discovery_tests` module) and
+  `rust/rustolonia/tests/host_discovery.rs` cover `discover_host_path`: the
   explicit override always winning (even to a nonexistent path), the
   adjacent-file lookup succeeding and failing, and the combined error naming
   both mechanisms -- all without requiring a published host.
@@ -379,8 +471,9 @@ process consumes, not as the whole of that process.
   external consumer and generates its sources before compile-checking it as a
   standalone crate. The checked-in template contains placeholders and should
   not be compiled directly.
-- `cargo package --list` (see [Source-only crate packaging](#source-only-crate-packaging))
-  is the packaging-readiness check for all three workspace crates.
+- `cargo package --workspace --exclude avalonia-sample` (see
+  [Crate publishing](#crate-publishing)) is the packaging check for all three
+  published crates.
 - `package.ps1` self-verify their own output shape (the
   publish step fails the script if the host file is missing, the cargo build
   step fails it if the binary is missing) and were run end to end for

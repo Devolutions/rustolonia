@@ -1,0 +1,52 @@
+[package]
+name = "rustolonia-sys"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Raw nano-COM bindings for the Avalonia NativeAOT host"
+repository = "https://github.com/Devolutions/rustolonia"
+readme = "README.md"
+rust-version = "1.88"
+keywords = ["avalonia", "gui", "ffi", "nativeaot", "sys"]
+categories = ["external-ffi-bindings", "gui"]
+build = "build.rs"
+include = [
+    "/build.rs",
+    "/build_support/**",
+    "/host-checksums.txt",
+    "/include/**",
+    "/src/**",
+    "/README.md",
+    "/LICENSE",
+]
+links = "rustolonia_host"
+
+[features]
+default = ["dev-host-path"]
+# Never download the prebuilt host; the application provides it at run time.
+no-download = []
+# Bake the staged host directory into the binary as a last-resort runtime
+# search path, so `cargo run` and `cargo test` work without setup.
+dev-host-path = []
+
+[dependencies]
+libloading = "0.8"
+
+[build-dependencies]
+dirs = "6"
+flate2 = "1"
+sha2 = "0.10"
+tar = { version = "0.4", default-features = false }
+ureq = { version = "2.12", default-features = false, features = ["tls"] }
+
+# build_support/host.rs is also compiled into the unit tests.
+[dev-dependencies]
+flate2 = "1"
+sha2 = "0.10"
+tar = { version = "0.4", default-features = false }
+ureq = { version = "2.12", default-features = false, features = ["tls"] }
+
+[package.metadata.docs.rs]
+# docs.rs builds never download the host (build.rs also checks DOCS_RS).
+features = ["no-download"]
+no-default-features = true

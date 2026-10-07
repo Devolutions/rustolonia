@@ -60,6 +60,15 @@ public static class Exports
         }
     }
 
+    /// <summary>
+    /// Reports the host release version and ABI fingerprint so
+    /// <c>rustolonia-sys</c> can refuse a host built from a different ABI.
+    /// Unlike the other exports this one never touches Avalonia, so it is
+    /// safe to call before anything else.
+    /// </summary>
+    [UnmanagedCallersOnly(EntryPoint = "avn_get_host_info")]
+    internal static unsafe int GetHostInfo(HostInfoNative* info) => HostInfo.Fill(info);
+
     [UnmanagedCallersOnly(EntryPoint = "avn_get_projection_diagnostics")]
     internal static unsafe int GetProjectionDiagnostics(
         ProjectionDiagnosticNativeSnapshot* snapshot)

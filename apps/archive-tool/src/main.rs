@@ -4,17 +4,17 @@
 //! view-model bridge exposes that state to the compiled Avalonia presentation.
 #![cfg_attr(target_os = "windows", windows_subsystem = "windows")]
 
-pub use avalonia::{
+pub use rustolonia::{
     AppScope, CancellationToken, ClipboardData, ConversionDirection, Error, MapKey, RangeBatch,
     RangeRequest, RecentFileList, Result, ScalarKind, ScalarValue,
 };
 pub mod view_model {
-    pub use avalonia::view_model::{
+    pub use rustolonia::view_model::{
         BatchCompletion, DynamicViewModel, ViewModelBatch, ViewModelSink,
     };
 }
 pub mod value_converter {
-    pub use avalonia::value_converter::ValueConverterDispatch;
+    pub use rustolonia::value_converter::ValueConverterDispatch;
 }
 
 #[path = "../generated/generated_view_models.rs"]
@@ -28,7 +28,7 @@ use archive::{
     smart_extract_destination, ArchiveEntry, ArchiveKind, ExtractReport,
 };
 use panes::{Pane, Side};
-use avalonia::{
+use rustolonia::{
     ActivationEvent, App, DragDropEffects, FileDropEvent, FileTypeFilter, FolderPickerOptions,
     OpenFilePickerOptions, PickerOutcome, SaveFilePickerOptions, Window,
 };
@@ -1372,7 +1372,7 @@ fn open_in_shell(path: &Path) -> std::result::Result<(), String> {
         .map_err(|error| format!("Unable to open {}: {error}", path.display()))
 }
 
-fn main() -> avalonia::Result<()> {
+fn main() -> rustolonia::Result<()> {
     App::load_from_env()?.run(|scope| {
         let startup = scope.activation_items()?;
         let mut recent = RecentFileList::with_capacity(MAIN_VIEW_MODEL_RECENT_FILES_CAPACITY);
