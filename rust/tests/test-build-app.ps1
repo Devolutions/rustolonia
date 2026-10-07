@@ -663,6 +663,48 @@ version = "0.1.0"
         Assert-True ($source.Count -eq 1 -and $source[0].value -like 'unavailable:*does not exist') 'Missing supplied dependency files must not be reported as available.'
     }
 
+    # Prebuilt host release assets consumed by rustolonia-sys/build.rs.
+    Assert-True ((Get-HostAssetName -Version '1.2.3' -Rid linux-arm64) -eq 'rustolonia-host-1.2.3-linux-arm64.tar.gz') 'Host asset names must match rustolonia-sys/build.rs.'
+    Assert-True ((Get-HostAssetName -Version '1.2.3' -Rid osx-x64 -Flavor devtools -Symbols) -eq 'rustolonia-host-1.2.3-osx-x64-devtools-symbols.tar.gz') 'Host asset names must encode flavor and symbols.'
+    Assert-Throws { Get-HostAssetName -Version '1.2.3' -Rid 'freebsd-x64' } 'Unsupported RID'
+    $releaseVersion = Get-RustoloniaReleaseVersion -RustoloniaRoot $root
+    Assert-True ($releaseVersion -match '^\d+\.\d+\.\d+') 'The release version must come from release-manifest.json.'
+    $abiFingerprint = Get-AbiFingerprint -RustoloniaRoot $root
+    Assert-True ($abiFingerprint -match '^[0-9a-f]{64}$') 'The ABI fingerprint must be a lowercase SHA-256.'
+
+    $hostStage = Join-Path $scratch 'host-stage'
+    New-Item -ItemType Directory -Path $hostStage | Out-Null
+    Set-Content -LiteralPath (Join-Path $hostStage 'rustolonia_host.dll') -Value 'host' -NoNewline
+    Set-Content -LiteralPath (Join-Path $hostStage 'LICENSE') -Value 'license' -NoNewline
+    Write-HostManifest -Directory $hostStage -Version $releaseVersion -Rid win-x64 -AbiFingerprint $abiFingerprint -RustoloniaRoot $root -SourceRevision 'abc'
+    $hostManifestText = [IO.File]::ReadAllText((Join-Path $hostStage 'host-manifest.json'))
+    Assert-True (-not $hostManifestText.Contains("`r")) 'host-manifest.json must use LF line endings.'
+    # rustolonia-sys reads the first occurrence of each key, so these keys must be unique.
+    foreach ($key in @('version', 'rid', 'abiFingerprint')) {
+        Assert-True (([regex]::Matches($hostManifestText, "`"$key`"\s*:")).Count -eq 1) "host-manifest.json must contain '$key' exactly once."
+    }
+    $hostManifest = $hostManifestText | ConvertFrom-Json
+    Assert-True ($hostManifest.version -eq $releaseVersion -and $hostManifest.rid -eq 'win-x64' -and $hostManifest.abiFingerprint -eq $abiFingerprint) 'host-manifest.json must record version, RID and ABI fingerprint.'
+    Assert-True ($hostManifest.hostFile -eq 'rustolonia_host.dll') 'host-manifest.json must name the host library.'
+    Assert-True ((@($hostManifest.files.name) -join ',') -eq 'LICENSE,rustolonia_host.dll') 'host-manifest.json must hash every other bundle file.'
+
+    $archiveFiles = @('rustolonia_host.dll', 'LICENSE', 'host-manifest.json')
+    $archiveA = Join-Path $scratch 'host-a.tar.gz'
+    $archiveB = Join-Path $scratch 'host-b.tar.gz'
+    New-DeterministicTarGz -SourceDirectory $hostStage -RelativePaths $archiveFiles -Destination $archiveA -Timestamp 1700000000
+    (Get-Item -LiteralPath (Join-Path $hostStage 'LICENSE')).LastWriteTimeUtc = [datetime]::UtcNow.AddDays(-3)
+    New-DeterministicTarGz -SourceDirectory $hostStage -RelativePaths @($archiveFiles[2], $archiveFiles[1], $archiveFiles[0]) -Destination $archiveB -Timestamp 1700000000
+    Assert-True ((Get-FileHash $archiveA).Hash -eq (Get-FileHash $archiveB).Hash) 'Host tarballs must be byte-identical for identical inputs.'
+    $extracted = Join-Path $scratch 'host-extracted'
+    New-Item -ItemType Directory -Path $extracted | Out-Null
+    $archiveStream = [IO.Compression.GZipStream]::new([IO.File]::OpenRead($archiveA), [IO.Compression.CompressionMode]::Decompress)
+    try { [Formats.Tar.TarFile]::ExtractToDirectory($archiveStream, $extracted, $false) }
+    finally { $archiveStream.Dispose() }
+    Assert-True (((@(Get-ChildItem -LiteralPath $extracted -File).Name | Sort-Object) -join ',') -eq 'host-manifest.json,LICENSE,rustolonia_host.dll') 'Host tarballs must have a flat root.'
+    Assert-Throws { New-DeterministicTarGz -SourceDirectory $hostStage -RelativePaths @('../escape.txt') -Destination (Join-Path $scratch 'bad.tar.gz') } 'relative path inside'
+    $assetHash = Write-AssetChecksum -Asset $archiveA
+    Assert-True ((Get-Content -LiteralPath "$archiveA.sha256" -Raw) -eq "$assetHash  host-a.tar.gz`n") 'Checksum sidecars must use sha256sum format.'
+
     if ($RunNativeSmoke) {
         $nativeTempRoot = [IO.Path]::GetTempPath()
         if ($IsMacOS) {

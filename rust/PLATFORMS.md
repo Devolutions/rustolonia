@@ -82,6 +82,19 @@ pwsh ./rust/build.ps1
 The X11 host requires the standard Avalonia Linux runtime libraries, including
 X11, fontconfig, and OpenGL/EGL or software-rendering dependencies.
 
+## Prebuilt host platform floors
+
+Release tarballs (`rust/package-host.ps1`) define the minimum OS a published
+`rustolonia-sys` supports:
+
+| RID | Build environment | Floor |
+| --- | --- | --- |
+| `win-x64`, `win-arm64` | `windows-latest` | Windows 10 1607 / Server 2016 (.NET 10 support floor) |
+| `linux-x64`, `linux-arm64` | Ubuntu 22.04 container | glibc 2.35 |
+| `osx-x64`, `osx-arm64` | `macos-latest`, `MACOSX_DEPLOYMENT_TARGET=12.0` | macOS 12 |
+
+Linux hosts are glibc-only; musl RIDs are not published.
+
 ## Cross-platform gate result
 
 The generated `rust_vm_axaml` application was published and launched through

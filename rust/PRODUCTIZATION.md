@@ -348,6 +348,26 @@ host. Packaging is checked with:
 cargo package --workspace --exclude avalonia-sample --allow-dirty
 ```
 
+### Prebuilt host tarballs
+
+`rust/package-host.ps1 -Rid <rid> [-Flavor default|devtools]` publishes the
+NativeAOT host (or packages an existing `-PublishDirectory`) into
+`rust/artifacts/host/`:
+
+| Asset | Contents |
+| --- | --- |
+| `rustolonia-host-<v>-<rid>[-devtools].tar.gz` | Flat root: host library, native dependencies, notices, `sbom.cdx.json`, `host-manifest.json` |
+| `…tar.gz.sha256` | `sha256sum` sidecar |
+| `rustolonia-host-<v>-<rid>[-devtools]-symbols.tar.gz` | `.pdb` / `.dbg` / `.dSYM` symbols, never downloaded by `build.rs` |
+
+`host-manifest.json` begins with `version`, `rid`, and `abiFingerprint` (the
+SHA-256 of `avalonia-rust-abi.h`), which `rustolonia-sys` checks after
+extraction; it also records the source revision, producer pin, patches, and
+per-file hashes. Archives are deterministic: sorted entries, uid/gid 0, fixed
+modes, and an mtime from `SOURCE_DATE_EPOCH` (or the HEAD commit time). The
+version comes from `release-manifest.json` and must match all three crates.
+Platform floors for release builds are listed in [PLATFORMS.md](PLATFORMS.md#prebuilt-host-platform-floors).
+
 ## SBOM (EU CRA) scope
 
 Rustolonia does not carry the upstream Avalonia producer's NUKE build or its
