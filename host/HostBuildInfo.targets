@@ -1,0 +1,41 @@
+<Project>
+  <!--
+    Bakes the release version and the ABI fingerprint into the host as
+    HostBuildInfo constants, which avn_get_host_info returns.
+
+    The ABI fingerprint is the lowercase SHA-256 of the generated C ABI header
+    (rust/rustolonia-sys/include/avalonia-rust-abi.h). .gitattributes pins that
+    header to LF, so it hashes the same on every platform. rustolonia-sys's
+    build.rs hashes the same file, and Host::load refuses a host whose
+    fingerprint differs.
+  -->
+  <PropertyGroup>
+    <RustoloniaAbiHeader Condition="'$(RustoloniaAbiHeader)' == ''">$(MSBuildThisFileDirectory)..\rust\rustolonia-sys\include\avalonia-rust-abi.h</RustoloniaAbiHeader>
+    <_RustoloniaHostBuildInfoFile>$(IntermediateOutputPath)RustoloniaHostBuildInfo.g.cs</_RustoloniaHostBuildInfoFile>
+  </PropertyGroup>
+
+  <Target Name="GenerateRustoloniaHostBuildInfo" BeforeTargets="CoreCompile" DependsOnTargets="PrepareForBuild">
+    <Error Condition="!Exists('$(RustoloniaAbiHeader)')" Text="The rustolonia ABI header was not found: '$(RustoloniaAbiHeader)'." />
+    <GetFileHash Files="$(RustoloniaAbiHeader)" Algorithm="SHA256" HashEncoding="hex">
+      <Output TaskParameter="Hash" PropertyName="_RustoloniaAbiHeaderHash" />
+    </GetFileHash>
+    <PropertyGroup>
+      <_RustoloniaAbiFingerprint>$(_RustoloniaAbiHeaderHash.ToLowerInvariant())</_RustoloniaAbiFingerprint>
+      <_RustoloniaHostBuildInfoSource>
+// &lt;auto-generated /&gt; by host/HostBuildInfo.targets
+namespace Avalonia.Host%3B
+
+internal static class HostBuildInfo
+{
+    internal const string Version = &quot;$(Version)&quot;%3B
+    internal const string AbiFingerprint = &quot;$(_RustoloniaAbiFingerprint)&quot;%3B
+}
+</_RustoloniaHostBuildInfoSource>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(_RustoloniaHostBuildInfoFile)" Lines="$(_RustoloniaHostBuildInfoSource)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <ItemGroup>
+      <Compile Include="$(_RustoloniaHostBuildInfoFile)" />
+      <FileWrites Include="$(_RustoloniaHostBuildInfoFile)" />
+    </ItemGroup>
+  </Target>
+</Project>

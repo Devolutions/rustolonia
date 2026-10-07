@@ -91,6 +91,29 @@ type GetActivationFactoryFn = unsafe extern "C" fn(*mut *mut c_void) -> i32;
 type FreeFn = unsafe extern "C" fn(*mut c_void);
 type AllocUtf16Fn = unsafe extern "C" fn(i32) -> *mut u16;
 type GetLastErrorFn = unsafe extern "C" fn(*mut *mut u16) -> i32;
+type GetHostInfoFn = unsafe extern "C" fn(*mut HostInfoNative) -> i32;
+
+/// SHA-256 of `include/avalonia-rust-abi.h`, computed by `build.rs`. A host
+/// is only accepted if it reports this exact fingerprint.
+pub const ABI_FINGERPRINT: &str = env!("RUSTOLONIA_ABI_FINGERPRINT");
+
+#[repr(C)]
+struct HostInfoNative {
+    struct_size: u32,
+    reserved: u32,
+    version: *const std::ffi::c_char,
+    abi_fingerprint: *const std::ffi::c_char,
+}
+
+/// Version information reported by a loaded host via `avn_get_host_info`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct HostInfo {
+    /// The rustolonia release the host was built from.
+    pub version: String,
+    /// SHA-256 of the ABI header the host was built against.
+    pub abi_fingerprint: String,
+}
+
 static FREE: OnceLock<FreeFn> = OnceLock::new();
 static ALLOC_UTF16: OnceLock<AllocUtf16Fn> = OnceLock::new();
 static HOST_EXPORTS: Mutex<()> = Mutex::new(());
@@ -100,6 +123,12 @@ static HOST_EXPORTS: Mutex<()> = Mutex::new(());
 pub enum HostLoadError {
     Library(libloading::Error),
     IncompatibleAllocator,
+    /// The host was built against a different ABI than this crate. `found`
+    /// is `None` for hosts that predate `avn_get_host_info`.
+    IncompatibleHost {
+        expected: &'static str,
+        found: Option<HostInfo>,
+    },
 }
 
 impl std::fmt::Display for HostLoadError {
@@ -109,8 +138,61 @@ impl std::fmt::Display for HostLoadError {
             Self::IncompatibleAllocator => formatter.write_str(
                 "Avalonia Host exports a different UTF-16 allocator than the already loaded host",
             ),
+            Self::IncompatibleHost { expected, found } => match found {
+                Some(found) => write!(
+                    formatter,
+                    "rustolonia host {} was built for ABI {}, but rustolonia-sys {} expects ABI {}; \
+                     use the host released with rustolonia-sys {}",
+                    found.version,
+                    found.abi_fingerprint,
+                    env!("CARGO_PKG_VERSION"),
+                    expected,
+                    env!("CARGO_PKG_VERSION"),
+                ),
+                None => write!(
+                    formatter,
+                    "rustolonia host does not export avn_get_host_info, so it predates \
+                     rustolonia-sys {}; use the host released with this version",
+                    env!("CARGO_PKG_VERSION"),
+                ),
+            },
         }
     }
+}
+
+/// Accepts `found` only if its ABI fingerprint is exactly `expected`.
+fn check_host_compatibility(
+    expected: &'static str,
+    found: Option<HostInfo>,
+) -> std::result::Result<HostInfo, HostLoadError> {
+    match found {
+        Some(info) if info.abi_fingerprint == expected => Ok(info),
+        found => Err(HostLoadError::IncompatibleHost { expected, found }),
+    }
+}
+
+/// Calls `avn_get_host_info`. Returns `None` if the call fails.
+unsafe fn query_host_info(get_host_info: GetHostInfoFn) -> Option<HostInfo> {
+    let mut native = HostInfoNative {
+        struct_size: std::mem::size_of::<HostInfoNative>() as u32,
+        reserved: 0,
+        version: ptr::null(),
+        abi_fingerprint: ptr::null(),
+    };
+    if get_host_info(&mut native) < 0 {
+        return None;
+    }
+    let read = |value: *const std::ffi::c_char| {
+        (!value.is_null()).then(|| {
+            std::ffi::CStr::from_ptr(value)
+                .to_string_lossy()
+                .into_owned()
+        })
+    };
+    Some(HostInfo {
+        version: read(native.version).unwrap_or_default(),
+        abi_fingerprint: read(native.abi_fingerprint).unwrap_or_default(),
+    })
 }
 
 impl std::error::Error for HostLoadError {}
@@ -242,6 +324,7 @@ pub struct Host {
     get_activation_factory: GetActivationFactoryFn,
     free: FreeFn,
     get_last_error: GetLastErrorFn,
+    info: HostInfo,
 }
 
 impl Host {
@@ -269,6 +352,11 @@ impl Host {
                 }
             }
             let lib = Library::new(path)?;
+            let found = match lib.get::<GetHostInfoFn>(b"avn_get_host_info\0") {
+                Ok(get_host_info) => query_host_info(*get_host_info),
+                Err(_) => None,
+            };
+            let info = check_host_compatibility(ABI_FINGERPRINT, found)?;
             let get_activation_factory =
                 *lib.get::<GetActivationFactoryFn>(b"avn_get_activation_factory\0")?;
             let free = *lib.get::<FreeFn>(b"avn_free\0")?;
@@ -301,8 +389,14 @@ impl Host {
                 get_activation_factory,
                 free,
                 get_last_error,
+                info,
             })
         }
+    }
+
+    /// Version and ABI fingerprint reported by this host.
+    pub fn info(&self) -> &HostInfo {
+        &self.info
     }
 
     pub fn activation_factory(&self) -> Result<ComPtr<IAvnActivationFactory>> {
@@ -338,5 +432,79 @@ impl Host {
             (self.free)(value.cast());
             Some(result)
         }
+    }
+}
+
+#[cfg(test)]
+mod host_info_tests {
+    use super::*;
+
+    fn info(fingerprint: &str) -> HostInfo {
+        HostInfo {
+            version: "0.1.0".into(),
+            abi_fingerprint: fingerprint.into(),
+        }
+    }
+
+    #[test]
+    fn abi_fingerprint_is_lowercase_sha256() {
+        assert_eq!(ABI_FINGERPRINT.len(), 64);
+        assert!(ABI_FINGERPRINT
+            .chars()
+            .all(|c| c.is_ascii_digit() || ('a'..='f').contains(&c)));
+    }
+
+    #[test]
+    fn matching_fingerprint_is_accepted() {
+        let accepted = check_host_compatibility("abc", Some(info("abc"))).unwrap();
+        assert_eq!(accepted, info("abc"));
+    }
+
+    #[test]
+    fn mismatched_fingerprint_is_rejected() {
+        let error = check_host_compatibility("abc", Some(info("def"))).unwrap_err();
+        assert!(matches!(
+            &error,
+            HostLoadError::IncompatibleHost { expected: "abc", found: Some(found) } if found.abi_fingerprint == "def"
+        ));
+        let message = error.to_string();
+        assert!(message.contains("ABI def"), "{message}");
+        assert!(message.contains("expects ABI abc"), "{message}");
+    }
+
+    #[test]
+    fn missing_host_info_is_rejected() {
+        let error = check_host_compatibility("abc", None).unwrap_err();
+        assert!(matches!(
+            error,
+            HostLoadError::IncompatibleHost { found: None, .. }
+        ));
+        assert!(error.to_string().contains("avn_get_host_info"));
+    }
+
+    unsafe extern "C" fn fake_host_info(info: *mut HostInfoNative) -> i32 {
+        if (*info).struct_size < std::mem::size_of::<HostInfoNative>() as u32 {
+            return hresult::E_INVALIDARG;
+        }
+        (*info).version = c"1.2.3".as_ptr();
+        (*info).abi_fingerprint = c"feed".as_ptr();
+        0
+    }
+
+    unsafe extern "C" fn failing_host_info(_: *mut HostInfoNative) -> i32 {
+        hresult::E_POINTER
+    }
+
+    #[test]
+    fn query_reads_utf8_strings() {
+        let found = unsafe { query_host_info(fake_host_info) }.unwrap();
+        assert_eq!(
+            found,
+            HostInfo {
+                version: "1.2.3".into(),
+                abi_fingerprint: "feed".into()
+            }
+        );
+        assert!(unsafe { query_host_info(failing_host_info) }.is_none());
     }
 }

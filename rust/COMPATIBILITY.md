@@ -83,6 +83,14 @@ with a host from another.
 
 ## Native ABI
 
+`rustolonia-sys` refuses to load a host built against a different ABI. The
+host's `avn_get_host_info` export reports the SHA-256 of
+`rustolonia-sys/include/avalonia-rust-abi.h` it was built with, and
+`Host::load` compares it with the hash `rustolonia-sys` computed at build
+time. Any change to the generated header therefore requires a matching host;
+a mismatch (or a host without `avn_get_host_info`) fails with
+`HostLoadError::IncompatibleHost` instead of reaching a stale vtable.
+
 The overlay-chrome pass widens the leaf `IAvnWindow` ABI from 7 to 8 to expose only the safe, non-nullable window work-area and dialog members. This stays local to the window leaf: `IAvnContentControl` remains at 6 and the factory remained at 13 as of this wave (the later gradient-brush pass below moves it again), while blockers such as `Icon`, `Position`, nullable geometry, and cancelable `Closing` payloads stay out of scope.
 
 The wave P event-payload pass grows `IAvnControl` with `KeyUp`, `GotFocus`

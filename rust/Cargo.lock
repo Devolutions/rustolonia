@@ -131,6 +131,7 @@ name = "rustolonia-sys"
 version = "0.1.0"
 dependencies = [
  "libloading",
+ "sha2",
 ]
 
 [[package]]

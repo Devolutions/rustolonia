@@ -7,6 +7,10 @@ description = "Raw nano-COM bindings for the Avalonia NativeAOT host"
 repository = "https://github.com/Devolutions/rustolonia"
 readme = "README.md"
 publish = false
+build = "build.rs"
 
 [dependencies]
 libloading = "0.8"
+
+[build-dependencies]
+sha2 = "0.10"

@@ -21,6 +21,16 @@ loaded for the process lifetime because returned ABI strings can outlive a
 `Host` value. A later load whose `avn_free` or `avn_alloc_utf16` exports differ
 is rejected, preserving the single allocator-host invariant.
 
+## Host compatibility check
+
+Before resolving any other export, `Host::load` calls `avn_get_host_info`,
+which reports the host's release version and ABI fingerprint (the SHA-256 of
+`include/avalonia-rust-abi.h` at host build time). `build.rs` hashes the same
+header into `ABI_FINGERPRINT`. If the fingerprints differ, or the host is too
+old to export `avn_get_host_info`, loading fails with
+`HostLoadError::IncompatibleHost`. The version is reported in the error and
+through `Host::info()`; only the fingerprint decides compatibility.
+
 ## String arguments
 
 Safe wrappers accepting UTF-16 slices ensure that a NUL terminator exists
