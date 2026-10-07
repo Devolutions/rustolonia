@@ -2,7 +2,7 @@
 //! no AXAML, no compiled presentation, no view-model IR.
 //!
 //! Run with a packaged host next to the executable, or point
-//! `AVN_HOST_NATIVE_LIB` at a published `Avalonia.Host` native library.
+//! `RUSTOLONIA_HOST_LIB` at a published `Avalonia.Host` native library.
 
 use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::Arc;

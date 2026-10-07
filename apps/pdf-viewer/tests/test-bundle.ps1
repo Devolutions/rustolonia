@@ -122,7 +122,7 @@ try {
     if ($PdfPath) {
         $start.Arguments = '"' + (Resolve-Path -LiteralPath $PdfPath).ProviderPath + '"'
     }
-    $start.EnvironmentVariables.Remove('AVN_HOST_NATIVE_LIB')
+    $start.EnvironmentVariables.Remove('RUSTOLONIA_HOST_LIB')
     $script:app = [Diagnostics.Process]::Start($start)
     $script:window = Wait-Condition 'main window' {
         $script:app.Refresh()

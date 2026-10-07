@@ -60,7 +60,7 @@ function Test-NativeConsumer {
     $bundle = Join-Path $consumer 'artifacts' $rid
     $executable = Join-Path $bundle "smoke_app$($target.ExeExtension)"
     Assert-True (Test-Path -LiteralPath $executable -PathType Leaf) "Packaged executable is missing: $executable"
-    Assert-True (Test-Path -LiteralPath (Join-Path $bundle "Avalonia.Host$($target.HostExtension)") -PathType Leaf) 'Packaged host is missing.'
+    Assert-True (Test-Path -LiteralPath (Join-Path $bundle $target.HostFileName) -PathType Leaf) 'Packaged host is missing.'
     $inventory = Get-Content -LiteralPath (Join-Path $bundle 'sbom.cdx.json') -Raw | ConvertFrom-Json
     Assert-True (@($inventory.components | Where-Object { $_.type -eq 'library' -and $_.purl -like 'pkg:nuget/*' }).Count -gt 0) 'Packaged inventory must contain the published host dependencies.'
     foreach ($line in Get-Content -LiteralPath (Join-Path $bundle 'checksums.sha256')) {
@@ -69,16 +69,16 @@ function Test-NativeConsumer {
         Assert-True ($actual -eq $expected) "Checksum mismatch for $file"
     }
 
-    $previousHost = $env:AVN_HOST_NATIVE_LIB
+    $previousHost = $env:RUSTOLONIA_HOST_LIB
     $process = $null
     try {
-        Remove-Item Env:AVN_HOST_NATIVE_LIB -ErrorAction SilentlyContinue
+        Remove-Item Env:RUSTOLONIA_HOST_LIB -ErrorAction SilentlyContinue
         $process = Start-Process -FilePath $executable -WorkingDirectory $bundle -PassThru
         Assert-True (-not $process.WaitForExit(5000)) "Packaged consumer exited during startup."
     }
     finally {
-        if ($null -ne $previousHost) { $env:AVN_HOST_NATIVE_LIB = $previousHost }
-        else { Remove-Item Env:AVN_HOST_NATIVE_LIB -ErrorAction SilentlyContinue }
+        if ($null -ne $previousHost) { $env:RUSTOLONIA_HOST_LIB = $previousHost }
+        else { Remove-Item Env:RUSTOLONIA_HOST_LIB -ErrorAction SilentlyContinue }
         if ($null -ne $process) {
             try {
                 if (-not $process.HasExited) {
@@ -183,7 +183,7 @@ try {
     Assert-True ($firstStaging -ne $secondStaging -and (Test-Path -LiteralPath $firstStaging) -and (Test-Path -LiteralPath $secondStaging)) 'Staging must not remove another active invocation.'
     $sourceBundle = Join-Path $scratch 'source-bundle'
     New-Item -ItemType Directory -Path $sourceBundle | Out-Null
-    $sourceHost = Join-Path $sourceBundle 'Avalonia.Host.dll'
+    $sourceHost = Join-Path $sourceBundle 'rustolonia_host.dll'
     Set-Content -LiteralPath $sourceHost -Value 'stub host'
     Set-Content -LiteralPath (Join-Path $sourceBundle 'libexample.so.1') -Value 'versioned native library'
     $copyBundle = Join-Path $scratch 'source-bundle-copy'
@@ -529,7 +529,7 @@ Add-Content -LiteralPath (Join-Path $PSScriptRoot 'signatures.log') -Value $Arti
             $publish = if ($publishOverride.Count) { $publishOverride[0].Substring('-p:PublishDir='.Length) }
                 else { Join-Path $mockArtifacts 'publish' 'Avalonia.Host' "release_$nativeRid" }
             New-Item -ItemType Directory -Force -Path $publish | Out-Null
-            Set-Content -LiteralPath (Join-Path $publish "Avalonia.Host$($nativeTarget.HostExtension)") -Value 'new host'
+            Set-Content -LiteralPath (Join-Path $publish $nativeTarget.HostFileName) -Value 'new host'
             if ($IsMacOS) { Set-Content -LiteralPath (Join-Path $publish 'libAvaloniaNative.dylib') -Value 'native library' }
         }
         function cargo {

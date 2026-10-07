@@ -12,7 +12,7 @@ If local execution policy blocks scripts, add -ExecutionPolicy Bypass to that
 invocation after reviewing this file (process-local only; no policy is changed).
 
 The bundle must already be built. This script does not build or modify it.
-AVN_HOST_NATIVE_LIB is removed only from ProcessStartInfo.EnvironmentVariables;
+RUSTOLONIA_HOST_LIB is removed only from ProcessStartInfo.EnvironmentVariables;
 the calling process environment is never changed. Only the newly started process
 and its window are targeted. No process inventory, command lines, environment
 values, or full UI trees are printed. No process termination is ever attempted:
@@ -171,7 +171,7 @@ try {
     $start.FileName = $exe
     $start.WorkingDirectory = Split-Path -Parent $exe
     $start.UseShellExecute = $false
-    $start.EnvironmentVariables.Remove('AVN_HOST_NATIVE_LIB')
+    $start.EnvironmentVariables.Remove('RUSTOLONIA_HOST_LIB')
     $script:app = [Diagnostics.Process]::Start($start)
     Write-Host "Started bundle PID $($script:app.Id)."
     $script:window = Wait-Smoke 'main window' {

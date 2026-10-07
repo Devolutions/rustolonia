@@ -16,7 +16,7 @@ backend setup and the Win32 OLE thread scope.
 
 Linux publishes the host with a `$ORIGIN` runpath. Consequently
 `libSkiaSharp.so` and `libHarfBuzzSharp.so` are resolved beside
-`Avalonia.Host.so` without requiring a process-wide `LD_LIBRARY_PATH`.
+`librustolonia_host.so` without requiring a process-wide `LD_LIBRARY_PATH`.
 
 macOS publishes against `Avalonia.Native` and loads
 `libAvaloniaNative.dylib` from `@loader_path`. `build.ps1`, `package.ps1`,

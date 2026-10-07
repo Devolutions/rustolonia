@@ -54,7 +54,7 @@ fn explicit_override_always_wins() {
 fn missing_override_and_missing_adjacent_host_names_both_mechanisms() {
     let _lock = ENV_LOCK.lock().unwrap_or_else(|error| error.into_inner());
     let _guard = EnvVarGuard::unset();
-    // `cargo test`'s own binary directory legitimately has no Avalonia.Host
+    // `cargo test`'s own binary directory legitimately has no rustolonia_host
     // next to it, so this exercises the real "nothing found" path end to end
     // (through `std::env::current_exe`), not just the pure lookup helper.
     let error = discover_host_path().expect_err("neither mechanism should resolve here");
@@ -64,7 +64,7 @@ fn missing_override_and_missing_adjacent_host_names_both_mechanisms() {
         "expected the error to mention the override variable, got: {message}"
     );
     assert!(
-        message.contains("Avalonia.Host"),
+        message.contains("rustolonia_host"),
         "expected the error to name the host file it looked for, got: {message}"
     );
 }

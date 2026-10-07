@@ -94,7 +94,7 @@ pwsh ./rust/build.ps1
 ```
 
 The script publishes the NativeAOT host for this OS, points
-`AVN_HOST_NATIVE_LIB` at it, and runs the complete Rust workspace tests.
+`RUSTOLONIA_HOST_LIB` at it, and runs the complete Rust workspace tests.
 Use `-Architecture arm64` on a matching ARM64 runner.
 
 On Linux, initialize DBus sources first:
@@ -107,8 +107,8 @@ pwsh ./rust/build.ps1
 To run an example:
 
 ```powershell
-$env:AVN_HOST_NATIVE_LIB = (Resolve-Path `
-  .\host\bin\Release\net10.0\win-x64\publish\Avalonia.Host.dll)
+$env:RUSTOLONIA_HOST_LIB = (Resolve-Path `
+  .\host\bin\Release\net10.0\win-x64\publish\rustolonia_host.dll)
 cargo run --manifest-path .\rust\Cargo.toml -p rustolonia --example hello_world
 ```
 

@@ -35,21 +35,21 @@ fn one_pixel_png_path() -> PathBuf {
 }
 
 fn host_path() -> PathBuf {
-    if let Ok(path) = std::env::var("AVN_HOST_NATIVE_LIB") {
+    if let Ok(path) = std::env::var("RUSTOLONIA_HOST_LIB") {
         return PathBuf::from(path);
     }
 
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
     #[cfg(target_os = "windows")]
     let candidates = [
-        "host/bin/Release/net10.0/win-x64/publish/Avalonia.Host.dll",
-        "host/bin/Release/net10.0/win-arm64/publish/Avalonia.Host.dll",
-        "host/bin/Debug/net10.0/win-x64/publish/Avalonia.Host.dll",
+        "host/bin/Release/net10.0/win-x64/publish/rustolonia_host.dll",
+        "host/bin/Release/net10.0/win-arm64/publish/rustolonia_host.dll",
+        "host/bin/Debug/net10.0/win-x64/publish/rustolonia_host.dll",
     ];
     #[cfg(target_os = "linux")]
     let candidates = [
-        "rust/target/dotnet-linux-x64/publish/Avalonia.Host/release_linux-x64/Avalonia.Host.so",
-        "rust/target/dotnet-linux-arm64/publish/Avalonia.Host/release_linux-arm64/Avalonia.Host.so",
+        "rust/target/dotnet-linux-x64/publish/Avalonia.Host/release_linux-x64/librustolonia_host.so",
+        "rust/target/dotnet-linux-arm64/publish/Avalonia.Host/release_linux-arm64/librustolonia_host.so",
     ];
     #[cfg(not(any(target_os = "windows", target_os = "linux")))]
     let candidates: [&str; 0] = [];
@@ -62,7 +62,7 @@ fn host_path() -> PathBuf {
             panic!(
                 "Avalonia.Host native library not found. Publish with \
                  `rust/build.ps1` on Windows or `rust/build.sh` on Linux, or set \
-                 AVN_HOST_NATIVE_LIB."
+                 RUSTOLONIA_HOST_LIB."
             )
         })
 }

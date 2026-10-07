@@ -22,12 +22,12 @@ function Invoke-Logged {
 }
 
 $script:RidTargets = @{
-    'win-x64'     = @{ Triple = 'x86_64-pc-windows-msvc'; Platform = 'Win32'; HostExtension = '.dll'; ExeExtension = '.exe'; OS = 'Windows'; Arch = 'x64' }
-    'win-arm64'   = @{ Triple = 'aarch64-pc-windows-msvc'; Platform = 'Win32'; HostExtension = '.dll'; ExeExtension = '.exe'; OS = 'Windows'; Arch = 'arm64' }
-    'linux-x64'   = @{ Triple = 'x86_64-unknown-linux-gnu'; Platform = 'X11'; HostExtension = '.so'; ExeExtension = ''; OS = 'Linux'; Arch = 'x64' }
-    'linux-arm64' = @{ Triple = 'aarch64-unknown-linux-gnu'; Platform = 'X11'; HostExtension = '.so'; ExeExtension = ''; OS = 'Linux'; Arch = 'arm64' }
-    'osx-x64'     = @{ Triple = 'x86_64-apple-darwin'; Platform = 'OSX'; HostExtension = '.dylib'; ExeExtension = ''; OS = 'macOS'; Arch = 'x64' }
-    'osx-arm64'   = @{ Triple = 'aarch64-apple-darwin'; Platform = 'OSX'; HostExtension = '.dylib'; ExeExtension = ''; OS = 'macOS'; Arch = 'arm64' }
+    'win-x64'     = @{ Triple = 'x86_64-pc-windows-msvc'; Platform = 'Win32'; HostExtension = '.dll'; HostFileName = 'rustolonia_host.dll'; ExeExtension = '.exe'; OS = 'Windows'; Arch = 'x64' }
+    'win-arm64'   = @{ Triple = 'aarch64-pc-windows-msvc'; Platform = 'Win32'; HostExtension = '.dll'; HostFileName = 'rustolonia_host.dll'; ExeExtension = '.exe'; OS = 'Windows'; Arch = 'arm64' }
+    'linux-x64'   = @{ Triple = 'x86_64-unknown-linux-gnu'; Platform = 'X11'; HostExtension = '.so'; HostFileName = 'librustolonia_host.so'; ExeExtension = ''; OS = 'Linux'; Arch = 'x64' }
+    'linux-arm64' = @{ Triple = 'aarch64-unknown-linux-gnu'; Platform = 'X11'; HostExtension = '.so'; HostFileName = 'librustolonia_host.so'; ExeExtension = ''; OS = 'Linux'; Arch = 'arm64' }
+    'osx-x64'     = @{ Triple = 'x86_64-apple-darwin'; Platform = 'OSX'; HostExtension = '.dylib'; HostFileName = 'librustolonia_host.dylib'; ExeExtension = ''; OS = 'macOS'; Arch = 'x64' }
+    'osx-arm64'   = @{ Triple = 'aarch64-apple-darwin'; Platform = 'OSX'; HostExtension = '.dylib'; HostFileName = 'librustolonia_host.dylib'; ExeExtension = ''; OS = 'macOS'; Arch = 'arm64' }
 }
 
 function Get-RidTargetInfo {

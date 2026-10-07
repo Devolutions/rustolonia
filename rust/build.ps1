@@ -31,12 +31,12 @@ if ($Architecture -ne $nativeArchitecture) {
 if ($IsWindows) {
     $platform = 'Win32'
     $rid = "win-$Architecture"
-    $hostExtension = '.dll'
+    $hostFileName = 'rustolonia_host.dll'
 }
 elseif ($IsLinux) {
     $platform = 'X11'
     $rid = "linux-$Architecture"
-    $hostExtension = '.so'
+    $hostFileName = 'librustolonia_host.so'
     $dbus = Join-Path $avaloniaRoot 'external' 'Avalonia.DBus' 'src' 'Avalonia.DBus' 'Avalonia.DBus.csproj'
     if (-not (Test-Path -LiteralPath $dbus -PathType Leaf)) {
         throw 'Initialize Linux sources with: git submodule update --init external/Avalonia.DBus'
@@ -45,7 +45,7 @@ elseif ($IsLinux) {
 elseif ($IsMacOS) {
     $platform = 'OSX'
     $rid = "osx-$Architecture"
-    $hostExtension = '.dylib'
+    $hostFileName = 'librustolonia_host.dylib'
     $xcodeArch = if ($Architecture -eq 'x64') { 'x86_64' } else { 'arm64' }
     # The COM header avalonia-native.h is generated from avn.idl by the producer's NUKE
     # build; a fresh checkout does not carry it, so generate before xcodebuild.
@@ -77,12 +77,12 @@ $artifacts = if ($env:AVN_DOTNET_ARTIFACTS) { $env:AVN_DOTNET_ARTIFACTS } else {
 dotnet publish (Join-Path $repositoryRoot 'host' 'Avalonia.Host.csproj') `
     -c Release -r $rid "-p:AvaloniaRustHostPlatform=$platform" --artifacts-path $artifacts
 
-$hostFile = Join-Path $artifacts 'publish' 'Avalonia.Host' "release_$rid" "Avalonia.Host$hostExtension"
+$hostFile = Join-Path $artifacts 'publish' 'Avalonia.Host' "release_$rid" $hostFileName
 if (-not (Test-Path -LiteralPath $hostFile -PathType Leaf)) {
     throw "NativeAOT host was not produced at $hostFile"
 }
 
-$env:AVN_HOST_NATIVE_LIB = $hostFile
+$env:RUSTOLONIA_HOST_LIB = $hostFile
 if (-not $IsWindows) {
     $cargoTarget = if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { Join-Path $PSScriptRoot 'target' "cargo-$rid" }
     $env:CARGO_TARGET_DIR = $cargoTarget

@@ -180,7 +180,7 @@ Useful switches (the same PowerShell arguments work on Windows, Linux, and macOS
 | --- | --- |
 | `-Configuration Debug` | Build configuration for the .NET regeneration tools and managed build (default `Release`). |
 | `-SkipManagedBuild` | Skip the code-first and sample-composed `dotnet build` calls; generation and the Rust workspace build still run. |
-| `-Test` | Run `cargo test --workspace` instead of `cargo build --workspace`. Requires a host discoverable per [Host discovery](#host-discovery) below (`rust/build.ps1` publishes one; set `AVN_HOST_NATIVE_LIB` otherwise). |
+| `-Test` | Run `cargo test --workspace` instead of `cargo build --workspace`. Requires a host discoverable per [Host discovery](#host-discovery) below (`rust/build.ps1` publishes one; set `RUSTOLONIA_HOST_LIB` otherwise). |
 | `-ValidateTemplate` | Scaffold a temporary external consumer, generate its view-model sources, run `cargo check`, and remove it on success. |
 | `-PackageRid <rid>` | Additionally run [`package.ps1`](#deterministic-per-rid-artifact-layout) for that RID. |
 
@@ -201,7 +201,7 @@ real NativeAOT publish.
 `rustolonia::App::load_from_env()` (used by every example and the template)
 resolves the native `Avalonia.Host` library through `rustolonia::discover_host_path()`:
 
-1. **`AVN_HOST_NATIVE_LIB`** (the `rustolonia::HOST_NATIVE_LIB_ENV_VAR` constant) -- an explicit
+1. **`RUSTOLONIA_HOST_LIB`** (the `rustolonia::HOST_NATIVE_LIB_ENV_VAR` constant) -- an explicit
    override. If set, its value is used as-is, even if nothing exists at that
    path yet, so `Host::load` can surface a precise loader error instead of
    this function silently falling back to the next mechanism. This remains
@@ -209,8 +209,8 @@ resolves the native `Avalonia.Host` library through `rustolonia::discover_host_p
    freshly published host, and how you point a running app at a different
    host during development.
 2. **Adjacent to the executable** -- otherwise, the platform host file name
-   (`Avalonia.Host.dll` on Windows, `Avalonia.Host.so` on Linux,
-   `Avalonia.Host.dylib` on macOS) is looked up next to
+   (`rustolonia_host.dll` on Windows, `librustolonia_host.so` on Linux,
+   `librustolonia_host.dylib` on macOS) is looked up next to
    `std::env::current_exe()`. This is what lets a packaged application run
    with no environment variable at all: [`package.ps1`](#deterministic-per-rid-artifact-layout)
    copy the host and the application binary into the same directory.

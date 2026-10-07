@@ -336,16 +336,16 @@ impl AppContext {
 /// Set by `rust/build.ps1`/`rust/build.sh` for the workspace test suite, and
 /// always takes priority over the adjacent-executable lookup performed by
 /// [`discover_host_path`].
-pub const HOST_NATIVE_LIB_ENV_VAR: &str = "AVN_HOST_NATIVE_LIB";
+pub const HOST_NATIVE_LIB_ENV_VAR: &str = "RUSTOLONIA_HOST_LIB";
 
 #[cfg(target_os = "windows")]
-const HOST_FILE_NAME: &str = "Avalonia.Host.dll";
+const HOST_FILE_NAME: &str = "rustolonia_host.dll";
 #[cfg(target_os = "linux")]
-const HOST_FILE_NAME: &str = "Avalonia.Host.so";
+const HOST_FILE_NAME: &str = "librustolonia_host.so";
 #[cfg(target_os = "macos")]
-const HOST_FILE_NAME: &str = "Avalonia.Host.dylib";
+const HOST_FILE_NAME: &str = "librustolonia_host.dylib";
 #[cfg(not(any(target_os = "windows", target_os = "linux", target_os = "macos")))]
-const HOST_FILE_NAME: &str = "Avalonia.Host";
+const HOST_FILE_NAME: &str = "rustolonia_host";
 
 fn adjacent_host_path(directory: &Path) -> Option<PathBuf> {
     let candidate = directory.join(HOST_FILE_NAME);
@@ -355,11 +355,11 @@ fn adjacent_host_path(directory: &Path) -> Option<PathBuf> {
 /// Locates the native Avalonia host library the same way [`App::load_from_env`]
 /// does, without loading it.
 ///
-/// `AVN_HOST_NATIVE_LIB` ([`HOST_NATIVE_LIB_ENV_VAR`]) is an explicit override
+/// `RUSTOLONIA_HOST_LIB` ([`HOST_NATIVE_LIB_ENV_VAR`]) is an explicit override
 /// and always wins when set -- even to a path that does not exist yet, so
 /// [`sys::Host::load`] can surface a precise loader error instead of this
 /// function silently falling back. Otherwise this looks for the platform host
-/// library (`Avalonia.Host.dll` / `.so` / `.dylib`) next to the running
+/// library (`rustolonia_host.dll` / `.so` / `.dylib`) next to the running
 /// executable, matching the deterministic per-RID layout `rust/package.ps1`
 /// and `rust/package.sh` produce (see `rust/PRODUCTIZATION.md#host-discovery`).
 pub fn discover_host_path() -> Result<PathBuf> {
@@ -383,7 +383,7 @@ pub fn discover_host_path() -> Result<PathBuf> {
         Error::Load(format!(
             "{HOST_NATIVE_LIB_ENV_VAR} is not set and no {HOST_FILE_NAME} was found next to \
              '{}'; set {HOST_NATIVE_LIB_ENV_VAR} to override, or copy the published \
-             Avalonia.Host beside this executable (see rust/PRODUCTIZATION.md#host-discovery)",
+             {HOST_FILE_NAME} beside this executable (see rust/PRODUCTIZATION.md#host-discovery)",
             directory.display()
         ))
     })
@@ -391,7 +391,7 @@ pub fn discover_host_path() -> Result<PathBuf> {
 
 impl App {
     /// Loads the native Avalonia host discovered by [`discover_host_path`]:
-    /// `AVN_HOST_NATIVE_LIB` if set, otherwise the platform host library next
+    /// `RUSTOLONIA_HOST_LIB` if set, otherwise the platform host library next
     /// to this executable.
     pub fn load_from_env() -> Result<Self> {
         Self::load(discover_host_path()?)

@@ -727,8 +727,8 @@ no difference.
 ## RID artifacts
 
 Release artifacts are per RID and retain their exact names:
-`Avalonia.Host.dll` (`win-*`), `Avalonia.Host.so` (`linux-*`), and
-`Avalonia.Host.dylib` (`osx-*`). Each artifact directory contains the matching
+`rustolonia_host.dll` (`win-*`), `librustolonia_host.so` (`linux-*`), and
+`librustolonia_host.dylib` (`osx-*`). Each artifact directory contains the matching
 native dependencies, `licence.md`, a deterministic `sbom.cdx.json` delivery
 inventory, and a `checksums.sha256` manifest covering every delivered file
 except the manifest itself. Verify it before distribution or launch. Every RID

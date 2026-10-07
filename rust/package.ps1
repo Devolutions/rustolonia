@@ -63,7 +63,7 @@ Invoke-Logged -Command $publishCommand
 $hostAssets = Get-PublishedProjectAssetsFile -Project $hostProject -Configuration $Configuration -Rid $Rid -ArtifactsPath $artifactsRoot -AdditionalProperties $publishProperties
 
 $publishDir = Join-Path $artifactsRoot 'publish' 'Avalonia.Host' "$($Configuration.ToLowerInvariant())_$Rid"
-$hostFile = Join-Path $publishDir "Avalonia.Host$($target.HostExtension)"
+$hostFile = Join-Path $publishDir $target.HostFileName
 if (-not (Test-Path -LiteralPath $hostFile -PathType Leaf)) {
     throw "NativeAOT host was not produced at $hostFile"
 }
