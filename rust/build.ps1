@@ -92,5 +92,5 @@ cargo test --manifest-path (Join-Path $PSScriptRoot 'Cargo.toml') --workspace
 Write-Host "$rid NativeAOT host: $hostFile"
 
 if ($RunExamples) {
-    cargo run --manifest-path (Join-Path $PSScriptRoot 'Cargo.toml') -p avalonia --example hello_world
+    cargo run --manifest-path (Join-Path $PSScriptRoot 'Cargo.toml') -p rustolonia --example hello_world
 }

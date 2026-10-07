@@ -21,7 +21,7 @@ updating the manifest is caught rather than silently accepted.
 `rust/avalonia-sample/view-model.ir.json` (sample/application schema) are
 versioned schemas. A generator change must regenerate all checked-in managed,
 Rust, and contract outputs in the same change. Sample-only Rust API that used
-to be reexported from `avalonia` now lives in `avalonia-sample`. Additive, optional schema fields require a schema
+to be reexported from `rustolonia` now lives in `avalonia-sample`. Additive, optional schema fields require a schema
 version bump and readers that reject unsupported future versions clearly.
 Removing or changing the meaning, type, ordering, or requiredness of an
 existing field is breaking and requires a coordinated major release.
@@ -77,7 +77,7 @@ previously published ordinal moves.
 Consumer application manifests are independently versioned by
 `consumer-app-manifest.schema.json`; version 1 is validated before any build
 command runs. A consumer must pin the producer checkout/submodule commit that
-provides its `avalonia` crate, projection tool, and `Avalonia.Host`. Do not mix
+provides its `rustolonia` crate, projection tool, and `Avalonia.Host`. Do not mix
 consumer-generated registry/adapters or Rust API from one producer revision
 with a host from another.
 
@@ -365,7 +365,7 @@ no CommandParameter). Button and descendants 8 to 9 (or 4 to 5 for the wave D
 leaves), MenuItem 5 to 6, SplitButton/ToggleSplitButton 4 to 5, TrayIcon 1 to 2.
 Factory 13.
 
-Inbound commands close the loop: `avalonia_sys::command(execute, can_execute)`
+Inbound commands close the loop: `rustolonia_sys::command(execute, can_execute)`
 builds a Rust CCW implementing `IAvnCommand` (ref-counted, panic-safe closures,
 QI for IUnknown/IAvnCommand), and `Command::notify()` fires every live
 subscription when the Rust side re-queries `CanExecute`. The host's
@@ -484,8 +484,8 @@ Wave U19 projects data templates, closing the templating family.
 `match(AvnVariant data)` reports whether the template builds for an item
 and `build` hands back the control. The host's `AvnDataTemplate` wraps a
 managed template; a foreign `IAvnDataTemplate` converts back through the
-`DataTemplateAdapter`, so a Rust CCW — `avalonia_sys::data_template(
-matches, build)` or the safe `avalonia::data_template` — really renders
+`DataTemplateAdapter`, so a Rust CCW — `rustolonia_sys::data_template(
+matches, build)` or the safe `rustolonia::data_template` — really renders
 items. ItemTemplate crosses on ItemsControl, MenuFlyout, AutoCompleteBox
 and ComboBox (SelectionBoxItemTemplate); HeaderTemplate on
 HeaderedContentControl, HeaderedItemsControl, HeaderedSelectingItemsControl
@@ -543,7 +543,7 @@ whose invoke takes the search text and the item variant; `TextFilter`
 (ordinal 27) wraps the string predicate as `IAvnTextFilter` over two
 borrowed UTF-16 buffers. The host's `AvnItemFilter`/`AvnTextFilter` wrap
 managed delegates; a foreign interface converts back into the delegate, so
-the Rust CCWs — `avalonia_sys::item_filter`/`text_filter` — really filter
+the Rust CCWs — `rustolonia_sys::item_filter`/`text_filter` — really filter
 items (AutoCompleteBox 11 to 12). The selector delegates and the async
 populator stay gaps: selectors add another callback shape and the
 populator needs the async-completion transport. CCWs now free variant
@@ -578,7 +578,7 @@ the host's `AvnNotification` wraps a foreign interface as a managed
 `INotification`, reading the handlers through getter slots into managed
 actions. The bindgen emits the handler CCW through the event-callback
 pattern and RCW getters on `IAvnWindowNotificationManager`, and the
-Rust side grows a ref-counted `avalonia_sys::notification` CCW whose
+Rust side grows a ref-counted `rustolonia_sys::notification` CCW whose
 string getters allocate through the host's UTF-16 provider. The INotification
 content overloads and the Action-carrying Show overload cross through
 the notification CCW's handler slots; every remaining gap in the report
@@ -619,7 +619,7 @@ display text as a host-allocated UTF-16 buffer; `TextSelector` (ordinal 30)
 wraps the string selector as `IAvnTextSelector` over two borrowed buffers.
 The host's `AvnItemSelector`/`AvnTextSelector` wrap managed delegates; a
 foreign interface converts back into the delegate, so the Rust CCWs —
-`avalonia_sys::item_selector`/`text_selector` — really format items
+`rustolonia_sys::item_selector`/`text_selector` — really format items
 (AutoCompleteBox 13 to 14). The CCWs allocate their returned string through
 the host's UTF-16 provider and report E_NOTIMPL without a host, exactly as
 the notification CCW's string getters do. The gap report drops to 177
@@ -689,7 +689,7 @@ placement record through the new Avalonia.Host InternalsVisibleTo entry,
 calls it, and reads the mutations back), and Popup, ContextMenu and
 PopupFlyoutBase's CustomPopupPlacementCallback properties cross (the
 flyout base republishes at 6, Popup at 8, ContextMenu at 15). The Rust
-CCW — `avalonia_sys::popup_placement` — returns a
+CCW — `rustolonia_sys::popup_placement` — returns a
 `PopupPlacementResult`. The gap report drops to 160 entries. Factory
 stays 13.
 
@@ -703,7 +703,7 @@ bridges both directions: a managed delegate runs under
 `AvnPopulatorBridge` and reports through a host-built completion CCW,
 while a foreign CCW converts into the delegate through a
 `TaskCompletionSource` the completion resolves (AutoCompleteBox 15 to
-16). The Rust CCW — `avalonia_sys::async_populator` — hands the closure a
+16). The Rust CCW — `rustolonia_sys::async_populator` — hands the closure a
 `PopulateCompletion` reporter. ShowDialog stays by-design with an
 accurate reason: its modal completion needs the dialog-owner lifetime the
 projected Show overloads do not carry. The gap report drops to 159

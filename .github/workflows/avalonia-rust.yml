@@ -162,9 +162,9 @@ jobs:
       - name: Build flagship Rust view-model samples
         shell: pwsh
         run: |
-          cargo build --manifest-path rust/Cargo.toml -p avalonia --example rust_vm_axaml --release
+          cargo build --manifest-path rust/Cargo.toml -p rustolonia --example rust_vm_axaml --release
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          cargo build --manifest-path rust/Cargo.toml -p avalonia --example rust_dynamic_vm_axaml --release
+          cargo build --manifest-path rust/Cargo.toml -p rustolonia --example rust_dynamic_vm_axaml --release
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Test in-repository system monitor

@@ -17,7 +17,7 @@ requirements are defined in [COMPATIBILITY.md](COMPATIBILITY.md).
 ## Application template
 
 [`templates/avalonia-app`](templates/avalonia-app) is a minimal, copyable
-Cargo project (a `Cargo.toml` with a path dependency on `avalonia`, plus a
+Cargo project (a `Cargo.toml` with a path dependency on `rustolonia`, plus a
 `src/main.rs` that opens a window) meant to be copied outside this repository
 to bootstrap a new application. `new-app.ps1` performs the copy and
 package rename:
@@ -102,7 +102,7 @@ compiled statically into NativeAOT; no application-specific ABI is introduced.
 Normal consumer builds never run `cargo fmt` or rewrite handwritten Rust.
 External Rust output uses a crate-root compatibility bridge. Consumers must
 re-export `DynamicViewModel`, `ViewModelSink`, `ViewModelBatch`, and
-`BatchCompletion` from `avalonia::view_model`; the shipped template already
+`BatchCompletion` from `rustolonia::view_model`; the shipped template already
 does so.
 Finally it writes the host, published native DLLs/shared libraries, consumer
 executable, the producer's `licence.md`, Rustolonia's `LICENSE` and
@@ -138,8 +138,8 @@ previously separate, manually copy-pasted commands from README.md's
 1. Regenerate the object-model projection IR, generated C# COM sources, and
    the native ABI header from the current `AvaloniaObject`/`Control`
    assemblies (`Avalonia.Projection.Tool`).
-2. Regenerate the Rust `avalonia-sys`/`avalonia` bindings from that IR
-   (`avalonia-bindgen`), then `cargo fmt --all`.
+2. Regenerate the Rust `rustolonia-sys`/`rustolonia` bindings from that IR
+   (`rustolonia-bindgen`), then `cargo fmt --all`.
 3. Regenerate the managed adapters, application view registry, Rust
    view-model API, and `view-model.contract.md` from the sample-owned
    `rust/avalonia-sample/view-model.ir.json` (`Avalonia.ViewModelProjection.Tool`
@@ -198,10 +198,10 @@ real NativeAOT publish.
 
 ## Host discovery
 
-`avalonia::App::load_from_env()` (used by every example and the template)
-resolves the native `Avalonia.Host` library through `avalonia::discover_host_path()`:
+`rustolonia::App::load_from_env()` (used by every example and the template)
+resolves the native `Avalonia.Host` library through `rustolonia::discover_host_path()`:
 
-1. **`AVN_HOST_NATIVE_LIB`** (the `avalonia::HOST_NATIVE_LIB_ENV_VAR` constant) -- an explicit
+1. **`AVN_HOST_NATIVE_LIB`** (the `rustolonia::HOST_NATIVE_LIB_ENV_VAR` constant) -- an explicit
    override. If set, its value is used as-is, even if nothing exists at that
    path yet, so `Host::load` can surface a precise loader error instead of
    this function silently falling back to the next mechanism. This remains
@@ -217,10 +217,10 @@ resolves the native `Avalonia.Host` library through `avalonia::discover_host_pat
 
 If neither resolves, the error names both the environment variable and the
 host file name it looked for next to the executable's directory. See
-`rust/avalonia/src/runtime.rs` (`discover_host_path`, `HOST_NATIVE_LIB_ENV_VAR`)
-for the implementation, `rust/avalonia/src/runtime.rs`'s
+`rust/rustolonia/src/runtime.rs` (`discover_host_path`, `HOST_NATIVE_LIB_ENV_VAR`)
+for the implementation, `rust/rustolonia/src/runtime.rs`'s
 `host_discovery_tests` module for unit tests of the override/adjacent-lookup
-precedence and error message, and `rust/avalonia/tests/host_discovery.rs` for
+precedence and error message, and `rust/rustolonia/tests/host_discovery.rs` for
 the same behavior exercised through the crate's public API.
 
 ## Deterministic per-RID artifact layout
@@ -268,7 +268,7 @@ Both produce, for every supported RID:
   NuGet packages from the host's already-restored `project.assets.json` (no
   network access; `type: "project"` entries such as in-repo project
   references are excluded) and Cargo crates from `Cargo.lock` (workspace-local
-  crates with no `[source]`, like `avalonia`, are excluded as not third-party).
+  crates with no `[source]`, like `rustolonia`, are excluded as not third-party).
   Each resolved dependency is a CycloneDX `library` component with a `purl`
   (`pkg:nuget/...`/`pkg:cargo/...`). `metadata.properties` records the producer
   git pin used for the build and, when a dependency source path could not be
@@ -322,7 +322,7 @@ not signing inputs. Missing explicitly requested signing inputs fail the build.
 
 ## Source-only crate packaging
 
-`avalonia`, `avalonia-sys`, and `avalonia-bindgen` all set `publish = false`:
+`rustolonia`, `rustolonia-sys`, and `rustolonia-bindgen` all set `publish = false`:
 they are pinned to a matching `Avalonia.Host` build from the same checkout,
 not to a versioned ABI contract suitable for crates.io. That is a deliberate
 choice, not a gap -- but the crates are kept in a state where `cargo package`
@@ -331,9 +331,9 @@ would succeed if that ever changed: each has `description`, `license`,
 pointing at a real `README.md`. This is checked with:
 
 ```bash
-cargo package --list -p avalonia-sys --allow-dirty
-cargo package --list -p avalonia --allow-dirty
-cargo package --list -p avalonia-bindgen --allow-dirty
+cargo package --list -p rustolonia-sys --allow-dirty
+cargo package --list -p rustolonia --allow-dirty
+cargo package --list -p rustolonia-bindgen --allow-dirty
 ```
 
 ## SBOM (EU CRA) scope
@@ -370,8 +370,8 @@ process consumes, not as the whole of that process.
   `xvfb-run -a pwsh ./rust/tests/test-build-app.ps1 -RunNativeSmoke`. Smoke builds
   do not invoke a user-configured signing service and clear the host override
   when launching so that the adjacent packaged host is exercised.
-- `rust/avalonia/src/runtime.rs` (`host_discovery_tests` module) and
-  `rust/avalonia/tests/host_discovery.rs` cover `discover_host_path`: the
+- `rust/rustolonia/src/runtime.rs` (`host_discovery_tests` module) and
+  `rust/rustolonia/tests/host_discovery.rs` cover `discover_host_path`: the
   explicit override always winning (even to a nonexistent path), the
   adjacent-file lookup succeeding and failing, and the combined error naming
   both mechanisms -- all without requiring a published host.

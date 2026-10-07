@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["avalonia", "avalonia-sys", "avalonia-bindgen", "avalonia-sample"]
+members = ["rustolonia", "rustolonia-sys", "rustolonia-bindgen", "avalonia-sample"]
 # templates/avalonia-app is a copyable starting point for new applications
 # (see rust/new-app.ps1), not a member of this workspace: it is meant to be
 # copied outside this repository with its own path dependency updated to point

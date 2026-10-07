@@ -39,8 +39,8 @@ Managed tests and the Rust generator can run independently:
 
 ```powershell
 dotnet test .\Rustolonia.slnx -c Release
-cargo test --manifest-path .\rust\Cargo.toml -p avalonia-bindgen --locked
-cargo check --manifest-path .\rust\Cargo.toml -p avalonia --examples --locked
+cargo test --manifest-path .\rust\Cargo.toml -p rustolonia-bindgen --locked
+cargo check --manifest-path .\rust\Cargo.toml -p rustolonia --examples --locked
 ```
 
 For native integration, `rust/build.ps1` publishes a host and runs the Rust
@@ -68,7 +68,7 @@ prunes only previously owned, unmodified obsolete files and refuses conflicting
 claims from another generator. Do not manually delete or rewrite the manifests
 to bypass a conflict.
 
-The two managed projection tools and `avalonia-bindgen` accept `--check` before
+The two managed projection tools and `rustolonia-bindgen` accept `--check` before
 their normal positional arguments. This compares outputs without creating or
 rewriting them. `--check --normalize` is rejected rather than silently modifying
 the view-model input.

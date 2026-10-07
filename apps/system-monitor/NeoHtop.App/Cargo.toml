@@ -8,7 +8,7 @@ description = "NeoHtop NativeAOT Avalonia desktop application."
 license = "MIT"
 
 [dependencies]
-avalonia = { path = "../../../rust/avalonia" }
+rustolonia = { path = "../../../rust/rustolonia" }
 regex = "1"
 sysinfo = { version = "0.35.2", features = ["disk", "multithread", "network", "system"] }
 

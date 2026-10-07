@@ -3,34 +3,10 @@
 version = 4
 
 [[package]]
-name = "avalonia"
-version = "0.1.0"
-dependencies = [
- "avalonia-sample",
- "avalonia-sys",
-]
-
-[[package]]
-name = "avalonia-bindgen"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
- "sha2",
-]
-
-[[package]]
 name = "avalonia-sample"
 version = "0.1.0"
 dependencies = [
- "avalonia",
-]
-
-[[package]]
-name = "avalonia-sys"
-version = "0.1.0"
-dependencies = [
- "libloading",
+ "rustolonia",
 ]
 
 [[package]]
@@ -131,6 +107,30 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1fbf4db142a473a8d80c26bbf18454ed458bf8d26c8219c331daecfdbd079001"
 dependencies = [
  "proc-macro2",
+]
+
+[[package]]
+name = "rustolonia"
+version = "0.1.0"
+dependencies = [
+ "avalonia-sample",
+ "rustolonia-sys",
+]
+
+[[package]]
+name = "rustolonia-bindgen"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "sha2",
+]
+
+[[package]]
+name = "rustolonia-sys"
+version = "0.1.0"
+dependencies = [
+ "libloading",
 ]
 
 [[package]]

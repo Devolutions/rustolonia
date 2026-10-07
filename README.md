@@ -12,7 +12,7 @@ pinned `avalonia-src` producer submodule at commit
 |---|---|
 | `avalonia-src/` | Avalonia producer pinned to `9654332a79f637473da96054f75b2a16deaa557e`, currently cloned from the `mamoreau-devolutions/Avalonia` fork |
 | `avalonia-patches/` | Additive framework patches applied onto the pinned checkout (see its README + UPSTREAM.md) |
-| `rust/` | The Rust workspace: `avalonia` (safe bindings), `avalonia-sys` (ABI bindings), `avalonia-bindgen` (IR to Rust generator), `avalonia-sample` (flagship sample's application-owned view-model API), templates, build scripts, and the checked-in IR |
+| `rust/` | The Rust workspace: `rustolonia` (safe bindings), `rustolonia-sys` (ABI bindings), `rustolonia-bindgen` (IR to Rust generator), `avalonia-sample` (flagship sample's application-owned view-model API), templates, build scripts, and the checked-in IR |
 | `host/` | `Avalonia.Host` - the C# NativeAOT host that serves the ABI, plus its generated object model |
 | `projection/` | The projection pipeline: IR extraction, C#/header emitters, and the generator tools |
 | `interop/` | `Avalonia.Rust` and `Avalonia.Rust.Interop` - the managed-side view-model interop layer |
@@ -27,7 +27,7 @@ pinned `avalonia-src` producer submodule at commit
 ## Getting started
 
 ```pwsh
-git clone --recurse-submodules https://github.com/mamoreau-devolutions/rustolonia
+git clone --recurse-submodules https://github.com/Devolutions/rustolonia
 cd rustolonia
 pwsh ./avalonia-patches/apply-avalonia-patches.ps1 -AvaloniaRoot ./avalonia-src
 pwsh ./rust/regenerate-and-build.ps1 -Configuration Release

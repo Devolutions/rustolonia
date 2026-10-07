@@ -109,7 +109,7 @@ To run an example:
 ```powershell
 $env:AVN_HOST_NATIVE_LIB = (Resolve-Path `
   .\host\bin\Release\net10.0\win-x64\publish\Avalonia.Host.dll)
-cargo run --manifest-path .\rust\Cargo.toml -p avalonia --example hello_world
+cargo run --manifest-path .\rust\Cargo.toml -p rustolonia --example hello_world
 ```
 
 The examples progress from a basic window (`hello_world`) through a port of
@@ -163,13 +163,13 @@ are what it runs, spelled out for anyone changing the pipeline itself:
 dotnet run --project .\projection\Avalonia.Projection.Tool `
   -- .\rust\projection.ir.json `
   .\host\Generated\ObjectModel `
-  .\rust\avalonia-sys\include\avalonia-rust-abi.h
+  .\rust\rustolonia-sys\include\avalonia-rust-abi.h
 
 Push-Location .\rust
-cargo run -p avalonia-bindgen -- `
+cargo run -p rustolonia-bindgen -- `
   .\projection.ir.json `
-  .\avalonia-sys\src\generated.rs `
-  .\avalonia\src\generated.rs
+  .\rustolonia-sys\src\generated.rs `
+  .\rustolonia\src\generated.rs
 cargo fmt --all
 Pop-Location
 

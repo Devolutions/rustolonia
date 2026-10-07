@@ -55,10 +55,10 @@ Everything is generated from the shared projection IR by
   `FromAvalonia`/`ToAvalonia` helpers, and the brush interface plus its
   `AvnBrush` wrapper into `IAvnBrush.g.cs`.
 - `NativeHeaderEmitter` writes the `typedef struct Avn*` declarations into
-  `rust/avalonia-sys/include/avalonia-rust-abi.h`.
-- `rust/avalonia-bindgen/src/geometry.rs` is the Rust-side source of truth; it
-  emits the `#[repr(C)]` structs into `avalonia-sys` and the ergonomic structs
-  with `From`/`Into` bridges into the safe `avalonia` crate.
+  `rust/rustolonia-sys/include/avalonia-rust-abi.h`.
+- `rust/rustolonia-bindgen/src/geometry.rs` is the Rust-side source of truth; it
+  emits the `#[repr(C)]` structs into `rustolonia-sys` and the ergonomic structs
+  with `From`/`Into` bridges into the safe `rustolonia` crate.
 
 ## ABI shape in vtables
 
@@ -102,7 +102,7 @@ readout.set_margin(Thickness::uniform(8.0))?;
 ```
 
 `Thickness::uniform`, `Thickness::symmetric` and `CornerRadius::uniform` are
-emitted from the `helpers` column of `avalonia-bindgen`'s geometry table, so a
+emitted from the `helpers` column of `rustolonia-bindgen`'s geometry table, so a
 new geometry struct opts into them declaratively.
 
 ## Solid brushes

@@ -40,14 +40,14 @@ integers and remain stable when schema entries are reordered.
 
 ## Project boundaries
 
-`Avalonia.Rust.Interop` and `avalonia` contain only the generic transport,
+`Avalonia.Rust.Interop` and `rustolonia` contain only the generic transport,
 descriptors, sinks, and mounting. `avalonia-sample` owns the sample schema,
 generated Rust model API, and contract. `RustViewModelSample.Managed` owns
 AXAML, generated adapters, and `Generated/RustViewRegistry.g.cs`.
 `Avalonia.Host` defaults to a handwritten fallback registry with no sample
 presentation; compose an application with `AvaloniaRustPresentationProjects`
 and `AvaloniaRustViewRegistryFile`. Sample-only types previously reexported
-from `avalonia` (`SampleViewModel`, `mount_rust_vm_window`, …) now live in
+from `rustolonia` (`SampleViewModel`, `mount_rust_vm_window`, …) now live in
 `avalonia-sample`. Example commands are unchanged via a workspace
 dev-dependency.
 
@@ -328,7 +328,7 @@ dynamic adapters), invalid-contract behavior (unknown property/collection/
 command IDs and out-of-range enum values return a negative HRESULT and leave
 existing state untouched, on every new v2 method), and leak-shaped behavior
 (disposing a parent adapter disposes every nested model/collection item
-exactly once). `rust/avalonia/src/view_model.rs` covers the same
+exactly once). `rust/rustolonia/src/view_model.rs` covers the same
 nested-handle lifetime guarantees at the Rust `NestedSlots` level, including a
 200-iteration create/drop cycle with an instrumented `Drop` counter.
 

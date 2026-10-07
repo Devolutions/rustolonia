@@ -9,7 +9,7 @@ namespace Avalonia.Rust;
 
 /// <summary>
 /// Wire tags for one immutable batch operation. The numeric values are ABI and
-/// match <c>avalonia::view_model::ViewModelBatch</c> on the Rust side.
+/// match <c>rustolonia::view_model::ViewModelBatch</c> on the Rust side.
 /// </summary>
 public enum RustVmUpdateKind
 {

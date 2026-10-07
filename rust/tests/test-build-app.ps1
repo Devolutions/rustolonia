@@ -322,7 +322,7 @@ Add-Content -LiteralPath (Join-Path $PSScriptRoot 'signatures.log') -Value $Arti
     Assert-True ($scriptText.Contains($expectedCommand)) 'Printed build arguments must preserve exact spaced paths.'
     $cargoText = Get-Content -LiteralPath (Join-Path $consumer 'Cargo.toml') -Raw
     $relativeRustolonia = [IO.Path]::GetRelativePath($consumer, $root).Replace('\', '/')
-    Assert-True ($cargoText.Contains("path = `"$relativeRustolonia/rust/avalonia`"")) 'Cargo must reference Rustolonia relatively rather than the producer.'
+    Assert-True ($cargoText.Contains("path = `"$relativeRustolonia/rust/rustolonia`"")) 'Cargo must reference Rustolonia relatively rather than the producer.'
     $projectText = Get-Content -LiteralPath (Join-Path $consumer 'managed' 'Consumer.Presentation.csproj') -Raw
     $managedRoot = Join-Path $consumer 'managed'
     Assert-True ($projectText.Contains([IO.Path]::GetRelativePath($managedRoot, $fakeProducer).Replace('\', '/')) -and
@@ -389,10 +389,10 @@ Add-Content -LiteralPath (Join-Path $PSScriptRoot 'signatures.log') -Value $Arti
     # A tiny local dependency exercises real Cargo lock and relocation behavior without network access.
     $layout = Join-Path $scratch 'portable layout'
     $portableRoot = Join-Path $layout 'rustolonia'
-    $portableCrate = Join-Path $portableRoot 'rust' 'avalonia'
+    $portableCrate = Join-Path $portableRoot 'rust' 'rustolonia'
     New-Item -ItemType Directory (Join-Path $portableCrate 'src') -Force | Out-Null
     Copy-Item (Join-Path $root 'global.json') (Join-Path $portableRoot 'global.json')
-    Set-Content (Join-Path $portableCrate 'Cargo.toml') "[package]`nname = `"avalonia`"`nversion = `"0.1.0`"`nedition = `"2021`""
+    Set-Content (Join-Path $portableCrate 'Cargo.toml') "[package]`nname = `"rustolonia`"`nversion = `"0.1.0`"`nedition = `"2021`""
     Set-Content (Join-Path $portableCrate 'src' 'lib.rs') ''
     $portableConsumer = Join-Path $layout 'consumer'
     & (Join-Path $root 'rust' 'new-app.ps1') -Name portable_app -Destination $portableConsumer -ProducerRoot $portableRoot -RustoloniaRoot $portableRoot | Out-Null
@@ -414,7 +414,7 @@ Add-Content -LiteralPath (Join-Path $PSScriptRoot 'signatures.log') -Value $Arti
         Assert-True ($relocatedProject.Project.PropertyGroup.$property.Condition -eq "'`$($property)' == ''") "Explicit $property overrides must not be overwritten."
     }
     Assert-True ((Get-FileHash (Join-Path $portableConsumer 'Cargo.lock')).Hash -eq $lockHash) 'Locked metadata must not change the dependency lock.'
-    Set-Content (Join-Path $movedLayout 'rustolonia' 'rust' 'avalonia' 'Cargo.toml') "[package]`nname = `"avalonia`"`nversion = `"0.2.0`"`nedition = `"2021`""
+    Set-Content (Join-Path $movedLayout 'rustolonia' 'rust' 'rustolonia' 'Cargo.toml') "[package]`nname = `"rustolonia`"`nversion = `"0.2.0`"`nedition = `"2021`""
     Assert-Throws { Invoke-Logged -Command @('cargo', 'metadata', '--offline', '--locked', '--format-version', '1', '--manifest-path', $portableManifest) } 'exit code'
 
     $badManifest = Get-Content -LiteralPath (Join-Path $consumer 'avalonia-app.json') -Raw | ConvertFrom-Json -AsHashtable
@@ -646,7 +646,7 @@ version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
-name = "avalonia"
+name = "rustolonia"
 version = "0.1.0"
 '@
     & (Join-Path $root 'rust' 'generate-sbom.ps1') -Rid win-x64 -Bundle $depsInventory -CargoLockPath $fakeCargoLock -ProjectAssetsJsonPath $fakeAssets -ProducerPin 'deadbeef'
@@ -654,7 +654,7 @@ version = "0.1.0"
     Assert-True (@($depsSbom.components | Where-Object { $_.type -eq 'library' -and $_.purl -eq 'pkg:nuget/Some.Package@1.2.3' }).Count -eq 1) 'SBOM must include resolved NuGet package dependencies.'
     Assert-True (@($depsSbom.components | Where-Object { $_.type -eq 'library' -and $_.name -eq 'local-project' }).Count -eq 0) 'SBOM must not list local project references as third-party dependencies.'
     Assert-True (@($depsSbom.components | Where-Object { $_.type -eq 'library' -and $_.purl -eq 'pkg:cargo/third-party-crate@0.4.1' }).Count -eq 1) 'SBOM must include resolved Cargo dependencies.'
-    Assert-True (@($depsSbom.components | Where-Object { $_.type -eq 'library' -and $_.name -eq 'avalonia' -and $_.version -eq '0.1.0' }).Count -eq 0) 'SBOM must not list workspace-local crates without a [source] as third-party dependencies.'
+    Assert-True (@($depsSbom.components | Where-Object { $_.type -eq 'library' -and $_.name -eq 'rustolonia' -and $_.version -eq '0.1.0' }).Count -eq 0) 'SBOM must not list workspace-local crates without a [source] as third-party dependencies.'
     Assert-True (@($depsSbom.metadata.properties | Where-Object { $_.name -eq 'avalonia:producer-pin' -and $_.value -eq 'deadbeef' }).Count -eq 1) 'SBOM must record the producer pin used to build the bundle.'
     & (Join-Path $root 'rust' 'generate-sbom.ps1') -Rid win-x64 -Bundle $depsInventory -CargoLockPath (Join-Path $scratch 'missing.lock') -ProjectAssetsJsonPath (Join-Path $scratch 'missing.assets.json')
     $missingSbom = Get-Content -LiteralPath (Join-Path $depsInventory 'sbom.cdx.json') -Raw | ConvertFrom-Json

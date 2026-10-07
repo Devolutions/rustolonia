@@ -22,7 +22,7 @@ Write-Host '==> [1/4] Regenerating object-model projection IR, C# COM sources, a
 dotnet run --project (Join-Path $repositoryRoot 'projection' 'Avalonia.Projection.Tool') -c $Configuration -- `
     (Join-Path $repositoryRoot 'rust' 'projection.ir.json') `
     (Join-Path $repositoryRoot 'host' 'Generated' 'ObjectModel') `
-    (Join-Path $repositoryRoot 'rust' 'avalonia-sys' 'include' 'avalonia-rust-abi.h')
+    (Join-Path $repositoryRoot 'rust' 'rustolonia-sys' 'include' 'avalonia-rust-abi.h')
 if ($LASTEXITCODE -ne 0)
 {
     exit $LASTEXITCODE
@@ -32,10 +32,10 @@ Write-Host "==> [1/4] Regenerating Rust sys/safe bindings from projection IR"
 Push-Location "$repositoryRoot\rust"
 try
 {
-    cargo run -p avalonia-bindgen -- `
+    cargo run -p rustolonia-bindgen -- `
         (Join-Path '.' 'projection.ir.json') `
-        (Join-Path '.' 'avalonia-sys' 'src' 'generated.rs') `
-        (Join-Path '.' 'avalonia' 'src' 'generated.rs')
+        (Join-Path '.' 'rustolonia-sys' 'src' 'generated.rs') `
+        (Join-Path '.' 'rustolonia' 'src' 'generated.rs')
     if ($LASTEXITCODE -ne 0)
     {
         exit $LASTEXITCODE
@@ -44,9 +44,9 @@ try
     if ($UpdateAbiBaseline)
     {
         Write-Host "==> [1/4] Rewriting the released ABI baseline (intentional ABI wave)"
-        cargo run -p avalonia-bindgen -- --write-baseline `
+        cargo run -p rustolonia-bindgen -- --write-baseline `
             (Join-Path '.' 'projection.ir.json') `
-            (Join-Path '.' 'avalonia-sys' 'include' 'avalonia-rust-abi.h') `
+            (Join-Path '.' 'rustolonia-sys' 'include' 'avalonia-rust-abi.h') `
             (Join-Path '.' 'abi-baseline.json')
         if ($LASTEXITCODE -ne 0)
         {

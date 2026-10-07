@@ -6,7 +6,7 @@ Requires Windows PowerShell 5.1 Desktop, .NET Framework UIAutomationClient/
 UIAutomationTypes, and an unlocked interactive Windows desktop in the same user
 session and integrity level as the app. Headless/service CI sessions are not
 supported. No winapp, SDK, installed package, or screenshots are required.
-Run with powershell.exe -NoProfile -STA -File .\avalonia\tests\test-bundle.ps1.
+Run with powershell.exe -NoProfile -STA -File .\rustolonia\tests\test-bundle.ps1.
 Other hosts/apartment states fail before launch; there is no implicit relaunch.
 If local execution policy blocks scripts, add -ExecutionPolicy Bypass to that
 invocation after reviewing this file (process-local only; no policy is changed).
@@ -32,7 +32,7 @@ Deadline for each readiness/transition assertion (default 30 seconds).
 .PARAMETER CloseTimeoutSeconds
 Maximum normal-exit wait after requesting window close (default 15 seconds).
 .EXAMPLE
-powershell.exe -NoProfile -STA -File .\avalonia\tests\test-bundle.ps1
+powershell.exe -NoProfile -STA -File .\rustolonia\tests\test-bundle.ps1
 #>
 [CmdletBinding()]
 param(

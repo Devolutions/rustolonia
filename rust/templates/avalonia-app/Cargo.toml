@@ -6,6 +6,6 @@ publish = false
 description = "Starting point for a new Avalonia Rust application"
 
 [dependencies]
-avalonia = { path = "__RUSTOLONIA_ROOT__/rust/avalonia" }
+rustolonia = { path = "__RUSTOLONIA_ROOT__/rust/rustolonia" }
 
 [workspace]

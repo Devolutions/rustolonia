@@ -21,7 +21,7 @@ dependencies = [
 name = "archive-tool"
 version = "0.1.0"
 dependencies = [
- "avalonia",
+ "rustolonia",
  "bzip2",
  "cab",
  "flate2",
@@ -34,14 +34,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "avalonia"
+name = "rustolonia"
 version = "0.1.0"
 dependencies = [
- "avalonia-sys",
+ "rustolonia-sys",
 ]
 
 [[package]]
-name = "avalonia-sys"
+name = "rustolonia-sys"
 version = "0.1.0"
 dependencies = [
  "libloading",

@@ -621,7 +621,7 @@ public class ComSourceEmitterTests
             Normalize(File.ReadAllText(Path.Combine(
                 root,
                 "rust",
-                "avalonia-sys",
+                "rustolonia-sys",
                 "include",
                 "avalonia-rust-abi.h"))));
 

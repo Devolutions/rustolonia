@@ -5,7 +5,7 @@ namespace Avalonia.Host.Com;
 
 /// <summary>
 /// Kind of a projected storage item. Matches
-/// <c>avalonia::StorageItemKind</c> on the Rust side.
+/// <c>rustolonia::StorageItemKind</c> on the Rust side.
 /// </summary>
 internal enum AvnStorageItemKind
 {

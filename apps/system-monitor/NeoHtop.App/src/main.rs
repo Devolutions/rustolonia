@@ -13,7 +13,7 @@ use crate::filter::Filters;
 use crate::monitoring::{PendingKill, ProcessInfo, ProcessMonitor, SystemMonitor, SystemStats};
 use crate::sort::{process_key, sort_label, sort_visible_indices, SortColumn};
 
-pub use avalonia::{
+pub use rustolonia::{
     App, AppScope, CancellationToken, ClipboardData, Error, MapKey, RangeBatch, RangeRequest,
     Result,
 };
@@ -27,11 +27,11 @@ mod refresh;
 mod sort;
 
 pub mod value_converter {
-    pub use avalonia::value_converter::ValueConverterDispatch;
+    pub use rustolonia::value_converter::ValueConverterDispatch;
 }
 
 pub mod view_model {
-    pub use avalonia::view_model::{
+    pub use rustolonia::view_model::{
         BatchCompletion, DynamicViewModel, ViewModelBatch, ViewModelSink,
     };
 }
@@ -101,7 +101,7 @@ impl Default for ColumnVisibility {
 struct Shared {
     sink: Option<MainViewModelSink>,
     scope: Option<AppScope>,
-    window: Option<avalonia::Window>,
+    window: Option<rustolonia::Window>,
 }
 
 struct MonitorState {
@@ -1314,7 +1314,7 @@ impl RowValues {
     }
 }
 
-fn main() -> avalonia::Result<()> {
+fn main() -> rustolonia::Result<()> {
     App::load_from_env()?.run(|scope| {
         let state = Arc::new(Mutex::new(MonitorState::new()));
         let shared = Arc::new(Mutex::new(Shared::default()));

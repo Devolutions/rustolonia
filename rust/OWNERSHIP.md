@@ -58,5 +58,5 @@ not visible to `OnLastWindowClose` accounting and must never be created by the
 host bootstrap.
 
 The authoritative ABI is generated at
-`avalonia-sys/include/avalonia-rust-abi.h`. Interface ABI versions and IIDs are
+`rustolonia-sys/include/avalonia-rust-abi.h`. Interface ABI versions and IIDs are
 independent from the projection IR schema version.
