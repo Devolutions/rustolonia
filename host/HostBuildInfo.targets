@@ -11,10 +11,13 @@
   -->
   <PropertyGroup>
     <RustoloniaAbiHeader Condition="'$(RustoloniaAbiHeader)' == ''">$(MSBuildThisFileDirectory)..\rust\rustolonia-sys\include\avalonia-rust-abi.h</RustoloniaAbiHeader>
-    <_RustoloniaHostBuildInfoFile>$(IntermediateOutputPath)RustoloniaHostBuildInfo.g.cs</_RustoloniaHostBuildInfoFile>
   </PropertyGroup>
 
   <Target Name="GenerateRustoloniaHostBuildInfo" BeforeTargets="CoreCompile" DependsOnTargets="PrepareForBuild">
+    <!-- IntermediateOutputPath is only final at target time, not when this file is imported. -->
+    <PropertyGroup>
+      <_RustoloniaHostBuildInfoFile>$(IntermediateOutputPath)RustoloniaHostBuildInfo.g.cs</_RustoloniaHostBuildInfoFile>
+    </PropertyGroup>
     <Error Condition="!Exists('$(RustoloniaAbiHeader)')" Text="The rustolonia ABI header was not found: '$(RustoloniaAbiHeader)'." />
     <GetFileHash Files="$(RustoloniaAbiHeader)" Algorithm="SHA256" HashEncoding="hex">
       <Output TaskParameter="Hash" PropertyName="_RustoloniaAbiHeaderHash" />
