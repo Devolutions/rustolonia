@@ -114,34 +114,9 @@ jobs:
           AVALONIA_RUST_SIGN_COMMAND: ${{ vars.AVALONIA_RUST_SIGN_COMMAND }}
         run: ./rust/package-host.ps1 -Rid ${{ matrix.rid }} -OutputRoot rust/artifacts/host
 
-      - name: Build an example through the rustolonia-sys download path
+      - name: Build and launch an example through the rustolonia-sys download path
         shell: pwsh
-        run: |
-          $release = Join-Path $env:RUNNER_TEMP 'release'
-          New-Item -ItemType Directory -Force -Path (Join-Path $release "v$env:VERSION") | Out-Null
-          Copy-Item rust/artifacts/host/*.tar.gz (Join-Path $release "v$env:VERSION")
-          $checksums = Join-Path $env:RUNNER_TEMP 'host-checksums.txt'
-          Get-Content rust/artifacts/host/*.tar.gz.sha256 | Set-Content -LiteralPath $checksums
-          $cache = Join-Path $env:RUNNER_TEMP 'host-cache'
-          $env:RUSTOLONIA_NO_DOWNLOAD = '0'
-          $env:RUSTOLONIA_HOST_BASE_URL = [Uri]::new($release).AbsoluteUri
-          $env:RUSTOLONIA_HOST_CHECKSUMS = $checksums
-          $env:RUSTOLONIA_CACHE_DIR = $cache
-          Remove-Item Env:RUSTOLONIA_HOST_DIR -ErrorAction SilentlyContinue
-          cargo build --manifest-path rust/Cargo.toml -p rustolonia --example hello_world --release
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          . ./rust/package-shared.ps1
-          $hostFile = Join-Path $cache $env:VERSION '${{ matrix.rid }}' (Get-RidTargetInfo -Rid '${{ matrix.rid }}').HostFileName
-          if (-not (Test-Path -LiteralPath $hostFile)) { throw "The downloaded host was not cached at $hostFile." }
-
-      - name: Launch the example against the downloaded host
-        shell: pwsh
-        run: |
-          $exe = (Resolve-Path ('rust/target/release/examples/hello_world' + $(if ($IsWindows) { '.exe' } else { '' }))).Path
-          $process = if ($IsLinux) { Start-Process xvfb-run -ArgumentList '-a', $exe -PassThru } else { Start-Process $exe -PassThru }
-          Start-Sleep -Seconds 5
-          if ($process.HasExited) { throw "hello_world exited during startup with code $($process.ExitCode)." }
-          Stop-Process -Id $process.Id
+        run: ./rust/tests/test-host-download.ps1 -Rid ${{ matrix.rid }} -TarballDirectory rust/artifacts/host -WorkDirectory "$env:RUNNER_TEMP/host-download"
 
       - uses: actions/upload-artifact@v4
         with:

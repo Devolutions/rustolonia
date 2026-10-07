@@ -83,6 +83,8 @@ if (-not (Test-Path -LiteralPath $hostFile -PathType Leaf)) {
 }
 
 $env:RUSTOLONIA_HOST_LIB = $hostFile
+# Stage the freshly published host through rustolonia-sys, as consumers do.
+$env:RUSTOLONIA_HOST_DIR = Split-Path -Parent $hostFile
 if (-not $IsWindows) {
     $cargoTarget = if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { Join-Path $PSScriptRoot 'target' "cargo-$rid" }
     $env:CARGO_TARGET_DIR = $cargoTarget
