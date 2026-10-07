@@ -426,6 +426,48 @@ The release publication gate uses this mode with `-Distributable`, an empty
 host cache, and the final tag from its local git checkout. Only the host
 download base URL is redirected while the GitHub release is still a draft.
 
+### CI action policy
+
+The repository's Actions policy accepts enterprise-owned actions, actions created
+by GitHub, verified Marketplace publishers, and explicitly allowed patterns.
+`dtolnay/rust-toolchain@stable` is not permitted: the
+[12.1.0 startup failure](https://github.com/Devolutions/rustolonia/actions/runs/37685794062)
+occurred before any jobs ran. Conditions on jobs or steps do not exempt their
+action references from this startup check.
+
+Rust setup follows the checked-in toolchain/runner-rustup pattern in
+[IronRDP](https://github.com/Devolutions/IronRDP/blob/bbb15f2e5c9b1546dbfc6c80513ec3e5586cd1ff/rust-toolchain.toml),
+[picky-rs](https://github.com/Devolutions/picky-rs/blob/407d5c146dacc6e840eb5141ca729d39c5e722c4/rust-toolchain.toml),
+and [Gateway](https://github.com/Devolutions/devolutions-gateway/blob/62de985e3ef9dfc7077ea738ec693503d80388e1/rust-toolchain.toml).
+Rustolonia keeps the existing stable-channel choice rather than adopting those
+projects' version pins. Workflow steps invoke rustup directly, without a local
+wrapper or external toolchain action: `rustup show` installs the root
+`rust-toolchain.toml` selection, followed by Cargo and rustc version checks.
+Cross-builds invoke `rustup target add` for their matrix target, as in Gateway.
+Direct rustup setup is also used by
+[SSPI](https://github.com/Devolutions/sspi-rs/blob/21359c1e145758301a6b5fa3a55a2ed1c7bf627f/rust-toolchain.toml)
+and [cirup](https://github.com/Devolutions/cirup/blob/28ae91e0c5c075beddffe426b7dd512a8aca00eb/.github/workflows/ci.yml#L22-L28).
+Jobs on macOS also follow
+[Gateway's macOS shim repair](https://github.com/Devolutions/devolutions-gateway/blob/62de985e3ef9dfc7077ea738ec693503d80388e1/.github/workflows/ci.yml#L365-L379):
+replace the hosted runner's broken Homebrew shims with the official rustup
+installer and add its bin directory to `GITHUB_PATH`.
+
+Both workflows' remaining external actions are GitHub-created `actions/*`,
+except for the optional `rust-lang/crates-io-auth-action@v1`. That action's
+[Marketplace listing](https://github.com/marketplace/actions/crates-io-auth-action)
+identifies `rust-lang` as a verified publisher. It is used by
+[IronRDP](https://github.com/Devolutions/IronRDP/blob/bbb15f2e5c9b1546dbfc6c80513ec3e5586cd1ff/.github/workflows/release-crates.yml#L73-L81)
+and [picky-rs](https://github.com/Devolutions/picky-rs/blob/407d5c146dacc6e840eb5141ca729d39c5e722c4/.github/workflows/release-crates.yml#L79-L87);
+[picky-rs's successful run on 2026-10-07](https://github.com/Devolutions/picky-rs/actions/runs/37662591436)
+includes a successful authentication step. Keep this trusted-publishing path;
+do not replace it with a long-lived registry secret.
+
+The policy API returned HTTP 403 during this audit, so the public failure
+annotation and Marketplace verification are the available policy evidence,
+not an administrator-level guarantee of the effective settings. Recheck
+eligibility when adding or changing an external action; a successful run in
+another organization repository alone does not prove this repository allows it.
+
 ### Releasing
 
 Releases are driven by `.github/workflows/release.yml` and

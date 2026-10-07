@@ -158,11 +158,11 @@ try {
     }
 
     $fakeProducer = Join-Path $scratch 'fake producer'
-    $headerDirectory = Join-Path $fakeProducer 'nukebuild'
+    $headerDirectory = Join-Path $fakeProducer 'native' 'Avalonia.Native'
     New-Item -ItemType Directory -Force -Path $headerDirectory | Out-Null
-    Set-Content -LiteralPath (Join-Path $headerDirectory '_build.csproj') -Value '<Project />'
+    Set-Content -LiteralPath (Join-Path $headerDirectory 'Avalonia.Native.macOS.proj') -Value '<Project />'
     $headerCommand = New-ProducerHeaderGenerationCommand -ProducerRoot $fakeProducer
-    Assert-True ($headerCommand[-1] -eq 'GenerateCppHeaders') 'Native preparation must generate COM headers.'
+    Assert-True ($headerCommand[1] -eq 'build' -and $headerCommand[3] -eq '-t:GenerateMicroComItems' -and $headerCommand[4] -eq '-p:BuildAvaloniaNativeXcodeProject=false') 'Native preparation must generate COM headers without building Xcode.'
     $xcodeProject = Join-Path $fakeProducer 'native' 'Avalonia.Native' 'src' 'OSX' 'Avalonia.Native.OSX.xcodeproj'
     New-Item -ItemType Directory -Force -Path $xcodeProject | Out-Null
     foreach ($configuration in @('Debug', 'Release')) {

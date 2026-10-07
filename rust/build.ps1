@@ -47,15 +47,8 @@ elseif ($IsMacOS) {
     $rid = "osx-$Architecture"
     $hostFileName = 'librustolonia_host.dylib'
     $xcodeArch = if ($Architecture -eq 'x64') { 'x86_64' } else { 'arm64' }
-    # The COM header avalonia-native.h is generated from avn.idl by the producer's NUKE
-    # build; a fresh checkout does not carry it, so generate before xcodebuild.
-    Push-Location $avaloniaRoot
-    try {
-        dotnet run --project (Join-Path $avaloniaRoot 'nukebuild' '_build.csproj') --target GenerateCppHeaders
-    }
-    finally {
-        Pop-Location
-    }
+    $headerCommand = New-ProducerHeaderGenerationCommand -ProducerRoot $avaloniaRoot
+    Invoke-Logged -Command $headerCommand -WorkingDirectory $avaloniaRoot
     $xcodeProject = Join-Path $avaloniaRoot 'native' 'Avalonia.Native' 'src' 'OSX' 'Avalonia.Native.OSX.xcodeproj'
     $products = Join-Path $avaloniaRoot 'Build' 'Products' 'Release'
     xcodebuild -project $xcodeProject -configuration Release "ARCHS=$xcodeArch" "CONFIGURATION_BUILD_DIR=$products"

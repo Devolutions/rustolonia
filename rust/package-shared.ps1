@@ -102,12 +102,12 @@ function New-ProducerHeaderGenerationCommand {
         [Parameter(Mandatory)][string]$ProducerRoot
     )
 
-    $project = Join-Path $ProducerRoot 'nukebuild' '_build.csproj'
+    $project = Join-Path $ProducerRoot 'native' 'Avalonia.Native' 'Avalonia.Native.macOS.proj'
     if (-not (Test-Path -LiteralPath $project -PathType Leaf)) {
-        throw "Producer root is missing the NUKE build project: $project"
+        throw "Producer root is missing the native header project: $project"
     }
 
-    return @('dotnet', 'run', '--project', $project, '--target', 'GenerateCppHeaders')
+    return @('dotnet', 'build', $project, '-t:GenerateMicroComItems', '-p:BuildAvaloniaNativeXcodeProject=false')
 }
 
 function New-XcodeBuildCommand {

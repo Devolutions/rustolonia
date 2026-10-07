@@ -27,6 +27,26 @@ jobs:
         os: [windows-latest, ubuntu-latest, macos-14]
     steps:
       - uses: actions/checkout@v4
+      - name: Repair Rust shims (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "$HOME/.cargo/bin"
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+            | bash -s -- -y --default-toolchain none --no-modify-path --profile minimal
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+
+      - name: Set up Rust
+        shell: pwsh
+        run: |
+          rustup show
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          rustc --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Run helper and scaffold regressions without native builds
         shell: pwsh
         run: ./rust/tests/test-build-app.ps1
@@ -78,7 +98,25 @@ jobs:
         with:
           dotnet-version: 10.0.201
 
-      - uses: dtolnay/rust-toolchain@stable
+      - name: Repair Rust shims (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "$HOME/.cargo/bin"
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+            | bash -s -- -y --default-toolchain none --no-modify-path --profile minimal
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+
+      - name: Set up Rust
+        shell: pwsh
+        run: |
+          rustup show
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          rustc --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Install Linux smoke-test display
         if: runner.os == 'Linux'
@@ -118,7 +156,7 @@ jobs:
       - name: Generate Avalonia.Native COM headers
         if: runner.os == 'macOS'
         shell: pwsh
-        run: dotnet run --project nukebuild/_build.csproj --target GenerateCppHeaders
+        run: dotnet build native/Avalonia.Native/Avalonia.Native.macOS.proj -t:GenerateMicroComItems -p:BuildAvaloniaNativeXcodeProject=false
         working-directory: ./avalonia-src
 
       - name: Build Avalonia.Native for managed tests
@@ -312,9 +350,29 @@ jobs:
         with:
           dotnet-version: 10.0.201
 
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.rust-target }}
+      - name: Repair Rust shims (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "$HOME/.cargo/bin"
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+            | bash -s -- -y --default-toolchain none --no-modify-path --profile minimal
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+
+      - name: Set up Rust
+        shell: pwsh
+        env:
+          RUST_TARGET: ${{ matrix.rust-target }}
+        run: |
+          rustup show
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          rustup target add $env:RUST_TARGET
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          rustc --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Install Linux cross toolchain
         if: runner.os == 'Linux'
@@ -328,7 +386,7 @@ jobs:
       - name: Generate Avalonia.Native COM headers
         if: runner.os == 'macOS'
         shell: pwsh
-        run: dotnet run --project nukebuild/_build.csproj --target GenerateCppHeaders
+        run: dotnet build native/Avalonia.Native/Avalonia.Native.macOS.proj -t:GenerateMicroComItems -p:BuildAvaloniaNativeXcodeProject=false
         working-directory: ./avalonia-src
 
       - name: Restore producer packages (retries on NuGet flakes)
