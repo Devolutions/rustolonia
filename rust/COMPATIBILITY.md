@@ -1,9 +1,13 @@
 ﻿# Rust host compatibility policy
 
 `Avalonia.Host`, the generated managed projection, and all crates in this
-workspace are released in semver lockstep from one source revision. The crates
-are `publish = false`; consumers must not mix a host or generated bindings from
-one release with crates from another release.
+workspace are released in semver lockstep from one source revision.
+`rustolonia`, `rustolonia-sys` and `rustolonia-bindgen` are published to
+crates.io with the same version as the `rustolonia-host-<version>-<rid>.tar.gz`
+assets of the GitHub release `v<version>` (see
+[Crates.io and prebuilt hosts](#cratesio-and-prebuilt-hosts)); consumers must
+not mix a host or generated bindings from one release with crates from another
+release.
 
 [`rust/release-manifest.json`](release-manifest.json) is the single
 machine-readable record tying that lockstep release together: the Rustolonia
@@ -759,6 +763,25 @@ The Rust host and standalone Rust artifacts are not NuGet packages, so
 is instead represented by `rust/generate-sbom.ps1` in `sbom.cdx.json`, including
 the host, Rust executable, bundled native binaries, and licence with SHA-256
 hashes after signing.
+
+## Crates.io and prebuilt hosts
+
+- `rustolonia` depends on `rustolonia-sys` with an exact `=X.Y.Z` requirement,
+  so a dependency graph can contain only one release of the bindings.
+- `rustolonia-sys` downloads only the host tarball of its own version and
+  verifies it against the SHA-256 recorded in its packaged
+  `host-checksums.txt`. A crate version is never re-pointed at a different
+  host build; a new host means a new crate version.
+- The host reports its release version and the SHA-256 of
+  `avalonia-rust-abi.h` through `avn_get_host_info`. `Host::load` fails with
+  `HostLoadError::IncompatibleHost` when the fingerprint differs from the one
+  `rustolonia-sys` was built against, or when the export is missing (a host
+  older than this check). A host found through `RUSTOLONIA_HOST_LIB`,
+  `RUSTOLONIA_HOST_DIR` or next to the executable is subject to the same
+  check.
+- Until 1.0, a minor version bump (`0.Y`) may break the Rust API and the ABI;
+  a patch bump (`0.Y.Z`) is reserved for compatible fixes. Every release still
+  ships its own host, whatever the bump.
 
 ## File type associations
 

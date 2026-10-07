@@ -8,6 +8,25 @@ Idiomatic Rust API for building desktop GUI applications with
 rustolonia = "0.1"
 ```
 
+```rust,no_run
+use rustolonia::{App, Button, Orientation, StackPanel, TextBlock, Window};
+
+fn main() -> rustolonia::Result<()> {
+    App::load_from_env()?.run(|scope| {
+        scope.mount(
+            Window::new()?.title("Hello from Rust")?.content(Some(
+                &StackPanel::new()?
+                    .orientation(Orientation::Vertical)?
+                    .child(TextBlock::new()?.text("Welcome to Avalonia!")?)?
+                    .child(Button::new()?.content(Some(&TextBlock::new()?.text("Hello")?))?)?,
+            ))?,
+        )
+    })
+}
+```
+
+`cargo run` is all it takes.
+
 On the first build, `rustolonia-sys` downloads the prebuilt
 `rustolonia_host` library for your target from the matching
 [GitHub release](https://github.com/Devolutions/rustolonia/releases),
@@ -24,9 +43,17 @@ ship an application, copy the host directory next to your executable and build
 with `default-features = false` so that no build machine paths end up in the
 binary.
 
-The Rust and native host versions are locked to each other:
-`rustolonia 0.1.x` only works with the `0.1.x` host release built from the same
-tag. Both sides check the ABI fingerprint when the app starts.
+The Rust and native host versions are locked to each other: `rustolonia X.Y.Z`
+pins `rustolonia-sys =X.Y.Z`, which only downloads the `X.Y.Z` host release
+built from the same tag. When the app starts, the host's ABI fingerprint is
+checked against the one the crate was built with.
+
+Linux needs X11 (Wayland sessions work through XWayland) and fontconfig;
+minimum OS versions are listed in
+[PLATFORMS.md](https://github.com/Devolutions/rustolonia/blob/master/rust/PLATFORMS.md#prebuilt-host-platform-floors).
+The crates.io release covers code-first applications. Applications with
+compiled AXAML and view-model IR still build their own host from a source
+checkout.
 
 Application view-model schemas are owned by the consuming crate. In this
 repository the flagship sample is [`../avalonia-sample`](../avalonia-sample),

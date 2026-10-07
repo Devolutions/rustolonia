@@ -342,10 +342,10 @@ Each crate has an explicit `include` allow-list (sources, `build.rs`,
 `build_support/`, the ABI header, `host-checksums.txt`, README, LICENSE).
 Integration tests and repository-relative fixtures are not packaged. MSRV is
 `rust-version = "1.88"`. docs.rs builds with `no-download` and never fetches a
-host. Packaging is checked with:
+host. Packaging is checked in CI with:
 
 ```bash
-cargo package --workspace --exclude avalonia-sample --allow-dirty
+cargo package --locked -p rustolonia-sys -p rustolonia-bindgen -p rustolonia
 ```
 
 ### Prebuilt host tarballs

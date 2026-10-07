@@ -24,6 +24,26 @@ pinned `avalonia-src` producer submodule at commit
 | `samples/` | `RustViewModelSample.Managed` - the sample presentation project the host consumes |
 | `build/` | Vendored MSBuild configuration (versioning, signing, analyzers, xunit) |
 
+## Quick start (crates.io)
+
+Code-first applications need only Cargo; no .NET SDK or source checkout:
+
+```toml
+[dependencies]
+rustolonia = "0.1"
+```
+
+On the first build, `rustolonia-sys` downloads the prebuilt NativeAOT host for
+your target (Windows, macOS and Linux glibc, x64 and arm64) from the matching
+[GitHub release](https://github.com/Devolutions/rustolonia/releases), verifies
+its SHA-256, and caches it. See [rust/rustolonia/README.md](rust/rustolonia/README.md)
+for a hello-world and how to ship the host with your application, and
+[rust/rustolonia-sys/README.md](rust/rustolonia-sys/README.md) for offline,
+mirrored and locally built hosts.
+
+Applications with compiled AXAML and Rust view-models still build their own
+host from a source checkout, as described below.
+
 ## Getting started
 
 ```pwsh
@@ -89,3 +109,9 @@ pwsh ./rust/tests/test-build-app.ps1 -RunNativeSmoke
 
 Linux native smoke execution needs a display, for example
 `xvfb-run -a pwsh ./rust/tests/test-build-app.ps1 -RunNativeSmoke`.
+
+Native jobs also archive their host as a release tarball and build and launch
+`hello_world` through the `rustolonia-sys` download path
+(`rust/tests/test-host-download.ps1`). `.github/workflows/release.yml` builds
+the release host tarballs from a `v*` tag and publishes the crates; see
+[rust/PRODUCTIZATION.md](rust/PRODUCTIZATION.md#releasing).

@@ -80,6 +80,11 @@ Release compatibility and versioning rules are documented in
 
 ## Prerequisites
 
+Code-first applications that depend on the published `rustolonia` crate need
+only a Rust toolchain; the prebuilt host is downloaded at build time (see
+[rustolonia/README.md](rustolonia/README.md)). Working in this repository, or
+building an application with compiled AXAML and view-models, needs:
+
 - Windows 10 or later, Linux with X11, or macOS
 - PowerShell 7 (`pwsh`)
 - .NET SDK 10
