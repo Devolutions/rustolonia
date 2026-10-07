@@ -27,7 +27,9 @@ param(
     [int]$LaunchSeconds = 5,
     [string]$AppManifest,
     [string]$AppName,
-    [switch]$ShipHost
+    [switch]$ShipHost,
+    # Release validation must use the checksums shipped in the tagged source.
+    [switch]$UseCommittedChecksums
 )
 
 Set-StrictMode -Version Latest
@@ -45,14 +47,16 @@ $releaseDir = Join-Path $WorkDirectory 'release' "v$version"
 New-Item -ItemType Directory -Force -Path $releaseDir | Out-Null
 Copy-Item -LiteralPath $tarball -Destination $releaseDir
 $checksums = Join-Path $WorkDirectory 'host-checksums.txt'
-Get-Content -LiteralPath "$tarball.sha256" | Set-Content -LiteralPath $checksums
+if (-not $UseCommittedChecksums) {
+    Get-Content -LiteralPath "$tarball.sha256" | Set-Content -LiteralPath $checksums
+}
 $cache = Join-Path $WorkDirectory 'cache'
 
 $saved = @{}
 $overrides = @{
     RUSTOLONIA_NO_DOWNLOAD    = '0'
     RUSTOLONIA_HOST_BASE_URL  = [Uri]::new((Join-Path $WorkDirectory 'release')).AbsoluteUri
-    RUSTOLONIA_HOST_CHECKSUMS = $checksums
+    RUSTOLONIA_HOST_CHECKSUMS = if ($UseCommittedChecksums) { $null } else { $checksums }
     RUSTOLONIA_CACHE_DIR      = $cache
     RUSTOLONIA_HOST_DIR       = $null
     RUSTOLONIA_HOST_LIB       = $null

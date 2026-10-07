@@ -24,14 +24,22 @@ pinned `avalonia-src` producer submodule at upstream Avalonia `12.1.3` (commit
 | `samples/` | `RustViewModelSample.Managed` - the sample presentation project the host consumes |
 | `build/` | Vendored MSBuild configuration (versioning, signing, analyzers, xunit) |
 
-## Quick start (crates.io)
+## Quick start (GitHub release)
 
 Code-first applications need only Cargo; no .NET SDK or source checkout:
 
 ```toml
 [dependencies]
-rustolonia = "0.1"
+rustolonia = { git = "https://github.com/Devolutions/rustolonia", tag = "v12.1.0" }
 ```
+
+Use the final `v12.1.0` tag once its GitHub release is published, not the
+`host-v12.1.0` build tag. Cargo finds the crate in the `rust/` workspace and
+resolves `rustolonia-sys` from the same git revision; no crates.io publication
+or `[patch.crates-io]` is needed. Rust 1.88 or newer is required. Version
+`12.1.0` is the first Rustolonia release, backed by Avalonia `12.1.3`.
+The major/minor identify the Avalonia line; the patch counts Rustolonia
+releases independently and does not identify the upstream patch.
 
 On the first build, `rustolonia-sys` downloads the prebuilt NativeAOT host for
 your target (Windows, macOS and Linux glibc, x64 and arm64) from the matching
@@ -43,6 +51,9 @@ mirrored and locally built hosts.
 
 Applications with compiled AXAML and Rust view-models still build their own
 host from a source checkout, as described below.
+
+After the crates are published to crates.io, `rustolonia = "=12.1.0"` is an
+alternative to the git dependency.
 
 ## Getting started
 
@@ -87,7 +98,7 @@ pwsh ./apps/system-monitor/build.ps1
 ## CI
 
 `.github/workflows/avalonia-rust.yml` keeps the native release and cross-build
-gates running automatically on pull requests and pushes to `main`. Native
+gates running automatically on pull requests and pushes to `master`. Native
 execution covers Windows/Linux x64 and macOS x64/arm64; Windows/Linux arm64
 have cross-build packaging coverage, not native execution coverage. The
 original flagship samples remain part of the release gate.
@@ -113,5 +124,7 @@ Linux native smoke execution needs a display, for example
 Native jobs also archive their host as a release tarball and build and launch
 a standalone app that depends on the packaged crates through the
 `rustolonia-sys` download path (`rust/tests/test-standalone-app.ps1`). `.github/workflows/release.yml` builds
-the release host tarballs from a `v*` tag and publishes the crates; see
+the release host tarballs from a `host-v*` build tag, publishes the GitHub
+release on the checksum-bearing `v*` consumer tag, and optionally publishes
+the crates; see
 [rust/PRODUCTIZATION.md](rust/PRODUCTIZATION.md#releasing).

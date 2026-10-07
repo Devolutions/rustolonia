@@ -1,53 +1,93 @@
 name: Release
 
 # Release procedure (see rust/PRODUCTIZATION.md#releasing):
-#   1. rust/prepare-release.ps1 -Version X.Y.Z, commit, push tag vX.Y.Z.
-#      -> the `build` jobs publish the host tarballs to a draft release vX.Y.Z.
+#   1. rust/prepare-release.ps1 -Version X.Y.Z, commit, push tag host-vX.Y.Z.
+#      -> the `build` jobs upload host tarballs to a draft release host-vX.Y.Z.
 #   2. rust/prepare-release.ps1 -Checksums -FromRelease, commit to master.
-#   3. Run this workflow manually with version X.Y.Z.
-#      -> `publish` verifies the checksums, builds a fresh crates.io-style app
-#         against the packaged crates, publishes the GitHub release and the
-#         crates (approval through the `crates-io` environment).
+#      Push the consumer tag vX.Y.Z on that checksum-bearing commit.
+#   3. Run this workflow manually with version X.Y.Z (GitHub-only by default).
+#      -> verify a standalone git consumer, promote the draft to vX.Y.Z.
+#         Optionally publish crates after approval in `crates-io`.
+# After merging the first release preparation, dispatch phase=build from master
+# instead of step 1. Dispatch phase=publish for step 3.
 
 on:
   push:
-    tags: ['v*']
+    tags: ['host-v*']
   workflow_dispatch:
     inputs:
+      phase:
+        description: Build hosts first; publish after committing checksums and pushing the final tag
+        default: build
+        required: true
+        type: choice
+        options:
+          - build
+          - publish
       version:
-        description: Version to publish (without the leading v); its draft release must exist
+        description: Release version (without v); must match the checked-in versions
+        default: '12.1.0'
         required: true
         type: string
+      publish_crates:
+        description: Also publish to crates.io (requires trusted publishing and environment approval)
+        default: false
+        type: boolean
 
 permissions:
   contents: read
 
 concurrency:
-  group: release-${{ github.ref_name }}-${{ inputs.version }}
+  group: release-${{ inputs.version || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
   version:
     name: check version
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' || inputs.phase == 'build'
     runs-on: ubuntu-22.04
+    permissions:
+      contents: write
     outputs:
       version: ${{ steps.version.outputs.version }}
       prerelease: ${{ steps.version.outputs.prerelease }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - id: version
         name: Tag must match the crate, manifest and SharedVersion.props versions
         shell: pwsh
         run: |
           . ./rust/package-shared.ps1
           $version = Get-RustoloniaReleaseVersion -RustoloniaRoot $PWD
-          if ('${{ github.ref_name }}' -ne "v$version") { throw "Tag ${{ github.ref_name }} does not match version $version." }
+          if ($env:GITHUB_EVENT_NAME -eq 'push') {
+            if ($env:GITHUB_REF_NAME -ne "host-v$version") { throw "Tag $env:GITHUB_REF_NAME does not match version $version." }
+          } else {
+            if ($env:GITHUB_REF -ne 'refs/heads/master') { throw 'Dispatch the host build from master after merging the release preparation.' }
+            if ($env:REQUESTED_VERSION -ne $version) { throw "Requested version $env:REQUESTED_VERSION does not match version $version." }
+            if ($env:PUBLISH_CRATES -eq 'true') { throw 'publish_crates is only valid for the publish phase.' }
+          }
           if ((Get-Content build/SharedVersion.props -Raw) -notmatch "<Version>$([regex]::Escape($version))</Version>") {
             throw "build/SharedVersion.props does not match version $version."
           }
           "version=$version" >> $env:GITHUB_OUTPUT
           "prerelease=$($version.Contains('-').ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+          PUBLISH_CRATES: ${{ inputs.publish_crates }}
+
+      - name: Create the immutable host build tag
+        if: github.event_name == 'workflow_dispatch'
+        shell: pwsh
+        run: |
+          $version = '${{ steps.version.outputs.version }}'
+          $existing = @(git tag --list "host-v$version" "v$version")
+          if ($existing.Count -gt 0) { throw "Release tags already exist: $($existing -join ', '). Use the publish phase for an existing build." }
+          git tag "host-v$version"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          git push origin "host-v$version"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
   build:
     name: host (${{ matrix.rid }})
@@ -72,6 +112,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: host-v${{ needs.version.outputs.version }}
           submodules: recursive
 
       - name: Apply Avalonia source patches
@@ -118,6 +159,13 @@ jobs:
         shell: pwsh
         run: ./rust/tests/test-standalone-app.ps1 -Rid ${{ matrix.rid }} -TarballDirectory rust/artifacts/host -WorkDirectory "$env:RUNNER_TEMP/standalone-app"
 
+      - name: Build and launch a standalone app against the git build tag
+        shell: pwsh
+        run: |
+          ./rust/tests/test-standalone-app.ps1 -Rid ${{ matrix.rid }} -TarballDirectory rust/artifacts/host `
+            -GitRepository ([Uri]::new("$($PWD.Path)/").AbsoluteUri) -GitTag "host-v$env:VERSION" `
+            -WorkDirectory (Join-Path $env:RUNNER_TEMP 'git-app')
+
       - uses: actions/upload-artifact@v4
         with:
           name: rustolonia-host-${{ matrix.rid }}
@@ -153,22 +201,20 @@ jobs:
 
       - name: Create the draft release
         run: |
-          if gh release view "v$VERSION" > /dev/null 2>&1; then
-            echo "Release v$VERSION already exists; delete it to rebuild." >&2
+          if gh release view "host-v$VERSION" > /dev/null 2>&1 || gh release view "v$VERSION" > /dev/null 2>&1; then
+            echo "Release for $VERSION already exists; do not overwrite released host bytes." >&2
             exit 1
           fi
           flags=(--draft --verify-tag --title "rustolonia $VERSION" --notes "Prebuilt rustolonia hosts for rustolonia-sys $VERSION.")
           if [ '${{ needs.version.outputs.prerelease }}' = 'true' ]; then flags+=(--prerelease); fi
-          gh release create "v$VERSION" "${flags[@]}" dist/*
+          gh release create "host-v$VERSION" "${flags[@]}" dist/*
 
   publish:
     name: publish ${{ inputs.version }}
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && inputs.phase == 'publish'
     runs-on: ubuntu-22.04
-    environment: crates-io
     permissions:
       contents: write
-      id-token: write
     env:
       VERSION: ${{ inputs.version }}
       GH_TOKEN: ${{ github.token }}
@@ -176,6 +222,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: v${{ inputs.version }}
           fetch-depth: 0
 
       - uses: dtolnay/rust-toolchain@stable
@@ -183,11 +230,22 @@ jobs:
       - name: Install Linux smoke-test display
         run: sudo apt-get update && sudo apt-get install --yes xvfb
 
-      - name: Download the draft release
+      - name: Download the release assets
         shell: pwsh
         run: |
+          $releaseTag = "host-v$env:VERSION"
+          $draft = gh release view $releaseTag --json isDraft
+          if ($LASTEXITCODE -eq 0) {
+            if (-not ($draft | ConvertFrom-Json).isDraft) { throw 'The host build release must be a draft.' }
+          } else {
+            $releaseTag = "v$env:VERSION"
+            $published = gh release view $releaseTag --json isDraft
+            if ($LASTEXITCODE -ne 0) { throw 'Neither the host draft nor the published final release exists.' }
+            if (($published | ConvertFrom-Json).isDraft) { throw 'The final release is still a draft; use the host-v draft for initial publication.' }
+          }
+          "RELEASE_TAG=$releaseTag" >> $env:GITHUB_ENV
           $release = Join-Path $env:RUNNER_TEMP 'release' "v$env:VERSION"
-          gh release download "v$env:VERSION" --dir $release
+          gh release download $releaseTag --dir $release
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Push-Location $release
           sha256sum --check --strict SHA256SUMS
@@ -203,42 +261,47 @@ jobs:
           ./rust/prepare-release.ps1 -Checksums -SumsFile (Join-Path $env:RUNNER_TEMP 'release' "v$env:VERSION" 'SHA256SUMS')
           git diff --exit-code -- rust/rustolonia-sys/host-checksums.txt
           if ($LASTEXITCODE -ne 0) { throw 'host-checksums.txt does not match the release; run rust/prepare-release.ps1 -Checksums -FromRelease and commit.' }
-          $changed = @(git diff --name-only "v$env:VERSION" HEAD -- rust/rustolonia rust/rustolonia-sys rust/rustolonia-bindgen |
+          git merge-base --is-ancestor "host-v$env:VERSION" HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'The consumer tag must descend from the host build tag.' }
+          $changed = @(git diff --name-only "host-v$env:VERSION" HEAD |
             Where-Object { $_ -ne 'rust/rustolonia-sys/host-checksums.txt' })
-          if ($changed.Count -gt 0) { throw "Crate sources changed since v$($env:VERSION): $($changed -join ', ')" }
+          if ($LASTEXITCODE -ne 0) { throw 'Could not compare the host and consumer tags.' }
+          if ($changed.Count -gt 0) { throw "Sources changed since host-v$($env:VERSION): $($changed -join ', ')" }
+
+      - name: Build and launch a fresh app against the final git tag
+        shell: pwsh
+        run: |
+          ./rust/tests/test-standalone-app.ps1 -Rid linux-x64 `
+            -TarballDirectory (Join-Path $env:RUNNER_TEMP 'release' "v$env:VERSION") `
+            -GitRepository ([Uri]::new("$($PWD.Path)/").AbsoluteUri) -GitTag "v$env:VERSION" `
+            -UseCommittedChecksums -Distributable `
+            -WorkDirectory (Join-Path $env:RUNNER_TEMP 'git-consumer')
+
+      - name: Publish the GitHub release
+        run: |
+          if [ "$RELEASE_TAG" = "host-v$VERSION" ]; then
+            gh release edit "$RELEASE_TAG" --tag "v$VERSION" --verify-tag --draft=false
+          fi
+
+  publish-crates:
+    name: publish crates ${{ inputs.version }}
+    needs: publish
+    if: github.event_name == 'workflow_dispatch' && inputs.phase == 'publish' && inputs.publish_crates
+    runs-on: ubuntu-22.04
+    environment: crates-io
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v${{ inputs.version }}
+
+      - uses: dtolnay/rust-toolchain@stable
 
       - name: Package the crates
         working-directory: rust
         run: cargo package --locked -p rustolonia-sys -p rustolonia-bindgen -p rustolonia
-
-      - name: Build and launch a fresh app against the packaged crates
-        shell: pwsh
-        run: |
-          $app = Join-Path $env:RUNNER_TEMP 'consumer'
-          cargo new --vcs none --name consumer $app
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          $package = (Resolve-Path rust/target/package).Path.Replace('\', '/')
-          Add-Content -LiteralPath (Join-Path $app 'Cargo.toml') -Value @"
-          rustolonia = "=$env:VERSION"
-
-          [patch.crates-io]
-          rustolonia = { path = "$package/rustolonia-$env:VERSION" }
-          rustolonia-sys = { path = "$package/rustolonia-sys-$env:VERSION" }
-          "@
-          Copy-Item rust/rustolonia/examples/hello_world.rs (Join-Path $app 'src' 'main.rs') -Force
-          # The real checksums from the packaged rustolonia-sys; only the base URL is local
-          # because the release is still a draft.
-          $env:RUSTOLONIA_HOST_BASE_URL = [Uri]::new((Join-Path $env:RUNNER_TEMP 'release')).AbsoluteUri
-          $env:RUSTOLONIA_CACHE_DIR = Join-Path $env:RUNNER_TEMP 'host-cache'
-          cargo build --release --manifest-path (Join-Path $app 'Cargo.toml')
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          $process = Start-Process xvfb-run -ArgumentList '-a', (Join-Path $app 'target' 'release' 'consumer') -PassThru
-          Start-Sleep -Seconds 5
-          if ($process.HasExited) { throw "The consumer exited during startup with code $($process.ExitCode)." }
-          Stop-Process -Id $process.Id
-
-      - name: Publish the GitHub release
-        run: gh release edit "v$VERSION" --draft=false
 
       - uses: rust-lang/crates-io-auth-action@v1
         id: crates-io-auth

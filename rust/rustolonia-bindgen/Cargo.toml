@@ -1,6 +1,6 @@
 [package]
 name = "rustolonia-bindgen"
-version = "0.1.0"
+version = "12.1.0"
 edition = "2021"
 license = "MIT"
 description = "Code generator that emits rustolonia-sys/rustolonia from projection.ir.json"

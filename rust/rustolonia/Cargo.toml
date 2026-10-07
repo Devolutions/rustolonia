@@ -1,6 +1,6 @@
 [package]
 name = "rustolonia"
-version = "0.1.0"
+version = "12.1.0"
 edition = "2021"
 license = "MIT"
 description = "Idiomatic Rust API for Avalonia"
@@ -19,7 +19,7 @@ no-download = ["rustolonia-sys/no-download"]
 dev-host-path = ["rustolonia-sys/dev-host-path"]
 
 [dependencies]
-rustolonia-sys = { version = "=0.1.0", path = "../rustolonia-sys", default-features = false }
+rustolonia-sys = { version = "=12.1.0", path = "../rustolonia-sys", default-features = false }
 
 [dev-dependencies]
 avalonia-sample = { path = "../avalonia-sample" }

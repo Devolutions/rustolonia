@@ -442,7 +442,7 @@ dependencies = [
 
 [[package]]
 name = "rustolonia"
-version = "0.1.0"
+version = "12.1.0"
 dependencies = [
  "avalonia-sample",
  "rustolonia-sys",
@@ -450,7 +450,7 @@ dependencies = [
 
 [[package]]
 name = "rustolonia-bindgen"
-version = "0.1.0"
+version = "12.1.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -459,7 +459,7 @@ dependencies = [
 
 [[package]]
 name = "rustolonia-sys"
-version = "0.1.0"
+version = "12.1.0"
 dependencies = [
  "dirs",
  "flate2",
