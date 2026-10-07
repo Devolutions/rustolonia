@@ -156,7 +156,7 @@ jobs:
       - name: Generate Avalonia.Native COM headers
         if: runner.os == 'macOS'
         shell: pwsh
-        run: dotnet run --project nukebuild/_build.csproj --target GenerateCppHeaders
+        run: dotnet build native/Avalonia.Native/Avalonia.Native.macOS.proj -t:GenerateMicroComItems -p:BuildAvaloniaNativeXcodeProject=false
         working-directory: ./avalonia-src
 
       - name: Build Avalonia.Native for managed tests
@@ -386,7 +386,7 @@ jobs:
       - name: Generate Avalonia.Native COM headers
         if: runner.os == 'macOS'
         shell: pwsh
-        run: dotnet run --project nukebuild/_build.csproj --target GenerateCppHeaders
+        run: dotnet build native/Avalonia.Native/Avalonia.Native.macOS.proj -t:GenerateMicroComItems -p:BuildAvaloniaNativeXcodeProject=false
         working-directory: ./avalonia-src
 
       - name: Restore producer packages (retries on NuGet flakes)

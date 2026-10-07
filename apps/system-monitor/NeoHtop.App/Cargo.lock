@@ -563,14 +563,14 @@ dependencies = [
 
 [[package]]
 name = "rustolonia"
-version = "0.1.0"
+version = "12.1.0"
 dependencies = [
  "rustolonia-sys",
 ]
 
 [[package]]
 name = "rustolonia-sys"
-version = "0.1.0"
+version = "12.1.0"
 dependencies = [
  "dirs",
  "flate2",
