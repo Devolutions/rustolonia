@@ -90,7 +90,7 @@ Release tarballs (`rust/package-host.ps1`) define the minimum OS a published
 | RID | Build environment | Floor |
 | --- | --- | --- |
 | `win-x64`, `win-arm64` | `windows-latest` | Windows 10 1607 / Server 2016 (.NET 10 support floor) |
-| `linux-x64`, `linux-arm64` | Ubuntu 22.04 container | glibc 2.35 |
+| `linux-x64`, `linux-arm64` | `ubuntu-22.04` / `ubuntu-22.04-arm` runners | glibc 2.35 |
 | `osx-x64`, `osx-arm64` | `macos-latest`, `MACOSX_DEPLOYMENT_TARGET=12.0` | macOS 12 |
 
 Linux hosts are glibc-only; musl RIDs are not published.

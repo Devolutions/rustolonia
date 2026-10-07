@@ -368,6 +368,40 @@ modes, and an mtime from `SOURCE_DATE_EPOCH` (or the HEAD commit time). The
 version comes from `release-manifest.json` and must match all three crates.
 Platform floors for release builds are listed in [PLATFORMS.md](PLATFORMS.md#prebuilt-host-platform-floors).
 
+### Releasing
+
+Releases are driven by `.github/workflows/release.yml` and
+`rust/prepare-release.ps1`:
+
+1. `pwsh rust/prepare-release.ps1 -Version X.Y.Z` sets the version of the
+   three crates, the exact `rustolonia-sys` pin, `release-manifest.json`, and
+   `build/SharedVersion.props`, clears `host-checksums.txt`, and refreshes
+   `Cargo.lock`. Commit, then push the tag `vX.Y.Z`.
+2. The tag build checks that the tag matches every version, packages the
+   default host on native runners for all six RIDs, builds and launches
+   `hello_world` through the `rustolonia-sys` download path, and creates a
+   **draft** release `vX.Y.Z` with the tarballs, their symbols, `SHA256SUMS`,
+   and build provenance attestations. A version containing `-` is marked as a
+   prerelease. The job fails if the release already exists; delete the draft
+   to rebuild.
+3. `pwsh rust/prepare-release.ps1 -Checksums -FromRelease` (or
+   `-SumsFile <SHA256SUMS>`) writes the default tarball hashes into
+   `host-checksums.txt`. Commit to `master`. NativeAOT output is not
+   guaranteed to be bit-for-bit reproducible, so the hashes always come from
+   the release build itself.
+4. Run the **Release** workflow manually with `version = X.Y.Z` from
+   `master`. After approval in the `crates-io` environment, it checks that
+   `host-checksums.txt` matches `SHA256SUMS` and that the crate sources differ
+   from the tag only in `host-checksums.txt`, packages the crates, builds and
+   launches a fresh application that depends on the packaged crates through
+   `[patch.crates-io]` (downloading the host with the committed checksums),
+   publishes the GitHub release, and runs `cargo publish` for
+   `rustolonia-sys`, `rustolonia-bindgen`, and `rustolonia` with crates.io
+   trusted publishing.
+
+Signing is enabled by setting the `AVALONIA_RUST_SIGN_COMMAND` repository
+variable (see [Signing hook](#signing-hook)).
+
 ## SBOM (EU CRA) scope
 
 Rustolonia does not carry the upstream Avalonia producer's NUKE build or its

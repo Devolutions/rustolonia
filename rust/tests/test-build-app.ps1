@@ -705,6 +705,30 @@ version = "0.1.0"
     $assetHash = Write-AssetChecksum -Asset $archiveA
     Assert-True ((Get-Content -LiteralPath "$archiveA.sha256" -Raw) -eq "$assetHash  host-a.tar.gz`n") 'Checksum sidecars must use sha256sum format.'
 
+    $releaseRoot = Join-Path $scratch 'release-root'
+    foreach ($relative in @('rust/rustolonia/Cargo.toml', 'rust/rustolonia-sys/Cargo.toml', 'rust/rustolonia-bindgen/Cargo.toml', 'rust/release-manifest.json', 'build/SharedVersion.props', 'rust/rustolonia-sys/host-checksums.txt')) {
+        $destination = Join-Path $releaseRoot $relative
+        New-Item -ItemType Directory -Force -Path (Split-Path -Parent $destination) | Out-Null
+        Copy-Item -LiteralPath (Join-Path $root $relative) -Destination $destination
+    }
+    $prepareRelease = Join-Path $root 'rust' 'prepare-release.ps1'
+    & $prepareRelease -Version 9.8.7-rc.1 -SkipCargoUpdate -RustoloniaRoot $releaseRoot | Out-Null
+    Assert-True ((Get-RustoloniaReleaseVersion -RustoloniaRoot $releaseRoot) -eq '9.8.7-rc.1') 'prepare-release must bump every crate version.'
+    Assert-True ((Get-Content -LiteralPath (Join-Path $releaseRoot 'rust/rustolonia/Cargo.toml') -Raw) -match 'rustolonia-sys = \{ version = "=9\.8\.7-rc\.1"') 'prepare-release must bump the exact rustolonia-sys pin.'
+    Assert-True ((Get-Content -LiteralPath (Join-Path $releaseRoot 'build/SharedVersion.props') -Raw) -match '<Version>9\.8\.7-rc\.1</Version>') 'prepare-release must bump SharedVersion.props.'
+    $sumsLines = foreach ($rid in @('win-x64', 'win-arm64', 'linux-x64', 'linux-arm64', 'osx-x64', 'osx-arm64')) {
+        "$('a' * 64)  $(Get-HostAssetName -Version '9.8.7-rc.1' -Rid $rid)"
+        "$('b' * 64)  $(Get-HostAssetName -Version '9.8.7-rc.1' -Rid $rid -Symbols)"
+    }
+    $sumsFile = Join-Path $scratch 'SHA256SUMS'
+    [IO.File]::WriteAllLines($sumsFile, [string[]]$sumsLines)
+    & $prepareRelease -Checksums -SumsFile $sumsFile -RustoloniaRoot $releaseRoot | Out-Null
+    $checksumLines = @(Get-Content -LiteralPath (Join-Path $releaseRoot 'rust/rustolonia-sys/host-checksums.txt') | Where-Object { $_ -and -not $_.StartsWith('#') })
+    Assert-True ($checksumLines.Count -eq 6) 'host-checksums.txt must list every default host tarball.'
+    Assert-True (@($checksumLines | Where-Object { $_ -like '*symbols*' }).Count -eq 0) 'host-checksums.txt must not list symbol tarballs.'
+    [IO.File]::WriteAllLines($sumsFile, [string[]]($sumsLines | Select-Object -Skip 2))
+    Assert-Throws { & $prepareRelease -Checksums -SumsFile $sumsFile -RustoloniaRoot $releaseRoot } 'no entry for rustolonia-host-9\.8\.7-rc\.1-win-x64'
+
     if ($RunNativeSmoke) {
         $nativeTempRoot = [IO.Path]::GetTempPath()
         if ($IsMacOS) {

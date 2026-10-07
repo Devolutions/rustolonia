@@ -89,6 +89,10 @@ work. Producer changes belong in the documented patch set and upstreaming
 tracker; keep the submodule revision unchanged unless intentionally updating the
 supported producer contract.
 
-The crates remain source-pinned and `publish = false`. Changing publication,
-versioning or delivery policy requires a matching host/ABI compatibility plan
-and dependency/license provenance, not just a manifest toggle.
+`rustolonia`, `rustolonia-sys` and `rustolonia-bindgen` are published to
+crates.io in lockstep with the prebuilt host tarballs of the matching GitHub
+release; `avalonia-sample` stays `publish = false`. Follow the release
+procedure in [rust/PRODUCTIZATION.md](rust/PRODUCTIZATION.md#releasing)
+(`rust/prepare-release.ps1` and `.github/workflows/release.yml`); never bump a
+crate version or publish by hand. Changing the host/ABI contract requires a new
+version of all three crates.
