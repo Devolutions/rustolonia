@@ -352,41 +352,67 @@ fn adjacent_host_path(directory: &Path) -> Option<PathBuf> {
     candidate.exists().then_some(candidate)
 }
 
+/// Directories searched for the host, in order: the executable's directory,
+/// on macOS the app bundle's `Contents/Frameworks`, then the directory
+/// `rustolonia-sys`'s build script staged the host in (`dev-host-path`).
+fn host_search_dirs(exe_dir: Option<&Path>, build_host_dir: Option<&Path>) -> Vec<PathBuf> {
+    let mut dirs = Vec::new();
+    if let Some(exe_dir) = exe_dir {
+        dirs.push(exe_dir.to_path_buf());
+        if cfg!(target_os = "macos") {
+            dirs.push(exe_dir.join("..").join("Frameworks"));
+        }
+    }
+    dirs.extend(build_host_dir.map(Path::to_path_buf));
+    dirs
+}
+
+fn find_host(dirs: &[PathBuf]) -> std::result::Result<PathBuf, String> {
+    if let Some(found) = dirs.iter().find_map(|dir| adjacent_host_path(dir)) {
+        return Ok(found);
+    }
+    let searched = if dirs.is_empty() {
+        "no directories".to_owned()
+    } else {
+        dirs.iter()
+            .map(|dir| format!("'{}'", dir.display()))
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
+    Err(format!(
+        "{HOST_NATIVE_LIB_ENV_VAR} is not set and no {HOST_FILE_NAME} was found (searched \
+         {searched}); set {HOST_NATIVE_LIB_ENV_VAR} to override, or ship {HOST_FILE_NAME} \
+         beside this executable (see rust/PRODUCTIZATION.md#host-discovery)"
+    ))
+}
+
 /// Locates the native Avalonia host library the same way [`App::load_from_env`]
 /// does, without loading it.
 ///
 /// `RUSTOLONIA_HOST_LIB` ([`HOST_NATIVE_LIB_ENV_VAR`]) is an explicit override
 /// and always wins when set -- even to a path that does not exist yet, so
 /// [`sys::Host::load`] can surface a precise loader error instead of this
-/// function silently falling back. Otherwise this looks for the platform host
-/// library (`rustolonia_host.dll` / `.so` / `.dylib`) next to the running
-/// executable, matching the deterministic per-RID layout `rust/package.ps1`
-/// and `rust/package.sh` produce (see `rust/PRODUCTIZATION.md#host-discovery`).
+/// function silently falling back. Otherwise the platform host library
+/// (`rustolonia_host.dll` / `.so` / `.dylib`) is searched for:
+///
+/// 1. next to the running executable (the layout `rust/package.ps1` and
+///    `rust/package.sh` produce);
+/// 2. on macOS, in the app bundle's `Contents/Frameworks`;
+/// 3. in the directory where `rustolonia-sys` staged the host at build time,
+///    when the `dev-host-path` feature is enabled, so `cargo run` works
+///    without copying files.
+///
+/// See `rust/PRODUCTIZATION.md#host-discovery`.
 pub fn discover_host_path() -> Result<PathBuf> {
     if let Some(value) = std::env::var_os(HOST_NATIVE_LIB_ENV_VAR) {
         return Ok(PathBuf::from(value));
     }
-    let exe = std::env::current_exe().map_err(|error| {
-        Error::Load(format!(
-            "{HOST_NATIVE_LIB_ENV_VAR} is not set and the current executable could not be \
-             resolved to search for an adjacent {HOST_FILE_NAME}: {error}"
-        ))
-    })?;
-    let directory = exe.parent().ok_or_else(|| {
-        Error::Load(format!(
-            "{HOST_NATIVE_LIB_ENV_VAR} is not set and executable '{}' has no parent directory \
-             to search for {HOST_FILE_NAME}",
-            exe.display()
-        ))
-    })?;
-    adjacent_host_path(directory).ok_or_else(|| {
-        Error::Load(format!(
-            "{HOST_NATIVE_LIB_ENV_VAR} is not set and no {HOST_FILE_NAME} was found next to \
-             '{}'; set {HOST_NATIVE_LIB_ENV_VAR} to override, or copy the published \
-             {HOST_FILE_NAME} beside this executable (see rust/PRODUCTIZATION.md#host-discovery)",
-            directory.display()
-        ))
-    })
+    let exe = std::env::current_exe().ok();
+    let dirs = host_search_dirs(
+        exe.as_deref().and_then(Path::parent),
+        sys::BUILD_HOST_DIR.map(Path::new),
+    );
+    find_host(&dirs).map_err(Error::Load)
 }
 
 impl App {
@@ -621,13 +647,56 @@ mod host_discovery_tests {
     #[test]
     fn missing_env_and_missing_adjacent_host_reports_both_mechanisms() {
         let _lock = ENV_LOCK.lock().unwrap_or_else(|error| error.into_inner());
-        let _guard = EnvVarGuard::unset();
-        // The test binary's own directory legitimately has no Avalonia.Host
-        // next to it, so this exercises the real "nothing found" error path
-        // end to end (through `std::env::current_exe`).
-        let error = discover_host_path().expect_err("neither mechanism should resolve");
-        let message = error.to_string();
+        let directory = std::env::temp_dir().join(format!(
+            "avalonia-host-discovery-none-{}-{}",
+            std::process::id(),
+            line!()
+        ));
+        let dirs = host_search_dirs(Some(&directory), Some(&directory.join("build")));
+        let message = find_host(&dirs).expect_err("nothing should resolve");
         assert!(message.contains(HOST_NATIVE_LIB_ENV_VAR));
         assert!(message.contains(HOST_FILE_NAME));
+        for dir in &dirs {
+            assert!(message.contains(&dir.display().to_string()), "{message}");
+        }
+    }
+
+    #[test]
+    fn search_order_is_exe_dir_then_bundle_then_build_dir() {
+        let exe_dir = Path::new("exe");
+        let build_dir = Path::new("build");
+        let mut expected = vec![PathBuf::from("exe")];
+        if cfg!(target_os = "macos") {
+            expected.push(Path::new("exe").join("..").join("Frameworks"));
+        }
+        expected.push(PathBuf::from("build"));
+        assert_eq!(host_search_dirs(Some(exe_dir), Some(build_dir)), expected);
+        assert_eq!(
+            host_search_dirs(None, Some(build_dir)),
+            vec![PathBuf::from("build")]
+        );
+        assert!(host_search_dirs(None, None).is_empty());
+    }
+
+    #[test]
+    fn the_first_directory_containing_the_host_wins() {
+        let root = std::env::temp_dir().join(format!(
+            "avalonia-host-discovery-order-{}-{}",
+            std::process::id(),
+            line!()
+        ));
+        let (exe_dir, build_dir) = (root.join("exe"), root.join("build"));
+        std::fs::create_dir_all(&exe_dir).expect("create exe directory");
+        std::fs::create_dir_all(&build_dir).expect("create build directory");
+        std::fs::write(build_dir.join(HOST_FILE_NAME), b"stub").expect("write build host");
+        let dirs = host_search_dirs(Some(&exe_dir), Some(&build_dir));
+
+        let from_build = find_host(&dirs);
+        std::fs::write(exe_dir.join(HOST_FILE_NAME), b"stub").expect("write exe host");
+        let from_exe = find_host(&dirs);
+
+        std::fs::remove_dir_all(&root).ok();
+        assert_eq!(from_build, Ok(build_dir.join(HOST_FILE_NAME)));
+        assert_eq!(from_exe, Ok(exe_dir.join(HOST_FILE_NAME)));
     }
 }

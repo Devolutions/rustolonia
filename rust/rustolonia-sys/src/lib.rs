@@ -97,6 +97,11 @@ type GetHostInfoFn = unsafe extern "C" fn(*mut HostInfoNative) -> i32;
 /// is only accepted if it reports this exact fingerprint.
 pub const ABI_FINGERPRINT: &str = env!("RUSTOLONIA_ABI_FINGERPRINT");
 
+/// Directory where `build.rs` staged the host, when the `dev-host-path`
+/// feature is enabled and a host was staged. Only meaningful on the build
+/// machine; used as a last-resort runtime search path.
+pub const BUILD_HOST_DIR: Option<&str> = option_env!("RUSTOLONIA_BUILD_HOST_DIR");
+
 #[repr(C)]
 struct HostInfoNative {
     struct_size: u32,

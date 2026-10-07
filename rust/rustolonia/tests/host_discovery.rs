@@ -54,6 +54,13 @@ fn explicit_override_always_wins() {
 fn missing_override_and_missing_adjacent_host_names_both_mechanisms() {
     let _lock = ENV_LOCK.lock().unwrap_or_else(|error| error.into_inner());
     let _guard = EnvVarGuard::unset();
+    // When `rustolonia-sys` staged a real host at build time (`dev-host-path`
+    // with `RUSTOLONIA_HOST_DIR` or a download), discovery legitimately
+    // succeeds; the "nothing found" path is covered by the unit tests.
+    if let Some(dir) = rustolonia_sys::BUILD_HOST_DIR {
+        eprintln!("skipping: a build-time host directory is staged at {dir}");
+        return;
+    }
     // `cargo test`'s own binary directory legitimately has no rustolonia_host
     // next to it, so this exercises the real "nothing found" path end to end
     // (through `std::env::current_exe`), not just the pure lookup helper.

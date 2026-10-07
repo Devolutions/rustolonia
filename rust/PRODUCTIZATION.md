@@ -214,13 +214,22 @@ resolves the native `Avalonia.Host` library through `rustolonia::discover_host_p
    `std::env::current_exe()`. This is what lets a packaged application run
    with no environment variable at all: [`package.ps1`](#deterministic-per-rid-artifact-layout)
    copy the host and the application binary into the same directory.
+3. **macOS app bundle** -- on macOS, `<exe dir>/../Frameworks`, i.e.
+   `Contents/Frameworks` of an `.app` bundle.
+4. **Build-time host directory** -- with the `dev-host-path` feature (on by
+   default), the directory where `rustolonia-sys`'s build script staged the
+   host (`RUSTOLONIA_HOST_DIR` or the download cache) is baked into the
+   binary as `rustolonia_sys::BUILD_HOST_DIR`. This makes `cargo run` and
+   `cargo test` work without copying files. It points at the build machine,
+   so distributable builds should disable `dev-host-path` and ship the host
+   beside the executable.
 
-If neither resolves, the error names both the environment variable and the
-host file name it looked for next to the executable's directory. See
+If nothing resolves, the error names the environment variable, the host file
+name, and every directory searched. See
 `rust/rustolonia/src/runtime.rs` (`discover_host_path`, `HOST_NATIVE_LIB_ENV_VAR`)
 for the implementation, `rust/rustolonia/src/runtime.rs`'s
-`host_discovery_tests` module for unit tests of the override/adjacent-lookup
-precedence and error message, and `rust/rustolonia/tests/host_discovery.rs` for
+`host_discovery_tests` module for unit tests of the search order and error
+message, and `rust/rustolonia/tests/host_discovery.rs` for
 the same behavior exercised through the crate's public API.
 
 ## Deterministic per-RID artifact layout
