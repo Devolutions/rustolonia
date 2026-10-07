@@ -1,6 +1,6 @@
 diff --git a/src/Avalonia.Controls/Automation/Peers/TableViewRowAutomationPeer.cs b/src/Avalonia.Controls/Automation/Peers/TableViewRowAutomationPeer.cs
 new file mode 100644
-index 000000000..b64ad4df9
+index 0000000..b64ad4d
 --- /dev/null
 +++ b/src/Avalonia.Controls/Automation/Peers/TableViewRowAutomationPeer.cs
 @@ -0,0 +1,113 @@
@@ -118,7 +118,7 @@ index 000000000..b64ad4df9
 +    }
 +}
 diff --git a/src/Avalonia.Controls/Avalonia.Controls.csproj b/src/Avalonia.Controls/Avalonia.Controls.csproj
-index 2a67934a9..188ee7bb2 100644
+index 65ad4ab..c79ff63 100644
 --- a/src/Avalonia.Controls/Avalonia.Controls.csproj
 +++ b/src/Avalonia.Controls/Avalonia.Controls.csproj
 @@ -12,7 +12,9 @@
@@ -134,7 +134,7 @@ index 2a67934a9..188ee7bb2 100644
      <InternalsVisibleTo Include="Avalonia.Controls.UnitTests, PublicKey=$(AvaloniaPublicKey)" />
 diff --git a/src/Avalonia.Controls/IViewportRangeSource.cs b/src/Avalonia.Controls/IViewportRangeSource.cs
 new file mode 100644
-index 000000000..c9cfbfe8d
+index 0000000..c9cfbfe
 --- /dev/null
 +++ b/src/Avalonia.Controls/IViewportRangeSource.cs
 @@ -0,0 +1,16 @@
@@ -155,23 +155,10 @@ index 000000000..c9cfbfe8d
 +    void EnsureVisibleRange(int firstIndex, int lastIndex);
 +}
 diff --git a/src/Avalonia.Controls/Presenters/TableViewLayoutHelper.cs b/src/Avalonia.Controls/Presenters/TableViewLayoutHelper.cs
-index 9492427db..2cdb29c8c 100644
+index 479cb52..736622b 100644
 --- a/src/Avalonia.Controls/Presenters/TableViewLayoutHelper.cs
 +++ b/src/Avalonia.Controls/Presenters/TableViewLayoutHelper.cs
-@@ -26,10 +26,20 @@ public static bool UpdateActualWidths(
- 
-         for (var i = 0; i < columns.Count; i++)
-         {
-+            if (!columns[i].IsVisible)
-+            {
-+                if (columns[i].ActualWidth != 0)
-+                {
-+                    columns[i].ActualWidth = 0;
-+                    modified = true;
-+                }
-+                continue;
-+            }
-+
+@@ -39,7 +39,7 @@ public static bool UpdateActualWidths(
              var width = columns[i].Width;
              if (width.IsAbsolute)
              {
@@ -180,17 +167,7 @@ index 9492427db..2cdb29c8c 100644
  
                  if (useLayoutRounding)
                      actualWidth = LayoutHelper.RoundLayoutValue(actualWidth, layoutScale);
-@@ -68,6 +78,9 @@ public static bool UpdateActualWidths(
- 
-         for (var i = 0; i < columns.Count; i++)
-         {
-+            if (!columns[i].IsVisible)
-+                continue;
-+
-             var width = columns[i].Width;
-             if (!width.IsAbsolute)
-             {
-@@ -85,6 +98,18 @@ public static bool UpdateActualWidths(
+@@ -98,6 +98,18 @@ public static bool UpdateActualWidths(
                  else
                      roundedEdge = unroundedEdge;
  
@@ -210,10 +187,10 @@ index 9492427db..2cdb29c8c 100644
                  {
                      columns[i].ActualWidth = actualWidth;
 diff --git a/src/Avalonia.Controls/TableView.cs b/src/Avalonia.Controls/TableView.cs
-index 6fbc63447..da93c8fe8 100644
+index e79aa81..00609f7 100644
 --- a/src/Avalonia.Controls/TableView.cs
 +++ b/src/Avalonia.Controls/TableView.cs
-@@ -284,4 +284,30 @@ protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs chang
+@@ -286,4 +286,30 @@ protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs chang
                  column.UpdateCanUserEffectivelyResize();
          }
      }
@@ -245,10 +222,10 @@ index 6fbc63447..da93c8fe8 100644
 +    }
  }
 diff --git a/src/Avalonia.Controls/TableViewColumn.cs b/src/Avalonia.Controls/TableViewColumn.cs
-index d10278faf..37ee24d40 100644
+index d2ef2fb..08a7469 100644
 --- a/src/Avalonia.Controls/TableViewColumn.cs
 +++ b/src/Avalonia.Controls/TableViewColumn.cs
-@@ -38,6 +38,18 @@ public class TableViewColumn : StyledElement, IHeadered
+@@ -44,6 +44,18 @@ public class TableViewColumn : StyledElement, IHeadered
      public static readonly StyledProperty<GridLength> WidthProperty =
          AvaloniaProperty.Register<TableViewColumn, GridLength>(nameof(Width), new GridLength(1, GridUnitType.Star));
  
@@ -267,26 +244,7 @@ index d10278faf..37ee24d40 100644
      /// <summary>
      /// Defines the <see cref="CellTheme"/> property.
      /// </summary>
-@@ -56,6 +68,18 @@ public class TableViewColumn : StyledElement, IHeadered
-     public static readonly StyledProperty<BindingBase?> BindingProperty =
-         AvaloniaProperty.Register<TableViewColumn, BindingBase?>(nameof(Binding));
- 
-+    /// <summary>
-+    /// Defines the <see cref="IsVisible"/> property.
-+    /// </summary>
-+    /// <remarks>
-+    /// <see cref="TableViewColumn"/> is not a <see cref="Visual"/>, so
-+    /// <c>Visual.IsVisible</c> is not available in compiled AXAML. This
-+    /// property is the column-level hide: layout assigns it zero width and
-+    /// the resize thumb is disabled.
-+    /// </remarks>
-+    public static readonly StyledProperty<bool> IsVisibleProperty =
-+        AvaloniaProperty.Register<TableViewColumn, bool>(nameof(IsVisible), true);
-+
-     /// <summary>
-     /// Defines the <see cref="CanUserResize"/> property.
-     /// </summary>
-@@ -125,6 +149,52 @@ public GridLength Width
+@@ -140,6 +152,52 @@ public GridLength Width
          set => SetValue(WidthProperty, value);
      }
  
@@ -339,48 +297,18 @@ index d10278faf..37ee24d40 100644
      /// <summary>
      /// Gets or sets the theme to apply to the cells.
      /// It must target <see cref="TableViewCell"/>.
-@@ -159,6 +229,16 @@ public BindingBase? Binding
-         set => SetValue(BindingProperty, value);
-     }
- 
-+    /// <summary>
-+    /// Gets or sets whether the column is shown. Hidden columns occupy no
-+    /// layout width. The default is true. Bindable from compiled AXAML.
-+    /// </summary>
-+    public bool IsVisible
-+    {
-+        get => GetValue(IsVisibleProperty);
-+        set => SetValue(IsVisibleProperty, value);
-+    }
-+
-     /// <summary>
-     /// Gets or sets whether the column can be resized.
-     /// Set to null to use the value from <see cref="Avalonia.Controls.TableView.CanUserResizeColumns"/>.
-@@ -232,6 +312,13 @@ protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs chang
- 
-         if (change.Property == WidthProperty)
-             TableView?.OnColumnsSizeChanged();
-+        else if (change.Property == MinWidthProperty || change.Property == MaxWidthProperty)
-+            TableView?.OnColumnsSizeChanged();
-+        else if (change.Property == IsVisibleProperty)
-+        {
-+            UpdateCanUserEffectivelyResize();
-+            TableView?.OnColumnsSizeChanged();
-+        }
-         else if (change.Property == CanUserResizeProperty)
-             UpdateCanUserEffectivelyResize();
-         else
-@@ -244,7 +331,7 @@ protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs chang
-     }
- 
-     internal void UpdateCanUserEffectivelyResize()
--        => CanUserEffectivelyResize = CanUserResize ?? TableView?.CanUserResizeColumns ?? true;
-+        => CanUserEffectivelyResize = IsVisible && (CanUserResize ?? TableView?.CanUserResizeColumns ?? true);
- 
-     internal override void BuildDebugDisplay(StringBuilder builder, bool includeContent)
+@@ -247,7 +305,8 @@ protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs chang
      {
+         base.OnPropertyChanged(change);
+ 
+-        if (change.Property == WidthProperty || change.Property == IsVisibleProperty)
++        if (change.Property == WidthProperty || change.Property == IsVisibleProperty ||
++            change.Property == MinWidthProperty || change.Property == MaxWidthProperty)
+             TableView?.OnColumnsSizeChanged();
+ 
+         if (change.Property == CanUserResizeProperty)
 diff --git a/src/Avalonia.Controls/TableViewColumnHeader.cs b/src/Avalonia.Controls/TableViewColumnHeader.cs
-index 4afe51e47..b5c954dc9 100644
+index 6cc3bf7..db920f7 100644
 --- a/src/Avalonia.Controls/TableViewColumnHeader.cs
 +++ b/src/Avalonia.Controls/TableViewColumnHeader.cs
 @@ -61,8 +61,10 @@ private void OnResizerDragDelta(object? sender, VectorEventArgs e)
@@ -396,7 +324,7 @@ index 4afe51e47..b5c954dc9 100644
      }
  
 diff --git a/src/Avalonia.Controls/TableViewRow.cs b/src/Avalonia.Controls/TableViewRow.cs
-index 3084f2384..edfe5773c 100644
+index 3084f23..edfe577 100644
 --- a/src/Avalonia.Controls/TableViewRow.cs
 +++ b/src/Avalonia.Controls/TableViewRow.cs
 @@ -1,4 +1,5 @@
@@ -433,7 +361,7 @@ index 3084f2384..edfe5773c 100644
  }
 diff --git a/tests/Avalonia.Controls.UnitTests/Automation/TableViewRowAutomationPeerTests.cs b/tests/Avalonia.Controls.UnitTests/Automation/TableViewRowAutomationPeerTests.cs
 new file mode 100644
-index 000000000..fd23c7e91
+index 0000000..fd23c7e
 --- /dev/null
 +++ b/tests/Avalonia.Controls.UnitTests/Automation/TableViewRowAutomationPeerTests.cs
 @@ -0,0 +1,135 @@
@@ -574,7 +502,7 @@ index 000000000..fd23c7e91
 +}
 diff --git a/tests/Avalonia.Controls.UnitTests/Presenters/TableViewColumnWidthLimitTests.cs b/tests/Avalonia.Controls.UnitTests/Presenters/TableViewColumnWidthLimitTests.cs
 new file mode 100644
-index 000000000..8ab53caa3
+index 0000000..8ab53ca
 --- /dev/null
 +++ b/tests/Avalonia.Controls.UnitTests/Presenters/TableViewColumnWidthLimitTests.cs
 @@ -0,0 +1,109 @@
@@ -688,7 +616,7 @@ index 000000000..8ab53caa3
 +    }
 +}
 diff --git a/tests/Avalonia.Controls.UnitTests/TableViewTests.cs b/tests/Avalonia.Controls.UnitTests/TableViewTests.cs
-index e347d436d..5babf022b 100644
+index 638632a..e671fc2 100644
 --- a/tests/Avalonia.Controls.UnitTests/TableViewTests.cs
 +++ b/tests/Avalonia.Controls.UnitTests/TableViewTests.cs
 @@ -30,6 +30,30 @@ public void Container_For_Each_Item_Is_TableViewRow()

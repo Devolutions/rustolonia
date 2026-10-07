@@ -2,7 +2,7 @@
   "schemaVersion": 3,
   "kind": "released",
   "projectionIrVersion": 17,
-  "producerPin": "9654332a79f637473da96054f75b2a16deaa557e",
+  "producerPin": "8eeda4f6f546165b3f72e63c9f42247abb306905",
   "abiDefinitions": {
     "hresult": "int32_t",
     "callWin32": "__stdcall",

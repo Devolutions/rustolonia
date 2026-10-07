@@ -740,7 +740,7 @@ mod tests {
         assert_eq!(released.kind, "released");
         assert_eq!(
             released.producer_pin,
-            "9654332a79f637473da96054f75b2a16deaa557e"
+            "8eeda4f6f546165b3f72e63c9f42247abb306905"
         );
         assert_eq!(released.abi_definitions.hresult, "int32_t");
         assert_eq!(released.abi_definitions.call_win32, "__stdcall");

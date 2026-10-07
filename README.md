@@ -3,14 +3,14 @@
 First-class Rust bindings for [Avalonia](https://avaloniaui.net/), projected
 over a nano-COM ABI served by a NativeAOT host. This repository contains the
 complete bindings effort; the Avalonia framework itself is consumed from the
-pinned `avalonia-src` producer submodule at commit
-`9654332a79f637473da96054f75b2a16deaa557e`.
+pinned `avalonia-src` producer submodule at upstream Avalonia `12.1.3` (commit
+`8eeda4f6f546165b3f72e63c9f42247abb306905`).
 
 ## Layout
 
 | Directory | Contents |
 |---|---|
-| `avalonia-src/` | Avalonia producer pinned to `9654332a79f637473da96054f75b2a16deaa557e`, currently cloned from the `mamoreau-devolutions/Avalonia` fork |
+| `avalonia-src/` | Avalonia producer pinned to the upstream `12.1.3` tag (`8eeda4f6f546165b3f72e63c9f42247abb306905`), cloned from `AvaloniaUI/Avalonia` |
 | `avalonia-patches/` | Additive framework patches applied onto the pinned checkout (see its README + UPSTREAM.md) |
 | `rust/` | The Rust workspace: `rustolonia` (safe bindings), `rustolonia-sys` (ABI bindings), `rustolonia-bindgen` (IR to Rust generator), `avalonia-sample` (flagship sample's application-owned view-model API), templates, build scripts, and the checked-in IR |
 | `host/` | `Avalonia.Host` - the C# NativeAOT host that serves the ABI, plus its generated object model |
