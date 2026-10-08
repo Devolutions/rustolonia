@@ -10,8 +10,8 @@ rustolonia = { git = "https://github.com/Devolutions/rustolonia", tag = "v12.1.0
 
 Use this dependency once the `v12.1.0` GitHub release is published. Cargo
 resolves `rustolonia-sys` from the same git revision automatically; no
-registry patches or crates.io publication are required. The `host-v12.1.0`
-build tag is not consumable because it precedes the host checksum commit.
+registry patches or crates.io publication are required. The final tag includes
+the checksums of the actual release build.
 Rust 1.88 or newer is required. Rustolonia `12.1.0` uses Avalonia `12.1.3`:
 major/minor identify the Avalonia line, while the patch counts Rustolonia
 releases independently. The API is still experimental; use an exact release
@@ -55,8 +55,8 @@ binary.
 
 The Rust and native host versions are locked to each other: `rustolonia X.Y.Z`
 pins `rustolonia-sys =X.Y.Z`, which only downloads the `X.Y.Z` host release
-built from the `host-vX.Y.Z` build tag. The final `vX.Y.Z` consumer tag differs
-only by the committed host checksums. When the app starts, the host's ABI fingerprint is
+built from the recorded Actions build revision. The `vX.Y.Z` consumer tag differs
+from that revision only by the committed host checksums. When the app starts, the host's ABI fingerprint is
 checked against the one the crate was built with.
 
 Linux needs X11 (Wayland sessions work through XWayland) and fontconfig;
