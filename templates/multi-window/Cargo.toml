@@ -1,0 +1,12 @@
+[package]
+name = "rustolonia-multi-window-app"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.88"
+publish = false
+description = "Standalone multi-window application using the Rustolonia release host"
+
+[dependencies]
+rustolonia = { git = "https://github.com/Devolutions/rustolonia", tag = "v12.1.0" }
+
+[workspace]
