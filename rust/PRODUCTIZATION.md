@@ -424,7 +424,8 @@ and skips `cargo package`. Add `-UseCommittedChecksums` to verify the hashes
 embedded in that tag, rather than overriding them with local sidecars.
 The release publication gate uses this mode with `-Distributable`, an empty
 host cache, and the final tag from its local git checkout. Only the host
-download base URL is redirected while the GitHub release is still a draft.
+download base URL is redirected to the staged build artifacts before the
+GitHub release is created.
 
 ### CI action policy
 
@@ -476,64 +477,74 @@ Releases are driven by `.github/workflows/release.yml` and
 1. `pwsh rust/prepare-release.ps1 -Version X.Y.Z` sets the version of the
    three crates, the exact `rustolonia-sys` pin, `release-manifest.json`, and
    `build/SharedVersion.props`, clears `host-checksums.txt`, and refreshes
-   `Cargo.lock`. Commit, then push the build tag `host-vX.Y.Z`.
-2. The tag build checks that the tag matches every version, packages the
+   `Cargo.lock`. Commit to `master`, then dispatch `phase = build` with
+   `version = X.Y.Z`. No build tag or GitHub release is created.
+2. The build checks that the requested version matches every version, packages the
    default host on native runners for all six RIDs, builds and launches a
    standalone app against the packaged crates through the `rustolonia-sys`
-   download path (`rust/tests/test-standalone-app.ps1`), and creates a
-   **draft** release `host-vX.Y.Z` with the tarballs, their symbols, `SHA256SUMS`,
-   and build provenance attestations. A version containing `-` is marked as a
-   prerelease. The job fails if either the build or final release already
-   exists. Do not rebuild or replace artifacts once published.
-3. `pwsh rust/prepare-release.ps1 -Checksums -FromRelease` (or
-   `-SumsFile <SHA256SUMS>`) writes the default tarball hashes into
+   download path (`rust/tests/test-standalone-app.ps1`), and stages an Actions
+   artifact named `rustolonia-release-X.Y.Z` with the six tarballs, their
+   symbols, and `SHA256SUMS`, retained for 90 days. Build provenance attestations
+   are generated for the tarballs. Record the successful run ID. The build
+   fails if the final `vX.Y.Z` tag already exists.
+3. Download the staged artifact from that run.
+   `pwsh rust/prepare-release.ps1 -Checksums -SumsFile <SHA256SUMS>`
+   writes the default tarball hashes into
    `host-checksums.txt`. Commit only this file to `master`, then push the
    final consumer tag `vX.Y.Z` on that commit. NativeAOT output is not
    guaranteed to be bit-for-bit reproducible, so the hashes always come from
    the release build itself.
 4. Run the **Release** workflow manually with `phase = publish` and `version = X.Y.Z` from
-   `master`, leaving `publish_crates = false` for a GitHub-only release.
+   `master`, setting `build_run_id` to the successful build-phase run ID and
+   leaving `publish_crates = false` for a GitHub-only release.
    It checks out the final tag, verifies all assets against `SHA256SUMS`,
    checks that the committed host hashes match, and requires the final tag
-   to descend from the build tag with no changes other than
+   to descend from that run's source revision with no changes other than
    `host-checksums.txt` anywhere in the repository. It builds and launches a
    fresh git-dependent application with the tag's committed checksums, then
-   promotes the draft to the final `vX.Y.Z` GitHub release without rebuilding
-   the host. This path needs no crates.io credentials or environment approval.
+   creates the `vX.Y.Z` GitHub release without rebuilding the host.
+   **Releases are non-draft by default**. Set `draft = true` to create a draft
+   under the same `vX.Y.Z` tag instead; manually publish that draft when ready,
+   without moving its tag or replacing its assets. A version containing `-`
+   is marked as a prerelease independently of the draft option. Existing
+   releases are never overwritten. This path needs no crates.io credentials
+   or environment approval.
 5. To also publish crates, select `publish_crates = true`. The separate
    `publish-crates` job requires approval in the `crates-io` environment and
    configured crates.io trusted publishing for all three crates. It packages
    and publishes `rustolonia-sys`, `rustolonia-bindgen`, and `rustolonia`.
-   This option can also be selected on a later manual run for an already
-   published GitHub release; its assets and source are reverified first.
+   This cannot be combined with `draft = true`. Re-running publication for
+   an existing release fails rather than overwriting assets.
 
 For the first GitHub-only release, this PR already prepares version `12.1.0`.
 After merging it, start **Release** from `master` with `phase = build`,
 `version = 12.1.0`, and `publish_crates = false`. The build phase validates
-the version and creates the immutable `host-v12.1.0` tag, then runs the six
-host builds in the same workflow. Tags pushed with `GITHUB_TOKEN` do not
-trigger a second workflow. Equivalently:
+the version and stages the six host builds without pushing any tags.
+Only the checksum-bearing `v12.1.0` tag is needed. Equivalently:
 
 ```powershell
 gh workflow run release.yml --ref master -f phase=build -f version=12.1.0 -f publish_crates=false
-# Wait for the host build and draft release to finish successfully.
+# Wait for the build to succeed; replace RUN_ID below with its run ID.
+gh run download RUN_ID --name rustolonia-release-12.1.0 --dir release-assets
 # In an up-to-date master checkout:
-pwsh ./rust/prepare-release.ps1 -Checksums -FromRelease
+pwsh ./rust/prepare-release.ps1 -Checksums -SumsFile release-assets/SHA256SUMS
 git add rust/rustolonia-sys/host-checksums.txt
 git commit -m "Pin rustolonia 12.1.0 host checksums"
 git tag -a v12.1.0 -m "rustolonia 12.1.0"
 git push origin master v12.1.0
-gh workflow run release.yml --ref master -f phase=publish -f version=12.1.0 -f publish_crates=false
+gh workflow run release.yml --ref master -f phase=publish -f version=12.1.0 -f build_run_id=RUN_ID -f publish_crates=false -f draft=false
 ```
 
 Do not push `v12.1.0` before committing the actual six host hashes: Cargo
 downloads the source at the tag, not later commits on `master`. Wait for the
 manual publication gate before telling consumers to use that tag. If any
-source change is needed after the host build, start a new version/build tag
-instead of mixing changed source with the existing artifacts.
+source change is needed after staging the host build, run a new build before
+tagging. Once the final tag or release exists, use a new version instead of
+mixing changed source with the existing artifacts. `-FromRelease` remains
+available to read checksums from an existing `vX.Y.Z` release, not for staging.
 
 The repository must allow GitHub Actions and the workflow's
-`contents: write` permission to create the build tag and publish the release.
+`contents: write` permission to publish the release.
 All six native runner labels must be available to the repository. No
 additional secret is required for a GitHub-only release. The provenance step
 uses GitHub's `id-token: write` and `attestations: write` permissions.

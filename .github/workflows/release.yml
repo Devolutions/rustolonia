@@ -1,19 +1,16 @@
 name: Release
 
 # Release procedure (see rust/PRODUCTIZATION.md#releasing):
-#   1. rust/prepare-release.ps1 -Version X.Y.Z, commit, push tag host-vX.Y.Z.
-#      -> the `build` jobs upload host tarballs to a draft release host-vX.Y.Z.
-#   2. rust/prepare-release.ps1 -Checksums -FromRelease, commit to master.
+#   1. Prepare and merge the version, then dispatch phase=build from master.
+#      -> stage tarballs and SHA256SUMS as Actions artifacts (no tag/release).
+#   2. Download SHA256SUMS from that run, commit host checksums to master.
 #      Push the consumer tag vX.Y.Z on that checksum-bearing commit.
-#   3. Run this workflow manually with version X.Y.Z (GitHub-only by default).
-#      -> verify a standalone git consumer, promote the draft to vX.Y.Z.
+#   3. Dispatch phase=publish with build_run_id and version X.Y.Z.
+#      -> verify a standalone git consumer, create release vX.Y.Z.
+#         Non-draft by default; draft=true stages a draft instead.
 #         Optionally publish crates after approval in `crates-io`.
-# After merging the first release preparation, dispatch phase=build from master
-# instead of step 1. Dispatch phase=publish for step 3.
 
 on:
-  push:
-    tags: ['host-v*']
   workflow_dispatch:
     inputs:
       phase:
@@ -33,21 +30,29 @@ on:
         description: Also publish to crates.io (requires trusted publishing and environment approval)
         default: false
         type: boolean
+      build_run_id:
+        description: Successful build-phase run ID whose artifacts and source must match the final tag
+        default: ''
+        type: string
+      draft:
+        description: Create a draft GitHub release instead of publishing immediately
+        default: false
+        type: boolean
 
 permissions:
   contents: read
 
 concurrency:
-  group: release-${{ inputs.version || github.ref_name }}
+  group: release-${{ inputs.version }}
   cancel-in-progress: false
 
 jobs:
   version:
     name: check version
-    if: github.event_name == 'push' || inputs.phase == 'build'
+    if: inputs.phase == 'build'
     runs-on: ubuntu-22.04
     permissions:
-      contents: write
+      contents: read
     outputs:
       version: ${{ steps.version.outputs.version }}
       prerelease: ${{ steps.version.outputs.prerelease }}
@@ -56,18 +61,15 @@ jobs:
         with:
           fetch-depth: 0
       - id: version
-        name: Tag must match the crate, manifest and SharedVersion.props versions
+        name: Check release version and dispatch
         shell: pwsh
         run: |
           . ./rust/package-shared.ps1
           $version = Get-RustoloniaReleaseVersion -RustoloniaRoot $PWD
-          if ($env:GITHUB_EVENT_NAME -eq 'push') {
-            if ($env:GITHUB_REF_NAME -ne "host-v$version") { throw "Tag $env:GITHUB_REF_NAME does not match version $version." }
-          } else {
-            if ($env:GITHUB_REF -ne 'refs/heads/master') { throw 'Dispatch the host build from master after merging the release preparation.' }
-            if ($env:REQUESTED_VERSION -ne $version) { throw "Requested version $env:REQUESTED_VERSION does not match version $version." }
-            if ($env:PUBLISH_CRATES -eq 'true') { throw 'publish_crates is only valid for the publish phase.' }
-          }
+          if ($env:GITHUB_REF -ne 'refs/heads/master') { throw 'Dispatch the host build from master after merging the release preparation.' }
+          if ($env:REQUESTED_VERSION -ne $version) { throw "Requested version $env:REQUESTED_VERSION does not match version $version." }
+          if ($env:PUBLISH_CRATES -eq 'true') { throw 'publish_crates is only valid for the publish phase.' }
+          if (@(git tag --list "v$version").Count -gt 0) { throw "Final tag v$version already exists; use the publish phase for its staged build." }
           if ((Get-Content build/SharedVersion.props -Raw) -notmatch "<Version>$([regex]::Escape($version))</Version>") {
             throw "build/SharedVersion.props does not match version $version."
           }
@@ -76,18 +78,6 @@ jobs:
         env:
           REQUESTED_VERSION: ${{ inputs.version }}
           PUBLISH_CRATES: ${{ inputs.publish_crates }}
-
-      - name: Create the immutable host build tag
-        if: github.event_name == 'workflow_dispatch'
-        shell: pwsh
-        run: |
-          $version = '${{ steps.version.outputs.version }}'
-          $existing = @(git tag --list "host-v$version" "v$version")
-          if ($existing.Count -gt 0) { throw "Release tags already exist: $($existing -join ', '). Use the publish phase for an existing build." }
-          git tag "host-v$version"
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          git push origin "host-v$version"
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
   build:
     name: host (${{ matrix.rid }})
@@ -112,7 +102,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: host-v${{ needs.version.outputs.version }}
+          ref: ${{ github.sha }}
           submodules: recursive
 
       - name: Apply Avalonia source patches
@@ -177,11 +167,13 @@ jobs:
         shell: pwsh
         run: ./rust/tests/test-standalone-app.ps1 -Rid ${{ matrix.rid }} -TarballDirectory rust/artifacts/host -WorkDirectory "$env:RUNNER_TEMP/standalone-app"
 
-      - name: Build and launch a standalone app against the git build tag
+      - name: Build and launch a standalone app against the build source
         shell: pwsh
         run: |
+          git tag release-test-source
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ./rust/tests/test-standalone-app.ps1 -Rid ${{ matrix.rid }} -TarballDirectory rust/artifacts/host `
-            -GitRepository ([Uri]::new("$($PWD.Path)/").AbsoluteUri) -GitTag "host-v$env:VERSION" `
+            -GitRepository ([Uri]::new("$($PWD.Path)/").AbsoluteUri) -GitTag release-test-source `
             -WorkDirectory (Join-Path $env:RUNNER_TEMP 'git-app')
 
       - uses: actions/upload-artifact@v4
@@ -190,12 +182,12 @@ jobs:
           path: rust/artifacts/host/*.tar.gz
           if-no-files-found: error
 
-  draft-release:
-    name: draft GitHub release
+  stage-release:
+    name: stage release artifacts
     needs: [version, build]
     runs-on: ubuntu-22.04
     permissions:
-      contents: write
+      contents: read
       id-token: write
       attestations: write
     env:
@@ -217,15 +209,12 @@ jobs:
         with:
           subject-path: dist/*.tar.gz
 
-      - name: Create the draft release
-        run: |
-          if gh release view "host-v$VERSION" > /dev/null 2>&1 || gh release view "v$VERSION" > /dev/null 2>&1; then
-            echo "Release for $VERSION already exists; do not overwrite released host bytes." >&2
-            exit 1
-          fi
-          flags=(--draft --verify-tag --title "rustolonia $VERSION" --notes "Prebuilt rustolonia hosts for rustolonia-sys $VERSION.")
-          if [ '${{ needs.version.outputs.prerelease }}' = 'true' ]; then flags+=(--prerelease); fi
-          gh release create "host-v$VERSION" "${flags[@]}" dist/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rustolonia-release-${{ needs.version.outputs.version }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 90
 
   publish:
     name: publish ${{ inputs.version }}
@@ -233,10 +222,14 @@ jobs:
     runs-on: ubuntu-22.04
     permissions:
       contents: write
+      actions: read
     env:
       VERSION: ${{ inputs.version }}
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
+      BUILD_RUN_ID: ${{ inputs.build_run_id }}
+      DRAFT: ${{ inputs.draft }}
+      PUBLISH_CRATES: ${{ inputs.publish_crates }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -256,23 +249,37 @@ jobs:
       - name: Install Linux smoke-test display
         run: sudo apt-get update && sudo apt-get install --yes xvfb
 
-      - name: Download the release assets
+      - name: Validate the staged build
         shell: pwsh
         run: |
-          $releaseTag = "host-v$env:VERSION"
-          $draft = gh release view $releaseTag --json isDraft
-          if ($LASTEXITCODE -eq 0) {
-            if (-not ($draft | ConvertFrom-Json).isDraft) { throw 'The host build release must be a draft.' }
-          } else {
-            $releaseTag = "v$env:VERSION"
-            $published = gh release view $releaseTag --json isDraft
-            if ($LASTEXITCODE -ne 0) { throw 'Neither the host draft nor the published final release exists.' }
-            if (($published | ConvertFrom-Json).isDraft) { throw 'The final release is still a draft; use the host-v draft for initial publication.' }
-          }
-          "RELEASE_TAG=$releaseTag" >> $env:GITHUB_ENV
-          $release = Join-Path $env:RUNNER_TEMP 'release' "v$env:VERSION"
-          gh release download $releaseTag --dir $release
+          if ($env:GITHUB_REF -ne 'refs/heads/master') { throw 'Dispatch publication from master.' }
+          if ($env:BUILD_RUN_ID -notmatch '^[1-9][0-9]*$') { throw 'Pass the successful build-phase build_run_id.' }
+          if ($env:DRAFT -eq 'true' -and $env:PUBLISH_CRATES -eq 'true') { throw 'Cannot publish crates for a draft release.' }
+          $runJson = gh api "repos/$env:GH_REPO/actions/runs/$env:BUILD_RUN_ID"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $run = $runJson | ConvertFrom-Json
+          if ($run.conclusion -ne 'success' -or $run.event -ne 'workflow_dispatch' -or
+              $run.head_branch -ne 'master' -or $run.path -ne '.github/workflows/release.yml') {
+            throw 'The build must be a successful Release dispatch from master.'
+          }
+          git merge-base --is-ancestor $run.head_sha HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'The consumer tag must descend from the build source.' }
+          $changed = @(git diff --name-only $run.head_sha HEAD |
+            Where-Object { $_ -ne 'rust/rustolonia-sys/host-checksums.txt' })
+          if ($LASTEXITCODE -ne 0) { throw 'Could not compare the build source and consumer tag.' }
+          if ($changed.Count -gt 0) { throw "Sources changed since the build: $($changed -join ', ')" }
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: rustolonia-release-${{ inputs.version }}
+          path: ${{ runner.temp }}/release/v${{ inputs.version }}
+          run-id: ${{ inputs.build_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Verify staged asset hashes
+        shell: pwsh
+        run: |
+          $release = Join-Path $env:RUNNER_TEMP 'release' "v$env:VERSION"
           Push-Location $release
           sha256sum --check --strict SHA256SUMS
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -286,13 +293,7 @@ jobs:
           if ($version -ne $env:VERSION) { throw "The checkout is at version $version, not $env:VERSION." }
           ./rust/prepare-release.ps1 -Checksums -SumsFile (Join-Path $env:RUNNER_TEMP 'release' "v$env:VERSION" 'SHA256SUMS')
           git diff --exit-code -- rust/rustolonia-sys/host-checksums.txt
-          if ($LASTEXITCODE -ne 0) { throw 'host-checksums.txt does not match the release; run rust/prepare-release.ps1 -Checksums -FromRelease and commit.' }
-          git merge-base --is-ancestor "host-v$env:VERSION" HEAD
-          if ($LASTEXITCODE -ne 0) { throw 'The consumer tag must descend from the host build tag.' }
-          $changed = @(git diff --name-only "host-v$env:VERSION" HEAD |
-            Where-Object { $_ -ne 'rust/rustolonia-sys/host-checksums.txt' })
-          if ($LASTEXITCODE -ne 0) { throw 'Could not compare the host and consumer tags.' }
-          if ($changed.Count -gt 0) { throw "Sources changed since host-v$($env:VERSION): $($changed -join ', ')" }
+          if ($LASTEXITCODE -ne 0) { throw 'host-checksums.txt does not match the build; run rust/prepare-release.ps1 -Checksums -SumsFile <SHA256SUMS> and commit before tagging.' }
 
       - name: Build and launch a fresh app against the final git tag
         shell: pwsh
@@ -304,15 +305,23 @@ jobs:
             -WorkDirectory (Join-Path $env:RUNNER_TEMP 'git-consumer')
 
       - name: Publish the GitHub release
+        working-directory: ${{ runner.temp }}/release/v${{ inputs.version }}
         run: |
-          if [ "$RELEASE_TAG" = "host-v$VERSION" ]; then
-            gh release edit "$RELEASE_TAG" --tag "v$VERSION" --verify-tag --draft=false
+          set -euo pipefail
+          releases=$(gh api "repos/$GH_REPO/releases" --paginate --jq '.[].tag_name')
+          if grep -Fxq "v$VERSION" <<< "$releases"; then
+            echo "Release v$VERSION already exists; do not overwrite its assets." >&2
+            exit 1
           fi
+          flags=(--verify-tag --title "rustolonia $VERSION" --notes "Prebuilt rustolonia hosts for rustolonia-sys $VERSION.")
+          if [ "$DRAFT" = 'true' ]; then flags+=(--draft); fi
+          if [[ "$VERSION" == *-* ]]; then flags+=(--prerelease); fi
+          gh release create "v$VERSION" "${flags[@]}" ./*.tar.gz SHA256SUMS
 
   publish-crates:
     name: publish crates ${{ inputs.version }}
     needs: publish
-    if: github.event_name == 'workflow_dispatch' && inputs.phase == 'publish' && inputs.publish_crates
+    if: github.event_name == 'workflow_dispatch' && inputs.phase == 'publish' && inputs.publish_crates && !inputs.draft
     runs-on: ubuntu-22.04
     environment: crates-io
     permissions:

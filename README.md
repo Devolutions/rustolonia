@@ -33,8 +33,8 @@ Code-first applications need only Cargo; no .NET SDK or source checkout:
 rustolonia = { git = "https://github.com/Devolutions/rustolonia", tag = "v12.1.0" }
 ```
 
-Use the final `v12.1.0` tag once its GitHub release is published, not the
-`host-v12.1.0` build tag. Cargo finds the crate in the `rust/` workspace and
+Use the final `v12.1.0` tag once its GitHub release is published.
+Cargo finds the crate in the `rust/` workspace and
 resolves `rustolonia-sys` from the same git revision; no crates.io publication
 or `[patch.crates-io]` is needed. Rust 1.88 or newer is required. Version
 `12.1.0` is the first Rustolonia release, backed by Avalonia `12.1.3`.
@@ -124,7 +124,8 @@ Linux native smoke execution needs a display, for example
 Native jobs also archive their host as a release tarball and build and launch
 a standalone app that depends on the packaged crates through the
 `rustolonia-sys` download path (`rust/tests/test-standalone-app.ps1`). `.github/workflows/release.yml` builds
-the release host tarballs from a `host-v*` build tag, publishes the GitHub
-release on the checksum-bearing `v*` consumer tag, and optionally publishes
+the release host tarballs from `master` into staged Actions artifacts, publishes
+a non-draft GitHub release on the checksum-bearing `v*` tag by default
+(`draft=true` opts into a draft), and optionally publishes
 the crates; see
 [rust/PRODUCTIZATION.md](rust/PRODUCTIZATION.md#releasing).

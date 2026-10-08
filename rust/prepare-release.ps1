@@ -12,14 +12,16 @@ Two steps, each followed by a commit:
      the exact `rustolonia-sys` pin in rustolonia, `rustoloniaVersion` in
      rust/release-manifest.json and <Version> in build/SharedVersion.props,
      clears rust/rustolonia-sys/host-checksums.txt and refreshes Cargo.lock.
-     Commit, then push the tag `host-v<x.y.z>`; .github/workflows/release.yml
-     builds the host tarballs into a draft GitHub release.
+     Commit to master, then dispatch .github/workflows/release.yml with
+     phase=build. It stages host tarballs and SHA256SUMS as Actions artifacts.
 
   2. -Checksums (-SumsFile <SHA256SUMS> | -FromRelease)
-     Writes host-checksums.txt from the draft release's SHA256SUMS (symbol
-     tarballs are left out). Commit, then push `v<x.y.z>` on this commit.
-     Run the release workflow manually to publish the GitHub release.
-     crates.io publishing is opt-in.
+     Writes host-checksums.txt from SHA256SUMS (symbol tarballs are left out).
+     For initial publication use -SumsFile from the staged build artifact.
+     -FromRelease reads an existing v<x.y.z> release.
+     Commit, then push `v<x.y.z>` on this commit. Dispatch phase=publish
+     with build_run_id to create the GitHub release (non-draft by default).
+     crates.io publishing and draft releases are opt-in.
 #>
 [CmdletBinding(DefaultParameterSetName = 'Version')]
 param(
@@ -75,7 +77,7 @@ if ($PSCmdlet.ParameterSetName -eq 'Version') {
 
     if (-not $SkipCargoUpdate) { & cargo update --workspace --manifest-path (Join-Path $root 'rust' 'Cargo.toml') }
     $null = Get-RustoloniaReleaseVersion -RustoloniaRoot $root
-    Write-Host "Version set to $Version. Commit, then push the build tag host-v$Version."
+    Write-Host "Version set to $Version. Commit to master, then dispatch phase=build (no tag needed)."
     return
 }
 
@@ -85,7 +87,7 @@ if ($FromRelease) {
     $download = Join-Path ([IO.Path]::GetTempPath()) ('rustolonia-sums-' + [guid]::NewGuid().ToString('N'))
     New-Item -ItemType Directory -Path $download | Out-Null
     try {
-        & gh release download "host-v$version" --repo Devolutions/rustolonia --pattern SHA256SUMS --dir $download
+        & gh release download "v$version" --repo Devolutions/rustolonia --pattern SHA256SUMS --dir $download
         $sumsLines = @(Get-Content -LiteralPath (Join-Path $download 'SHA256SUMS'))
     }
     finally { Remove-Item -LiteralPath $download -Recurse -Force }
