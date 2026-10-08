@@ -20,6 +20,7 @@ pinned `avalonia-src` producer submodule at upstream Avalonia `12.1.3` (commit
 | `apps/pdf-viewer/` | A PDF Oxide-powered sample viewer with rendered page navigation and extracted text |
 | `apps/hash-calculator/` | A streaming checksum utility (MD5, SHA-1, SHA-256, SHA-512, BLAKE3) with compare and copy |
 | `apps/archive-tool/` | A dual-pane archive manager (zip/tar/7z/cab and compressed tars) |
+| `templates/` | Copy-out standalone app skeletons using the published bindings and prebuilt host |
 | `tests/` | Host, IR, and generator test suites |
 | `samples/` | `RustViewModelSample.Managed` - the sample presentation project the host consumes |
 | `build/` | Vendored MSBuild configuration (versioning, signing, analyzers, xunit) |
@@ -52,6 +53,10 @@ mirrored and locally built hosts.
 Applications with compiled AXAML and Rust view-models still build their own
 host from a source checkout, as described below.
 
+For complete standalone starting points using the release, see the
+[app templates](templates/README.md): minimal window, input form, and
+multi-window workspace.
+
 After the crates are published to crates.io, `rustolonia = "=12.1.0"` is an
 alternative to the git dependency.
 
@@ -74,6 +79,14 @@ Open `Rustolonia.slnx` for the managed projects. See
 boundaries.
 
 ## Creating a new app
+
+For a standalone code-first app using the latest published release, copy
+one of the [root `templates/`](templates/README.md)
+outside this repository and run `cargo run --locked` from the copied directory.
+Each includes an independent workspace and pinned release dependency, with no
+.NET SDK or local source-checkout requirements.
+
+For compiled AXAML and generated Rust view-models, use the source-build scaffold:
 
 ```pwsh
 pwsh ./rust/new-app.ps1 -Name my_app -Destination ../my_app -ProducerRoot ./avalonia-src -RustoloniaRoot .

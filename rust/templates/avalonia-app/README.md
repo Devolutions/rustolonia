@@ -1,5 +1,9 @@
 # Avalonia Rust external consumer
 
+For a code-first app using the prebuilt GitHub release with no .NET SDK or
+source-checkout dependencies, use the
+[root standalone templates](../../../templates/README.md) instead.
+
 Two source checkouts are required: Rustolonia (Rust crates, interop, projection
 tool and NativeAOT host) and its pinned Avalonia producer (framework and XAML
 compiler). The producer normally lives at `avalonia-src` inside Rustolonia.
