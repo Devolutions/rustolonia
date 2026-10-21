@@ -1294,6 +1294,154 @@ fn map_result(result: Result<()>) -> sys::Result<()> {
     })
 }
 
+/// A compile-time typed property path descriptor pairing a view-model getter and
+/// setter with its property name.
+pub struct PropertyPath<Vm, T> {
+    pub name: &'static str,
+    pub get: fn(&Vm) -> T,
+    pub set: Option<fn(&mut Vm, T) -> Result<()>>,
+}
+
+impl<Vm, T> Copy for PropertyPath<Vm, T> {}
+
+impl<Vm, T> Clone for PropertyPath<Vm, T> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<Vm, T> fmt::Debug for PropertyPath<Vm, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("PropertyPath")
+            .field("name", &self.name)
+            .finish()
+    }
+}
+
+impl<Vm, T> PropertyPath<Vm, T> {
+    pub fn read(&self, vm: &Vm) -> T {
+        (self.get)(vm)
+    }
+
+    pub fn write(&self, vm: &mut Vm, value: T) -> Result<()> {
+        if let Some(set) = self.set {
+            set(vm, value)
+        } else {
+            Ok(())
+        }
+    }
+}
+
+/// Builds a compile-time [`PropertyPath`] for a view-model field.
+#[macro_export]
+macro_rules! prop {
+    ($vm:ty => $field:ident) => {
+        $crate::view_model::PropertyPath::<$vm, _> {
+            name: stringify!($field),
+            get: |vm: &$vm| vm.$field.clone(),
+            set: None,
+        }
+    };
+    (mut $vm:ty => $field:ident, $setter:ident) => {
+        $crate::view_model::PropertyPath::<$vm, _> {
+            name: stringify!($field),
+            get: |vm: &$vm| vm.$field.clone(),
+            set: Some(|vm: &mut $vm, value| vm.$setter(value)),
+        }
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __vm_sink_call {
+    ($sink:ident, $setter:ident, $val:expr, str_ref) => {
+        $sink.$setter(&$val)
+    };
+    ($sink:ident, $setter:ident, $val:expr, opt_str) => {
+        $sink.$setter($val.as_deref())
+    };
+    ($sink:ident, $setter:ident, $val:expr, by_val) => {
+        $sink.$setter($val)
+    };
+    ($sink:ident, $setter:ident, $val:expr, clone) => {
+        $sink.$setter($val.clone())
+    };
+}
+
+/// Declaratively defines a Rust view-model struct backed by a generated sink,
+/// automatically generating `new()`, `attach_sink()`, `detach_sink()`, and
+/// `PartialEq`-deduplicated reactive field setters that forward changes to the sink.
+#[macro_export]
+macro_rules! reactive_view_model {
+    (
+        $(#[$meta:meta])*
+        $vis:vis struct $name:ident (sink: $sink:ty) {
+            $(
+                $fvis:vis $field:ident : $fty:ty = $init:expr => $setter:ident ($mode:ident)
+            ),* $(,)?
+        }
+    ) => {
+        $(#[$meta])*
+        $vis struct $name {
+            sink: ::core::option::Option<$sink>,
+            $(
+                $fvis $field: $fty,
+            )*
+        }
+
+        impl ::core::default::Default for $name {
+            fn default() -> Self {
+                Self::new()
+            }
+        }
+
+        impl $name {
+            pub fn new() -> Self {
+                Self {
+                    sink: ::core::option::Option::None,
+                    $(
+                        $field: $init,
+                    )*
+                }
+            }
+
+            pub fn sink(&self) -> ::core::option::Option<&$sink> {
+                self.sink.as_ref()
+            }
+
+            pub fn attach_sink(&mut self, sink: $sink) -> $crate::Result<()> {
+                $(
+                    $crate::__vm_sink_call!(sink, $setter, self.$field, $mode)?;
+                )*
+                self.sink = ::core::option::Option::Some(sink);
+                ::core::result::Result::Ok(())
+            }
+
+            pub fn detach_sink(&mut self) -> $crate::Result<()> {
+                self.sink = ::core::option::Option::None;
+                ::core::result::Result::Ok(())
+            }
+
+            $(
+                pub fn $field(&self) -> &$fty {
+                    &self.$field
+                }
+
+                pub fn $setter(&mut self, value: impl ::core::convert::Into<$fty>) -> $crate::Result<()> {
+                    let value: $fty = value.into();
+                    if self.$field != value {
+                        self.$field = value;
+                        if let ::core::option::Option::Some(sink) = &self.sink {
+                            $crate::__vm_sink_call!(sink, $setter, self.$field, $mode)?;
+                        }
+                    }
+                    ::core::result::Result::Ok(())
+                }
+            )*
+        }
+    };
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

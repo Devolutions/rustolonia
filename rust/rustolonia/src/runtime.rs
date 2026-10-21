@@ -38,6 +38,32 @@ pub trait AsControl {
     fn as_control(&self) -> Result<sys::ComPtr<sys::IAvnControl>>;
 }
 
+impl<T: AsControl + ?Sized> AsControl for &T {
+    fn as_control(&self) -> Result<sys::ComPtr<sys::IAvnControl>> {
+        (**self).as_control()
+    }
+}
+
+/// Static upcast along the projected Avalonia single-inheritance hierarchy.
+///
+/// # Safety
+/// `Self` and `Target` must be `#[repr(transparent)]` wrappers over `ComPtr`
+/// interfaces where `Self`'s vtable is a prefix-extension of `Target`'s vtable.
+pub unsafe trait Upcast<Target>: Sized {
+    fn upcast(&self) -> Target;
+    fn upcast_ref(&self) -> &Target;
+}
+
+unsafe impl<T: Clone> Upcast<T> for T {
+    fn upcast(&self) -> T {
+        self.clone()
+    }
+
+    fn upcast_ref(&self) -> &T {
+        self
+    }
+}
+
 pub struct EventSubscription {
     unsubscribe: Option<Box<dyn Fn() -> sys::Result<()> + Send>>,
     _thread_affinity: PhantomData<Rc<()>>,
@@ -246,6 +272,7 @@ impl AppScope {
     }
 
     fn clear(&self) {
+        crate::reactive::clear_reactive_runtime();
         self.state.tasks.clear();
         self.state
             .subscriptions

@@ -314,9 +314,125 @@ pub fn emit_safe_structs() -> String {
                  \x20   /// A fully opaque colour.\n\
                  \x20   pub const fn rgb(r: u8, g: u8, b: u8) -> Self {{\n\
                  \x20       Self::new(255, r, g, b)\n\
+                 \x20   }}\n\n\
+                 \x20   /// Parses `#RGB`, `#ARGB`, `#RRGGBB`, or `#AARRGGBB` (leading `#` optional).\n\
+                 \x20   pub fn parse_hex(hex: &str) -> Option<Self> {{\n\
+                 \x20       let hex = hex.strip_prefix('#').unwrap_or(hex);\n\
+                 \x20       if !hex.is_ascii() {{\n\
+                 \x20           return None;\n\
+                 \x20       }}\n\
+                 \x20       match hex.len() {{\n\
+                 \x20           3 => {{\n\
+                 \x20               let r = u8::from_str_radix(&hex[0..1], 16).ok()? * 17;\n\
+                 \x20               let g = u8::from_str_radix(&hex[1..2], 16).ok()? * 17;\n\
+                 \x20               let b = u8::from_str_radix(&hex[2..3], 16).ok()? * 17;\n\
+                 \x20               Some(Self::rgb(r, g, b))\n\
+                 \x20           }}\n\
+                 \x20           4 => {{\n\
+                 \x20               let a = u8::from_str_radix(&hex[0..1], 16).ok()? * 17;\n\
+                 \x20               let r = u8::from_str_radix(&hex[1..2], 16).ok()? * 17;\n\
+                 \x20               let g = u8::from_str_radix(&hex[2..3], 16).ok()? * 17;\n\
+                 \x20               let b = u8::from_str_radix(&hex[3..4], 16).ok()? * 17;\n\
+                 \x20               Some(Self::new(a, r, g, b))\n\
+                 \x20           }}\n\
+                 \x20           6 => {{\n\
+                 \x20               let r = u8::from_str_radix(&hex[0..2], 16).ok()?;\n\
+                 \x20               let g = u8::from_str_radix(&hex[2..4], 16).ok()?;\n\
+                 \x20               let b = u8::from_str_radix(&hex[4..6], 16).ok()?;\n\
+                 \x20               Some(Self::rgb(r, g, b))\n\
+                 \x20           }}\n\
+                 \x20           8 => {{\n\
+                 \x20               let a = u8::from_str_radix(&hex[0..2], 16).ok()?;\n\
+                 \x20               let r = u8::from_str_radix(&hex[2..4], 16).ok()?;\n\
+                 \x20               let g = u8::from_str_radix(&hex[4..6], 16).ok()?;\n\
+                 \x20               let b = u8::from_str_radix(&hex[6..8], 16).ok()?;\n\
+                 \x20               Some(Self::new(a, r, g, b))\n\
+                 \x20           }}\n\
+                 \x20           _ => None,\n\
+                 \x20       }}\n\
+                 \x20   }}\n\
+                 }}\n\n\
+                 impl From<(u8, u8, u8)> for {safe} {{\n\
+                 \x20   fn from((r, g, b): (u8, u8, u8)) -> Self {{\n\
+                 \x20       Self::rgb(r, g, b)\n\
+                 \x20   }}\n\
+                 }}\n\n\
+                 impl From<(u8, u8, u8, u8)> for {safe} {{\n\
+                 \x20   fn from((a, r, g, b): (u8, u8, u8, u8)) -> Self {{\n\
+                 \x20       Self::new(a, r, g, b)\n\
+                 \x20   }}\n\
+                 }}\n\n\
+                 impl From<u32> for {safe} {{\n\
+                 \x20   fn from(argb: u32) -> Self {{\n\
+                 \x20       Self::new(\n\
+                 \x20           (argb >> 24) as u8,\n\
+                 \x20           (argb >> 16) as u8,\n\
+                 \x20           (argb >> 8) as u8,\n\
+                 \x20           argb as u8,\n\
+                 \x20       )\n\
                  \x20   }}\n\
                  }}\n\n"
             ));
+        }
+
+        if geometry.helpers.contains(&Helper::Uniform) {
+            out.push_str(&format!(
+                "impl From<f64> for {safe} {{\n\
+                 \x20   fn from(value: f64) -> Self {{\n\
+                 \x20       Self::uniform(value)\n\
+                 \x20   }}\n\
+                 }}\n\n"
+            ));
+        }
+        if geometry
+            .helpers
+            .iter()
+            .any(|helper| matches!(helper, Helper::Symmetric(_)))
+        {
+            out.push_str(&format!(
+                "impl From<(f64, f64)> for {safe} {{\n\
+                 \x20   fn from((horizontal, vertical): (f64, f64)) -> Self {{\n\
+                 \x20       Self::symmetric(horizontal, vertical)\n\
+                 \x20   }}\n\
+                 }}\n\n"
+            ));
+        }
+        if geometry.conversion == Conversion::Components && geometry.fields.len() == 2 {
+            out.push_str(&format!(
+                "impl From<(f64, f64)> for {safe} {{\n\
+                 \x20   fn from((a, b): (f64, f64)) -> Self {{\n\
+                 \x20       Self::new(a, b)\n\
+                 \x20   }}\n\
+                 }}\n\n\
+                 impl From<[f64; 2]> for {safe} {{\n\
+                 \x20   fn from([a, b]: [f64; 2]) -> Self {{\n\
+                 \x20       Self::new(a, b)\n\
+                 \x20   }}\n\
+                 }}\n\n"
+            ));
+        }
+        if geometry.conversion == Conversion::Components && geometry.fields.len() == 4 {
+            out.push_str(&format!(
+                "impl From<(f64, f64, f64, f64)> for {safe} {{\n\
+                 \x20   fn from((a, b, c, d): (f64, f64, f64, f64)) -> Self {{\n\
+                 \x20       Self::new(a, b, c, d)\n\
+                 \x20   }}\n\
+                 }}\n\n\
+                 impl From<[f64; 4]> for {safe} {{\n\
+                 \x20   fn from([a, b, c, d]: [f64; 4]) -> Self {{\n\
+                 \x20       Self::new(a, b, c, d)\n\
+                 \x20   }}\n\
+                 }}\n\n"
+            ));
+        }
+        if geometry.kind == "Rect" {
+            out.push_str(
+                "impl From<(Point, Size)> for Rect {\n\
+                 \x20   fn from((origin, size): (Point, Size)) -> Self {\n\
+                 \x20       Self::new(origin.x, origin.y, size.width, size.height)\n\
+                 \x20   }\n\
+                 }\n\n",
+            );
         }
 
         match geometry.conversion {
