@@ -496,7 +496,7 @@ public static class ViewModelRustScanner
     }
 
     private static readonly Regex EnumBlockRegex = new(
-        @"#\[(?:rustolonia::)?view_model_enum(?:\((?<attr>[^)]*)\))?\]\s*(?:#\[[^\]]*\]\s*)*(?:pub(?:\([^)]*\))?\s+)?enum\s+(?<name>[A-Za-z_][A-Za-z0-9_]*)\s*\{(?<body>[^}]*)\}",
+        @"#\[(?:rustolonia::)?view_model_enum(?:\((?<attr>(?:""[^""]*""|[^)])*)\))?\]\s*(?:#\[[^\]]*\]\s*)*(?:pub(?:\([^)]*\))?\s+)?enum\s+(?<name>[A-Za-z_][A-Za-z0-9_]*)\s*\{(?<body>[^}]*)\}",
         RegexOptions.Compiled | RegexOptions.Singleline);
 
     private static readonly Regex EnumMemberRegex = new(
@@ -504,11 +504,11 @@ public static class ViewModelRustScanner
         RegexOptions.Compiled);
 
     private static readonly Regex StructBlockRegex = new(
-        @"#\[(?:rustolonia::)?view_model(?:\((?<attr>[^)]*)\))?\]\s*(?:#\[[^\]]*\]\s*)*(?:pub(?:\([^)]*\))?\s+)?struct\s+(?<name>[A-Za-z_][A-Za-z0-9_]*)\s*\{(?<body>[^}]*)\}",
+        @"#\[(?:rustolonia::)?view_model(?:\((?<attr>(?:""[^""]*""|[^)])*)\))?\]\s*(?:#\[[^\]]*\]\s*)*(?:pub(?:\([^)]*\))?\s+)?struct\s+(?<name>[A-Za-z_][A-Za-z0-9_]*)\s*\{(?<body>[^}]*)\}",
         RegexOptions.Compiled | RegexOptions.Singleline);
 
     private static readonly Regex FieldRegex = new(
-        @"#\[(?<kind>prop|derived|collection)(?:\((?<attr>[^)]*)\))?\]\s*(?:pub(?:\([^)]*\))?\s+)?(?<name>[A-Za-z_][A-Za-z0-9_]*)\s*:\s*(?<type>[^,\n}]+)",
+        @"#\[(?<kind>prop|derived|collection)(?:\((?<attr>(?:""[^""]*""|[^)])*)\))?\]\s*(?:pub(?:\([^)]*\))?\s+)?(?<name>[A-Za-z_][A-Za-z0-9_]*)\s*:\s*(?<type>[^,\n}]+)",
         RegexOptions.Compiled);
 
     private static readonly Regex ImplBlockRegex = new(
@@ -516,7 +516,7 @@ public static class ViewModelRustScanner
         RegexOptions.Compiled | RegexOptions.Singleline);
 
     private static readonly Regex CommandFnRegex = new(
-        @"#\[command(?:\((?<attr>[^)]*)\))?\]\s*(?:pub(?:\([^)]*\))?\s+)?(?:async\s+)?fn\s+(?<name>[A-Za-z_][A-Za-z0-9_]*)",
+        @"#\[command(?:\((?<attr>(?:""[^""]*""|[^)])*)\))?\]\s*(?:pub(?:\([^)]*\))?\s+)?(?:async\s+)?fn\s+(?<name>[A-Za-z_][A-Za-z0-9_]*)",
         RegexOptions.Compiled);
 
     private static readonly Regex AttrItemRegex = new(

@@ -46,9 +46,9 @@ struct ParsedBinding {
     string_format: Option<String>,
 }
 
-/// Compiles an `.axaml` document against the embedded `projection.ir.json`.
-pub fn compile_axaml(axaml: &str) -> Result<String, GenerationError> {
-    let ir: ProjectionIr = serde_json::from_str(include_str!("../../projection.ir.json"))?;
+/// Compiles an `.axaml` document against a `projection.ir.json` string.
+pub fn compile_axaml_from_json(ir_json: &str, axaml: &str) -> Result<String, GenerationError> {
+    let ir: ProjectionIr = serde_json::from_str(ir_json)?;
     compile_axaml_to_rust(&ir, axaml)
 }
 
@@ -934,6 +934,10 @@ fn unescape_xml(raw: &str) -> String {
 mod tests {
     use super::*;
 
+    fn compile_test_axaml(axaml: &str) -> Result<String, GenerationError> {
+        compile_axaml_from_json(include_str!("../../projection.ir.json"), axaml)
+    }
+
     #[test]
     fn compiles_axaml_window_with_refs_attached_props_and_two_way_bindings() {
         let axaml = r##"
@@ -961,7 +965,7 @@ mod tests {
 </Window>
 "##;
 
-        let rust_code = compile_axaml(axaml).expect("AXAML should compile to Rust");
+        let rust_code = compile_test_axaml(axaml).expect("AXAML should compile to Rust");
         assert!(rust_code.contains("pub struct LoginWindowRefs"));
         assert!(rust_code.contains("pub header_text: rustolonia::NodeRef<rustolonia::TextBlock>"));
         assert!(rust_code.contains("pub username_input: rustolonia::NodeRef<rustolonia::TextBox>"));
@@ -1007,7 +1011,7 @@ mod tests {
 "##;
 
         let rust_code =
-            compile_axaml(axaml).expect("AXAML with events and DataTemplate should compile");
+            compile_test_axaml(axaml).expect("AXAML with events and DataTemplate should compile");
         assert!(rust_code.contains("pub struct TaskWindowHandlers"));
         assert!(rust_code.contains("pub on_add_task: Box<dyn FnMut(()) + Send + 'static>"));
         assert!(rust_code.contains(".on_click(handlers.on_add_task)"));
@@ -1018,8 +1022,8 @@ mod tests {
 
     #[test]
     fn rejects_unknown_control_or_property_in_axaml() {
-        assert!(compile_axaml("<NonExistentControl />").is_err());
-        assert!(compile_axaml("<Button NoSuchProperty=\"123\" />").is_err());
-        assert!(compile_axaml("<Button Grid.NoSuchAttached=\"1\" />").is_err());
+        assert!(compile_test_axaml("<NonExistentControl />").is_err());
+        assert!(compile_test_axaml("<Button NoSuchProperty=\"123\" />").is_err());
+        assert!(compile_test_axaml("<Button Grid.NoSuchAttached=\"1\" />").is_err());
     }
 }

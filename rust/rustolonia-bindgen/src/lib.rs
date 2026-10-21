@@ -9,7 +9,7 @@ mod owned;
 mod validate;
 mod variant;
 pub use abi_contract::regenerate_baseline;
-pub use axaml::{compile_axaml, compile_axaml_to_rust};
+pub use axaml::{compile_axaml_from_json, compile_axaml_to_rust};
 pub use error::GenerationError;
 pub use ir::ProjectionIr;
 pub use owned::{check_outputs, write_outputs, BINDGEN_GENERATOR_ID};

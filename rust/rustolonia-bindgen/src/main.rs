@@ -139,20 +139,29 @@ fn write_baseline(args: &[std::ffi::OsString]) -> ExitCode {
 }
 
 fn compile_axaml_cli(args: &[std::ffi::OsString]) -> ExitCode {
-    if args.len() != 2 {
-        eprintln!("Usage: rustolonia-bindgen --compile-axaml <input.axaml> <output.rs>");
+    if args.len() != 3 {
+        eprintln!(
+            "Usage: rustolonia-bindgen --compile-axaml <projection.ir.json> <input.axaml> <output.rs>"
+        );
         return ExitCode::from(2);
     }
-    let axaml = match fs::read_to_string(&args[0]) {
+    let ir_json = match fs::read_to_string(&args[0]) {
+        Ok(value) => value,
+        Err(error) => {
+            eprintln!("Failed to read projection IR: {error}");
+            return ExitCode::FAILURE;
+        }
+    };
+    let axaml = match fs::read_to_string(&args[1]) {
         Ok(value) => value,
         Err(error) => {
             eprintln!("Failed to read AXAML file: {error}");
             return ExitCode::FAILURE;
         }
     };
-    match rustolonia_bindgen::compile_axaml(&axaml) {
+    match rustolonia_bindgen::compile_axaml_from_json(&ir_json, &axaml) {
         Ok(rust_source) => {
-            if let Err(error) = fs::write(&args[1], rust_source) {
+            if let Err(error) = fs::write(&args[2], rust_source) {
                 eprintln!("Failed to write compiled AXAML Rust output: {error}");
                 return ExitCode::FAILURE;
             }
