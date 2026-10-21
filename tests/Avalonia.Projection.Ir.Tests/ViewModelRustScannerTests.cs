@@ -37,6 +37,8 @@ public class ViewModelRustScannerTests
                 pub name: String,
                 #[prop(initial = 0)]
                 pub count: i64,
+                #[derived(initial = "Initial (0)")]
+                pub summary: String,
                 #[prop(writable, initial = true)]
                 pub is_dark: bool,
                 #[prop(nullable, writable)]
@@ -74,10 +76,14 @@ public class ViewModelRustScannerTests
         Assert.Equal("Name", main.DisplayPath);
         Assert.Equal("IsDark", main.ThemeVariantProperty);
 
-        Assert.Equal(6, main.Properties.Count);
+        Assert.Equal(7, main.Properties.Count);
         var nameProp = main.Properties.Single(p => p.Name == "Name");
         Assert.True(nameProp.Writable);
         Assert.Equal("Avalonia from Rust", nameProp.InitialString);
+
+        var summaryProp = main.Properties.Single(p => p.Name == "Summary");
+        Assert.False(summaryProp.Writable);
+        Assert.Equal("Initial (0)", summaryProp.InitialString);
 
         var nickProp = main.Properties.Single(p => p.Name == "Nickname");
         Assert.True(nickProp.Nullable);

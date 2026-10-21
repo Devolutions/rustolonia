@@ -64,6 +64,54 @@ unsafe impl<T: Clone> Upcast<T> for T {
     }
 }
 
+/// Safe runtime downcast from a projected base class (such as `Control` or
+/// `AvaloniaObject`) to a more specific derived class via `QueryInterface`.
+pub unsafe trait Downcast<Target>: Sized {
+    fn is_instance(&self) -> bool;
+    fn downcast(&self) -> Option<Target>;
+}
+
+unsafe impl<T: Clone> Downcast<T> for T {
+    fn is_instance(&self) -> bool {
+        true
+    }
+
+    fn downcast(&self) -> Option<T> {
+        Some(self.clone())
+    }
+}
+
+/// A lightweight identity-comparable wrapper for non-owning element references
+/// (such as `PlacementTarget` or `Label::target`), comparing handles by their
+/// host `object_id`.
+#[derive(Clone, Debug)]
+pub struct NonOwningRef<T> {
+    object_id: i64,
+    target: T,
+}
+
+impl<T> NonOwningRef<T> {
+    pub fn from_object_id(object_id: i64, target: T) -> Self {
+        Self { object_id, target }
+    }
+
+    pub fn object_id(&self) -> i64 {
+        self.object_id
+    }
+
+    pub fn get(&self) -> &T {
+        &self.target
+    }
+}
+
+impl<T> PartialEq for NonOwningRef<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.object_id == other.object_id
+    }
+}
+
+impl<T> Eq for NonOwningRef<T> {}
+
 pub struct EventSubscription {
     unsubscribe: Option<Box<dyn Fn() -> sys::Result<()> + Send>>,
     _thread_affinity: PhantomData<Rc<()>>,

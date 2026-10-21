@@ -6,9 +6,9 @@
 //! without cloning control handles or wrapping state in `Arc<Mutex<_>>`.
 
 use crate::Result;
-use std::any::Any;
+use std::any::{Any, TypeId};
 use std::cell::RefCell;
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 use std::fmt;
 use std::marker::PhantomData;
 
@@ -27,11 +27,21 @@ struct EffectSlot {
     queued: bool,
 }
 
+struct ScopeSlot {
+    parent: Option<usize>,
+    children: Vec<usize>,
+    effects: Vec<usize>,
+    contexts: HashMap<TypeId, Box<dyn Any>>,
+    active: bool,
+}
+
 #[derive(Default)]
 struct ReactiveRuntime {
     signals: Vec<SignalSlot>,
     effects: Vec<EffectSlot>,
+    scopes: Vec<ScopeSlot>,
     tracking_stack: Vec<usize>,
+    scope_stack: Vec<usize>,
     pending_effects: VecDeque<usize>,
     flushing: bool,
 }
@@ -50,10 +60,38 @@ pub(crate) fn clear_reactive_runtime() {
         }
         rt.signals.clear();
         rt.effects.clear();
+        rt.scopes.clear();
         rt.tracking_stack.clear();
+        rt.scope_stack.clear();
         rt.pending_effects.clear();
         rt.flushing = false;
     });
+}
+
+fn ensure_root_scope(rt: &mut ReactiveRuntime) -> usize {
+    if rt.scopes.is_empty() {
+        rt.scopes.push(ScopeSlot {
+            parent: None,
+            children: Vec::new(),
+            effects: Vec::new(),
+            contexts: HashMap::new(),
+            active: true,
+        });
+    }
+    0
+}
+
+fn attach_effect_to_current_scope(rt: &mut ReactiveRuntime, effect_id: usize) {
+    let scope_id = rt
+        .scope_stack
+        .last()
+        .copied()
+        .unwrap_or_else(|| ensure_root_scope(rt));
+    if let Some(scope) = rt.scopes.get_mut(scope_id) {
+        if scope.active && !scope.effects.contains(&effect_id) {
+            scope.effects.push(effect_id);
+        }
+    }
 }
 
 fn record_dependency(signal_id: usize) {
@@ -391,6 +429,7 @@ impl<T: Clone + PartialEq + 'static> Memo<T> {
                 running: true,
                 queued: false,
             });
+            attach_effect_to_current_scope(&mut rt, id);
             rt.tracking_stack.push(id);
             id
         });
@@ -463,6 +502,7 @@ impl Effect {
                 running: true,
                 queued: false,
             });
+            attach_effect_to_current_scope(&mut rt, id);
             rt.tracking_stack.push(id);
             id
         });
@@ -542,5 +582,273 @@ impl<T: 'static> NodeRef<T> {
 
     pub fn set(&self, value: T) {
         self.slot.set(Some(value));
+    }
+}
+
+/// A hierarchical ownership scope that tracks [`Effect`]s, [`Memo`]s, and
+/// context values created within a UI subtree, disposing them deterministically
+/// when the subtree unmounts.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ReactiveScope {
+    id: usize,
+}
+
+impl Default for ReactiveScope {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl ReactiveScope {
+    /// Creates a new child `ReactiveScope` parented to the currently active scope.
+    pub fn new() -> Self {
+        let id = RUNTIME.with(|runtime| {
+            let mut rt = runtime.borrow_mut();
+            let parent = Some(
+                rt.scope_stack
+                    .last()
+                    .copied()
+                    .unwrap_or_else(|| ensure_root_scope(&mut rt)),
+            );
+            let id = rt.scopes.len();
+            rt.scopes.push(ScopeSlot {
+                parent,
+                children: Vec::new(),
+                effects: Vec::new(),
+                contexts: HashMap::new(),
+                active: true,
+            });
+            if let Some(parent_id) = parent {
+                if let Some(parent_slot) = rt.scopes.get_mut(parent_id) {
+                    parent_slot.children.push(id);
+                }
+            }
+            id
+        });
+        Self { id }
+    }
+
+    /// Runs `f` with this scope active on the scope stack.
+    pub fn run<R>(self, f: impl FnOnce() -> R) -> R {
+        RUNTIME.with(|runtime| {
+            runtime.borrow_mut().scope_stack.push(self.id);
+        });
+        struct PopGuard;
+        impl Drop for PopGuard {
+            fn drop(&mut self) {
+                RUNTIME.with(|runtime| {
+                    runtime.borrow_mut().scope_stack.pop();
+                });
+            }
+        }
+        let _guard = PopGuard;
+        f()
+    }
+
+    /// Creates a new `ReactiveScope`, runs `f` inside it, and returns both the
+    /// result and the scope handle.
+    pub fn with_new<R>(f: impl FnOnce() -> R) -> (R, Self) {
+        let scope = Self::new();
+        let out = scope.run(f);
+        (out, scope)
+    }
+
+    /// Disposes this scope, all of its child scopes, and every [`Effect`] / [`Memo`]
+    /// created within them.
+    pub fn dispose(self) {
+        RUNTIME.with(|runtime| {
+            let mut rt = runtime.borrow_mut();
+            dispose_scope_recursive(&mut rt, self.id);
+        });
+    }
+}
+
+fn dispose_scope_recursive(rt: &mut ReactiveRuntime, scope_id: usize) {
+    let (children, effects) = if let Some(scope) = rt.scopes.get_mut(scope_id) {
+        if !scope.active {
+            return;
+        }
+        scope.active = false;
+        scope.contexts.clear();
+        (
+            std::mem::take(&mut scope.children),
+            std::mem::take(&mut scope.effects),
+        )
+    } else {
+        return;
+    };
+
+    for child_id in children {
+        dispose_scope_recursive(rt, child_id);
+    }
+
+    for effect_id in effects {
+        unlink_effect_dependencies(rt, effect_id);
+        if let Some(effect) = rt.effects.get_mut(effect_id) {
+            effect.active = false;
+            effect.callback = None;
+        }
+    }
+}
+
+/// Provides a typed context value to the current [`ReactiveScope`] and all of
+/// its descendants.
+pub fn provide_context<T: Clone + 'static>(value: T) {
+    RUNTIME.with(|runtime| {
+        let mut rt = runtime.borrow_mut();
+        let scope_id = rt
+            .scope_stack
+            .last()
+            .copied()
+            .unwrap_or_else(|| ensure_root_scope(&mut rt));
+        if let Some(scope) = rt.scopes.get_mut(scope_id) {
+            scope.contexts.insert(TypeId::of::<T>(), Box::new(value));
+        }
+    });
+}
+
+/// Retrieves a typed context value from the nearest enclosing [`ReactiveScope`]
+/// (walking up to the root application scope).
+pub fn use_context<T: Clone + 'static>() -> Option<T> {
+    RUNTIME.with(|runtime| {
+        let rt = runtime.borrow();
+        if rt.scopes.is_empty() {
+            return None;
+        }
+        let mut cursor = Some(rt.scope_stack.last().copied().unwrap_or(0));
+        while let Some(scope_id) = cursor {
+            let scope = rt.scopes.get(scope_id)?;
+            if let Some(boxed) = scope.contexts.get(&TypeId::of::<T>()) {
+                if let Some(value) = boxed.downcast_ref::<T>() {
+                    return Some(value.clone());
+                }
+            }
+            cursor = scope.parent;
+        }
+        None
+    })
+}
+
+/// The state of an asynchronous or derived [`Resource<T>`].
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ResourceState<T> {
+    Loading,
+    Ready(T),
+    Error(String),
+}
+
+impl<T> ResourceState<T> {
+    pub fn is_loading(&self) -> bool {
+        matches!(self, Self::Loading)
+    }
+
+    pub fn ready(&self) -> Option<&T> {
+        match self {
+            Self::Ready(value) => Some(value),
+            _ => None,
+        }
+    }
+
+    pub fn error(&self) -> Option<&str> {
+        match self {
+            Self::Error(message) => Some(message.as_str()),
+            _ => None,
+        }
+    }
+}
+
+/// A `Copy` reactive handle representing an asynchronous or fallible data resource.
+pub struct Resource<T: 'static> {
+    state: Signal<ResourceState<T>>,
+    generation: Signal<u64>,
+}
+
+impl<T: 'static> Copy for Resource<T> {}
+
+impl<T: 'static> Clone for Resource<T> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<T: 'static> fmt::Debug for Resource<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Resource")
+            .field("state", &self.state)
+            .field("generation", &self.generation)
+            .finish()
+    }
+}
+
+impl<T: 'static> Resource<T> {
+    /// Creates a new resource initially in [`ResourceState::Loading`].
+    pub fn pending() -> Self {
+        Self {
+            state: Signal::new(ResourceState::Loading),
+            generation: Signal::new(0),
+        }
+    }
+
+    /// Creates a reactive resource computed from `source` and `fetcher`.
+    /// Whenever any signal read by `source` changes, `state` updates with the
+    /// result of `fetcher`.
+    pub fn new_derived<S>(
+        mut source: impl FnMut() -> S + 'static,
+        mut fetcher: impl FnMut(S) -> std::result::Result<T, String> + 'static,
+    ) -> Result<Self>
+    where
+        T: PartialEq,
+    {
+        let resource = Self::pending();
+        Effect::new(move || {
+            let input = source();
+            let next = match fetcher(input) {
+                Ok(value) => ResourceState::Ready(value),
+                Err(error) => ResourceState::Error(error),
+            };
+            resource.state.set_if_changed(next);
+            Ok(())
+        })?;
+        Ok(resource)
+    }
+
+    pub fn get(&self) -> ResourceState<T>
+    where
+        T: Clone,
+    {
+        self.state.get()
+    }
+
+    pub fn get_untracked(&self) -> ResourceState<T>
+    where
+        T: Clone,
+    {
+        self.state.get_untracked()
+    }
+
+    pub fn signal(&self) -> Signal<ResourceState<T>> {
+        self.state
+    }
+
+    pub fn set_loading(&self) {
+        self.state.set(ResourceState::Loading);
+    }
+
+    pub fn set_ready(&self, value: T) {
+        self.state.set(ResourceState::Ready(value));
+    }
+
+    pub fn set_error(&self, message: impl Into<String>) {
+        self.state.set(ResourceState::Error(message.into()));
+    }
+
+    pub(crate) fn next_generation(&self) -> u64 {
+        let next = self.generation.get_untracked().wrapping_add(1);
+        self.generation.set(next);
+        next
+    }
+
+    pub(crate) fn current_generation(&self) -> u64 {
+        self.generation.get_untracked()
     }
 }

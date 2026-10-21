@@ -16,10 +16,13 @@ pub use clipboard::{ClipboardCapabilities, ClipboardData, ClipboardFilesOperatio
 pub use data_shapes::{CancellationToken, MapKey, RangeBatch, RangeRequest};
 pub use generated::*;
 pub use menu::{RecentFileList, RecentFilesChange};
-pub use reactive::{Effect, Memo, NodeRef, Signal, TwoWay};
+pub use reactive::{
+    provide_context, use_context, Effect, Memo, NodeRef, ReactiveScope, Resource, ResourceState,
+    Signal, TwoWay,
+};
 pub use runtime::{
-    discover_host_path, App, AppContext, AppScope, AsControl, EventSubscription, ResourceValue,
-    ThemeVariant, Upcast, HOST_NATIVE_LIB_ENV_VAR,
+    discover_host_path, App, AppContext, AppScope, AsControl, Downcast, EventSubscription,
+    NonOwningRef, ResourceValue, ThemeVariant, Upcast, HOST_NATIVE_LIB_ENV_VAR,
 };
 pub use storage::{
     ActivationEvent, DragDropEffects, FileDropEvent, FileTypeFilter, FolderPickerOptions,
@@ -28,7 +31,8 @@ pub use storage::{
 };
 pub use value_converter::{ConversionDirection, ScalarKind, ScalarValue};
 pub use view::{
-    data_template_reactive, AnyEl, El, IntoChildEl, IntoContentEl, IntoProp, IntoValue, PropBinding,
+    data_template_reactive, theme_brush, AnyEl, Command, ControlSlot, El, For, IntoChildEl,
+    IntoCommandProp, IntoContentEl, IntoProp, IntoValue, KeyedListReconciler, PropBinding, Show,
 };
 
 /// Builds a data template from Rust closures, wrapping the sys-level CCW in

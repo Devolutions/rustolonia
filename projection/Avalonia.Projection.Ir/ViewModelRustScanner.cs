@@ -288,7 +288,7 @@ public static class ViewModelRustScanner
             var isOption = ExtractGenericArg(rustType, "Option") is { } optInner;
             var coreType = ExtractGenericArg(rustType, "Option") ?? rustType;
             var nullable = isOption || HasFlag(attrArgs, "nullable");
-            var writable = HasFlag(attrArgs, "writable");
+            var writable = attrKind != "derived" && HasFlag(attrArgs, "writable");
 
             var explicitEnum = GetAttr(attrArgs, "enum");
             var explicitModel = GetAttr(attrArgs, "model");
@@ -508,7 +508,7 @@ public static class ViewModelRustScanner
         RegexOptions.Compiled | RegexOptions.Singleline);
 
     private static readonly Regex FieldRegex = new(
-        @"#\[(?<kind>prop|collection)(?:\((?<attr>[^)]*)\))?\]\s*(?:pub(?:\([^)]*\))?\s+)?(?<name>[A-Za-z_][A-Za-z0-9_]*)\s*:\s*(?<type>[^,\n}]+)",
+        @"#\[(?<kind>prop|derived|collection)(?:\((?<attr>[^)]*)\))?\]\s*(?:pub(?:\([^)]*\))?\s+)?(?<name>[A-Za-z_][A-Za-z0-9_]*)\s*:\s*(?<type>[^,\n}]+)",
         RegexOptions.Compiled);
 
     private static readonly Regex ImplBlockRegex = new(

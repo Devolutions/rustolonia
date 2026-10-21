@@ -3,15 +3,18 @@
 //! `Memo`, `Effect`, `NodeRef`, `TwoWay`), `El<T>`, `rsx!`, and `reactive_view_model!`.
 
 use rustolonia::{
-    prop, reactive_view_model, rsx, AsControl, AvaloniaObject, Border, Brush, Button, CheckBox,
-    Color, ContentControl, Control, CornerRadius, Dock, Effect, El, IntoProp, IntoValue, ListBox,
-    ListBoxItem, Memo, NodeRef, Orientation, Paint, PixelPoint, PlacementMode, Point, PropBinding,
-    Rect, Result, Signal, Size, Slider, StackPanel, StyledElement, TemplatedControl, TextBlock,
-    TextBox, Thickness, ToggleSwitch, Upcast, Vector, Window,
+    prop, provide_context, reactive_view_model, rsx, theme_brush, use_context, when_any, AsControl,
+    AvaloniaObject, Border, Brush, Button, CheckBox, Color, Command, ContentControl, Control,
+    ControlSlot, CornerRadius, Dock, Downcast, Effect, El, For, IntoProp, IntoValue,
+    KeyedListReconciler, ListBox, ListBoxItem, Memo, NodeRef, NonOwningRef, Orientation, Paint,
+    PixelPoint, PlacementMode, Point, PropBinding, ReactiveScope, Rect, Resource, ResourceState,
+    Result, Show, Signal, Size, Slider, StackPanel, StyledElement, TemplatedControl, TextBlock,
+    TextBox, ThemeVariant, Thickness, ToggleSwitch, Upcast, Vector, Window,
 };
 use std::cell::RefCell;
 use std::ops::Deref;
 use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 
 #[test]
 fn geometry_and_color_ergonomic_conversions_match_constructors() {
@@ -126,6 +129,26 @@ fn hierarchy_traits_upcast_and_deref_are_implemented_across_lineage() {
 
     assert_as_control::<Button>();
     assert_as_control::<&Button>();
+
+    fn assert_downcast<Ancestor, Sub>()
+    where
+        Ancestor: Downcast<Sub>,
+    {
+    }
+
+    assert_downcast::<AvaloniaObject, Button>();
+    assert_downcast::<StyledElement, Button>();
+    assert_downcast::<Control, Button>();
+    assert_downcast::<TemplatedControl, Button>();
+    assert_downcast::<ContentControl, Button>();
+    assert_downcast::<Button, Button>();
+
+    let ref_a = NonOwningRef::from_object_id(101, "control-a");
+    let ref_a_dup = NonOwningRef::from_object_id(101, "control-a-alias");
+    let ref_b = NonOwningRef::from_object_id(202, "control-b");
+    assert_eq!(ref_a, ref_a_dup);
+    assert_ne!(ref_a, ref_b);
+    assert_eq!(ref_a.object_id(), 101);
 }
 
 #[test]
@@ -347,4 +370,415 @@ fn reactive_view_model_and_prop_macros_forward_and_deduplicate_sink_updates() {
     assert!(vm.sink().is_none());
     vm.set_count(99).expect("update while detached");
     assert_eq!(sink.events.borrow().len(), 7);
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct TodoItem {
+    id: u32,
+    label: String,
+}
+
+#[test]
+fn keyed_list_reconciler_reuses_views_and_updates_signals_in_place() {
+    let mut reconciler = KeyedListReconciler::<TodoItem, u32, (u32, Signal<TodoItem>)>::new();
+    let created_ids = Rc::new(RefCell::new(Vec::new()));
+    let applied_lists = Rc::new(RefCell::new(Vec::<Vec<u32>>::new()));
+
+    let initial = vec![
+        TodoItem {
+            id: 1,
+            label: "First".into(),
+        },
+        TodoItem {
+            id: 2,
+            label: "Second".into(),
+        },
+    ];
+
+    let created_for_build = created_ids.clone();
+    let applied_for_list = applied_lists.clone();
+    let changed = reconciler
+        .reconcile(
+            initial,
+            &mut |item| item.id,
+            &mut |sig| {
+                let id = sig.get_untracked().id;
+                created_for_build.borrow_mut().push(id);
+                Ok((id, sig))
+            },
+            |views| {
+                applied_for_list
+                    .borrow_mut()
+                    .push(views.iter().map(|(id, _)| *id).collect());
+                Ok(())
+            },
+        )
+        .expect("initial reconcile");
+    assert!(changed);
+    assert_eq!(*created_ids.borrow(), vec![1, 2]);
+    assert_eq!(*applied_lists.borrow(), vec![vec![1, 2]]);
+
+    // Same keys, updated label on item 2: no new views created and `apply_list` is not called.
+    let updated_in_place = vec![
+        TodoItem {
+            id: 1,
+            label: "First".into(),
+        },
+        TodoItem {
+            id: 2,
+            label: "Second (edited)".into(),
+        },
+    ];
+    let changed = reconciler
+        .reconcile(
+            updated_in_place,
+            &mut |item| item.id,
+            &mut |sig| {
+                let id = sig.get_untracked().id;
+                created_ids.borrow_mut().push(id);
+                Ok((id, sig))
+            },
+            |views| {
+                applied_lists
+                    .borrow_mut()
+                    .push(views.iter().map(|(id, _)| *id).collect());
+                Ok(())
+            },
+        )
+        .expect("in-place reconcile");
+    assert!(!changed);
+    assert_eq!(
+        *created_ids.borrow(),
+        vec![1, 2],
+        "no new view should be built for existing keys"
+    );
+    assert_eq!(
+        applied_lists.borrow().len(),
+        1,
+        "apply_list should not run when key order is unchanged"
+    );
+
+    // Reorder (2, 1) and add key 3: only key 3 is built, and `apply_list` receives [2, 1, 3].
+    let reordered = vec![
+        TodoItem {
+            id: 2,
+            label: "Second (edited)".into(),
+        },
+        TodoItem {
+            id: 1,
+            label: "First".into(),
+        },
+        TodoItem {
+            id: 3,
+            label: "Third".into(),
+        },
+    ];
+    let mut captured_signals = Vec::new();
+    let changed = reconciler
+        .reconcile(
+            reordered,
+            &mut |item| item.id,
+            &mut |sig| {
+                let id = sig.get_untracked().id;
+                created_ids.borrow_mut().push(id);
+                Ok((id, sig))
+            },
+            |views| {
+                captured_signals = views.iter().map(|(_, s)| *s).collect();
+                applied_lists
+                    .borrow_mut()
+                    .push(views.iter().map(|(id, _)| *id).collect());
+                Ok(())
+            },
+        )
+        .expect("reordered reconcile");
+    assert!(changed);
+    assert_eq!(*created_ids.borrow(), vec![1, 2, 3]);
+    assert_eq!(*applied_lists.borrow(), vec![vec![1, 2], vec![2, 1, 3]]);
+    assert_eq!(captured_signals[0].get().label, "Second (edited)");
+}
+
+#[test]
+fn show_for_control_slot_and_theme_brush_compose_in_rsx() {
+    let theme = Signal::new(ThemeVariant::Light);
+    let bg = theme_brush(theme, (0xFF, 0xFF, 0xFF), (0x1E, 0x1E, 0x2E));
+    assert_eq!(bg.get(), Some(Brush::solid(Color::rgb(0xFF, 0xFF, 0xFF))));
+    theme.set(ThemeVariant::Dark);
+    assert_eq!(bg.get(), Some(Brush::solid(Color::rgb(0x1E, 0x1E, 0x2E))));
+
+    let visible = Signal::new(true);
+    let rows = Signal::new(vec![
+        TodoItem {
+            id: 1,
+            label: "Alpha".into(),
+        },
+        TodoItem {
+            id: 2,
+            label: "Beta".into(),
+        },
+    ]);
+    let slot = ControlSlot::new();
+
+    let _window: El<Window> = rsx! {
+        Window {
+            title: "Reactive Structural Primitives",
+            StackPanel {
+                background: bg,
+                { Show::when_else(visible, || TextBlock::el().text("Shown"), || TextBlock::el().text("Hidden")) }
+                { For::each(rows, |item| item.id, |item_sig| TextBlock::el().text(move || item_sig.get().label)) }
+                { slot.host() }
+            }
+        }
+    };
+    assert!(slot.host_control().is_none());
+}
+
+impl MockSink {
+    fn set_summary(&self, value: &str) -> Result<()> {
+        self.events.borrow_mut().push(format!("summary={value}"));
+        Ok(())
+    }
+
+    fn set_save_enabled(&self, enabled: bool) -> Result<()> {
+        self.events
+            .borrow_mut()
+            .push(format!("save_enabled={enabled}"));
+        Ok(())
+    }
+}
+
+reactive_view_model! {
+    pub struct DerivedDemoViewModel (sink: MockSink) {
+        pub name: String = String::from("Initial") => set_name(str_ref),
+        pub count: i64 = 0 => set_count(by_val),
+    }
+    derived {
+        pub summary: String = |vm: &Self| format!("{} ({})", vm.name, vm.count) => set_summary(str_ref),
+    }
+    can_execute {
+        pub save_enabled: bool = |vm: &Self| !vm.name.is_empty() && vm.count > 0 => set_save_enabled,
+    }
+}
+
+#[test]
+fn derived_properties_when_any_and_can_execute_recompute_on_state_changes() {
+    let mut vm = DerivedDemoViewModel::new();
+    assert_eq!(vm.summary(), "Initial (0)");
+    assert!(!vm.save_enabled());
+
+    let sink = MockSink::default();
+    vm.attach_sink(sink.clone()).expect("attach");
+    assert_eq!(
+        *sink.events.borrow(),
+        vec![
+            "name=Initial",
+            "count=0",
+            "summary=Initial (0)",
+            "save_enabled=false",
+        ]
+    );
+
+    vm.set_count(3).expect("set count to 3");
+    assert_eq!(vm.summary(), "Initial (3)");
+    assert!(vm.save_enabled());
+    assert_eq!(
+        *sink.events.borrow(),
+        vec![
+            "name=Initial",
+            "count=0",
+            "summary=Initial (0)",
+            "save_enabled=false",
+            "count=3",
+            "summary=Initial (3)",
+            "save_enabled=true",
+        ]
+    );
+
+    // Updating count from 3 to 4 updates `summary`, while `save_enabled` stays `true` (deduplicated!).
+    vm.set_count(4).expect("set count to 4");
+    assert_eq!(
+        *sink.events.borrow(),
+        vec![
+            "name=Initial",
+            "count=0",
+            "summary=Initial (0)",
+            "save_enabled=false",
+            "count=3",
+            "summary=Initial (3)",
+            "save_enabled=true",
+            "count=4",
+            "summary=Initial (4)",
+        ]
+    );
+
+    let combined = when_any!(
+        &vm,
+        prop!(DerivedDemoViewModel => name),
+        prop!(DerivedDemoViewModel => count)
+        => |name, count| format!("{name}#{count}")
+    );
+    assert_eq!(combined, "Initial#4");
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct AppThemeContext {
+    accent_hex: String,
+}
+
+#[test]
+fn reactive_scopes_dispose_child_effects_and_resolve_hierarchical_context() {
+    let source = Signal::new(10_i32);
+    let log = Rc::new(RefCell::new(Vec::new()));
+
+    provide_context(AppThemeContext {
+        accent_hex: "#007ACC".into(),
+    });
+    assert_eq!(
+        use_context::<AppThemeContext>().map(|c| c.accent_hex),
+        Some("#007ACC".into())
+    );
+
+    let log_for_child = log.clone();
+    let (_, child_scope) = ReactiveScope::with_new(|| {
+        provide_context(AppThemeContext {
+            accent_hex: "#FF6600".into(),
+        });
+        assert_eq!(
+            use_context::<AppThemeContext>().map(|c| c.accent_hex),
+            Some("#FF6600".into())
+        );
+        Effect::new(move || {
+            log_for_child.borrow_mut().push(source.get());
+            Ok(())
+        })
+        .expect("child effect");
+    });
+
+    // Outside the child scope, the root context is still active.
+    assert_eq!(
+        use_context::<AppThemeContext>().map(|c| c.accent_hex),
+        Some("#007ACC".into())
+    );
+    assert_eq!(*log.borrow(), vec![10]);
+
+    source.set(20);
+    assert_eq!(*log.borrow(), vec![10, 20]);
+
+    // Disposing the child scope stops all effects created inside it.
+    child_scope.dispose();
+    source.set(30);
+    assert_eq!(*log.borrow(), vec![10, 20]);
+}
+
+#[test]
+fn keyed_reconciler_disposes_removed_item_scopes_automatically() {
+    let global_tick = Signal::new(0_i32);
+    let ticks_seen_by_item_2 = Rc::new(RefCell::new(Vec::new()));
+    let mut reconciler = KeyedListReconciler::<TodoItem, u32, u32>::new();
+
+    let ticks_clone = ticks_seen_by_item_2.clone();
+    reconciler
+        .reconcile(
+            vec![
+                TodoItem {
+                    id: 1,
+                    label: "One".into(),
+                },
+                TodoItem {
+                    id: 2,
+                    label: "Two".into(),
+                },
+            ],
+            &mut |item| item.id,
+            &mut |sig| {
+                let id = sig.get_untracked().id;
+                if id == 2 {
+                    let ticks_inner = ticks_clone.clone();
+                    Effect::new(move || {
+                        ticks_inner.borrow_mut().push(global_tick.get());
+                        Ok(())
+                    })?;
+                }
+                Ok(id)
+            },
+            |_| Ok(()),
+        )
+        .expect("initial reconcile");
+
+    assert_eq!(*ticks_seen_by_item_2.borrow(), vec![0]);
+    global_tick.set(1);
+    assert_eq!(*ticks_seen_by_item_2.borrow(), vec![0, 1]);
+
+    // Remove item 2 from the list: its ReactiveScope is disposed automatically.
+    reconciler
+        .reconcile(
+            vec![TodoItem {
+                id: 1,
+                label: "One".into(),
+            }],
+            &mut |item| item.id,
+            &mut |sig| Ok(sig.get_untracked().id),
+            |_| Ok(()),
+        )
+        .expect("remove item 2");
+
+    global_tick.set(2);
+    assert_eq!(
+        *ticks_seen_by_item_2.borrow(),
+        vec![0, 1],
+        "removed item's effect must not run after reconciliation removes its key"
+    );
+}
+
+#[test]
+fn safe_reactive_command_tracks_can_execute_and_derived_resource_updates() {
+    let can_submit = Signal::new(false);
+    let executed_with = Arc::new(Mutex::new(Vec::new()));
+    let executed_for_cmd = executed_with.clone();
+
+    let cmd = Command::with_can_execute(can_submit, move |param| {
+        executed_for_cmd.lock().unwrap().push(param);
+        Ok(())
+    })
+    .expect("create command");
+
+    assert!(!cmd.is_enabled());
+    can_submit.set(true);
+    assert!(cmd.is_enabled());
+
+    cmd.execute(42_i32).expect("execute command");
+    assert_eq!(
+        *executed_with.lock().unwrap(),
+        vec![rustolonia::Variant::I32(42)]
+    );
+
+    let _btn = rsx! {
+        Button {
+            command: cmd,
+            "Submit"
+        }
+    };
+
+    let query = Signal::new(String::from("rust"));
+    let res = Resource::new_derived(
+        move || query.get(),
+        |q| {
+            if q.is_empty() {
+                Err("Query cannot be empty".into())
+            } else {
+                Ok(format!("Results for {q}"))
+            }
+        },
+    )
+    .expect("derived resource");
+
+    assert_eq!(
+        res.get(),
+        ResourceState::Ready("Results for rust".to_string())
+    );
+    query.set(String::new());
+    assert_eq!(
+        res.get(),
+        ResourceState::Error("Query cannot be empty".to_string())
+    );
 }

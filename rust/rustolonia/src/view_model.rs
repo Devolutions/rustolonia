@@ -1368,9 +1368,19 @@ macro_rules! __vm_sink_call {
     };
 }
 
+/// Evaluates a derived function over one or more [`PropertyPath`] descriptors on a view model.
+#[macro_export]
+macro_rules! when_any {
+    ($vm:expr, $($path:expr),+ => $compute:expr) => {{
+        let __vm = $vm;
+        ($compute)($($path.read(__vm)),+)
+    }};
+}
+
 /// Declaratively defines a Rust view-model struct backed by a generated sink,
-/// automatically generating `new()`, `attach_sink()`, `detach_sink()`, and
-/// `PartialEq`-deduplicated reactive field setters that forward changes to the sink.
+/// automatically generating `new()`, `attach_sink()`, `detach_sink()`,
+/// `PartialEq`-deduplicated reactive field setters, automatic `derived` property
+/// recomputation, and automatic `can_execute` command-state updates.
 #[macro_export]
 macro_rules! reactive_view_model {
     (
@@ -1380,6 +1390,20 @@ macro_rules! reactive_view_model {
                 $fvis:vis $field:ident : $fty:ty = $init:expr => $setter:ident ($mode:ident)
             ),* $(,)?
         }
+        $(
+            derived {
+                $(
+                    $dvis:vis $dfield:ident : $dty:ty = $dcompute:expr => $dsetter:ident ($dmode:ident)
+                ),* $(,)?
+            }
+        )?
+        $(
+            can_execute {
+                $(
+                    $cvis:vis $cfield:ident : bool = $ccompute:expr => $csetter:ident
+                ),* $(,)?
+            }
+        )?
     ) => {
         $(#[$meta])*
         $vis struct $name {
@@ -1387,6 +1411,12 @@ macro_rules! reactive_view_model {
             $(
                 $fvis $field: $fty,
             )*
+            $($(
+                $dvis $dfield: $dty,
+            )*)?
+            $($(
+                $cvis $cfield: bool,
+            )*)?
         }
 
         impl ::core::default::Default for $name {
@@ -1397,22 +1427,74 @@ macro_rules! reactive_view_model {
 
         impl $name {
             pub fn new() -> Self {
-                Self {
+                #[allow(unused_mut)]
+                let mut instance = Self {
                     sink: ::core::option::Option::None,
                     $(
                         $field: $init,
                     )*
-                }
+                    $($(
+                        $dfield: ::core::default::Default::default(),
+                    )*)?
+                    $($(
+                        $cfield: false,
+                    )*)?
+                };
+                $($(
+                    instance.$dfield = ($dcompute)(&instance);
+                )*)?
+                $($(
+                    instance.$cfield = ($ccompute)(&instance);
+                )*)?
+                instance
             }
 
             pub fn sink(&self) -> ::core::option::Option<&$sink> {
                 self.sink.as_ref()
             }
 
+            pub fn recompute_dependents(&mut self) -> $crate::Result<()> {
+                $($(
+                    {
+                        let next_derived: $dty = ($dcompute)(self);
+                        if self.$dfield != next_derived {
+                            self.$dfield = next_derived;
+                            if let ::core::option::Option::Some(sink) = &self.sink {
+                                $crate::__vm_sink_call!(sink, $dsetter, self.$dfield, $dmode)?;
+                            }
+                        }
+                    }
+                )*)?
+                $($(
+                    {
+                        let next_can_exec: bool = ($ccompute)(self);
+                        if self.$cfield != next_can_exec {
+                            self.$cfield = next_can_exec;
+                            if let ::core::option::Option::Some(sink) = &self.sink {
+                                sink.$csetter(self.$cfield)?;
+                            }
+                        }
+                    }
+                )*)?
+                ::core::result::Result::Ok(())
+            }
+
             pub fn attach_sink(&mut self, sink: $sink) -> $crate::Result<()> {
+                $($(
+                    self.$dfield = ($dcompute)(self);
+                )*)?
+                $($(
+                    self.$cfield = ($ccompute)(self);
+                )*)?
                 $(
                     $crate::__vm_sink_call!(sink, $setter, self.$field, $mode)?;
                 )*
+                $($(
+                    $crate::__vm_sink_call!(sink, $dsetter, self.$dfield, $dmode)?;
+                )*)?
+                $($(
+                    sink.$csetter(self.$cfield)?;
+                )*)?
                 self.sink = ::core::option::Option::Some(sink);
                 ::core::result::Result::Ok(())
             }
@@ -1434,10 +1516,23 @@ macro_rules! reactive_view_model {
                         if let ::core::option::Option::Some(sink) = &self.sink {
                             $crate::__vm_sink_call!(sink, $setter, self.$field, $mode)?;
                         }
+                        self.recompute_dependents()?;
                     }
                     ::core::result::Result::Ok(())
                 }
             )*
+
+            $($(
+                pub fn $dfield(&self) -> &$dty {
+                    &self.$dfield
+                }
+            )*)?
+
+            $($(
+                pub fn $cfield(&self) -> bool {
+                    self.$cfield
+                }
+            )*)?
         }
     };
 }

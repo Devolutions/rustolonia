@@ -1,12 +1,19 @@
 //! Declarative element builders (`El<T>`, `AnyEl`), polymorphic property conversions
 //! (`IntoValue`, `IntoProp`), and pooled reactive `DataTemplate` support.
 
-use crate::reactive::{Effect, Memo, NodeRef, Signal, TwoWay};
-use crate::{
-    AppScope, AsControl, Brush, Color, Control, CornerRadius, DataTemplate, EventSubscription,
-    LinearGradientBrush, Paint, PixelPoint, Point, RadialGradientBrush, Rect, Result, Size,
-    StyledElement, TextBlock, Thickness, Upcast, Variant, Vector, Window,
+use crate::reactive::{
+    provide_context, Effect, Memo, NodeRef, ReactiveScope, Resource, Signal, TwoWay,
 };
+use crate::{
+    AppScope, AsControl, Border, Brush, Color, ContentControl, Control, CornerRadius, DataTemplate,
+    Decorator, EventSubscription, ItemsControl, LinearGradientBrush, Paint, Panel, PixelPoint,
+    Point, RadialGradientBrush, Rect, ResourceValue, Result, Size, StackPanel, StyledElement,
+    TextBlock, ThemeVariant, Thickness, Upcast, Variant, Vector, Window,
+};
+use rustolonia_sys as sys;
+use std::cell::RefCell;
+use std::future::Future;
+use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
@@ -604,6 +611,23 @@ impl<T: 'static> El<T> {
         })
     }
 
+    /// Provides a typed context value to this element and all of its descendants
+    /// during [`El::build`].
+    pub fn provide_context<C: Clone + 'static>(mut self, value: C) -> Self {
+        let mut prev_ops = std::mem::take(&mut self.ops);
+        self.ops.push(Box::new(move |scope, control| {
+            let child_scope = ReactiveScope::new();
+            child_scope.run(|| {
+                provide_context(value);
+                for op in prev_ops.drain(..) {
+                    op(scope, control)?;
+                }
+                Ok(())
+            })
+        }));
+        self
+    }
+
     /// Materializes the control and applies all deferred properties, children,
     /// and event subscriptions within `scope`.
     pub fn build(self, scope: &AppScope) -> Result<T> {
@@ -613,6 +637,591 @@ impl<T: 'static> El<T> {
         }
         Ok(instance)
     }
+
+    /// Materializes this element and sets it as the content of `host`.
+    pub fn mount_into_content(
+        self,
+        scope: &AppScope,
+        host: &impl Upcast<ContentControl>,
+    ) -> Result<T>
+    where
+        T: AsControl,
+    {
+        let built = self.build(scope)?;
+        host.upcast_ref().set_content(Some(&built))?;
+        Ok(built)
+    }
+
+    /// Materializes this element and sets it as the single child of a [`Decorator`]
+    /// (such as [`Border`] or `Viewbox`).
+    pub fn mount_into_decorator(self, scope: &AppScope, host: &impl Upcast<Decorator>) -> Result<T>
+    where
+        T: AsControl,
+    {
+        let built = self.build(scope)?;
+        host.upcast_ref().set_child(Some(&built))?;
+        Ok(built)
+    }
+
+    /// Materializes this element and appends it to `host.children()`.
+    pub fn mount_into_panel(self, scope: &AppScope, host: &impl Upcast<Panel>) -> Result<T>
+    where
+        T: AsControl,
+    {
+        let built = self.build(scope)?;
+        host.upcast_ref().children()?.add(&built)?;
+        Ok(built)
+    }
+
+    /// Reactively binds a keyed list of items to a [`Panel`]'s `children()` collection.
+    ///
+    /// When the bound signal/closure updates, existing keys keep their realized
+    /// [`Control`] instances and update their per-item [`Signal<Item>`] in place.
+    pub fn children_for<Item, K, M, KF, VF, E>(
+        self,
+        items: impl IntoProp<Vec<Item>, M> + 'static,
+        mut key_fn: KF,
+        mut view_fn: VF,
+    ) -> Self
+    where
+        T: Upcast<Panel> + Clone + 'static,
+        Item: Clone + PartialEq + 'static,
+        K: Eq + Clone + 'static,
+        KF: FnMut(&Item) -> K + 'static,
+        VF: FnMut(Signal<Item>) -> E + 'static,
+        E: IntoChildEl + 'static,
+    {
+        let binding = items.into_prop();
+        self.with_op(move |scope, panel_owner| {
+            let panel: Panel = panel_owner.upcast();
+            let scope = scope.clone();
+            let reconciler = Rc::new(RefCell::new(KeyedListReconciler::<Item, K, Control>::new()));
+
+            let apply =
+                move |next_items: Vec<Item>, key_fn: &mut KF, view_fn: &mut VF| -> Result<()> {
+                    let scope_for_build = scope.clone();
+                    let panel_for_apply = panel.clone();
+                    reconciler.borrow_mut().reconcile(
+                        next_items,
+                        key_fn,
+                        &mut |sig| view_fn(sig).into_child_el().build(&scope_for_build),
+                        |controls| {
+                            let list = panel_for_apply.children()?;
+                            list.clear()?;
+                            for ctrl in controls {
+                                list.add(ctrl)?;
+                            }
+                            Ok(())
+                        },
+                    )?;
+                    Ok(())
+                };
+
+            match binding {
+                PropBinding::Static(initial) => {
+                    let mut key_fn = key_fn;
+                    let mut view_fn = view_fn;
+                    apply(initial, &mut key_fn, &mut view_fn)
+                }
+                PropBinding::Reactive(mut compute) => {
+                    Effect::new(move || apply(compute(), &mut key_fn, &mut view_fn)).map(|_| ())
+                }
+                PropBinding::TwoWay(adapter) => {
+                    let updating = Arc::new(AtomicBool::new(false));
+                    let mut key_fn = key_fn;
+                    let mut view_fn = view_fn;
+                    let apply_cell = Rc::new(RefCell::new(move |next: Vec<Item>| {
+                        apply(next, &mut key_fn, &mut view_fn)
+                    }));
+                    (adapter.bind_to_control)(
+                        Box::new(move |next| (apply_cell.borrow_mut())(next)),
+                        updating,
+                    )
+                }
+            }
+        })
+    }
+
+    /// Reactively binds a keyed list of items to an [`ItemsControl`]'s `items()` collection.
+    pub fn items_for<Item, K, M, KF, VF, E>(
+        self,
+        items: impl IntoProp<Vec<Item>, M> + 'static,
+        mut key_fn: KF,
+        mut view_fn: VF,
+    ) -> Self
+    where
+        T: Upcast<ItemsControl> + Clone + 'static,
+        Item: Clone + PartialEq + 'static,
+        K: Eq + Clone + 'static,
+        KF: FnMut(&Item) -> K + 'static,
+        VF: FnMut(Signal<Item>) -> E + 'static,
+        E: IntoChildEl + 'static,
+    {
+        let binding = items.into_prop();
+        self.with_op(move |scope, items_owner| {
+            let items_control: ItemsControl = items_owner.upcast();
+            let scope = scope.clone();
+            let reconciler = Rc::new(RefCell::new(KeyedListReconciler::<Item, K, Control>::new()));
+
+            let apply =
+                move |next_items: Vec<Item>, key_fn: &mut KF, view_fn: &mut VF| -> Result<()> {
+                    let scope_for_build = scope.clone();
+                    let ic_for_apply = items_control.clone();
+                    reconciler.borrow_mut().reconcile(
+                        next_items,
+                        key_fn,
+                        &mut |sig| view_fn(sig).into_child_el().build(&scope_for_build),
+                        |controls| {
+                            let list = ic_for_apply.items()?;
+                            list.clear()?;
+                            for ctrl in controls {
+                                list.add(ctrl)?;
+                            }
+                            Ok(())
+                        },
+                    )?;
+                    Ok(())
+                };
+
+            match binding {
+                PropBinding::Static(initial) => {
+                    let mut key_fn = key_fn;
+                    let mut view_fn = view_fn;
+                    apply(initial, &mut key_fn, &mut view_fn)
+                }
+                PropBinding::Reactive(mut compute) => {
+                    Effect::new(move || apply(compute(), &mut key_fn, &mut view_fn)).map(|_| ())
+                }
+                PropBinding::TwoWay(adapter) => {
+                    let updating = Arc::new(AtomicBool::new(false));
+                    let mut key_fn = key_fn;
+                    let mut view_fn = view_fn;
+                    let apply_cell = Rc::new(RefCell::new(move |next: Vec<Item>| {
+                        apply(next, &mut key_fn, &mut view_fn)
+                    }));
+                    (adapter.bind_to_control)(
+                        Box::new(move |next| (apply_cell.borrow_mut())(next)),
+                        updating,
+                    )
+                }
+            }
+        })
+    }
+}
+
+/// Keyed list reconciler that reuses existing realized view handles `V` and
+/// updates their per-item [`Signal<T>`] in place when items are added, removed,
+/// reordered, or modified.
+pub struct KeyedListReconciler<T: 'static, K, V> {
+    entries: Vec<(K, V, Signal<T>, ReactiveScope)>,
+}
+
+impl<T: 'static, K, V> Default for KeyedListReconciler<T, K, V> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<T: 'static, K, V> KeyedListReconciler<T, K, V> {
+    pub fn new() -> Self {
+        Self {
+            entries: Vec::new(),
+        }
+    }
+
+    pub fn len(&self) -> usize {
+        self.entries.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.entries.is_empty()
+    }
+}
+
+impl<T: 'static, K, V> KeyedListReconciler<T, K, V>
+where
+    T: Clone + PartialEq,
+    K: Eq + Clone,
+    V: Clone,
+{
+    /// Reconciles `next_items` against the currently realized entries.
+    ///
+    /// Returns `Ok(true)` if the structural key sequence changed (and `apply_list`
+    /// was invoked), or `Ok(false)` if all keys remained in the exact same order
+    /// (in which case only per-item signals were updated in place). Any removed
+    /// item's [`ReactiveScope`] is automatically disposed.
+    pub fn reconcile(
+        &mut self,
+        next_items: Vec<T>,
+        key_fn: &mut impl FnMut(&T) -> K,
+        build_view: &mut impl FnMut(Signal<T>) -> Result<V>,
+        apply_list: impl FnOnce(&[V]) -> Result<()>,
+    ) -> Result<bool> {
+        let old_keys: Vec<K> = self.entries.iter().map(|(k, _, _, _)| k.clone()).collect();
+        let mut old_entries: Vec<Option<(K, V, Signal<T>, ReactiveScope)>> =
+            self.entries.drain(..).map(Some).collect();
+        let mut next_entries = Vec::with_capacity(next_items.len());
+        let mut next_keys = Vec::with_capacity(next_items.len());
+
+        for item in next_items {
+            let key = key_fn(&item);
+            next_keys.push(key.clone());
+            let found = old_entries
+                .iter_mut()
+                .find(|slot| slot.as_ref().is_some_and(|(k, _, _, _)| *k == key))
+                .and_then(Option::take);
+
+            if let Some((existing_key, view, signal, item_scope)) = found {
+                signal.set_if_changed(item);
+                next_entries.push((existing_key, view, signal, item_scope));
+            } else {
+                let signal = Signal::new(item);
+                let item_scope = ReactiveScope::new();
+                let view = item_scope.run(|| build_view(signal))?;
+                next_entries.push((key, view, signal, item_scope));
+            }
+        }
+
+        // Dispose scopes for any removed items.
+        for (_, _, _, removed_scope) in old_entries.into_iter().flatten() {
+            removed_scope.dispose();
+        }
+
+        let keys_changed = old_keys != next_keys;
+        if keys_changed {
+            let views: Vec<V> = next_entries.iter().map(|(_, v, _, _)| v.clone()).collect();
+            apply_list(&views)?;
+        }
+        self.entries = next_entries;
+        Ok(keys_changed)
+    }
+}
+
+/// Reactive conditional view primitive (`Show::when` / `Show::when_else`).
+pub struct Show;
+
+impl Show {
+    /// Renders `then_view` inside a lightweight [`Border`] container when
+    /// `condition` evaluates to `true`, and clears the container when `false`.
+    pub fn when<M, F, E>(
+        condition: impl IntoProp<bool, M> + 'static,
+        mut then_view: F,
+    ) -> El<Border>
+    where
+        F: FnMut() -> E + 'static,
+        E: IntoContentEl + 'static,
+    {
+        Self::when_else(
+            condition,
+            move || then_view().into_content_el(),
+            || None::<AnyEl>,
+        )
+    }
+
+    /// Renders `then_view` when `condition` is `true` and `else_view` when `false`,
+    /// swapping the mounted child only when the boolean condition flips.
+    pub fn when_else<M, FT, ET, FE, EE>(
+        condition: impl IntoProp<bool, M> + 'static,
+        mut then_view: FT,
+        mut else_view: FE,
+    ) -> El<Border>
+    where
+        FT: FnMut() -> ET + 'static,
+        ET: IntoContentEl + 'static,
+        FE: FnMut() -> EE + 'static,
+        EE: IntoContentEl + 'static,
+    {
+        let binding = condition.into_prop();
+        Border::el().with_op(move |scope, border| {
+            let scope = scope.clone();
+            let border = border.clone();
+            let last_state: Rc<RefCell<Option<bool>>> = Rc::new(RefCell::new(None));
+            let active_scope: Rc<RefCell<Option<ReactiveScope>>> = Rc::new(RefCell::new(None));
+
+            let mut update = move |state: bool| -> Result<()> {
+                if *last_state.borrow() == Some(state) {
+                    return Ok(());
+                }
+                *last_state.borrow_mut() = Some(state);
+                if let Some(prev_scope) = active_scope.borrow_mut().take() {
+                    prev_scope.dispose();
+                }
+                let branch_scope = ReactiveScope::new();
+                let built = branch_scope.run(|| {
+                    let next_el = if state {
+                        then_view().into_content_el()
+                    } else {
+                        else_view().into_content_el()
+                    };
+                    next_el.map(|el| el.build(&scope)).transpose()
+                })?;
+                *active_scope.borrow_mut() = Some(branch_scope);
+                border.set_child(built.as_ref().map(|c| c as &dyn AsControl))
+            };
+
+            match binding {
+                PropBinding::Static(state) => update(state),
+                PropBinding::Reactive(mut compute) => {
+                    Effect::new(move || update(compute())).map(|_| ())
+                }
+                PropBinding::TwoWay(adapter) => {
+                    let updating = Arc::new(AtomicBool::new(false));
+                    let update_cell = Rc::new(RefCell::new(update));
+                    (adapter.bind_to_control)(
+                        Box::new(move |state| (update_cell.borrow_mut())(state)),
+                        updating,
+                    )
+                }
+            }
+        })
+    }
+}
+
+/// Reactive keyed list view primitive (`For::each`).
+pub struct For;
+
+impl For {
+    /// Renders a reactive keyed list inside a [`StackPanel`], reusing realized
+    /// controls and updating per-item [`Signal<Item>`] handles in place.
+    pub fn each<Item, K, M, KF, VF, E>(
+        items: impl IntoProp<Vec<Item>, M> + 'static,
+        key_fn: KF,
+        view_fn: VF,
+    ) -> El<StackPanel>
+    where
+        Item: Clone + PartialEq + 'static,
+        K: Eq + Clone + 'static,
+        KF: FnMut(&Item) -> K + 'static,
+        VF: FnMut(Signal<Item>) -> E + 'static,
+        E: IntoChildEl + 'static,
+    {
+        StackPanel::el().children_for(items, key_fn, view_fn)
+    }
+}
+
+/// A `Copy` slot for dynamically mounting, replacing, or clearing a declarative
+/// [`El`] / `rsx!` subtree inside an existing view hierarchy at runtime.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct ControlSlot {
+    host: NodeRef<Border>,
+    active_scope: NodeRef<ReactiveScope>,
+}
+
+impl ControlSlot {
+    pub fn new() -> Self {
+        Self {
+            host: NodeRef::new(),
+            active_scope: NodeRef::new(),
+        }
+    }
+
+    /// Returns the host [`El<Border>`] to place inside a parent `rsx!` or `El` tree.
+    pub fn host(&self) -> El<Border> {
+        Border::el().node_ref(self.host)
+    }
+
+    /// Returns the underlying host [`Border`] if it has been materialized.
+    pub fn host_control(&self) -> Option<Border> {
+        self.host.get()
+    }
+
+    /// Materializes `view` inside a new [`ReactiveScope`] and mounts it into this
+    /// slot's host container, disposing any previous subtree's scope.
+    pub fn mount(&self, scope: &AppScope, view: impl IntoContentEl) -> Result<()> {
+        if let Some(prev) = self.active_scope.get() {
+            prev.dispose();
+        }
+        let next_scope = ReactiveScope::new();
+        self.active_scope.set(next_scope);
+        let Some(border) = self.host.get() else {
+            return Ok(());
+        };
+        let built =
+            next_scope.run(|| view.into_content_el().map(|el| el.build(scope)).transpose())?;
+        border.set_child(built.as_ref().map(|c| c as &dyn AsControl))
+    }
+
+    /// Clears any currently mounted child and disposes its [`ReactiveScope`].
+    pub fn clear(&self) -> Result<()> {
+        if let Some(prev) = self.active_scope.get() {
+            prev.dispose();
+        }
+        let Some(border) = self.host.get() else {
+            return Ok(());
+        };
+        border.set_child(None)
+    }
+}
+
+/// A safe, reactive wrapper around `IAvnCommand` that supports automatic
+/// `CanExecuteChanged` notifications driven by [`Signal<bool>`], [`Memo<bool>`],
+/// or reactive closures.
+#[derive(Clone, Debug)]
+pub struct Command {
+    pub(crate) raw: sys::Command,
+    can_execute_flag: Arc<AtomicBool>,
+    _effect: Option<Effect>,
+}
+
+impl Command {
+    /// Creates an always-enabled command that invokes `execute` with the command parameter.
+    pub fn new(mut execute: impl FnMut(Variant) -> Result<()> + Send + 'static) -> Self {
+        let can_execute_flag = Arc::new(AtomicBool::new(true));
+        let flag_for_query = can_execute_flag.clone();
+        let raw = sys::command(
+            move |variant| {
+                execute(Variant::from_abi(variant)).map_err(|error| match error {
+                    crate::Error::Abi(error) => error,
+                    _ => sys::Error(sys::E_FAIL),
+                })
+            },
+            move |_| Ok(flag_for_query.load(Ordering::Acquire)),
+        );
+        Self {
+            raw,
+            can_execute_flag,
+            _effect: None,
+        }
+    }
+
+    /// Creates a command whose `CanExecute` state is reactively driven by `can_execute`
+    /// (a `bool`, [`Signal<bool>`], [`Memo<bool>`], or closure), automatically firing
+    /// `CanExecuteChanged` when the state changes.
+    pub fn with_can_execute<M>(
+        can_execute: impl IntoProp<bool, M> + 'static,
+        mut execute: impl FnMut(Variant) -> Result<()> + Send + 'static,
+    ) -> Result<Self> {
+        let can_execute_flag = Arc::new(AtomicBool::new(true));
+        let flag_for_query = can_execute_flag.clone();
+        let raw = sys::command(
+            move |variant| {
+                execute(Variant::from_abi(variant)).map_err(|error| match error {
+                    crate::Error::Abi(error) => error,
+                    _ => sys::Error(sys::E_FAIL),
+                })
+            },
+            move |_| Ok(flag_for_query.load(Ordering::Acquire)),
+        );
+
+        let effect = match can_execute.into_prop() {
+            PropBinding::Static(initial) => {
+                can_execute_flag.store(initial, Ordering::Release);
+                None
+            }
+            PropBinding::Reactive(mut compute) => {
+                let flag_for_effect = can_execute_flag.clone();
+                let raw_for_effect = raw.clone();
+                Some(Effect::new(move || {
+                    let next = compute();
+                    let prev = flag_for_effect.swap(next, Ordering::AcqRel);
+                    if prev != next {
+                        raw_for_effect.notify();
+                    }
+                    Ok(())
+                })?)
+            }
+            PropBinding::TwoWay(adapter) => {
+                let flag_for_effect = can_execute_flag.clone();
+                let raw_for_effect = raw.clone();
+                let updating = Arc::new(AtomicBool::new(false));
+                (adapter.bind_to_control)(
+                    Box::new(move |next| {
+                        let prev = flag_for_effect.swap(next, Ordering::AcqRel);
+                        if prev != next {
+                            raw_for_effect.notify();
+                        }
+                        Ok(())
+                    }),
+                    updating,
+                )?;
+                None
+            }
+        };
+
+        Ok(Self {
+            raw,
+            can_execute_flag,
+            _effect: effect,
+        })
+    }
+
+    /// Returns whether this command is currently enabled.
+    pub fn is_enabled(&self) -> bool {
+        self.can_execute_flag.load(Ordering::Acquire)
+    }
+
+    /// Manually fires `CanExecuteChanged` notifications to all subscribed controls.
+    pub fn notify(&self) {
+        self.raw.notify();
+    }
+
+    /// Invokes the command directly from Rust with `parameter`.
+    pub fn execute(&self, parameter: impl Into<Variant>) -> Result<()> {
+        let abi = parameter.into().to_abi()?;
+        Ok(self.raw.as_com_ptr().execute(*abi)?)
+    }
+
+    pub fn as_com_ptr(&self) -> &sys::ComPtr<sys::IAvnCommand> {
+        self.raw.as_com_ptr()
+    }
+}
+
+/// Polymorphic conversion into an optional `IAvnCommand` pointer for control setters.
+pub trait IntoCommandProp {
+    fn into_command_prop(self) -> Option<sys::ComPtr<sys::IAvnCommand>>;
+}
+
+impl IntoCommandProp for Command {
+    fn into_command_prop(self) -> Option<sys::ComPtr<sys::IAvnCommand>> {
+        Some(self.raw.as_com_ptr().clone())
+    }
+}
+
+impl IntoCommandProp for &Command {
+    fn into_command_prop(self) -> Option<sys::ComPtr<sys::IAvnCommand>> {
+        Some(self.raw.as_com_ptr().clone())
+    }
+}
+
+impl IntoCommandProp for Option<Command> {
+    fn into_command_prop(self) -> Option<sys::ComPtr<sys::IAvnCommand>> {
+        self.map(|cmd| cmd.raw.as_com_ptr().clone())
+    }
+}
+
+impl IntoCommandProp for sys::ComPtr<sys::IAvnCommand> {
+    fn into_command_prop(self) -> Option<sys::ComPtr<sys::IAvnCommand>> {
+        Some(self)
+    }
+}
+
+impl IntoCommandProp for Option<sys::ComPtr<sys::IAvnCommand>> {
+    fn into_command_prop(self) -> Option<sys::ComPtr<sys::IAvnCommand>> {
+        self
+    }
+}
+
+impl IntoCommandProp for Option<&sys::ComPtr<sys::IAvnCommand>> {
+    fn into_command_prop(self) -> Option<sys::ComPtr<sys::IAvnCommand>> {
+        self.cloned()
+    }
+}
+
+/// Returns a reactive [`Memo<Option<Brush>>`] that switches between `light` and
+/// `dark` whenever `theme` changes.
+pub fn theme_brush(
+    theme: Signal<ThemeVariant>,
+    light: impl Into<Brush>,
+    dark: impl Into<Brush>,
+) -> Memo<Option<Brush>> {
+    let light = light.into();
+    let dark = dark.into();
+    Memo::new(move || {
+        Some(match theme.get() {
+            ThemeVariant::Dark => dark,
+            ThemeVariant::Light | ThemeVariant::Default => light,
+        })
+    })
 }
 
 /// A type-erased declarative element that materializes into a [`Control`].
@@ -798,6 +1407,115 @@ impl AppScope {
     /// Creates a [`NodeRef`] slot for capturing a materialized control from `El<T>` or `rsx!`.
     pub fn node_ref<T: 'static>(&self) -> NodeRef<T> {
         NodeRef::new()
+    }
+
+    /// Creates a [`ControlSlot`] for dynamically mounting or swapping `rsx!` subtrees.
+    pub fn control_slot(&self) -> ControlSlot {
+        ControlSlot::new()
+    }
+
+    /// Creates an asynchronous reactive [`Resource<T>`] that runs `fetcher` on a
+    /// background task whenever the value returned by `source` changes.
+    ///
+    /// If `source` changes again while a previous fetch is still in flight, the
+    /// stale result is discarded automatically.
+    pub fn create_resource<S, T, Fut>(
+        &self,
+        mut source: impl FnMut() -> S + 'static,
+        fetcher: impl Fn(S) -> Fut + 'static,
+    ) -> Result<Resource<T>>
+    where
+        S: PartialEq + Clone + Send + 'static,
+        T: Clone + Send + 'static,
+        Fut: Future<Output = std::result::Result<T, String>> + Send + 'static,
+    {
+        let resource = Resource::<T>::pending();
+        let scope = self.clone();
+        let last_source: Rc<RefCell<Option<S>>> = Rc::new(RefCell::new(None));
+
+        Effect::new(move || {
+            let next_source = source();
+            if last_source.borrow().as_ref() == Some(&next_source) {
+                return Ok(());
+            }
+            *last_source.borrow_mut() = Some(next_source.clone());
+
+            let gen = resource.next_generation();
+            resource.set_loading();
+            let fut = fetcher(next_source);
+            let scope_for_post = scope.clone();
+            scope.spawn(async move {
+                let outcome = fut.await;
+                let _ = scope_for_post.post(move || {
+                    if resource.current_generation() == gen {
+                        match outcome {
+                            Ok(value) => resource.set_ready(value),
+                            Err(error) => resource.set_error(error),
+                        }
+                    }
+                });
+            })
+        })?;
+
+        Ok(resource)
+    }
+
+    /// Creates a reactive [`Signal<ThemeVariant>`] that tracks `ActualThemeVariantChanged`
+    /// on `host` (for example a [`Window`] or root [`Control`]).
+    pub fn theme_variant_signal(
+        &self,
+        host: &impl Upcast<StyledElement>,
+    ) -> Result<Signal<ThemeVariant>> {
+        let initial = self.actual_theme_variant()?;
+        let signal = Signal::new(initial);
+        let app_scope = self.clone();
+        let subscription = host
+            .upcast_ref()
+            .subscribe_actual_theme_variant_changed(move |_| {
+                if let Ok(variant) = app_scope.actual_theme_variant() {
+                    signal.set_if_changed(variant);
+                }
+            })?;
+        self.retain_subscription(subscription);
+        Ok(signal)
+    }
+
+    /// Creates a reactive [`Signal<Option<ResourceValue>>`] that resolves `key`
+    /// and updates automatically when `ActualThemeVariantChanged` or
+    /// `ResourcesChanged` fires on `host`.
+    pub fn resource_signal(
+        &self,
+        host: &impl Upcast<StyledElement>,
+        key: impl Into<String>,
+    ) -> Result<Signal<Option<ResourceValue>>> {
+        let key = key.into();
+        let theme = self.actual_theme_variant()?;
+        let initial = self.find_resource(&key, theme)?;
+        let signal = Signal::new(initial);
+
+        let styled = host.upcast_ref();
+        let scope_for_theme = self.clone();
+        let key_for_theme = key.clone();
+        let theme_sub = styled.subscribe_actual_theme_variant_changed(move |_| {
+            if let Ok(variant) = scope_for_theme.actual_theme_variant() {
+                if let Ok(val) = scope_for_theme.find_resource(&key_for_theme, variant) {
+                    signal.set_if_changed(val);
+                }
+            }
+        })?;
+        self.retain_subscription(theme_sub);
+
+        let scope_for_res = self.clone();
+        let res_sub = styled.subscribe_resources_changed(move |_| {
+            if let Ok(variant) = scope_for_res.actual_theme_variant() {
+                if let Ok(val) = scope_for_res.find_resource(&key, variant) {
+                    signal.set_if_changed(val);
+                }
+            }
+        })?;
+        self.retain_subscription(res_sub);
+
+        Ok(signal)
     }
 
     /// Materializes a declarative [`El<Window>`] and mounts it into this application scope.

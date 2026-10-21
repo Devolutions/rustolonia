@@ -639,6 +639,28 @@ fn emit_type(
             );
         }
     }
+    if has_text_block {
+        out.push_str(
+            "    pub fn object_id(&self) -> Result<i64> {\n\
+             \x20       Ok(self.raw.object_id()?)\n\
+             \x20   }\n\
+             \x20   pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {\n\
+             \x20       Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)\n\
+             \x20   }\n\
+             \x20   pub fn is<Target>(&self) -> bool\n\
+             \x20   where\n\
+             \x20       Self: crate::Downcast<Target>,\n\
+             \x20   {\n\
+             \x20       <Self as crate::Downcast<Target>>::is_instance(self)\n\
+             \x20   }\n\
+             \x20   pub fn cast<Target>(&self) -> Option<Target>\n\
+             \x20   where\n\
+             \x20       Self: crate::Downcast<Target>,\n\
+             \x20   {\n\
+             \x20       <Self as crate::Downcast<Target>>::downcast(self)\n\
+             \x20   }\n",
+        );
+    }
 
     let reserved_methods: std::collections::HashSet<String> = lineage(ir, ty)
         .iter()
@@ -751,7 +773,19 @@ fn emit_type(
              \x20   fn as_ref(&self) -> &{ancestor_safe} {{\n\
              \x20       <Self as crate::Upcast<{ancestor_safe}>>::upcast_ref(self)\n\
              \x20   }}\n\
-             }}\n\n"
+             }}\n\n\
+             unsafe impl crate::Downcast<{safe_name}> for {ancestor_safe} {{\n\
+             \x20   fn is_instance(&self) -> bool {{\n\
+             \x20       self.raw.query_interface::<sys::{interface_name}>().is_ok()\n\
+             \x20   }}\n\
+             \x20   fn downcast(&self) -> Option<{safe_name}> {{\n\
+             \x20       self.raw\n\
+             \x20           .query_interface::<sys::{interface_name}>()\n\
+             \x20           .ok()\n\
+             \x20           .map(|raw| {safe_name} {{ raw }})\n\
+             \x20   }}\n\
+             }}\n\n",
+            interface_name = ty.name
         ));
     }
 
@@ -1071,7 +1105,17 @@ fn emit_el_type(
                          \x20   }}\n"
                     ));
                 }
-                "Command" | "ItemFilter" | "TextFilter" | "ItemSelector" | "TextSelector"
+                "Command" => {
+                    out.push_str(&format!(
+                        "    pub fn {builder}(self, value: impl crate::view::IntoCommandProp + 'static) -> Self {{\n\
+                         \x20       self.with_op(move |_, control| {{\n\
+                         \x20           let cmd = value.into_command_prop();\n\
+                         \x20           control.set_{builder}(cmd.as_ref())\n\
+                         \x20       }})\n\
+                         \x20   }}\n"
+                    ));
+                }
+                "ItemFilter" | "TextFilter" | "ItemSelector" | "TextSelector"
                 | "PopupPlacement" | "AsyncPopulator" => {
                     let full =
                         simple_name(property.interface_name.as_deref().expect("interfaceName"));

@@ -3173,6 +3173,24 @@ impl AvaloniaObject {
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
     }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
+    }
 }
 
 
@@ -3192,6 +3210,24 @@ impl AutoCompleteBox {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -4325,6 +4361,18 @@ impl AsRef<AvaloniaObject> for AutoCompleteBox {
     }
 }
 
+unsafe impl crate::Downcast<AutoCompleteBox> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnAutoCompleteBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<AutoCompleteBox> {
+        self.raw
+            .query_interface::<sys::IAvnAutoCompleteBox>()
+            .ok()
+            .map(|raw| AutoCompleteBox { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for AutoCompleteBox {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -4339,6 +4387,18 @@ unsafe impl crate::Upcast<StyledElement> for AutoCompleteBox {
 impl AsRef<StyledElement> for AutoCompleteBox {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<AutoCompleteBox> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnAutoCompleteBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<AutoCompleteBox> {
+        self.raw
+            .query_interface::<sys::IAvnAutoCompleteBox>()
+            .ok()
+            .map(|raw| AutoCompleteBox { raw })
     }
 }
 
@@ -4359,6 +4419,18 @@ impl AsRef<Control> for AutoCompleteBox {
     }
 }
 
+unsafe impl crate::Downcast<AutoCompleteBox> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnAutoCompleteBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<AutoCompleteBox> {
+        self.raw
+            .query_interface::<sys::IAvnAutoCompleteBox>()
+            .ok()
+            .map(|raw| AutoCompleteBox { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for AutoCompleteBox {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -4373,6 +4445,18 @@ unsafe impl crate::Upcast<TemplatedControl> for AutoCompleteBox {
 impl AsRef<TemplatedControl> for AutoCompleteBox {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<AutoCompleteBox> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnAutoCompleteBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<AutoCompleteBox> {
+        self.raw
+            .query_interface::<sys::IAvnAutoCompleteBox>()
+            .ok()
+            .map(|raw| AutoCompleteBox { raw })
     }
 }
 
@@ -5008,6 +5092,24 @@ impl Border {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -5771,6 +5873,18 @@ impl AsRef<AvaloniaObject> for Border {
     }
 }
 
+unsafe impl crate::Downcast<Border> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnBorder>().is_ok()
+    }
+    fn downcast(&self) -> Option<Border> {
+        self.raw
+            .query_interface::<sys::IAvnBorder>()
+            .ok()
+            .map(|raw| Border { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for Border {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -5785,6 +5899,18 @@ unsafe impl crate::Upcast<StyledElement> for Border {
 impl AsRef<StyledElement> for Border {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Border> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnBorder>().is_ok()
+    }
+    fn downcast(&self) -> Option<Border> {
+        self.raw
+            .query_interface::<sys::IAvnBorder>()
+            .ok()
+            .map(|raw| Border { raw })
     }
 }
 
@@ -5805,6 +5931,18 @@ impl AsRef<Control> for Border {
     }
 }
 
+unsafe impl crate::Downcast<Border> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnBorder>().is_ok()
+    }
+    fn downcast(&self) -> Option<Border> {
+        self.raw
+            .query_interface::<sys::IAvnBorder>()
+            .ok()
+            .map(|raw| Border { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Decorator> for Border {
     fn upcast(&self) -> Decorator {
         Decorator {
@@ -5819,6 +5957,18 @@ unsafe impl crate::Upcast<Decorator> for Border {
 impl AsRef<Decorator> for Border {
     fn as_ref(&self) -> &Decorator {
         <Self as crate::Upcast<Decorator>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Border> for Decorator {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnBorder>().is_ok()
+    }
+    fn downcast(&self) -> Option<Border> {
+        self.raw
+            .query_interface::<sys::IAvnBorder>()
+            .ok()
+            .map(|raw| Border { raw })
     }
 }
 
@@ -6255,6 +6405,24 @@ impl Button {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -7209,6 +7377,18 @@ impl AsRef<AvaloniaObject> for Button {
     }
 }
 
+unsafe impl crate::Downcast<Button> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<Button> {
+        self.raw
+            .query_interface::<sys::IAvnButton>()
+            .ok()
+            .map(|raw| Button { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for Button {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -7223,6 +7403,18 @@ unsafe impl crate::Upcast<StyledElement> for Button {
 impl AsRef<StyledElement> for Button {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Button> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<Button> {
+        self.raw
+            .query_interface::<sys::IAvnButton>()
+            .ok()
+            .map(|raw| Button { raw })
     }
 }
 
@@ -7243,6 +7435,18 @@ impl AsRef<Control> for Button {
     }
 }
 
+unsafe impl crate::Downcast<Button> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<Button> {
+        self.raw
+            .query_interface::<sys::IAvnButton>()
+            .ok()
+            .map(|raw| Button { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for Button {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -7260,6 +7464,18 @@ impl AsRef<TemplatedControl> for Button {
     }
 }
 
+unsafe impl crate::Downcast<Button> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<Button> {
+        self.raw
+            .query_interface::<sys::IAvnButton>()
+            .ok()
+            .map(|raw| Button { raw })
+    }
+}
+
 unsafe impl crate::Upcast<ContentControl> for Button {
     fn upcast(&self) -> ContentControl {
         ContentControl {
@@ -7274,6 +7490,18 @@ unsafe impl crate::Upcast<ContentControl> for Button {
 impl AsRef<ContentControl> for Button {
     fn as_ref(&self) -> &ContentControl {
         <Self as crate::Upcast<ContentControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Button> for ContentControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<Button> {
+        self.raw
+            .query_interface::<sys::IAvnButton>()
+            .ok()
+            .map(|raw| Button { raw })
     }
 }
 
@@ -7605,8 +7833,11 @@ impl crate::view::El<Button> {
             crate::view::apply_prop(control, binding, |c, v| c.set_click_mode(v))
         })
     }
-    pub fn command(self, value: Option<sys::ComPtr<sys::IAvnCommand>>) -> Self {
-        self.with_op(move |_, control| control.set_command(value.as_ref()))
+    pub fn command(self, value: impl crate::view::IntoCommandProp + 'static) -> Self {
+        self.with_op(move |_, control| {
+            let cmd = value.into_command_prop();
+            control.set_command(cmd.as_ref())
+        })
     }
     pub fn hot_key<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
         let binding = value.into_prop();
@@ -7809,6 +8040,24 @@ impl ButtonSpinner {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -8726,6 +8975,18 @@ impl AsRef<AvaloniaObject> for ButtonSpinner {
     }
 }
 
+unsafe impl crate::Downcast<ButtonSpinner> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnButtonSpinner>().is_ok()
+    }
+    fn downcast(&self) -> Option<ButtonSpinner> {
+        self.raw
+            .query_interface::<sys::IAvnButtonSpinner>()
+            .ok()
+            .map(|raw| ButtonSpinner { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for ButtonSpinner {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -8740,6 +9001,18 @@ unsafe impl crate::Upcast<StyledElement> for ButtonSpinner {
 impl AsRef<StyledElement> for ButtonSpinner {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ButtonSpinner> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnButtonSpinner>().is_ok()
+    }
+    fn downcast(&self) -> Option<ButtonSpinner> {
+        self.raw
+            .query_interface::<sys::IAvnButtonSpinner>()
+            .ok()
+            .map(|raw| ButtonSpinner { raw })
     }
 }
 
@@ -8760,6 +9033,18 @@ impl AsRef<Control> for ButtonSpinner {
     }
 }
 
+unsafe impl crate::Downcast<ButtonSpinner> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnButtonSpinner>().is_ok()
+    }
+    fn downcast(&self) -> Option<ButtonSpinner> {
+        self.raw
+            .query_interface::<sys::IAvnButtonSpinner>()
+            .ok()
+            .map(|raw| ButtonSpinner { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for ButtonSpinner {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -8774,6 +9059,18 @@ unsafe impl crate::Upcast<TemplatedControl> for ButtonSpinner {
 impl AsRef<TemplatedControl> for ButtonSpinner {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ButtonSpinner> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnButtonSpinner>().is_ok()
+    }
+    fn downcast(&self) -> Option<ButtonSpinner> {
+        self.raw
+            .query_interface::<sys::IAvnButtonSpinner>()
+            .ok()
+            .map(|raw| ButtonSpinner { raw })
     }
 }
 
@@ -8794,6 +9091,18 @@ impl AsRef<ContentControl> for ButtonSpinner {
     }
 }
 
+unsafe impl crate::Downcast<ButtonSpinner> for ContentControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnButtonSpinner>().is_ok()
+    }
+    fn downcast(&self) -> Option<ButtonSpinner> {
+        self.raw
+            .query_interface::<sys::IAvnButtonSpinner>()
+            .ok()
+            .map(|raw| ButtonSpinner { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Spinner> for ButtonSpinner {
     fn upcast(&self) -> Spinner {
         Spinner {
@@ -8808,6 +9117,18 @@ unsafe impl crate::Upcast<Spinner> for ButtonSpinner {
 impl AsRef<Spinner> for ButtonSpinner {
     fn as_ref(&self) -> &Spinner {
         <Self as crate::Upcast<Spinner>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ButtonSpinner> for Spinner {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnButtonSpinner>().is_ok()
+    }
+    fn downcast(&self) -> Option<ButtonSpinner> {
+        self.raw
+            .query_interface::<sys::IAvnButtonSpinner>()
+            .ok()
+            .map(|raw| ButtonSpinner { raw })
     }
 }
 
@@ -9331,6 +9652,24 @@ impl Calendar {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -10294,6 +10633,18 @@ impl AsRef<AvaloniaObject> for Calendar {
     }
 }
 
+unsafe impl crate::Downcast<Calendar> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCalendar>().is_ok()
+    }
+    fn downcast(&self) -> Option<Calendar> {
+        self.raw
+            .query_interface::<sys::IAvnCalendar>()
+            .ok()
+            .map(|raw| Calendar { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for Calendar {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -10308,6 +10659,18 @@ unsafe impl crate::Upcast<StyledElement> for Calendar {
 impl AsRef<StyledElement> for Calendar {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Calendar> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCalendar>().is_ok()
+    }
+    fn downcast(&self) -> Option<Calendar> {
+        self.raw
+            .query_interface::<sys::IAvnCalendar>()
+            .ok()
+            .map(|raw| Calendar { raw })
     }
 }
 
@@ -10328,6 +10691,18 @@ impl AsRef<Control> for Calendar {
     }
 }
 
+unsafe impl crate::Downcast<Calendar> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCalendar>().is_ok()
+    }
+    fn downcast(&self) -> Option<Calendar> {
+        self.raw
+            .query_interface::<sys::IAvnCalendar>()
+            .ok()
+            .map(|raw| Calendar { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for Calendar {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -10342,6 +10717,18 @@ unsafe impl crate::Upcast<TemplatedControl> for Calendar {
 impl AsRef<TemplatedControl> for Calendar {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Calendar> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCalendar>().is_ok()
+    }
+    fn downcast(&self) -> Option<Calendar> {
+        self.raw
+            .query_interface::<sys::IAvnCalendar>()
+            .ok()
+            .map(|raw| Calendar { raw })
     }
 }
 
@@ -10889,6 +11276,24 @@ impl CalendarDatePicker {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -11917,6 +12322,18 @@ impl AsRef<AvaloniaObject> for CalendarDatePicker {
     }
 }
 
+unsafe impl crate::Downcast<CalendarDatePicker> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCalendarDatePicker>().is_ok()
+    }
+    fn downcast(&self) -> Option<CalendarDatePicker> {
+        self.raw
+            .query_interface::<sys::IAvnCalendarDatePicker>()
+            .ok()
+            .map(|raw| CalendarDatePicker { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for CalendarDatePicker {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -11931,6 +12348,18 @@ unsafe impl crate::Upcast<StyledElement> for CalendarDatePicker {
 impl AsRef<StyledElement> for CalendarDatePicker {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<CalendarDatePicker> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCalendarDatePicker>().is_ok()
+    }
+    fn downcast(&self) -> Option<CalendarDatePicker> {
+        self.raw
+            .query_interface::<sys::IAvnCalendarDatePicker>()
+            .ok()
+            .map(|raw| CalendarDatePicker { raw })
     }
 }
 
@@ -11951,6 +12380,18 @@ impl AsRef<Control> for CalendarDatePicker {
     }
 }
 
+unsafe impl crate::Downcast<CalendarDatePicker> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCalendarDatePicker>().is_ok()
+    }
+    fn downcast(&self) -> Option<CalendarDatePicker> {
+        self.raw
+            .query_interface::<sys::IAvnCalendarDatePicker>()
+            .ok()
+            .map(|raw| CalendarDatePicker { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for CalendarDatePicker {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -11965,6 +12406,18 @@ unsafe impl crate::Upcast<TemplatedControl> for CalendarDatePicker {
 impl AsRef<TemplatedControl> for CalendarDatePicker {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<CalendarDatePicker> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCalendarDatePicker>().is_ok()
+    }
+    fn downcast(&self) -> Option<CalendarDatePicker> {
+        self.raw
+            .query_interface::<sys::IAvnCalendarDatePicker>()
+            .ok()
+            .map(|raw| CalendarDatePicker { raw })
     }
 }
 
@@ -12551,6 +13004,24 @@ impl Canvas {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -13280,6 +13751,18 @@ impl AsRef<AvaloniaObject> for Canvas {
     }
 }
 
+unsafe impl crate::Downcast<Canvas> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCanvas>().is_ok()
+    }
+    fn downcast(&self) -> Option<Canvas> {
+        self.raw
+            .query_interface::<sys::IAvnCanvas>()
+            .ok()
+            .map(|raw| Canvas { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for Canvas {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -13294,6 +13777,18 @@ unsafe impl crate::Upcast<StyledElement> for Canvas {
 impl AsRef<StyledElement> for Canvas {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Canvas> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCanvas>().is_ok()
+    }
+    fn downcast(&self) -> Option<Canvas> {
+        self.raw
+            .query_interface::<sys::IAvnCanvas>()
+            .ok()
+            .map(|raw| Canvas { raw })
     }
 }
 
@@ -13314,6 +13809,18 @@ impl AsRef<Control> for Canvas {
     }
 }
 
+unsafe impl crate::Downcast<Canvas> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCanvas>().is_ok()
+    }
+    fn downcast(&self) -> Option<Canvas> {
+        self.raw
+            .query_interface::<sys::IAvnCanvas>()
+            .ok()
+            .map(|raw| Canvas { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Panel> for Canvas {
     fn upcast(&self) -> Panel {
         Panel {
@@ -13328,6 +13835,18 @@ unsafe impl crate::Upcast<Panel> for Canvas {
 impl AsRef<Panel> for Canvas {
     fn as_ref(&self) -> &Panel {
         <Self as crate::Upcast<Panel>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Canvas> for Panel {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCanvas>().is_ok()
+    }
+    fn downcast(&self) -> Option<Canvas> {
+        self.raw
+            .query_interface::<sys::IAvnCanvas>()
+            .ok()
+            .map(|raw| Canvas { raw })
     }
 }
 
@@ -13738,6 +14257,24 @@ impl Carousel {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -14682,6 +15219,18 @@ impl AsRef<AvaloniaObject> for Carousel {
     }
 }
 
+unsafe impl crate::Downcast<Carousel> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCarousel>().is_ok()
+    }
+    fn downcast(&self) -> Option<Carousel> {
+        self.raw
+            .query_interface::<sys::IAvnCarousel>()
+            .ok()
+            .map(|raw| Carousel { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for Carousel {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -14696,6 +15245,18 @@ unsafe impl crate::Upcast<StyledElement> for Carousel {
 impl AsRef<StyledElement> for Carousel {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Carousel> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCarousel>().is_ok()
+    }
+    fn downcast(&self) -> Option<Carousel> {
+        self.raw
+            .query_interface::<sys::IAvnCarousel>()
+            .ok()
+            .map(|raw| Carousel { raw })
     }
 }
 
@@ -14716,6 +15277,18 @@ impl AsRef<Control> for Carousel {
     }
 }
 
+unsafe impl crate::Downcast<Carousel> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCarousel>().is_ok()
+    }
+    fn downcast(&self) -> Option<Carousel> {
+        self.raw
+            .query_interface::<sys::IAvnCarousel>()
+            .ok()
+            .map(|raw| Carousel { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for Carousel {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -14730,6 +15303,18 @@ unsafe impl crate::Upcast<TemplatedControl> for Carousel {
 impl AsRef<TemplatedControl> for Carousel {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Carousel> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCarousel>().is_ok()
+    }
+    fn downcast(&self) -> Option<Carousel> {
+        self.raw
+            .query_interface::<sys::IAvnCarousel>()
+            .ok()
+            .map(|raw| Carousel { raw })
     }
 }
 
@@ -14750,6 +15335,18 @@ impl AsRef<ItemsControl> for Carousel {
     }
 }
 
+unsafe impl crate::Downcast<Carousel> for ItemsControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCarousel>().is_ok()
+    }
+    fn downcast(&self) -> Option<Carousel> {
+        self.raw
+            .query_interface::<sys::IAvnCarousel>()
+            .ok()
+            .map(|raw| Carousel { raw })
+    }
+}
+
 unsafe impl crate::Upcast<SelectingItemsControl> for Carousel {
     fn upcast(&self) -> SelectingItemsControl {
         SelectingItemsControl {
@@ -14764,6 +15361,18 @@ unsafe impl crate::Upcast<SelectingItemsControl> for Carousel {
 impl AsRef<SelectingItemsControl> for Carousel {
     fn as_ref(&self) -> &SelectingItemsControl {
         <Self as crate::Upcast<SelectingItemsControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Carousel> for SelectingItemsControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCarousel>().is_ok()
+    }
+    fn downcast(&self) -> Option<Carousel> {
+        self.raw
+            .query_interface::<sys::IAvnCarousel>()
+            .ok()
+            .map(|raw| Carousel { raw })
     }
 }
 
@@ -15316,6 +15925,24 @@ impl CheckBox {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -16299,6 +16926,18 @@ impl AsRef<AvaloniaObject> for CheckBox {
     }
 }
 
+unsafe impl crate::Downcast<CheckBox> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCheckBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<CheckBox> {
+        self.raw
+            .query_interface::<sys::IAvnCheckBox>()
+            .ok()
+            .map(|raw| CheckBox { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for CheckBox {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -16313,6 +16952,18 @@ unsafe impl crate::Upcast<StyledElement> for CheckBox {
 impl AsRef<StyledElement> for CheckBox {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<CheckBox> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCheckBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<CheckBox> {
+        self.raw
+            .query_interface::<sys::IAvnCheckBox>()
+            .ok()
+            .map(|raw| CheckBox { raw })
     }
 }
 
@@ -16333,6 +16984,18 @@ impl AsRef<Control> for CheckBox {
     }
 }
 
+unsafe impl crate::Downcast<CheckBox> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCheckBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<CheckBox> {
+        self.raw
+            .query_interface::<sys::IAvnCheckBox>()
+            .ok()
+            .map(|raw| CheckBox { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for CheckBox {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -16347,6 +17010,18 @@ unsafe impl crate::Upcast<TemplatedControl> for CheckBox {
 impl AsRef<TemplatedControl> for CheckBox {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<CheckBox> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCheckBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<CheckBox> {
+        self.raw
+            .query_interface::<sys::IAvnCheckBox>()
+            .ok()
+            .map(|raw| CheckBox { raw })
     }
 }
 
@@ -16367,6 +17042,18 @@ impl AsRef<ContentControl> for CheckBox {
     }
 }
 
+unsafe impl crate::Downcast<CheckBox> for ContentControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCheckBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<CheckBox> {
+        self.raw
+            .query_interface::<sys::IAvnCheckBox>()
+            .ok()
+            .map(|raw| CheckBox { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Button> for CheckBox {
     fn upcast(&self) -> Button {
         Button {
@@ -16384,6 +17071,18 @@ impl AsRef<Button> for CheckBox {
     }
 }
 
+unsafe impl crate::Downcast<CheckBox> for Button {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCheckBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<CheckBox> {
+        self.raw
+            .query_interface::<sys::IAvnCheckBox>()
+            .ok()
+            .map(|raw| CheckBox { raw })
+    }
+}
+
 unsafe impl crate::Upcast<ToggleButton> for CheckBox {
     fn upcast(&self) -> ToggleButton {
         ToggleButton {
@@ -16398,6 +17097,18 @@ unsafe impl crate::Upcast<ToggleButton> for CheckBox {
 impl AsRef<ToggleButton> for CheckBox {
     fn as_ref(&self) -> &ToggleButton {
         <Self as crate::Upcast<ToggleButton>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<CheckBox> for ToggleButton {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCheckBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<CheckBox> {
+        self.raw
+            .query_interface::<sys::IAvnCheckBox>()
+            .ok()
+            .map(|raw| CheckBox { raw })
     }
 }
 
@@ -16729,8 +17440,11 @@ impl crate::view::El<CheckBox> {
             crate::view::apply_prop(control, binding, |c, v| c.set_click_mode(v))
         })
     }
-    pub fn command(self, value: Option<sys::ComPtr<sys::IAvnCommand>>) -> Self {
-        self.with_op(move |_, control| control.set_command(value.as_ref()))
+    pub fn command(self, value: impl crate::view::IntoCommandProp + 'static) -> Self {
+        self.with_op(move |_, control| {
+            let cmd = value.into_command_prop();
+            control.set_command(cmd.as_ref())
+        })
     }
     pub fn hot_key<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
         let binding = value.into_prop();
@@ -16958,6 +17672,24 @@ impl ComboBox {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -17980,6 +18712,18 @@ impl AsRef<AvaloniaObject> for ComboBox {
     }
 }
 
+unsafe impl crate::Downcast<ComboBox> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnComboBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<ComboBox> {
+        self.raw
+            .query_interface::<sys::IAvnComboBox>()
+            .ok()
+            .map(|raw| ComboBox { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for ComboBox {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -17994,6 +18738,18 @@ unsafe impl crate::Upcast<StyledElement> for ComboBox {
 impl AsRef<StyledElement> for ComboBox {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ComboBox> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnComboBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<ComboBox> {
+        self.raw
+            .query_interface::<sys::IAvnComboBox>()
+            .ok()
+            .map(|raw| ComboBox { raw })
     }
 }
 
@@ -18014,6 +18770,18 @@ impl AsRef<Control> for ComboBox {
     }
 }
 
+unsafe impl crate::Downcast<ComboBox> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnComboBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<ComboBox> {
+        self.raw
+            .query_interface::<sys::IAvnComboBox>()
+            .ok()
+            .map(|raw| ComboBox { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for ComboBox {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -18028,6 +18796,18 @@ unsafe impl crate::Upcast<TemplatedControl> for ComboBox {
 impl AsRef<TemplatedControl> for ComboBox {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ComboBox> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnComboBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<ComboBox> {
+        self.raw
+            .query_interface::<sys::IAvnComboBox>()
+            .ok()
+            .map(|raw| ComboBox { raw })
     }
 }
 
@@ -18048,6 +18828,18 @@ impl AsRef<ItemsControl> for ComboBox {
     }
 }
 
+unsafe impl crate::Downcast<ComboBox> for ItemsControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnComboBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<ComboBox> {
+        self.raw
+            .query_interface::<sys::IAvnComboBox>()
+            .ok()
+            .map(|raw| ComboBox { raw })
+    }
+}
+
 unsafe impl crate::Upcast<SelectingItemsControl> for ComboBox {
     fn upcast(&self) -> SelectingItemsControl {
         SelectingItemsControl {
@@ -18062,6 +18854,18 @@ unsafe impl crate::Upcast<SelectingItemsControl> for ComboBox {
 impl AsRef<SelectingItemsControl> for ComboBox {
     fn as_ref(&self) -> &SelectingItemsControl {
         <Self as crate::Upcast<SelectingItemsControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ComboBox> for SelectingItemsControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnComboBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<ComboBox> {
+        self.raw
+            .query_interface::<sys::IAvnComboBox>()
+            .ok()
+            .map(|raw| ComboBox { raw })
     }
 }
 
@@ -18653,6 +19457,24 @@ impl ComboBoxItem {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -19532,6 +20354,18 @@ impl AsRef<AvaloniaObject> for ComboBoxItem {
     }
 }
 
+unsafe impl crate::Downcast<ComboBoxItem> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnComboBoxItem>().is_ok()
+    }
+    fn downcast(&self) -> Option<ComboBoxItem> {
+        self.raw
+            .query_interface::<sys::IAvnComboBoxItem>()
+            .ok()
+            .map(|raw| ComboBoxItem { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for ComboBoxItem {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -19546,6 +20380,18 @@ unsafe impl crate::Upcast<StyledElement> for ComboBoxItem {
 impl AsRef<StyledElement> for ComboBoxItem {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ComboBoxItem> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnComboBoxItem>().is_ok()
+    }
+    fn downcast(&self) -> Option<ComboBoxItem> {
+        self.raw
+            .query_interface::<sys::IAvnComboBoxItem>()
+            .ok()
+            .map(|raw| ComboBoxItem { raw })
     }
 }
 
@@ -19566,6 +20412,18 @@ impl AsRef<Control> for ComboBoxItem {
     }
 }
 
+unsafe impl crate::Downcast<ComboBoxItem> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnComboBoxItem>().is_ok()
+    }
+    fn downcast(&self) -> Option<ComboBoxItem> {
+        self.raw
+            .query_interface::<sys::IAvnComboBoxItem>()
+            .ok()
+            .map(|raw| ComboBoxItem { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for ComboBoxItem {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -19580,6 +20438,18 @@ unsafe impl crate::Upcast<TemplatedControl> for ComboBoxItem {
 impl AsRef<TemplatedControl> for ComboBoxItem {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ComboBoxItem> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnComboBoxItem>().is_ok()
+    }
+    fn downcast(&self) -> Option<ComboBoxItem> {
+        self.raw
+            .query_interface::<sys::IAvnComboBoxItem>()
+            .ok()
+            .map(|raw| ComboBoxItem { raw })
     }
 }
 
@@ -19600,6 +20470,18 @@ impl AsRef<ContentControl> for ComboBoxItem {
     }
 }
 
+unsafe impl crate::Downcast<ComboBoxItem> for ContentControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnComboBoxItem>().is_ok()
+    }
+    fn downcast(&self) -> Option<ComboBoxItem> {
+        self.raw
+            .query_interface::<sys::IAvnComboBoxItem>()
+            .ok()
+            .map(|raw| ComboBoxItem { raw })
+    }
+}
+
 unsafe impl crate::Upcast<ListBoxItem> for ComboBoxItem {
     fn upcast(&self) -> ListBoxItem {
         ListBoxItem {
@@ -19614,6 +20496,18 @@ unsafe impl crate::Upcast<ListBoxItem> for ComboBoxItem {
 impl AsRef<ListBoxItem> for ComboBoxItem {
     fn as_ref(&self) -> &ListBoxItem {
         <Self as crate::Upcast<ListBoxItem>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ComboBoxItem> for ListBoxItem {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnComboBoxItem>().is_ok()
+    }
+    fn downcast(&self) -> Option<ComboBoxItem> {
+        self.raw
+            .query_interface::<sys::IAvnComboBoxItem>()
+            .ok()
+            .map(|raw| ComboBoxItem { raw })
     }
 }
 
@@ -20113,6 +21007,24 @@ impl CommandBar {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -21102,6 +22014,18 @@ impl AsRef<AvaloniaObject> for CommandBar {
     }
 }
 
+unsafe impl crate::Downcast<CommandBar> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCommandBar>().is_ok()
+    }
+    fn downcast(&self) -> Option<CommandBar> {
+        self.raw
+            .query_interface::<sys::IAvnCommandBar>()
+            .ok()
+            .map(|raw| CommandBar { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for CommandBar {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -21116,6 +22040,18 @@ unsafe impl crate::Upcast<StyledElement> for CommandBar {
 impl AsRef<StyledElement> for CommandBar {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<CommandBar> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCommandBar>().is_ok()
+    }
+    fn downcast(&self) -> Option<CommandBar> {
+        self.raw
+            .query_interface::<sys::IAvnCommandBar>()
+            .ok()
+            .map(|raw| CommandBar { raw })
     }
 }
 
@@ -21136,6 +22072,18 @@ impl AsRef<Control> for CommandBar {
     }
 }
 
+unsafe impl crate::Downcast<CommandBar> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCommandBar>().is_ok()
+    }
+    fn downcast(&self) -> Option<CommandBar> {
+        self.raw
+            .query_interface::<sys::IAvnCommandBar>()
+            .ok()
+            .map(|raw| CommandBar { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for CommandBar {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -21150,6 +22098,18 @@ unsafe impl crate::Upcast<TemplatedControl> for CommandBar {
 impl AsRef<TemplatedControl> for CommandBar {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<CommandBar> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCommandBar>().is_ok()
+    }
+    fn downcast(&self) -> Option<CommandBar> {
+        self.raw
+            .query_interface::<sys::IAvnCommandBar>()
+            .ok()
+            .map(|raw| CommandBar { raw })
     }
 }
 
@@ -21700,6 +22660,24 @@ impl CommandBarButton {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -22711,6 +23689,18 @@ impl AsRef<AvaloniaObject> for CommandBarButton {
     }
 }
 
+unsafe impl crate::Downcast<CommandBarButton> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCommandBarButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<CommandBarButton> {
+        self.raw
+            .query_interface::<sys::IAvnCommandBarButton>()
+            .ok()
+            .map(|raw| CommandBarButton { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for CommandBarButton {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -22725,6 +23715,18 @@ unsafe impl crate::Upcast<StyledElement> for CommandBarButton {
 impl AsRef<StyledElement> for CommandBarButton {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<CommandBarButton> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCommandBarButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<CommandBarButton> {
+        self.raw
+            .query_interface::<sys::IAvnCommandBarButton>()
+            .ok()
+            .map(|raw| CommandBarButton { raw })
     }
 }
 
@@ -22745,6 +23747,18 @@ impl AsRef<Control> for CommandBarButton {
     }
 }
 
+unsafe impl crate::Downcast<CommandBarButton> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCommandBarButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<CommandBarButton> {
+        self.raw
+            .query_interface::<sys::IAvnCommandBarButton>()
+            .ok()
+            .map(|raw| CommandBarButton { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for CommandBarButton {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -22759,6 +23773,18 @@ unsafe impl crate::Upcast<TemplatedControl> for CommandBarButton {
 impl AsRef<TemplatedControl> for CommandBarButton {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<CommandBarButton> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCommandBarButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<CommandBarButton> {
+        self.raw
+            .query_interface::<sys::IAvnCommandBarButton>()
+            .ok()
+            .map(|raw| CommandBarButton { raw })
     }
 }
 
@@ -22779,6 +23805,18 @@ impl AsRef<ContentControl> for CommandBarButton {
     }
 }
 
+unsafe impl crate::Downcast<CommandBarButton> for ContentControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCommandBarButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<CommandBarButton> {
+        self.raw
+            .query_interface::<sys::IAvnCommandBarButton>()
+            .ok()
+            .map(|raw| CommandBarButton { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Button> for CommandBarButton {
     fn upcast(&self) -> Button {
         Button {
@@ -22793,6 +23831,18 @@ unsafe impl crate::Upcast<Button> for CommandBarButton {
 impl AsRef<Button> for CommandBarButton {
     fn as_ref(&self) -> &Button {
         <Self as crate::Upcast<Button>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<CommandBarButton> for Button {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCommandBarButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<CommandBarButton> {
+        self.raw
+            .query_interface::<sys::IAvnCommandBarButton>()
+            .ok()
+            .map(|raw| CommandBarButton { raw })
     }
 }
 
@@ -23124,8 +24174,11 @@ impl crate::view::El<CommandBarButton> {
             crate::view::apply_prop(control, binding, |c, v| c.set_click_mode(v))
         })
     }
-    pub fn command(self, value: Option<sys::ComPtr<sys::IAvnCommand>>) -> Self {
-        self.with_op(move |_, control| control.set_command(value.as_ref()))
+    pub fn command(self, value: impl crate::view::IntoCommandProp + 'static) -> Self {
+        self.with_op(move |_, control| {
+            let cmd = value.into_command_prop();
+            control.set_command(cmd.as_ref())
+        })
     }
     pub fn hot_key<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
         let binding = value.into_prop();
@@ -23364,6 +24417,24 @@ impl CommandBarSeparator {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -24200,6 +25271,18 @@ impl AsRef<AvaloniaObject> for CommandBarSeparator {
     }
 }
 
+unsafe impl crate::Downcast<CommandBarSeparator> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCommandBarSeparator>().is_ok()
+    }
+    fn downcast(&self) -> Option<CommandBarSeparator> {
+        self.raw
+            .query_interface::<sys::IAvnCommandBarSeparator>()
+            .ok()
+            .map(|raw| CommandBarSeparator { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for CommandBarSeparator {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -24214,6 +25297,18 @@ unsafe impl crate::Upcast<StyledElement> for CommandBarSeparator {
 impl AsRef<StyledElement> for CommandBarSeparator {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<CommandBarSeparator> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCommandBarSeparator>().is_ok()
+    }
+    fn downcast(&self) -> Option<CommandBarSeparator> {
+        self.raw
+            .query_interface::<sys::IAvnCommandBarSeparator>()
+            .ok()
+            .map(|raw| CommandBarSeparator { raw })
     }
 }
 
@@ -24234,6 +25329,18 @@ impl AsRef<Control> for CommandBarSeparator {
     }
 }
 
+unsafe impl crate::Downcast<CommandBarSeparator> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCommandBarSeparator>().is_ok()
+    }
+    fn downcast(&self) -> Option<CommandBarSeparator> {
+        self.raw
+            .query_interface::<sys::IAvnCommandBarSeparator>()
+            .ok()
+            .map(|raw| CommandBarSeparator { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for CommandBarSeparator {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -24251,6 +25358,18 @@ impl AsRef<TemplatedControl> for CommandBarSeparator {
     }
 }
 
+unsafe impl crate::Downcast<CommandBarSeparator> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCommandBarSeparator>().is_ok()
+    }
+    fn downcast(&self) -> Option<CommandBarSeparator> {
+        self.raw
+            .query_interface::<sys::IAvnCommandBarSeparator>()
+            .ok()
+            .map(|raw| CommandBarSeparator { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Separator> for CommandBarSeparator {
     fn upcast(&self) -> Separator {
         Separator {
@@ -24265,6 +25384,18 @@ unsafe impl crate::Upcast<Separator> for CommandBarSeparator {
 impl AsRef<Separator> for CommandBarSeparator {
     fn as_ref(&self) -> &Separator {
         <Self as crate::Upcast<Separator>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<CommandBarSeparator> for Separator {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCommandBarSeparator>().is_ok()
+    }
+    fn downcast(&self) -> Option<CommandBarSeparator> {
+        self.raw
+            .query_interface::<sys::IAvnCommandBarSeparator>()
+            .ok()
+            .map(|raw| CommandBarSeparator { raw })
     }
 }
 
@@ -24746,6 +25877,24 @@ impl CommandBarToggleButton {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -25786,6 +26935,18 @@ impl AsRef<AvaloniaObject> for CommandBarToggleButton {
     }
 }
 
+unsafe impl crate::Downcast<CommandBarToggleButton> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCommandBarToggleButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<CommandBarToggleButton> {
+        self.raw
+            .query_interface::<sys::IAvnCommandBarToggleButton>()
+            .ok()
+            .map(|raw| CommandBarToggleButton { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for CommandBarToggleButton {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -25800,6 +26961,18 @@ unsafe impl crate::Upcast<StyledElement> for CommandBarToggleButton {
 impl AsRef<StyledElement> for CommandBarToggleButton {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<CommandBarToggleButton> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCommandBarToggleButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<CommandBarToggleButton> {
+        self.raw
+            .query_interface::<sys::IAvnCommandBarToggleButton>()
+            .ok()
+            .map(|raw| CommandBarToggleButton { raw })
     }
 }
 
@@ -25820,6 +26993,18 @@ impl AsRef<Control> for CommandBarToggleButton {
     }
 }
 
+unsafe impl crate::Downcast<CommandBarToggleButton> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCommandBarToggleButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<CommandBarToggleButton> {
+        self.raw
+            .query_interface::<sys::IAvnCommandBarToggleButton>()
+            .ok()
+            .map(|raw| CommandBarToggleButton { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for CommandBarToggleButton {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -25834,6 +27019,18 @@ unsafe impl crate::Upcast<TemplatedControl> for CommandBarToggleButton {
 impl AsRef<TemplatedControl> for CommandBarToggleButton {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<CommandBarToggleButton> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCommandBarToggleButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<CommandBarToggleButton> {
+        self.raw
+            .query_interface::<sys::IAvnCommandBarToggleButton>()
+            .ok()
+            .map(|raw| CommandBarToggleButton { raw })
     }
 }
 
@@ -25854,6 +27051,18 @@ impl AsRef<ContentControl> for CommandBarToggleButton {
     }
 }
 
+unsafe impl crate::Downcast<CommandBarToggleButton> for ContentControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCommandBarToggleButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<CommandBarToggleButton> {
+        self.raw
+            .query_interface::<sys::IAvnCommandBarToggleButton>()
+            .ok()
+            .map(|raw| CommandBarToggleButton { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Button> for CommandBarToggleButton {
     fn upcast(&self) -> Button {
         Button {
@@ -25871,6 +27080,18 @@ impl AsRef<Button> for CommandBarToggleButton {
     }
 }
 
+unsafe impl crate::Downcast<CommandBarToggleButton> for Button {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCommandBarToggleButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<CommandBarToggleButton> {
+        self.raw
+            .query_interface::<sys::IAvnCommandBarToggleButton>()
+            .ok()
+            .map(|raw| CommandBarToggleButton { raw })
+    }
+}
+
 unsafe impl crate::Upcast<ToggleButton> for CommandBarToggleButton {
     fn upcast(&self) -> ToggleButton {
         ToggleButton {
@@ -25885,6 +27106,18 @@ unsafe impl crate::Upcast<ToggleButton> for CommandBarToggleButton {
 impl AsRef<ToggleButton> for CommandBarToggleButton {
     fn as_ref(&self) -> &ToggleButton {
         <Self as crate::Upcast<ToggleButton>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<CommandBarToggleButton> for ToggleButton {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnCommandBarToggleButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<CommandBarToggleButton> {
+        self.raw
+            .query_interface::<sys::IAvnCommandBarToggleButton>()
+            .ok()
+            .map(|raw| CommandBarToggleButton { raw })
     }
 }
 
@@ -26216,8 +27449,11 @@ impl crate::view::El<CommandBarToggleButton> {
             crate::view::apply_prop(control, binding, |c, v| c.set_click_mode(v))
         })
     }
-    pub fn command(self, value: Option<sys::ComPtr<sys::IAvnCommand>>) -> Self {
-        self.with_op(move |_, control| control.set_command(value.as_ref()))
+    pub fn command(self, value: impl crate::view::IntoCommandProp + 'static) -> Self {
+        self.with_op(move |_, control| {
+            let cmd = value.into_command_prop();
+            control.set_command(cmd.as_ref())
+        })
     }
     pub fn hot_key<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
         let binding = value.into_prop();
@@ -26481,6 +27717,24 @@ impl ContentControl {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -27352,6 +28606,18 @@ impl AsRef<AvaloniaObject> for ContentControl {
     }
 }
 
+unsafe impl crate::Downcast<ContentControl> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnContentControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<ContentControl> {
+        self.raw
+            .query_interface::<sys::IAvnContentControl>()
+            .ok()
+            .map(|raw| ContentControl { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for ContentControl {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -27366,6 +28632,18 @@ unsafe impl crate::Upcast<StyledElement> for ContentControl {
 impl AsRef<StyledElement> for ContentControl {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ContentControl> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnContentControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<ContentControl> {
+        self.raw
+            .query_interface::<sys::IAvnContentControl>()
+            .ok()
+            .map(|raw| ContentControl { raw })
     }
 }
 
@@ -27386,6 +28664,18 @@ impl AsRef<Control> for ContentControl {
     }
 }
 
+unsafe impl crate::Downcast<ContentControl> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnContentControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<ContentControl> {
+        self.raw
+            .query_interface::<sys::IAvnContentControl>()
+            .ok()
+            .map(|raw| ContentControl { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for ContentControl {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -27400,6 +28690,18 @@ unsafe impl crate::Upcast<TemplatedControl> for ContentControl {
 impl AsRef<TemplatedControl> for ContentControl {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ContentControl> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnContentControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<ContentControl> {
+        self.raw
+            .query_interface::<sys::IAvnContentControl>()
+            .ok()
+            .map(|raw| ContentControl { raw })
     }
 }
 
@@ -27893,6 +29195,24 @@ impl ContextMenu {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -28963,6 +30283,18 @@ impl AsRef<AvaloniaObject> for ContextMenu {
     }
 }
 
+unsafe impl crate::Downcast<ContextMenu> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnContextMenu>().is_ok()
+    }
+    fn downcast(&self) -> Option<ContextMenu> {
+        self.raw
+            .query_interface::<sys::IAvnContextMenu>()
+            .ok()
+            .map(|raw| ContextMenu { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for ContextMenu {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -28977,6 +30309,18 @@ unsafe impl crate::Upcast<StyledElement> for ContextMenu {
 impl AsRef<StyledElement> for ContextMenu {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ContextMenu> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnContextMenu>().is_ok()
+    }
+    fn downcast(&self) -> Option<ContextMenu> {
+        self.raw
+            .query_interface::<sys::IAvnContextMenu>()
+            .ok()
+            .map(|raw| ContextMenu { raw })
     }
 }
 
@@ -28997,6 +30341,18 @@ impl AsRef<Control> for ContextMenu {
     }
 }
 
+unsafe impl crate::Downcast<ContextMenu> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnContextMenu>().is_ok()
+    }
+    fn downcast(&self) -> Option<ContextMenu> {
+        self.raw
+            .query_interface::<sys::IAvnContextMenu>()
+            .ok()
+            .map(|raw| ContextMenu { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for ContextMenu {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -29011,6 +30367,18 @@ unsafe impl crate::Upcast<TemplatedControl> for ContextMenu {
 impl AsRef<TemplatedControl> for ContextMenu {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ContextMenu> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnContextMenu>().is_ok()
+    }
+    fn downcast(&self) -> Option<ContextMenu> {
+        self.raw
+            .query_interface::<sys::IAvnContextMenu>()
+            .ok()
+            .map(|raw| ContextMenu { raw })
     }
 }
 
@@ -29031,6 +30399,18 @@ impl AsRef<ItemsControl> for ContextMenu {
     }
 }
 
+unsafe impl crate::Downcast<ContextMenu> for ItemsControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnContextMenu>().is_ok()
+    }
+    fn downcast(&self) -> Option<ContextMenu> {
+        self.raw
+            .query_interface::<sys::IAvnContextMenu>()
+            .ok()
+            .map(|raw| ContextMenu { raw })
+    }
+}
+
 unsafe impl crate::Upcast<SelectingItemsControl> for ContextMenu {
     fn upcast(&self) -> SelectingItemsControl {
         SelectingItemsControl {
@@ -29048,6 +30428,18 @@ impl AsRef<SelectingItemsControl> for ContextMenu {
     }
 }
 
+unsafe impl crate::Downcast<ContextMenu> for SelectingItemsControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnContextMenu>().is_ok()
+    }
+    fn downcast(&self) -> Option<ContextMenu> {
+        self.raw
+            .query_interface::<sys::IAvnContextMenu>()
+            .ok()
+            .map(|raw| ContextMenu { raw })
+    }
+}
+
 unsafe impl crate::Upcast<MenuBase> for ContextMenu {
     fn upcast(&self) -> MenuBase {
         MenuBase {
@@ -29062,6 +30454,18 @@ unsafe impl crate::Upcast<MenuBase> for ContextMenu {
 impl AsRef<MenuBase> for ContextMenu {
     fn as_ref(&self) -> &MenuBase {
         <Self as crate::Upcast<MenuBase>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ContextMenu> for MenuBase {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnContextMenu>().is_ok()
+    }
+    fn downcast(&self) -> Option<ContextMenu> {
+        self.raw
+            .query_interface::<sys::IAvnContextMenu>()
+            .ok()
+            .map(|raw| ContextMenu { raw })
     }
 }
 
@@ -29683,6 +31087,24 @@ impl Control {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -30358,6 +31780,18 @@ impl AsRef<AvaloniaObject> for Control {
     }
 }
 
+unsafe impl crate::Downcast<Control> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<Control> {
+        self.raw
+            .query_interface::<sys::IAvnControl>()
+            .ok()
+            .map(|raw| Control { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for Control {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -30372,6 +31806,18 @@ unsafe impl crate::Upcast<StyledElement> for Control {
 impl AsRef<StyledElement> for Control {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Control> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<Control> {
+        self.raw
+            .query_interface::<sys::IAvnControl>()
+            .ok()
+            .map(|raw| Control { raw })
     }
 }
 
@@ -30757,6 +32203,24 @@ impl DatePicker {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -31690,6 +33154,18 @@ impl AsRef<AvaloniaObject> for DatePicker {
     }
 }
 
+unsafe impl crate::Downcast<DatePicker> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnDatePicker>().is_ok()
+    }
+    fn downcast(&self) -> Option<DatePicker> {
+        self.raw
+            .query_interface::<sys::IAvnDatePicker>()
+            .ok()
+            .map(|raw| DatePicker { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for DatePicker {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -31704,6 +33180,18 @@ unsafe impl crate::Upcast<StyledElement> for DatePicker {
 impl AsRef<StyledElement> for DatePicker {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<DatePicker> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnDatePicker>().is_ok()
+    }
+    fn downcast(&self) -> Option<DatePicker> {
+        self.raw
+            .query_interface::<sys::IAvnDatePicker>()
+            .ok()
+            .map(|raw| DatePicker { raw })
     }
 }
 
@@ -31724,6 +33212,18 @@ impl AsRef<Control> for DatePicker {
     }
 }
 
+unsafe impl crate::Downcast<DatePicker> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnDatePicker>().is_ok()
+    }
+    fn downcast(&self) -> Option<DatePicker> {
+        self.raw
+            .query_interface::<sys::IAvnDatePicker>()
+            .ok()
+            .map(|raw| DatePicker { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for DatePicker {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -31738,6 +33238,18 @@ unsafe impl crate::Upcast<TemplatedControl> for DatePicker {
 impl AsRef<TemplatedControl> for DatePicker {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<DatePicker> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnDatePicker>().is_ok()
+    }
+    fn downcast(&self) -> Option<DatePicker> {
+        self.raw
+            .query_interface::<sys::IAvnDatePicker>()
+            .ok()
+            .map(|raw| DatePicker { raw })
     }
 }
 
@@ -32273,6 +33785,24 @@ impl Decorator {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -32969,6 +34499,18 @@ impl AsRef<AvaloniaObject> for Decorator {
     }
 }
 
+unsafe impl crate::Downcast<Decorator> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnDecorator>().is_ok()
+    }
+    fn downcast(&self) -> Option<Decorator> {
+        self.raw
+            .query_interface::<sys::IAvnDecorator>()
+            .ok()
+            .map(|raw| Decorator { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for Decorator {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -32986,6 +34528,18 @@ impl AsRef<StyledElement> for Decorator {
     }
 }
 
+unsafe impl crate::Downcast<Decorator> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnDecorator>().is_ok()
+    }
+    fn downcast(&self) -> Option<Decorator> {
+        self.raw
+            .query_interface::<sys::IAvnDecorator>()
+            .ok()
+            .map(|raw| Decorator { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Control> for Decorator {
     fn upcast(&self) -> Control {
         Control {
@@ -33000,6 +34554,18 @@ unsafe impl crate::Upcast<Control> for Decorator {
 impl AsRef<Control> for Decorator {
     fn as_ref(&self) -> &Control {
         <Self as crate::Upcast<Control>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Decorator> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnDecorator>().is_ok()
+    }
+    fn downcast(&self) -> Option<Decorator> {
+        self.raw
+            .query_interface::<sys::IAvnDecorator>()
+            .ok()
+            .map(|raw| Decorator { raw })
     }
 }
 
@@ -33400,6 +34966,24 @@ impl DockPanel {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -34126,6 +35710,18 @@ impl AsRef<AvaloniaObject> for DockPanel {
     }
 }
 
+unsafe impl crate::Downcast<DockPanel> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnDockPanel>().is_ok()
+    }
+    fn downcast(&self) -> Option<DockPanel> {
+        self.raw
+            .query_interface::<sys::IAvnDockPanel>()
+            .ok()
+            .map(|raw| DockPanel { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for DockPanel {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -34140,6 +35736,18 @@ unsafe impl crate::Upcast<StyledElement> for DockPanel {
 impl AsRef<StyledElement> for DockPanel {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<DockPanel> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnDockPanel>().is_ok()
+    }
+    fn downcast(&self) -> Option<DockPanel> {
+        self.raw
+            .query_interface::<sys::IAvnDockPanel>()
+            .ok()
+            .map(|raw| DockPanel { raw })
     }
 }
 
@@ -34160,6 +35768,18 @@ impl AsRef<Control> for DockPanel {
     }
 }
 
+unsafe impl crate::Downcast<DockPanel> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnDockPanel>().is_ok()
+    }
+    fn downcast(&self) -> Option<DockPanel> {
+        self.raw
+            .query_interface::<sys::IAvnDockPanel>()
+            .ok()
+            .map(|raw| DockPanel { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Panel> for DockPanel {
     fn upcast(&self) -> Panel {
         Panel {
@@ -34174,6 +35794,18 @@ unsafe impl crate::Upcast<Panel> for DockPanel {
 impl AsRef<Panel> for DockPanel {
     fn as_ref(&self) -> &Panel {
         <Self as crate::Upcast<Panel>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<DockPanel> for Panel {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnDockPanel>().is_ok()
+    }
+    fn downcast(&self) -> Option<DockPanel> {
+        self.raw
+            .query_interface::<sys::IAvnDockPanel>()
+            .ok()
+            .map(|raw| DockPanel { raw })
     }
 }
 
@@ -34602,6 +36234,24 @@ impl DropDownButton {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -35556,6 +37206,18 @@ impl AsRef<AvaloniaObject> for DropDownButton {
     }
 }
 
+unsafe impl crate::Downcast<DropDownButton> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnDropDownButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<DropDownButton> {
+        self.raw
+            .query_interface::<sys::IAvnDropDownButton>()
+            .ok()
+            .map(|raw| DropDownButton { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for DropDownButton {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -35570,6 +37232,18 @@ unsafe impl crate::Upcast<StyledElement> for DropDownButton {
 impl AsRef<StyledElement> for DropDownButton {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<DropDownButton> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnDropDownButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<DropDownButton> {
+        self.raw
+            .query_interface::<sys::IAvnDropDownButton>()
+            .ok()
+            .map(|raw| DropDownButton { raw })
     }
 }
 
@@ -35590,6 +37264,18 @@ impl AsRef<Control> for DropDownButton {
     }
 }
 
+unsafe impl crate::Downcast<DropDownButton> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnDropDownButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<DropDownButton> {
+        self.raw
+            .query_interface::<sys::IAvnDropDownButton>()
+            .ok()
+            .map(|raw| DropDownButton { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for DropDownButton {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -35604,6 +37290,18 @@ unsafe impl crate::Upcast<TemplatedControl> for DropDownButton {
 impl AsRef<TemplatedControl> for DropDownButton {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<DropDownButton> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnDropDownButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<DropDownButton> {
+        self.raw
+            .query_interface::<sys::IAvnDropDownButton>()
+            .ok()
+            .map(|raw| DropDownButton { raw })
     }
 }
 
@@ -35624,6 +37322,18 @@ impl AsRef<ContentControl> for DropDownButton {
     }
 }
 
+unsafe impl crate::Downcast<DropDownButton> for ContentControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnDropDownButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<DropDownButton> {
+        self.raw
+            .query_interface::<sys::IAvnDropDownButton>()
+            .ok()
+            .map(|raw| DropDownButton { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Button> for DropDownButton {
     fn upcast(&self) -> Button {
         Button {
@@ -35638,6 +37348,18 @@ unsafe impl crate::Upcast<Button> for DropDownButton {
 impl AsRef<Button> for DropDownButton {
     fn as_ref(&self) -> &Button {
         <Self as crate::Upcast<Button>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<DropDownButton> for Button {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnDropDownButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<DropDownButton> {
+        self.raw
+            .query_interface::<sys::IAvnDropDownButton>()
+            .ok()
+            .map(|raw| DropDownButton { raw })
     }
 }
 
@@ -35969,8 +37691,11 @@ impl crate::view::El<DropDownButton> {
             crate::view::apply_prop(control, binding, |c, v| c.set_click_mode(v))
         })
     }
-    pub fn command(self, value: Option<sys::ComPtr<sys::IAvnCommand>>) -> Self {
-        self.with_op(move |_, control| control.set_command(value.as_ref()))
+    pub fn command(self, value: impl crate::view::IntoCommandProp + 'static) -> Self {
+        self.with_op(move |_, control| {
+            let cmd = value.into_command_prop();
+            control.set_command(cmd.as_ref())
+        })
     }
     pub fn hot_key<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
         let binding = value.into_prop();
@@ -36173,6 +37898,24 @@ impl Expander {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -37140,6 +38883,18 @@ impl AsRef<AvaloniaObject> for Expander {
     }
 }
 
+unsafe impl crate::Downcast<Expander> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnExpander>().is_ok()
+    }
+    fn downcast(&self) -> Option<Expander> {
+        self.raw
+            .query_interface::<sys::IAvnExpander>()
+            .ok()
+            .map(|raw| Expander { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for Expander {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -37154,6 +38909,18 @@ unsafe impl crate::Upcast<StyledElement> for Expander {
 impl AsRef<StyledElement> for Expander {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Expander> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnExpander>().is_ok()
+    }
+    fn downcast(&self) -> Option<Expander> {
+        self.raw
+            .query_interface::<sys::IAvnExpander>()
+            .ok()
+            .map(|raw| Expander { raw })
     }
 }
 
@@ -37174,6 +38941,18 @@ impl AsRef<Control> for Expander {
     }
 }
 
+unsafe impl crate::Downcast<Expander> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnExpander>().is_ok()
+    }
+    fn downcast(&self) -> Option<Expander> {
+        self.raw
+            .query_interface::<sys::IAvnExpander>()
+            .ok()
+            .map(|raw| Expander { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for Expander {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -37188,6 +38967,18 @@ unsafe impl crate::Upcast<TemplatedControl> for Expander {
 impl AsRef<TemplatedControl> for Expander {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Expander> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnExpander>().is_ok()
+    }
+    fn downcast(&self) -> Option<Expander> {
+        self.raw
+            .query_interface::<sys::IAvnExpander>()
+            .ok()
+            .map(|raw| Expander { raw })
     }
 }
 
@@ -37208,6 +38999,18 @@ impl AsRef<ContentControl> for Expander {
     }
 }
 
+unsafe impl crate::Downcast<Expander> for ContentControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnExpander>().is_ok()
+    }
+    fn downcast(&self) -> Option<Expander> {
+        self.raw
+            .query_interface::<sys::IAvnExpander>()
+            .ok()
+            .map(|raw| Expander { raw })
+    }
+}
+
 unsafe impl crate::Upcast<HeaderedContentControl> for Expander {
     fn upcast(&self) -> HeaderedContentControl {
         HeaderedContentControl {
@@ -37222,6 +39025,18 @@ unsafe impl crate::Upcast<HeaderedContentControl> for Expander {
 impl AsRef<HeaderedContentControl> for Expander {
     fn as_ref(&self) -> &HeaderedContentControl {
         <Self as crate::Upcast<HeaderedContentControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Expander> for HeaderedContentControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnExpander>().is_ok()
+    }
+    fn downcast(&self) -> Option<Expander> {
+        self.raw
+            .query_interface::<sys::IAvnExpander>()
+            .ok()
+            .map(|raw| Expander { raw })
     }
 }
 
@@ -37761,6 +39576,24 @@ impl Flyout {
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
     }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
+    }
     pub fn get_is_open(&self) -> Result<bool> { Ok(self.raw.get_is_open()?) }
     pub fn set_open(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_open(value)?)
@@ -37980,6 +39813,18 @@ impl AsRef<AvaloniaObject> for Flyout {
     }
 }
 
+unsafe impl crate::Downcast<Flyout> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnFlyout>().is_ok()
+    }
+    fn downcast(&self) -> Option<Flyout> {
+        self.raw
+            .query_interface::<sys::IAvnFlyout>()
+            .ok()
+            .map(|raw| Flyout { raw })
+    }
+}
+
 unsafe impl crate::Upcast<FlyoutBase> for Flyout {
     fn upcast(&self) -> FlyoutBase {
         FlyoutBase {
@@ -37997,6 +39842,18 @@ impl AsRef<FlyoutBase> for Flyout {
     }
 }
 
+unsafe impl crate::Downcast<Flyout> for FlyoutBase {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnFlyout>().is_ok()
+    }
+    fn downcast(&self) -> Option<Flyout> {
+        self.raw
+            .query_interface::<sys::IAvnFlyout>()
+            .ok()
+            .map(|raw| Flyout { raw })
+    }
+}
+
 unsafe impl crate::Upcast<PopupFlyoutBase> for Flyout {
     fn upcast(&self) -> PopupFlyoutBase {
         PopupFlyoutBase {
@@ -38011,6 +39868,18 @@ unsafe impl crate::Upcast<PopupFlyoutBase> for Flyout {
 impl AsRef<PopupFlyoutBase> for Flyout {
     fn as_ref(&self) -> &PopupFlyoutBase {
         <Self as crate::Upcast<PopupFlyoutBase>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Flyout> for PopupFlyoutBase {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnFlyout>().is_ok()
+    }
+    fn downcast(&self) -> Option<Flyout> {
+        self.raw
+            .query_interface::<sys::IAvnFlyout>()
+            .ok()
+            .map(|raw| Flyout { raw })
     }
 }
 
@@ -38130,6 +39999,24 @@ impl Grid {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -38914,6 +40801,18 @@ impl AsRef<AvaloniaObject> for Grid {
     }
 }
 
+unsafe impl crate::Downcast<Grid> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnGrid>().is_ok()
+    }
+    fn downcast(&self) -> Option<Grid> {
+        self.raw
+            .query_interface::<sys::IAvnGrid>()
+            .ok()
+            .map(|raw| Grid { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for Grid {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -38928,6 +40827,18 @@ unsafe impl crate::Upcast<StyledElement> for Grid {
 impl AsRef<StyledElement> for Grid {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Grid> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnGrid>().is_ok()
+    }
+    fn downcast(&self) -> Option<Grid> {
+        self.raw
+            .query_interface::<sys::IAvnGrid>()
+            .ok()
+            .map(|raw| Grid { raw })
     }
 }
 
@@ -38948,6 +40859,18 @@ impl AsRef<Control> for Grid {
     }
 }
 
+unsafe impl crate::Downcast<Grid> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnGrid>().is_ok()
+    }
+    fn downcast(&self) -> Option<Grid> {
+        self.raw
+            .query_interface::<sys::IAvnGrid>()
+            .ok()
+            .map(|raw| Grid { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Panel> for Grid {
     fn upcast(&self) -> Panel {
         Panel {
@@ -38962,6 +40885,18 @@ unsafe impl crate::Upcast<Panel> for Grid {
 impl AsRef<Panel> for Grid {
     fn as_ref(&self) -> &Panel {
         <Self as crate::Upcast<Panel>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Grid> for Panel {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnGrid>().is_ok()
+    }
+    fn downcast(&self) -> Option<Grid> {
+        self.raw
+            .query_interface::<sys::IAvnGrid>()
+            .ok()
+            .map(|raw| Grid { raw })
     }
 }
 
@@ -39402,6 +41337,24 @@ impl GridSplitter {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -40301,6 +42254,18 @@ impl AsRef<AvaloniaObject> for GridSplitter {
     }
 }
 
+unsafe impl crate::Downcast<GridSplitter> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnGridSplitter>().is_ok()
+    }
+    fn downcast(&self) -> Option<GridSplitter> {
+        self.raw
+            .query_interface::<sys::IAvnGridSplitter>()
+            .ok()
+            .map(|raw| GridSplitter { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for GridSplitter {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -40315,6 +42280,18 @@ unsafe impl crate::Upcast<StyledElement> for GridSplitter {
 impl AsRef<StyledElement> for GridSplitter {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<GridSplitter> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnGridSplitter>().is_ok()
+    }
+    fn downcast(&self) -> Option<GridSplitter> {
+        self.raw
+            .query_interface::<sys::IAvnGridSplitter>()
+            .ok()
+            .map(|raw| GridSplitter { raw })
     }
 }
 
@@ -40335,6 +42312,18 @@ impl AsRef<Control> for GridSplitter {
     }
 }
 
+unsafe impl crate::Downcast<GridSplitter> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnGridSplitter>().is_ok()
+    }
+    fn downcast(&self) -> Option<GridSplitter> {
+        self.raw
+            .query_interface::<sys::IAvnGridSplitter>()
+            .ok()
+            .map(|raw| GridSplitter { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for GridSplitter {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -40352,6 +42341,18 @@ impl AsRef<TemplatedControl> for GridSplitter {
     }
 }
 
+unsafe impl crate::Downcast<GridSplitter> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnGridSplitter>().is_ok()
+    }
+    fn downcast(&self) -> Option<GridSplitter> {
+        self.raw
+            .query_interface::<sys::IAvnGridSplitter>()
+            .ok()
+            .map(|raw| GridSplitter { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Thumb> for GridSplitter {
     fn upcast(&self) -> Thumb {
         Thumb {
@@ -40366,6 +42367,18 @@ unsafe impl crate::Upcast<Thumb> for GridSplitter {
 impl AsRef<Thumb> for GridSplitter {
     fn as_ref(&self) -> &Thumb {
         <Self as crate::Upcast<Thumb>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<GridSplitter> for Thumb {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnGridSplitter>().is_ok()
+    }
+    fn downcast(&self) -> Option<GridSplitter> {
+        self.raw
+            .query_interface::<sys::IAvnGridSplitter>()
+            .ok()
+            .map(|raw| GridSplitter { raw })
     }
 }
 
@@ -40883,6 +42896,24 @@ impl GroupBox {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -41783,6 +43814,18 @@ impl AsRef<AvaloniaObject> for GroupBox {
     }
 }
 
+unsafe impl crate::Downcast<GroupBox> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnGroupBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<GroupBox> {
+        self.raw
+            .query_interface::<sys::IAvnGroupBox>()
+            .ok()
+            .map(|raw| GroupBox { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for GroupBox {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -41797,6 +43840,18 @@ unsafe impl crate::Upcast<StyledElement> for GroupBox {
 impl AsRef<StyledElement> for GroupBox {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<GroupBox> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnGroupBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<GroupBox> {
+        self.raw
+            .query_interface::<sys::IAvnGroupBox>()
+            .ok()
+            .map(|raw| GroupBox { raw })
     }
 }
 
@@ -41817,6 +43872,18 @@ impl AsRef<Control> for GroupBox {
     }
 }
 
+unsafe impl crate::Downcast<GroupBox> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnGroupBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<GroupBox> {
+        self.raw
+            .query_interface::<sys::IAvnGroupBox>()
+            .ok()
+            .map(|raw| GroupBox { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for GroupBox {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -41831,6 +43898,18 @@ unsafe impl crate::Upcast<TemplatedControl> for GroupBox {
 impl AsRef<TemplatedControl> for GroupBox {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<GroupBox> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnGroupBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<GroupBox> {
+        self.raw
+            .query_interface::<sys::IAvnGroupBox>()
+            .ok()
+            .map(|raw| GroupBox { raw })
     }
 }
 
@@ -41851,6 +43930,18 @@ impl AsRef<ContentControl> for GroupBox {
     }
 }
 
+unsafe impl crate::Downcast<GroupBox> for ContentControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnGroupBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<GroupBox> {
+        self.raw
+            .query_interface::<sys::IAvnGroupBox>()
+            .ok()
+            .map(|raw| GroupBox { raw })
+    }
+}
+
 unsafe impl crate::Upcast<HeaderedContentControl> for GroupBox {
     fn upcast(&self) -> HeaderedContentControl {
         HeaderedContentControl {
@@ -41865,6 +43956,18 @@ unsafe impl crate::Upcast<HeaderedContentControl> for GroupBox {
 impl AsRef<HeaderedContentControl> for GroupBox {
     fn as_ref(&self) -> &HeaderedContentControl {
         <Self as crate::Upcast<HeaderedContentControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<GroupBox> for HeaderedContentControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnGroupBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<GroupBox> {
+        self.raw
+            .query_interface::<sys::IAvnGroupBox>()
+            .ok()
+            .map(|raw| GroupBox { raw })
     }
 }
 
@@ -42367,6 +44470,24 @@ impl HyperlinkButton {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -43340,6 +45461,18 @@ impl AsRef<AvaloniaObject> for HyperlinkButton {
     }
 }
 
+unsafe impl crate::Downcast<HyperlinkButton> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnHyperlinkButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<HyperlinkButton> {
+        self.raw
+            .query_interface::<sys::IAvnHyperlinkButton>()
+            .ok()
+            .map(|raw| HyperlinkButton { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for HyperlinkButton {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -43354,6 +45487,18 @@ unsafe impl crate::Upcast<StyledElement> for HyperlinkButton {
 impl AsRef<StyledElement> for HyperlinkButton {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<HyperlinkButton> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnHyperlinkButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<HyperlinkButton> {
+        self.raw
+            .query_interface::<sys::IAvnHyperlinkButton>()
+            .ok()
+            .map(|raw| HyperlinkButton { raw })
     }
 }
 
@@ -43374,6 +45519,18 @@ impl AsRef<Control> for HyperlinkButton {
     }
 }
 
+unsafe impl crate::Downcast<HyperlinkButton> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnHyperlinkButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<HyperlinkButton> {
+        self.raw
+            .query_interface::<sys::IAvnHyperlinkButton>()
+            .ok()
+            .map(|raw| HyperlinkButton { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for HyperlinkButton {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -43388,6 +45545,18 @@ unsafe impl crate::Upcast<TemplatedControl> for HyperlinkButton {
 impl AsRef<TemplatedControl> for HyperlinkButton {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<HyperlinkButton> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnHyperlinkButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<HyperlinkButton> {
+        self.raw
+            .query_interface::<sys::IAvnHyperlinkButton>()
+            .ok()
+            .map(|raw| HyperlinkButton { raw })
     }
 }
 
@@ -43408,6 +45577,18 @@ impl AsRef<ContentControl> for HyperlinkButton {
     }
 }
 
+unsafe impl crate::Downcast<HyperlinkButton> for ContentControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnHyperlinkButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<HyperlinkButton> {
+        self.raw
+            .query_interface::<sys::IAvnHyperlinkButton>()
+            .ok()
+            .map(|raw| HyperlinkButton { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Button> for HyperlinkButton {
     fn upcast(&self) -> Button {
         Button {
@@ -43422,6 +45603,18 @@ unsafe impl crate::Upcast<Button> for HyperlinkButton {
 impl AsRef<Button> for HyperlinkButton {
     fn as_ref(&self) -> &Button {
         <Self as crate::Upcast<Button>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<HyperlinkButton> for Button {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnHyperlinkButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<HyperlinkButton> {
+        self.raw
+            .query_interface::<sys::IAvnHyperlinkButton>()
+            .ok()
+            .map(|raw| HyperlinkButton { raw })
     }
 }
 
@@ -43753,8 +45946,11 @@ impl crate::view::El<HyperlinkButton> {
             crate::view::apply_prop(control, binding, |c, v| c.set_click_mode(v))
         })
     }
-    pub fn command(self, value: Option<sys::ComPtr<sys::IAvnCommand>>) -> Self {
-        self.with_op(move |_, control| control.set_command(value.as_ref()))
+    pub fn command(self, value: impl crate::view::IntoCommandProp + 'static) -> Self {
+        self.with_op(move |_, control| {
+            let cmd = value.into_command_prop();
+            control.set_command(cmd.as_ref())
+        })
     }
     pub fn hot_key<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
         let binding = value.into_prop();
@@ -43963,6 +46159,24 @@ pub struct IconElement {
 }
 
 impl IconElement {
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
+    }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
     }
@@ -44782,6 +46996,18 @@ impl AsRef<AvaloniaObject> for IconElement {
     }
 }
 
+unsafe impl crate::Downcast<IconElement> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnIconElement>().is_ok()
+    }
+    fn downcast(&self) -> Option<IconElement> {
+        self.raw
+            .query_interface::<sys::IAvnIconElement>()
+            .ok()
+            .map(|raw| IconElement { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for IconElement {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -44796,6 +47022,18 @@ unsafe impl crate::Upcast<StyledElement> for IconElement {
 impl AsRef<StyledElement> for IconElement {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<IconElement> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnIconElement>().is_ok()
+    }
+    fn downcast(&self) -> Option<IconElement> {
+        self.raw
+            .query_interface::<sys::IAvnIconElement>()
+            .ok()
+            .map(|raw| IconElement { raw })
     }
 }
 
@@ -44816,6 +47054,18 @@ impl AsRef<Control> for IconElement {
     }
 }
 
+unsafe impl crate::Downcast<IconElement> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnIconElement>().is_ok()
+    }
+    fn downcast(&self) -> Option<IconElement> {
+        self.raw
+            .query_interface::<sys::IAvnIconElement>()
+            .ok()
+            .map(|raw| IconElement { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for IconElement {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -44830,6 +47080,18 @@ unsafe impl crate::Upcast<TemplatedControl> for IconElement {
 impl AsRef<TemplatedControl> for IconElement {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<IconElement> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnIconElement>().is_ok()
+    }
+    fn downcast(&self) -> Option<IconElement> {
+        self.raw
+            .query_interface::<sys::IAvnIconElement>()
+            .ok()
+            .map(|raw| IconElement { raw })
     }
 }
 
@@ -44852,6 +47114,24 @@ impl Image {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -45571,6 +47851,18 @@ impl AsRef<AvaloniaObject> for Image {
     }
 }
 
+unsafe impl crate::Downcast<Image> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnImage>().is_ok()
+    }
+    fn downcast(&self) -> Option<Image> {
+        self.raw
+            .query_interface::<sys::IAvnImage>()
+            .ok()
+            .map(|raw| Image { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for Image {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -45588,6 +47880,18 @@ impl AsRef<StyledElement> for Image {
     }
 }
 
+unsafe impl crate::Downcast<Image> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnImage>().is_ok()
+    }
+    fn downcast(&self) -> Option<Image> {
+        self.raw
+            .query_interface::<sys::IAvnImage>()
+            .ok()
+            .map(|raw| Image { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Control> for Image {
     fn upcast(&self) -> Control {
         Control {
@@ -45602,6 +47906,18 @@ unsafe impl crate::Upcast<Control> for Image {
 impl AsRef<Control> for Image {
     fn as_ref(&self) -> &Control {
         <Self as crate::Upcast<Control>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Image> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnImage>().is_ok()
+    }
+    fn downcast(&self) -> Option<Image> {
+        self.raw
+            .query_interface::<sys::IAvnImage>()
+            .ok()
+            .map(|raw| Image { raw })
     }
 }
 
@@ -46011,6 +48327,24 @@ impl ItemsControl {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -46871,6 +49205,18 @@ impl AsRef<AvaloniaObject> for ItemsControl {
     }
 }
 
+unsafe impl crate::Downcast<ItemsControl> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnItemsControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<ItemsControl> {
+        self.raw
+            .query_interface::<sys::IAvnItemsControl>()
+            .ok()
+            .map(|raw| ItemsControl { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for ItemsControl {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -46885,6 +49231,18 @@ unsafe impl crate::Upcast<StyledElement> for ItemsControl {
 impl AsRef<StyledElement> for ItemsControl {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ItemsControl> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnItemsControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<ItemsControl> {
+        self.raw
+            .query_interface::<sys::IAvnItemsControl>()
+            .ok()
+            .map(|raw| ItemsControl { raw })
     }
 }
 
@@ -46905,6 +49263,18 @@ impl AsRef<Control> for ItemsControl {
     }
 }
 
+unsafe impl crate::Downcast<ItemsControl> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnItemsControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<ItemsControl> {
+        self.raw
+            .query_interface::<sys::IAvnItemsControl>()
+            .ok()
+            .map(|raw| ItemsControl { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for ItemsControl {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -46919,6 +49289,18 @@ unsafe impl crate::Upcast<TemplatedControl> for ItemsControl {
 impl AsRef<TemplatedControl> for ItemsControl {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ItemsControl> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnItemsControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<ItemsControl> {
+        self.raw
+            .query_interface::<sys::IAvnItemsControl>()
+            .ok()
+            .map(|raw| ItemsControl { raw })
     }
 }
 
@@ -47410,6 +49792,24 @@ impl Label {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -48292,6 +50692,18 @@ impl AsRef<AvaloniaObject> for Label {
     }
 }
 
+unsafe impl crate::Downcast<Label> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnLabel>().is_ok()
+    }
+    fn downcast(&self) -> Option<Label> {
+        self.raw
+            .query_interface::<sys::IAvnLabel>()
+            .ok()
+            .map(|raw| Label { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for Label {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -48306,6 +50718,18 @@ unsafe impl crate::Upcast<StyledElement> for Label {
 impl AsRef<StyledElement> for Label {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Label> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnLabel>().is_ok()
+    }
+    fn downcast(&self) -> Option<Label> {
+        self.raw
+            .query_interface::<sys::IAvnLabel>()
+            .ok()
+            .map(|raw| Label { raw })
     }
 }
 
@@ -48326,6 +50750,18 @@ impl AsRef<Control> for Label {
     }
 }
 
+unsafe impl crate::Downcast<Label> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnLabel>().is_ok()
+    }
+    fn downcast(&self) -> Option<Label> {
+        self.raw
+            .query_interface::<sys::IAvnLabel>()
+            .ok()
+            .map(|raw| Label { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for Label {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -48343,6 +50779,18 @@ impl AsRef<TemplatedControl> for Label {
     }
 }
 
+unsafe impl crate::Downcast<Label> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnLabel>().is_ok()
+    }
+    fn downcast(&self) -> Option<Label> {
+        self.raw
+            .query_interface::<sys::IAvnLabel>()
+            .ok()
+            .map(|raw| Label { raw })
+    }
+}
+
 unsafe impl crate::Upcast<ContentControl> for Label {
     fn upcast(&self) -> ContentControl {
         ContentControl {
@@ -48357,6 +50805,18 @@ unsafe impl crate::Upcast<ContentControl> for Label {
 impl AsRef<ContentControl> for Label {
     fn as_ref(&self) -> &ContentControl {
         <Self as crate::Upcast<ContentControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Label> for ContentControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnLabel>().is_ok()
+    }
+    fn downcast(&self) -> Option<Label> {
+        self.raw
+            .query_interface::<sys::IAvnLabel>()
+            .ok()
+            .map(|raw| Label { raw })
     }
 }
 
@@ -48856,6 +51316,24 @@ impl LayoutTransformControl {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -49560,6 +52038,18 @@ impl AsRef<AvaloniaObject> for LayoutTransformControl {
     }
 }
 
+unsafe impl crate::Downcast<LayoutTransformControl> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnLayoutTransformControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<LayoutTransformControl> {
+        self.raw
+            .query_interface::<sys::IAvnLayoutTransformControl>()
+            .ok()
+            .map(|raw| LayoutTransformControl { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for LayoutTransformControl {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -49574,6 +52064,18 @@ unsafe impl crate::Upcast<StyledElement> for LayoutTransformControl {
 impl AsRef<StyledElement> for LayoutTransformControl {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<LayoutTransformControl> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnLayoutTransformControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<LayoutTransformControl> {
+        self.raw
+            .query_interface::<sys::IAvnLayoutTransformControl>()
+            .ok()
+            .map(|raw| LayoutTransformControl { raw })
     }
 }
 
@@ -49594,6 +52096,18 @@ impl AsRef<Control> for LayoutTransformControl {
     }
 }
 
+unsafe impl crate::Downcast<LayoutTransformControl> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnLayoutTransformControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<LayoutTransformControl> {
+        self.raw
+            .query_interface::<sys::IAvnLayoutTransformControl>()
+            .ok()
+            .map(|raw| LayoutTransformControl { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Decorator> for LayoutTransformControl {
     fn upcast(&self) -> Decorator {
         Decorator {
@@ -49608,6 +52122,18 @@ unsafe impl crate::Upcast<Decorator> for LayoutTransformControl {
 impl AsRef<Decorator> for LayoutTransformControl {
     fn as_ref(&self) -> &Decorator {
         <Self as crate::Upcast<Decorator>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<LayoutTransformControl> for Decorator {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnLayoutTransformControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<LayoutTransformControl> {
+        self.raw
+            .query_interface::<sys::IAvnLayoutTransformControl>()
+            .ok()
+            .map(|raw| LayoutTransformControl { raw })
     }
 }
 
@@ -50014,6 +52540,24 @@ impl ListBox {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -50949,6 +53493,18 @@ impl AsRef<AvaloniaObject> for ListBox {
     }
 }
 
+unsafe impl crate::Downcast<ListBox> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnListBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<ListBox> {
+        self.raw
+            .query_interface::<sys::IAvnListBox>()
+            .ok()
+            .map(|raw| ListBox { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for ListBox {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -50963,6 +53519,18 @@ unsafe impl crate::Upcast<StyledElement> for ListBox {
 impl AsRef<StyledElement> for ListBox {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ListBox> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnListBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<ListBox> {
+        self.raw
+            .query_interface::<sys::IAvnListBox>()
+            .ok()
+            .map(|raw| ListBox { raw })
     }
 }
 
@@ -50983,6 +53551,18 @@ impl AsRef<Control> for ListBox {
     }
 }
 
+unsafe impl crate::Downcast<ListBox> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnListBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<ListBox> {
+        self.raw
+            .query_interface::<sys::IAvnListBox>()
+            .ok()
+            .map(|raw| ListBox { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for ListBox {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -50997,6 +53577,18 @@ unsafe impl crate::Upcast<TemplatedControl> for ListBox {
 impl AsRef<TemplatedControl> for ListBox {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ListBox> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnListBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<ListBox> {
+        self.raw
+            .query_interface::<sys::IAvnListBox>()
+            .ok()
+            .map(|raw| ListBox { raw })
     }
 }
 
@@ -51017,6 +53609,18 @@ impl AsRef<ItemsControl> for ListBox {
     }
 }
 
+unsafe impl crate::Downcast<ListBox> for ItemsControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnListBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<ListBox> {
+        self.raw
+            .query_interface::<sys::IAvnListBox>()
+            .ok()
+            .map(|raw| ListBox { raw })
+    }
+}
+
 unsafe impl crate::Upcast<SelectingItemsControl> for ListBox {
     fn upcast(&self) -> SelectingItemsControl {
         SelectingItemsControl {
@@ -51031,6 +53635,18 @@ unsafe impl crate::Upcast<SelectingItemsControl> for ListBox {
 impl AsRef<SelectingItemsControl> for ListBox {
     fn as_ref(&self) -> &SelectingItemsControl {
         <Self as crate::Upcast<SelectingItemsControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ListBox> for SelectingItemsControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnListBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<ListBox> {
+        self.raw
+            .query_interface::<sys::IAvnListBox>()
+            .ok()
+            .map(|raw| ListBox { raw })
     }
 }
 
@@ -51577,6 +54193,24 @@ impl ListBoxItem {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -52456,6 +55090,18 @@ impl AsRef<AvaloniaObject> for ListBoxItem {
     }
 }
 
+unsafe impl crate::Downcast<ListBoxItem> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnListBoxItem>().is_ok()
+    }
+    fn downcast(&self) -> Option<ListBoxItem> {
+        self.raw
+            .query_interface::<sys::IAvnListBoxItem>()
+            .ok()
+            .map(|raw| ListBoxItem { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for ListBoxItem {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -52470,6 +55116,18 @@ unsafe impl crate::Upcast<StyledElement> for ListBoxItem {
 impl AsRef<StyledElement> for ListBoxItem {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ListBoxItem> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnListBoxItem>().is_ok()
+    }
+    fn downcast(&self) -> Option<ListBoxItem> {
+        self.raw
+            .query_interface::<sys::IAvnListBoxItem>()
+            .ok()
+            .map(|raw| ListBoxItem { raw })
     }
 }
 
@@ -52490,6 +55148,18 @@ impl AsRef<Control> for ListBoxItem {
     }
 }
 
+unsafe impl crate::Downcast<ListBoxItem> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnListBoxItem>().is_ok()
+    }
+    fn downcast(&self) -> Option<ListBoxItem> {
+        self.raw
+            .query_interface::<sys::IAvnListBoxItem>()
+            .ok()
+            .map(|raw| ListBoxItem { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for ListBoxItem {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -52507,6 +55177,18 @@ impl AsRef<TemplatedControl> for ListBoxItem {
     }
 }
 
+unsafe impl crate::Downcast<ListBoxItem> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnListBoxItem>().is_ok()
+    }
+    fn downcast(&self) -> Option<ListBoxItem> {
+        self.raw
+            .query_interface::<sys::IAvnListBoxItem>()
+            .ok()
+            .map(|raw| ListBoxItem { raw })
+    }
+}
+
 unsafe impl crate::Upcast<ContentControl> for ListBoxItem {
     fn upcast(&self) -> ContentControl {
         ContentControl {
@@ -52521,6 +55203,18 @@ unsafe impl crate::Upcast<ContentControl> for ListBoxItem {
 impl AsRef<ContentControl> for ListBoxItem {
     fn as_ref(&self) -> &ContentControl {
         <Self as crate::Upcast<ContentControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ListBoxItem> for ContentControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnListBoxItem>().is_ok()
+    }
+    fn downcast(&self) -> Option<ListBoxItem> {
+        self.raw
+            .query_interface::<sys::IAvnListBoxItem>()
+            .ok()
+            .map(|raw| ListBoxItem { raw })
     }
 }
 
@@ -53020,6 +55714,24 @@ impl MaskedTextBox {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -54275,6 +56987,18 @@ impl AsRef<AvaloniaObject> for MaskedTextBox {
     }
 }
 
+unsafe impl crate::Downcast<MaskedTextBox> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnMaskedTextBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<MaskedTextBox> {
+        self.raw
+            .query_interface::<sys::IAvnMaskedTextBox>()
+            .ok()
+            .map(|raw| MaskedTextBox { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for MaskedTextBox {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -54289,6 +57013,18 @@ unsafe impl crate::Upcast<StyledElement> for MaskedTextBox {
 impl AsRef<StyledElement> for MaskedTextBox {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<MaskedTextBox> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnMaskedTextBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<MaskedTextBox> {
+        self.raw
+            .query_interface::<sys::IAvnMaskedTextBox>()
+            .ok()
+            .map(|raw| MaskedTextBox { raw })
     }
 }
 
@@ -54309,6 +57045,18 @@ impl AsRef<Control> for MaskedTextBox {
     }
 }
 
+unsafe impl crate::Downcast<MaskedTextBox> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnMaskedTextBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<MaskedTextBox> {
+        self.raw
+            .query_interface::<sys::IAvnMaskedTextBox>()
+            .ok()
+            .map(|raw| MaskedTextBox { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for MaskedTextBox {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -54326,6 +57074,18 @@ impl AsRef<TemplatedControl> for MaskedTextBox {
     }
 }
 
+unsafe impl crate::Downcast<MaskedTextBox> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnMaskedTextBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<MaskedTextBox> {
+        self.raw
+            .query_interface::<sys::IAvnMaskedTextBox>()
+            .ok()
+            .map(|raw| MaskedTextBox { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TextBox> for MaskedTextBox {
     fn upcast(&self) -> TextBox {
         TextBox {
@@ -54340,6 +57100,18 @@ unsafe impl crate::Upcast<TextBox> for MaskedTextBox {
 impl AsRef<TextBox> for MaskedTextBox {
     fn as_ref(&self) -> &TextBox {
         <Self as crate::Upcast<TextBox>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<MaskedTextBox> for TextBox {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnMaskedTextBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<MaskedTextBox> {
+        self.raw
+            .query_interface::<sys::IAvnMaskedTextBox>()
+            .ok()
+            .map(|raw| MaskedTextBox { raw })
     }
 }
 
@@ -55077,6 +57849,24 @@ impl Menu {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -56031,6 +58821,18 @@ impl AsRef<AvaloniaObject> for Menu {
     }
 }
 
+unsafe impl crate::Downcast<Menu> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnMenu>().is_ok()
+    }
+    fn downcast(&self) -> Option<Menu> {
+        self.raw
+            .query_interface::<sys::IAvnMenu>()
+            .ok()
+            .map(|raw| Menu { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for Menu {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -56045,6 +58847,18 @@ unsafe impl crate::Upcast<StyledElement> for Menu {
 impl AsRef<StyledElement> for Menu {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Menu> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnMenu>().is_ok()
+    }
+    fn downcast(&self) -> Option<Menu> {
+        self.raw
+            .query_interface::<sys::IAvnMenu>()
+            .ok()
+            .map(|raw| Menu { raw })
     }
 }
 
@@ -56065,6 +58879,18 @@ impl AsRef<Control> for Menu {
     }
 }
 
+unsafe impl crate::Downcast<Menu> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnMenu>().is_ok()
+    }
+    fn downcast(&self) -> Option<Menu> {
+        self.raw
+            .query_interface::<sys::IAvnMenu>()
+            .ok()
+            .map(|raw| Menu { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for Menu {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -56079,6 +58905,18 @@ unsafe impl crate::Upcast<TemplatedControl> for Menu {
 impl AsRef<TemplatedControl> for Menu {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Menu> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnMenu>().is_ok()
+    }
+    fn downcast(&self) -> Option<Menu> {
+        self.raw
+            .query_interface::<sys::IAvnMenu>()
+            .ok()
+            .map(|raw| Menu { raw })
     }
 }
 
@@ -56099,6 +58937,18 @@ impl AsRef<ItemsControl> for Menu {
     }
 }
 
+unsafe impl crate::Downcast<Menu> for ItemsControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnMenu>().is_ok()
+    }
+    fn downcast(&self) -> Option<Menu> {
+        self.raw
+            .query_interface::<sys::IAvnMenu>()
+            .ok()
+            .map(|raw| Menu { raw })
+    }
+}
+
 unsafe impl crate::Upcast<SelectingItemsControl> for Menu {
     fn upcast(&self) -> SelectingItemsControl {
         SelectingItemsControl {
@@ -56116,6 +58966,18 @@ impl AsRef<SelectingItemsControl> for Menu {
     }
 }
 
+unsafe impl crate::Downcast<Menu> for SelectingItemsControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnMenu>().is_ok()
+    }
+    fn downcast(&self) -> Option<Menu> {
+        self.raw
+            .query_interface::<sys::IAvnMenu>()
+            .ok()
+            .map(|raw| Menu { raw })
+    }
+}
+
 unsafe impl crate::Upcast<MenuBase> for Menu {
     fn upcast(&self) -> MenuBase {
         MenuBase {
@@ -56130,6 +58992,18 @@ unsafe impl crate::Upcast<MenuBase> for Menu {
 impl AsRef<MenuBase> for Menu {
     fn as_ref(&self) -> &MenuBase {
         <Self as crate::Upcast<MenuBase>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Menu> for MenuBase {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnMenu>().is_ok()
+    }
+    fn downcast(&self) -> Option<Menu> {
+        self.raw
+            .query_interface::<sys::IAvnMenu>()
+            .ok()
+            .map(|raw| Menu { raw })
     }
 }
 
@@ -56676,6 +59550,24 @@ pub struct MenuBase {
 }
 
 impl MenuBase {
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
+    }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
     }
@@ -57629,6 +60521,18 @@ impl AsRef<AvaloniaObject> for MenuBase {
     }
 }
 
+unsafe impl crate::Downcast<MenuBase> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnMenuBase>().is_ok()
+    }
+    fn downcast(&self) -> Option<MenuBase> {
+        self.raw
+            .query_interface::<sys::IAvnMenuBase>()
+            .ok()
+            .map(|raw| MenuBase { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for MenuBase {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -57643,6 +60547,18 @@ unsafe impl crate::Upcast<StyledElement> for MenuBase {
 impl AsRef<StyledElement> for MenuBase {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<MenuBase> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnMenuBase>().is_ok()
+    }
+    fn downcast(&self) -> Option<MenuBase> {
+        self.raw
+            .query_interface::<sys::IAvnMenuBase>()
+            .ok()
+            .map(|raw| MenuBase { raw })
     }
 }
 
@@ -57663,6 +60579,18 @@ impl AsRef<Control> for MenuBase {
     }
 }
 
+unsafe impl crate::Downcast<MenuBase> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnMenuBase>().is_ok()
+    }
+    fn downcast(&self) -> Option<MenuBase> {
+        self.raw
+            .query_interface::<sys::IAvnMenuBase>()
+            .ok()
+            .map(|raw| MenuBase { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for MenuBase {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -57677,6 +60605,18 @@ unsafe impl crate::Upcast<TemplatedControl> for MenuBase {
 impl AsRef<TemplatedControl> for MenuBase {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<MenuBase> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnMenuBase>().is_ok()
+    }
+    fn downcast(&self) -> Option<MenuBase> {
+        self.raw
+            .query_interface::<sys::IAvnMenuBase>()
+            .ok()
+            .map(|raw| MenuBase { raw })
     }
 }
 
@@ -57697,6 +60637,18 @@ impl AsRef<ItemsControl> for MenuBase {
     }
 }
 
+unsafe impl crate::Downcast<MenuBase> for ItemsControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnMenuBase>().is_ok()
+    }
+    fn downcast(&self) -> Option<MenuBase> {
+        self.raw
+            .query_interface::<sys::IAvnMenuBase>()
+            .ok()
+            .map(|raw| MenuBase { raw })
+    }
+}
+
 unsafe impl crate::Upcast<SelectingItemsControl> for MenuBase {
     fn upcast(&self) -> SelectingItemsControl {
         SelectingItemsControl {
@@ -57711,6 +60663,18 @@ unsafe impl crate::Upcast<SelectingItemsControl> for MenuBase {
 impl AsRef<SelectingItemsControl> for MenuBase {
     fn as_ref(&self) -> &SelectingItemsControl {
         <Self as crate::Upcast<SelectingItemsControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<MenuBase> for SelectingItemsControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnMenuBase>().is_ok()
+    }
+    fn downcast(&self) -> Option<MenuBase> {
+        self.raw
+            .query_interface::<sys::IAvnMenuBase>()
+            .ok()
+            .map(|raw| MenuBase { raw })
     }
 }
 
@@ -57733,6 +60697,24 @@ impl MenuFlyout {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_is_open(&self) -> Result<bool> { Ok(self.raw.get_is_open()?) }
     pub fn set_open(&self, value: bool) -> Result<()> {
@@ -57951,6 +60933,18 @@ impl AsRef<AvaloniaObject> for MenuFlyout {
     }
 }
 
+unsafe impl crate::Downcast<MenuFlyout> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnMenuFlyout>().is_ok()
+    }
+    fn downcast(&self) -> Option<MenuFlyout> {
+        self.raw
+            .query_interface::<sys::IAvnMenuFlyout>()
+            .ok()
+            .map(|raw| MenuFlyout { raw })
+    }
+}
+
 unsafe impl crate::Upcast<FlyoutBase> for MenuFlyout {
     fn upcast(&self) -> FlyoutBase {
         FlyoutBase {
@@ -57968,6 +60962,18 @@ impl AsRef<FlyoutBase> for MenuFlyout {
     }
 }
 
+unsafe impl crate::Downcast<MenuFlyout> for FlyoutBase {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnMenuFlyout>().is_ok()
+    }
+    fn downcast(&self) -> Option<MenuFlyout> {
+        self.raw
+            .query_interface::<sys::IAvnMenuFlyout>()
+            .ok()
+            .map(|raw| MenuFlyout { raw })
+    }
+}
+
 unsafe impl crate::Upcast<PopupFlyoutBase> for MenuFlyout {
     fn upcast(&self) -> PopupFlyoutBase {
         PopupFlyoutBase {
@@ -57982,6 +60988,18 @@ unsafe impl crate::Upcast<PopupFlyoutBase> for MenuFlyout {
 impl AsRef<PopupFlyoutBase> for MenuFlyout {
     fn as_ref(&self) -> &PopupFlyoutBase {
         <Self as crate::Upcast<PopupFlyoutBase>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<MenuFlyout> for PopupFlyoutBase {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnMenuFlyout>().is_ok()
+    }
+    fn downcast(&self) -> Option<MenuFlyout> {
+        self.raw
+            .query_interface::<sys::IAvnMenuFlyout>()
+            .ok()
+            .map(|raw| MenuFlyout { raw })
     }
 }
 
@@ -58111,6 +61129,24 @@ impl MenuItem {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -59203,6 +62239,18 @@ impl AsRef<AvaloniaObject> for MenuItem {
     }
 }
 
+unsafe impl crate::Downcast<MenuItem> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnMenuItem>().is_ok()
+    }
+    fn downcast(&self) -> Option<MenuItem> {
+        self.raw
+            .query_interface::<sys::IAvnMenuItem>()
+            .ok()
+            .map(|raw| MenuItem { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for MenuItem {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -59217,6 +62265,18 @@ unsafe impl crate::Upcast<StyledElement> for MenuItem {
 impl AsRef<StyledElement> for MenuItem {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<MenuItem> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnMenuItem>().is_ok()
+    }
+    fn downcast(&self) -> Option<MenuItem> {
+        self.raw
+            .query_interface::<sys::IAvnMenuItem>()
+            .ok()
+            .map(|raw| MenuItem { raw })
     }
 }
 
@@ -59237,6 +62297,18 @@ impl AsRef<Control> for MenuItem {
     }
 }
 
+unsafe impl crate::Downcast<MenuItem> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnMenuItem>().is_ok()
+    }
+    fn downcast(&self) -> Option<MenuItem> {
+        self.raw
+            .query_interface::<sys::IAvnMenuItem>()
+            .ok()
+            .map(|raw| MenuItem { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for MenuItem {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -59251,6 +62323,18 @@ unsafe impl crate::Upcast<TemplatedControl> for MenuItem {
 impl AsRef<TemplatedControl> for MenuItem {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<MenuItem> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnMenuItem>().is_ok()
+    }
+    fn downcast(&self) -> Option<MenuItem> {
+        self.raw
+            .query_interface::<sys::IAvnMenuItem>()
+            .ok()
+            .map(|raw| MenuItem { raw })
     }
 }
 
@@ -59271,6 +62355,18 @@ impl AsRef<ItemsControl> for MenuItem {
     }
 }
 
+unsafe impl crate::Downcast<MenuItem> for ItemsControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnMenuItem>().is_ok()
+    }
+    fn downcast(&self) -> Option<MenuItem> {
+        self.raw
+            .query_interface::<sys::IAvnMenuItem>()
+            .ok()
+            .map(|raw| MenuItem { raw })
+    }
+}
+
 unsafe impl crate::Upcast<SelectingItemsControl> for MenuItem {
     fn upcast(&self) -> SelectingItemsControl {
         SelectingItemsControl {
@@ -59288,6 +62384,18 @@ impl AsRef<SelectingItemsControl> for MenuItem {
     }
 }
 
+unsafe impl crate::Downcast<MenuItem> for SelectingItemsControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnMenuItem>().is_ok()
+    }
+    fn downcast(&self) -> Option<MenuItem> {
+        self.raw
+            .query_interface::<sys::IAvnMenuItem>()
+            .ok()
+            .map(|raw| MenuItem { raw })
+    }
+}
+
 unsafe impl crate::Upcast<HeaderedSelectingItemsControl> for MenuItem {
     fn upcast(&self) -> HeaderedSelectingItemsControl {
         HeaderedSelectingItemsControl {
@@ -59302,6 +62410,18 @@ unsafe impl crate::Upcast<HeaderedSelectingItemsControl> for MenuItem {
 impl AsRef<HeaderedSelectingItemsControl> for MenuItem {
     fn as_ref(&self) -> &HeaderedSelectingItemsControl {
         <Self as crate::Upcast<HeaderedSelectingItemsControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<MenuItem> for HeaderedSelectingItemsControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnMenuItem>().is_ok()
+    }
+    fn downcast(&self) -> Option<MenuItem> {
+        self.raw
+            .query_interface::<sys::IAvnMenuItem>()
+            .ok()
+            .map(|raw| MenuItem { raw })
     }
 }
 
@@ -59683,8 +62803,11 @@ impl crate::view::El<MenuItem> {
     pub fn header_template(self, value: Option<DataTemplate>) -> Self {
         self.with_op(move |_, control| control.set_header_template(value.as_ref()))
     }
-    pub fn command(self, value: Option<sys::ComPtr<sys::IAvnCommand>>) -> Self {
-        self.with_op(move |_, control| control.set_command(value.as_ref()))
+    pub fn command(self, value: impl crate::view::IntoCommandProp + 'static) -> Self {
+        self.with_op(move |_, control| {
+            let cmd = value.into_command_prop();
+            control.set_command(cmd.as_ref())
+        })
     }
     pub fn hot_key<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
         let binding = value.into_prop();
@@ -59926,6 +63049,24 @@ impl NotificationCard {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -60831,6 +63972,18 @@ impl AsRef<AvaloniaObject> for NotificationCard {
     }
 }
 
+unsafe impl crate::Downcast<NotificationCard> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnNotificationCard>().is_ok()
+    }
+    fn downcast(&self) -> Option<NotificationCard> {
+        self.raw
+            .query_interface::<sys::IAvnNotificationCard>()
+            .ok()
+            .map(|raw| NotificationCard { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for NotificationCard {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -60845,6 +63998,18 @@ unsafe impl crate::Upcast<StyledElement> for NotificationCard {
 impl AsRef<StyledElement> for NotificationCard {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<NotificationCard> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnNotificationCard>().is_ok()
+    }
+    fn downcast(&self) -> Option<NotificationCard> {
+        self.raw
+            .query_interface::<sys::IAvnNotificationCard>()
+            .ok()
+            .map(|raw| NotificationCard { raw })
     }
 }
 
@@ -60865,6 +64030,18 @@ impl AsRef<Control> for NotificationCard {
     }
 }
 
+unsafe impl crate::Downcast<NotificationCard> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnNotificationCard>().is_ok()
+    }
+    fn downcast(&self) -> Option<NotificationCard> {
+        self.raw
+            .query_interface::<sys::IAvnNotificationCard>()
+            .ok()
+            .map(|raw| NotificationCard { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for NotificationCard {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -60882,6 +64059,18 @@ impl AsRef<TemplatedControl> for NotificationCard {
     }
 }
 
+unsafe impl crate::Downcast<NotificationCard> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnNotificationCard>().is_ok()
+    }
+    fn downcast(&self) -> Option<NotificationCard> {
+        self.raw
+            .query_interface::<sys::IAvnNotificationCard>()
+            .ok()
+            .map(|raw| NotificationCard { raw })
+    }
+}
+
 unsafe impl crate::Upcast<ContentControl> for NotificationCard {
     fn upcast(&self) -> ContentControl {
         ContentControl {
@@ -60896,6 +64085,18 @@ unsafe impl crate::Upcast<ContentControl> for NotificationCard {
 impl AsRef<ContentControl> for NotificationCard {
     fn as_ref(&self) -> &ContentControl {
         <Self as crate::Upcast<ContentControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<NotificationCard> for ContentControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnNotificationCard>().is_ok()
+    }
+    fn downcast(&self) -> Option<NotificationCard> {
+        self.raw
+            .query_interface::<sys::IAvnNotificationCard>()
+            .ok()
+            .map(|raw| NotificationCard { raw })
     }
 }
 
@@ -61407,6 +64608,24 @@ impl WindowNotificationManager {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -62251,6 +65470,18 @@ impl AsRef<AvaloniaObject> for WindowNotificationManager {
     }
 }
 
+unsafe impl crate::Downcast<WindowNotificationManager> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnWindowNotificationManager>().is_ok()
+    }
+    fn downcast(&self) -> Option<WindowNotificationManager> {
+        self.raw
+            .query_interface::<sys::IAvnWindowNotificationManager>()
+            .ok()
+            .map(|raw| WindowNotificationManager { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for WindowNotificationManager {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -62265,6 +65496,18 @@ unsafe impl crate::Upcast<StyledElement> for WindowNotificationManager {
 impl AsRef<StyledElement> for WindowNotificationManager {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<WindowNotificationManager> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnWindowNotificationManager>().is_ok()
+    }
+    fn downcast(&self) -> Option<WindowNotificationManager> {
+        self.raw
+            .query_interface::<sys::IAvnWindowNotificationManager>()
+            .ok()
+            .map(|raw| WindowNotificationManager { raw })
     }
 }
 
@@ -62285,6 +65528,18 @@ impl AsRef<Control> for WindowNotificationManager {
     }
 }
 
+unsafe impl crate::Downcast<WindowNotificationManager> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnWindowNotificationManager>().is_ok()
+    }
+    fn downcast(&self) -> Option<WindowNotificationManager> {
+        self.raw
+            .query_interface::<sys::IAvnWindowNotificationManager>()
+            .ok()
+            .map(|raw| WindowNotificationManager { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for WindowNotificationManager {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -62299,6 +65554,18 @@ unsafe impl crate::Upcast<TemplatedControl> for WindowNotificationManager {
 impl AsRef<TemplatedControl> for WindowNotificationManager {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<WindowNotificationManager> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnWindowNotificationManager>().is_ok()
+    }
+    fn downcast(&self) -> Option<WindowNotificationManager> {
+        self.raw
+            .query_interface::<sys::IAvnWindowNotificationManager>()
+            .ok()
+            .map(|raw| WindowNotificationManager { raw })
     }
 }
 
@@ -62780,6 +66047,24 @@ impl NumericUpDown {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -63808,6 +67093,18 @@ impl AsRef<AvaloniaObject> for NumericUpDown {
     }
 }
 
+unsafe impl crate::Downcast<NumericUpDown> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnNumericUpDown>().is_ok()
+    }
+    fn downcast(&self) -> Option<NumericUpDown> {
+        self.raw
+            .query_interface::<sys::IAvnNumericUpDown>()
+            .ok()
+            .map(|raw| NumericUpDown { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for NumericUpDown {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -63822,6 +67119,18 @@ unsafe impl crate::Upcast<StyledElement> for NumericUpDown {
 impl AsRef<StyledElement> for NumericUpDown {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<NumericUpDown> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnNumericUpDown>().is_ok()
+    }
+    fn downcast(&self) -> Option<NumericUpDown> {
+        self.raw
+            .query_interface::<sys::IAvnNumericUpDown>()
+            .ok()
+            .map(|raw| NumericUpDown { raw })
     }
 }
 
@@ -63842,6 +67151,18 @@ impl AsRef<Control> for NumericUpDown {
     }
 }
 
+unsafe impl crate::Downcast<NumericUpDown> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnNumericUpDown>().is_ok()
+    }
+    fn downcast(&self) -> Option<NumericUpDown> {
+        self.raw
+            .query_interface::<sys::IAvnNumericUpDown>()
+            .ok()
+            .map(|raw| NumericUpDown { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for NumericUpDown {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -63856,6 +67177,18 @@ unsafe impl crate::Upcast<TemplatedControl> for NumericUpDown {
 impl AsRef<TemplatedControl> for NumericUpDown {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<NumericUpDown> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnNumericUpDown>().is_ok()
+    }
+    fn downcast(&self) -> Option<NumericUpDown> {
+        self.raw
+            .query_interface::<sys::IAvnNumericUpDown>()
+            .ok()
+            .map(|raw| NumericUpDown { raw })
     }
 }
 
@@ -64448,6 +67781,24 @@ impl Panel {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -65141,6 +68492,18 @@ impl AsRef<AvaloniaObject> for Panel {
     }
 }
 
+unsafe impl crate::Downcast<Panel> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnPanel>().is_ok()
+    }
+    fn downcast(&self) -> Option<Panel> {
+        self.raw
+            .query_interface::<sys::IAvnPanel>()
+            .ok()
+            .map(|raw| Panel { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for Panel {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -65158,6 +68521,18 @@ impl AsRef<StyledElement> for Panel {
     }
 }
 
+unsafe impl crate::Downcast<Panel> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnPanel>().is_ok()
+    }
+    fn downcast(&self) -> Option<Panel> {
+        self.raw
+            .query_interface::<sys::IAvnPanel>()
+            .ok()
+            .map(|raw| Panel { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Control> for Panel {
     fn upcast(&self) -> Control {
         Control {
@@ -65172,6 +68547,18 @@ unsafe impl crate::Upcast<Control> for Panel {
 impl AsRef<Control> for Panel {
     fn as_ref(&self) -> &Control {
         <Self as crate::Upcast<Control>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Panel> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnPanel>().is_ok()
+    }
+    fn downcast(&self) -> Option<Panel> {
+        self.raw
+            .query_interface::<sys::IAvnPanel>()
+            .ok()
+            .map(|raw| Panel { raw })
     }
 }
 
@@ -65582,6 +68969,24 @@ impl PathIcon {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -66413,6 +69818,18 @@ impl AsRef<AvaloniaObject> for PathIcon {
     }
 }
 
+unsafe impl crate::Downcast<PathIcon> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnPathIcon>().is_ok()
+    }
+    fn downcast(&self) -> Option<PathIcon> {
+        self.raw
+            .query_interface::<sys::IAvnPathIcon>()
+            .ok()
+            .map(|raw| PathIcon { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for PathIcon {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -66427,6 +69844,18 @@ unsafe impl crate::Upcast<StyledElement> for PathIcon {
 impl AsRef<StyledElement> for PathIcon {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<PathIcon> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnPathIcon>().is_ok()
+    }
+    fn downcast(&self) -> Option<PathIcon> {
+        self.raw
+            .query_interface::<sys::IAvnPathIcon>()
+            .ok()
+            .map(|raw| PathIcon { raw })
     }
 }
 
@@ -66447,6 +69876,18 @@ impl AsRef<Control> for PathIcon {
     }
 }
 
+unsafe impl crate::Downcast<PathIcon> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnPathIcon>().is_ok()
+    }
+    fn downcast(&self) -> Option<PathIcon> {
+        self.raw
+            .query_interface::<sys::IAvnPathIcon>()
+            .ok()
+            .map(|raw| PathIcon { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for PathIcon {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -66464,6 +69905,18 @@ impl AsRef<TemplatedControl> for PathIcon {
     }
 }
 
+unsafe impl crate::Downcast<PathIcon> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnPathIcon>().is_ok()
+    }
+    fn downcast(&self) -> Option<PathIcon> {
+        self.raw
+            .query_interface::<sys::IAvnPathIcon>()
+            .ok()
+            .map(|raw| PathIcon { raw })
+    }
+}
+
 unsafe impl crate::Upcast<IconElement> for PathIcon {
     fn upcast(&self) -> IconElement {
         IconElement {
@@ -66478,6 +69931,18 @@ unsafe impl crate::Upcast<IconElement> for PathIcon {
 impl AsRef<IconElement> for PathIcon {
     fn as_ref(&self) -> &IconElement {
         <Self as crate::Upcast<IconElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<PathIcon> for IconElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnPathIcon>().is_ok()
+    }
+    fn downcast(&self) -> Option<PathIcon> {
+        self.raw
+            .query_interface::<sys::IAvnPathIcon>()
+            .ok()
+            .map(|raw| PathIcon { raw })
     }
 }
 
@@ -66953,6 +70418,24 @@ impl PipsPager {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -67837,6 +71320,18 @@ impl AsRef<AvaloniaObject> for PipsPager {
     }
 }
 
+unsafe impl crate::Downcast<PipsPager> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnPipsPager>().is_ok()
+    }
+    fn downcast(&self) -> Option<PipsPager> {
+        self.raw
+            .query_interface::<sys::IAvnPipsPager>()
+            .ok()
+            .map(|raw| PipsPager { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for PipsPager {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -67851,6 +71346,18 @@ unsafe impl crate::Upcast<StyledElement> for PipsPager {
 impl AsRef<StyledElement> for PipsPager {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<PipsPager> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnPipsPager>().is_ok()
+    }
+    fn downcast(&self) -> Option<PipsPager> {
+        self.raw
+            .query_interface::<sys::IAvnPipsPager>()
+            .ok()
+            .map(|raw| PipsPager { raw })
     }
 }
 
@@ -67871,6 +71378,18 @@ impl AsRef<Control> for PipsPager {
     }
 }
 
+unsafe impl crate::Downcast<PipsPager> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnPipsPager>().is_ok()
+    }
+    fn downcast(&self) -> Option<PipsPager> {
+        self.raw
+            .query_interface::<sys::IAvnPipsPager>()
+            .ok()
+            .map(|raw| PipsPager { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for PipsPager {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -67885,6 +71404,18 @@ unsafe impl crate::Upcast<TemplatedControl> for PipsPager {
 impl AsRef<TemplatedControl> for PipsPager {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<PipsPager> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnPipsPager>().is_ok()
+    }
+    fn downcast(&self) -> Option<PipsPager> {
+        self.raw
+            .query_interface::<sys::IAvnPipsPager>()
+            .ok()
+            .map(|raw| PipsPager { raw })
     }
 }
 
@@ -68390,6 +71921,24 @@ pub struct FlyoutBase {
 }
 
 impl FlyoutBase {
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
+    }
     pub fn get_is_open(&self) -> Result<bool> { Ok(self.raw.get_is_open()?) }
     pub fn set_open(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_open(value)?)
@@ -68458,6 +72007,18 @@ impl AsRef<AvaloniaObject> for FlyoutBase {
     }
 }
 
+unsafe impl crate::Downcast<FlyoutBase> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnFlyoutBase>().is_ok()
+    }
+    fn downcast(&self) -> Option<FlyoutBase> {
+        self.raw
+            .query_interface::<sys::IAvnFlyoutBase>()
+            .ok()
+            .map(|raw| FlyoutBase { raw })
+    }
+}
+
 
 #[repr(transparent)]
 #[derive(Clone, Debug)]
@@ -68472,6 +72033,24 @@ impl HeaderedContentControl {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -69372,6 +72951,18 @@ impl AsRef<AvaloniaObject> for HeaderedContentControl {
     }
 }
 
+unsafe impl crate::Downcast<HeaderedContentControl> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnHeaderedContentControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<HeaderedContentControl> {
+        self.raw
+            .query_interface::<sys::IAvnHeaderedContentControl>()
+            .ok()
+            .map(|raw| HeaderedContentControl { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for HeaderedContentControl {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -69386,6 +72977,18 @@ unsafe impl crate::Upcast<StyledElement> for HeaderedContentControl {
 impl AsRef<StyledElement> for HeaderedContentControl {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<HeaderedContentControl> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnHeaderedContentControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<HeaderedContentControl> {
+        self.raw
+            .query_interface::<sys::IAvnHeaderedContentControl>()
+            .ok()
+            .map(|raw| HeaderedContentControl { raw })
     }
 }
 
@@ -69406,6 +73009,18 @@ impl AsRef<Control> for HeaderedContentControl {
     }
 }
 
+unsafe impl crate::Downcast<HeaderedContentControl> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnHeaderedContentControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<HeaderedContentControl> {
+        self.raw
+            .query_interface::<sys::IAvnHeaderedContentControl>()
+            .ok()
+            .map(|raw| HeaderedContentControl { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for HeaderedContentControl {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -69423,6 +73038,18 @@ impl AsRef<TemplatedControl> for HeaderedContentControl {
     }
 }
 
+unsafe impl crate::Downcast<HeaderedContentControl> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnHeaderedContentControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<HeaderedContentControl> {
+        self.raw
+            .query_interface::<sys::IAvnHeaderedContentControl>()
+            .ok()
+            .map(|raw| HeaderedContentControl { raw })
+    }
+}
+
 unsafe impl crate::Upcast<ContentControl> for HeaderedContentControl {
     fn upcast(&self) -> ContentControl {
         ContentControl {
@@ -69437,6 +73064,18 @@ unsafe impl crate::Upcast<ContentControl> for HeaderedContentControl {
 impl AsRef<ContentControl> for HeaderedContentControl {
     fn as_ref(&self) -> &ContentControl {
         <Self as crate::Upcast<ContentControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<HeaderedContentControl> for ContentControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnHeaderedContentControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<HeaderedContentControl> {
+        self.raw
+            .query_interface::<sys::IAvnHeaderedContentControl>()
+            .ok()
+            .map(|raw| HeaderedContentControl { raw })
     }
 }
 
@@ -69939,6 +73578,24 @@ impl HeaderedItemsControl {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -70828,6 +74485,18 @@ impl AsRef<AvaloniaObject> for HeaderedItemsControl {
     }
 }
 
+unsafe impl crate::Downcast<HeaderedItemsControl> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnHeaderedItemsControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<HeaderedItemsControl> {
+        self.raw
+            .query_interface::<sys::IAvnHeaderedItemsControl>()
+            .ok()
+            .map(|raw| HeaderedItemsControl { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for HeaderedItemsControl {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -70842,6 +74511,18 @@ unsafe impl crate::Upcast<StyledElement> for HeaderedItemsControl {
 impl AsRef<StyledElement> for HeaderedItemsControl {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<HeaderedItemsControl> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnHeaderedItemsControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<HeaderedItemsControl> {
+        self.raw
+            .query_interface::<sys::IAvnHeaderedItemsControl>()
+            .ok()
+            .map(|raw| HeaderedItemsControl { raw })
     }
 }
 
@@ -70862,6 +74543,18 @@ impl AsRef<Control> for HeaderedItemsControl {
     }
 }
 
+unsafe impl crate::Downcast<HeaderedItemsControl> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnHeaderedItemsControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<HeaderedItemsControl> {
+        self.raw
+            .query_interface::<sys::IAvnHeaderedItemsControl>()
+            .ok()
+            .map(|raw| HeaderedItemsControl { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for HeaderedItemsControl {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -70879,6 +74572,18 @@ impl AsRef<TemplatedControl> for HeaderedItemsControl {
     }
 }
 
+unsafe impl crate::Downcast<HeaderedItemsControl> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnHeaderedItemsControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<HeaderedItemsControl> {
+        self.raw
+            .query_interface::<sys::IAvnHeaderedItemsControl>()
+            .ok()
+            .map(|raw| HeaderedItemsControl { raw })
+    }
+}
+
 unsafe impl crate::Upcast<ItemsControl> for HeaderedItemsControl {
     fn upcast(&self) -> ItemsControl {
         ItemsControl {
@@ -70893,6 +74598,18 @@ unsafe impl crate::Upcast<ItemsControl> for HeaderedItemsControl {
 impl AsRef<ItemsControl> for HeaderedItemsControl {
     fn as_ref(&self) -> &ItemsControl {
         <Self as crate::Upcast<ItemsControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<HeaderedItemsControl> for ItemsControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnHeaderedItemsControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<HeaderedItemsControl> {
+        self.raw
+            .query_interface::<sys::IAvnHeaderedItemsControl>()
+            .ok()
+            .map(|raw| HeaderedItemsControl { raw })
     }
 }
 
@@ -71393,6 +75110,24 @@ impl HeaderedSelectingItemsControl {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -72347,6 +76082,18 @@ impl AsRef<AvaloniaObject> for HeaderedSelectingItemsControl {
     }
 }
 
+unsafe impl crate::Downcast<HeaderedSelectingItemsControl> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnHeaderedSelectingItemsControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<HeaderedSelectingItemsControl> {
+        self.raw
+            .query_interface::<sys::IAvnHeaderedSelectingItemsControl>()
+            .ok()
+            .map(|raw| HeaderedSelectingItemsControl { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for HeaderedSelectingItemsControl {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -72361,6 +76108,18 @@ unsafe impl crate::Upcast<StyledElement> for HeaderedSelectingItemsControl {
 impl AsRef<StyledElement> for HeaderedSelectingItemsControl {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<HeaderedSelectingItemsControl> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnHeaderedSelectingItemsControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<HeaderedSelectingItemsControl> {
+        self.raw
+            .query_interface::<sys::IAvnHeaderedSelectingItemsControl>()
+            .ok()
+            .map(|raw| HeaderedSelectingItemsControl { raw })
     }
 }
 
@@ -72381,6 +76140,18 @@ impl AsRef<Control> for HeaderedSelectingItemsControl {
     }
 }
 
+unsafe impl crate::Downcast<HeaderedSelectingItemsControl> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnHeaderedSelectingItemsControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<HeaderedSelectingItemsControl> {
+        self.raw
+            .query_interface::<sys::IAvnHeaderedSelectingItemsControl>()
+            .ok()
+            .map(|raw| HeaderedSelectingItemsControl { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for HeaderedSelectingItemsControl {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -72395,6 +76166,18 @@ unsafe impl crate::Upcast<TemplatedControl> for HeaderedSelectingItemsControl {
 impl AsRef<TemplatedControl> for HeaderedSelectingItemsControl {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<HeaderedSelectingItemsControl> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnHeaderedSelectingItemsControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<HeaderedSelectingItemsControl> {
+        self.raw
+            .query_interface::<sys::IAvnHeaderedSelectingItemsControl>()
+            .ok()
+            .map(|raw| HeaderedSelectingItemsControl { raw })
     }
 }
 
@@ -72415,6 +76198,18 @@ impl AsRef<ItemsControl> for HeaderedSelectingItemsControl {
     }
 }
 
+unsafe impl crate::Downcast<HeaderedSelectingItemsControl> for ItemsControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnHeaderedSelectingItemsControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<HeaderedSelectingItemsControl> {
+        self.raw
+            .query_interface::<sys::IAvnHeaderedSelectingItemsControl>()
+            .ok()
+            .map(|raw| HeaderedSelectingItemsControl { raw })
+    }
+}
+
 unsafe impl crate::Upcast<SelectingItemsControl> for HeaderedSelectingItemsControl {
     fn upcast(&self) -> SelectingItemsControl {
         SelectingItemsControl {
@@ -72429,6 +76224,18 @@ unsafe impl crate::Upcast<SelectingItemsControl> for HeaderedSelectingItemsContr
 impl AsRef<SelectingItemsControl> for HeaderedSelectingItemsControl {
     fn as_ref(&self) -> &SelectingItemsControl {
         <Self as crate::Upcast<SelectingItemsControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<HeaderedSelectingItemsControl> for SelectingItemsControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnHeaderedSelectingItemsControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<HeaderedSelectingItemsControl> {
+        self.raw
+            .query_interface::<sys::IAvnHeaderedSelectingItemsControl>()
+            .ok()
+            .map(|raw| HeaderedSelectingItemsControl { raw })
     }
 }
 
@@ -72978,6 +76785,24 @@ impl Popup {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -73851,6 +77676,18 @@ impl AsRef<AvaloniaObject> for Popup {
     }
 }
 
+unsafe impl crate::Downcast<Popup> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnPopup>().is_ok()
+    }
+    fn downcast(&self) -> Option<Popup> {
+        self.raw
+            .query_interface::<sys::IAvnPopup>()
+            .ok()
+            .map(|raw| Popup { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for Popup {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -73868,6 +77705,18 @@ impl AsRef<StyledElement> for Popup {
     }
 }
 
+unsafe impl crate::Downcast<Popup> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnPopup>().is_ok()
+    }
+    fn downcast(&self) -> Option<Popup> {
+        self.raw
+            .query_interface::<sys::IAvnPopup>()
+            .ok()
+            .map(|raw| Popup { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Control> for Popup {
     fn upcast(&self) -> Control {
         Control {
@@ -73882,6 +77731,18 @@ unsafe impl crate::Upcast<Control> for Popup {
 impl AsRef<Control> for Popup {
     fn as_ref(&self) -> &Control {
         <Self as crate::Upcast<Control>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Popup> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnPopup>().is_ok()
+    }
+    fn downcast(&self) -> Option<Popup> {
+        self.raw
+            .query_interface::<sys::IAvnPopup>()
+            .ok()
+            .map(|raw| Popup { raw })
     }
 }
 
@@ -74387,6 +78248,24 @@ pub struct PopupFlyoutBase {
 }
 
 impl PopupFlyoutBase {
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
+    }
     pub fn get_is_open(&self) -> Result<bool> { Ok(self.raw.get_is_open()?) }
     pub fn set_open(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_is_open(value)?)
@@ -74577,6 +78456,18 @@ impl AsRef<AvaloniaObject> for PopupFlyoutBase {
     }
 }
 
+unsafe impl crate::Downcast<PopupFlyoutBase> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnPopupFlyoutBase>().is_ok()
+    }
+    fn downcast(&self) -> Option<PopupFlyoutBase> {
+        self.raw
+            .query_interface::<sys::IAvnPopupFlyoutBase>()
+            .ok()
+            .map(|raw| PopupFlyoutBase { raw })
+    }
+}
+
 unsafe impl crate::Upcast<FlyoutBase> for PopupFlyoutBase {
     fn upcast(&self) -> FlyoutBase {
         FlyoutBase {
@@ -74594,6 +78485,18 @@ impl AsRef<FlyoutBase> for PopupFlyoutBase {
     }
 }
 
+unsafe impl crate::Downcast<PopupFlyoutBase> for FlyoutBase {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnPopupFlyoutBase>().is_ok()
+    }
+    fn downcast(&self) -> Option<PopupFlyoutBase> {
+        self.raw
+            .query_interface::<sys::IAvnPopupFlyoutBase>()
+            .ok()
+            .map(|raw| PopupFlyoutBase { raw })
+    }
+}
+
 
 #[repr(transparent)]
 #[derive(Clone, Debug)]
@@ -74602,6 +78505,24 @@ pub struct RangeBase {
 }
 
 impl RangeBase {
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
+    }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
     }
@@ -75472,6 +79393,18 @@ impl AsRef<AvaloniaObject> for RangeBase {
     }
 }
 
+unsafe impl crate::Downcast<RangeBase> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnRangeBase>().is_ok()
+    }
+    fn downcast(&self) -> Option<RangeBase> {
+        self.raw
+            .query_interface::<sys::IAvnRangeBase>()
+            .ok()
+            .map(|raw| RangeBase { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for RangeBase {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -75486,6 +79419,18 @@ unsafe impl crate::Upcast<StyledElement> for RangeBase {
 impl AsRef<StyledElement> for RangeBase {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<RangeBase> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnRangeBase>().is_ok()
+    }
+    fn downcast(&self) -> Option<RangeBase> {
+        self.raw
+            .query_interface::<sys::IAvnRangeBase>()
+            .ok()
+            .map(|raw| RangeBase { raw })
     }
 }
 
@@ -75506,6 +79451,18 @@ impl AsRef<Control> for RangeBase {
     }
 }
 
+unsafe impl crate::Downcast<RangeBase> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnRangeBase>().is_ok()
+    }
+    fn downcast(&self) -> Option<RangeBase> {
+        self.raw
+            .query_interface::<sys::IAvnRangeBase>()
+            .ok()
+            .map(|raw| RangeBase { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for RangeBase {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -75520,6 +79477,18 @@ unsafe impl crate::Upcast<TemplatedControl> for RangeBase {
 impl AsRef<TemplatedControl> for RangeBase {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<RangeBase> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnRangeBase>().is_ok()
+    }
+    fn downcast(&self) -> Option<RangeBase> {
+        self.raw
+            .query_interface::<sys::IAvnRangeBase>()
+            .ok()
+            .map(|raw| RangeBase { raw })
     }
 }
 
@@ -75542,6 +79511,24 @@ impl SelectingItemsControl {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -76467,6 +80454,18 @@ impl AsRef<AvaloniaObject> for SelectingItemsControl {
     }
 }
 
+unsafe impl crate::Downcast<SelectingItemsControl> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSelectingItemsControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<SelectingItemsControl> {
+        self.raw
+            .query_interface::<sys::IAvnSelectingItemsControl>()
+            .ok()
+            .map(|raw| SelectingItemsControl { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for SelectingItemsControl {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -76481,6 +80480,18 @@ unsafe impl crate::Upcast<StyledElement> for SelectingItemsControl {
 impl AsRef<StyledElement> for SelectingItemsControl {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<SelectingItemsControl> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSelectingItemsControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<SelectingItemsControl> {
+        self.raw
+            .query_interface::<sys::IAvnSelectingItemsControl>()
+            .ok()
+            .map(|raw| SelectingItemsControl { raw })
     }
 }
 
@@ -76501,6 +80512,18 @@ impl AsRef<Control> for SelectingItemsControl {
     }
 }
 
+unsafe impl crate::Downcast<SelectingItemsControl> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSelectingItemsControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<SelectingItemsControl> {
+        self.raw
+            .query_interface::<sys::IAvnSelectingItemsControl>()
+            .ok()
+            .map(|raw| SelectingItemsControl { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for SelectingItemsControl {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -76518,6 +80541,18 @@ impl AsRef<TemplatedControl> for SelectingItemsControl {
     }
 }
 
+unsafe impl crate::Downcast<SelectingItemsControl> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSelectingItemsControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<SelectingItemsControl> {
+        self.raw
+            .query_interface::<sys::IAvnSelectingItemsControl>()
+            .ok()
+            .map(|raw| SelectingItemsControl { raw })
+    }
+}
+
 unsafe impl crate::Upcast<ItemsControl> for SelectingItemsControl {
     fn upcast(&self) -> ItemsControl {
         ItemsControl {
@@ -76532,6 +80567,18 @@ unsafe impl crate::Upcast<ItemsControl> for SelectingItemsControl {
 impl AsRef<ItemsControl> for SelectingItemsControl {
     fn as_ref(&self) -> &ItemsControl {
         <Self as crate::Upcast<ItemsControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<SelectingItemsControl> for ItemsControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSelectingItemsControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<SelectingItemsControl> {
+        self.raw
+            .query_interface::<sys::IAvnSelectingItemsControl>()
+            .ok()
+            .map(|raw| SelectingItemsControl { raw })
     }
 }
 
@@ -77072,6 +81119,24 @@ impl TemplatedControl {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -77892,6 +81957,18 @@ impl AsRef<AvaloniaObject> for TemplatedControl {
     }
 }
 
+unsafe impl crate::Downcast<TemplatedControl> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTemplatedControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<TemplatedControl> {
+        self.raw
+            .query_interface::<sys::IAvnTemplatedControl>()
+            .ok()
+            .map(|raw| TemplatedControl { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for TemplatedControl {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -77909,6 +81986,18 @@ impl AsRef<StyledElement> for TemplatedControl {
     }
 }
 
+unsafe impl crate::Downcast<TemplatedControl> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTemplatedControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<TemplatedControl> {
+        self.raw
+            .query_interface::<sys::IAvnTemplatedControl>()
+            .ok()
+            .map(|raw| TemplatedControl { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Control> for TemplatedControl {
     fn upcast(&self) -> Control {
         Control {
@@ -77923,6 +82012,18 @@ unsafe impl crate::Upcast<Control> for TemplatedControl {
 impl AsRef<Control> for TemplatedControl {
     fn as_ref(&self) -> &Control {
         <Self as crate::Upcast<Control>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<TemplatedControl> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTemplatedControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<TemplatedControl> {
+        self.raw
+            .query_interface::<sys::IAvnTemplatedControl>()
+            .ok()
+            .map(|raw| TemplatedControl { raw })
     }
 }
 
@@ -78392,6 +82493,24 @@ impl Thumb {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -79245,6 +83364,18 @@ impl AsRef<AvaloniaObject> for Thumb {
     }
 }
 
+unsafe impl crate::Downcast<Thumb> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnThumb>().is_ok()
+    }
+    fn downcast(&self) -> Option<Thumb> {
+        self.raw
+            .query_interface::<sys::IAvnThumb>()
+            .ok()
+            .map(|raw| Thumb { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for Thumb {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -79259,6 +83390,18 @@ unsafe impl crate::Upcast<StyledElement> for Thumb {
 impl AsRef<StyledElement> for Thumb {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Thumb> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnThumb>().is_ok()
+    }
+    fn downcast(&self) -> Option<Thumb> {
+        self.raw
+            .query_interface::<sys::IAvnThumb>()
+            .ok()
+            .map(|raw| Thumb { raw })
     }
 }
 
@@ -79279,6 +83422,18 @@ impl AsRef<Control> for Thumb {
     }
 }
 
+unsafe impl crate::Downcast<Thumb> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnThumb>().is_ok()
+    }
+    fn downcast(&self) -> Option<Thumb> {
+        self.raw
+            .query_interface::<sys::IAvnThumb>()
+            .ok()
+            .map(|raw| Thumb { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for Thumb {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -79293,6 +83448,18 @@ unsafe impl crate::Upcast<TemplatedControl> for Thumb {
 impl AsRef<TemplatedControl> for Thumb {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Thumb> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnThumb>().is_ok()
+    }
+    fn downcast(&self) -> Option<Thumb> {
+        self.raw
+            .query_interface::<sys::IAvnThumb>()
+            .ok()
+            .map(|raw| Thumb { raw })
     }
 }
 
@@ -79780,6 +83947,24 @@ impl ToggleButton {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -80763,6 +84948,18 @@ impl AsRef<AvaloniaObject> for ToggleButton {
     }
 }
 
+unsafe impl crate::Downcast<ToggleButton> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnToggleButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<ToggleButton> {
+        self.raw
+            .query_interface::<sys::IAvnToggleButton>()
+            .ok()
+            .map(|raw| ToggleButton { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for ToggleButton {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -80777,6 +84974,18 @@ unsafe impl crate::Upcast<StyledElement> for ToggleButton {
 impl AsRef<StyledElement> for ToggleButton {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ToggleButton> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnToggleButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<ToggleButton> {
+        self.raw
+            .query_interface::<sys::IAvnToggleButton>()
+            .ok()
+            .map(|raw| ToggleButton { raw })
     }
 }
 
@@ -80797,6 +85006,18 @@ impl AsRef<Control> for ToggleButton {
     }
 }
 
+unsafe impl crate::Downcast<ToggleButton> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnToggleButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<ToggleButton> {
+        self.raw
+            .query_interface::<sys::IAvnToggleButton>()
+            .ok()
+            .map(|raw| ToggleButton { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for ToggleButton {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -80811,6 +85032,18 @@ unsafe impl crate::Upcast<TemplatedControl> for ToggleButton {
 impl AsRef<TemplatedControl> for ToggleButton {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ToggleButton> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnToggleButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<ToggleButton> {
+        self.raw
+            .query_interface::<sys::IAvnToggleButton>()
+            .ok()
+            .map(|raw| ToggleButton { raw })
     }
 }
 
@@ -80831,6 +85064,18 @@ impl AsRef<ContentControl> for ToggleButton {
     }
 }
 
+unsafe impl crate::Downcast<ToggleButton> for ContentControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnToggleButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<ToggleButton> {
+        self.raw
+            .query_interface::<sys::IAvnToggleButton>()
+            .ok()
+            .map(|raw| ToggleButton { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Button> for ToggleButton {
     fn upcast(&self) -> Button {
         Button {
@@ -80845,6 +85090,18 @@ unsafe impl crate::Upcast<Button> for ToggleButton {
 impl AsRef<Button> for ToggleButton {
     fn as_ref(&self) -> &Button {
         <Self as crate::Upcast<Button>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ToggleButton> for Button {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnToggleButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<ToggleButton> {
+        self.raw
+            .query_interface::<sys::IAvnToggleButton>()
+            .ok()
+            .map(|raw| ToggleButton { raw })
     }
 }
 
@@ -81176,8 +85433,11 @@ impl crate::view::El<ToggleButton> {
             crate::view::apply_prop(control, binding, |c, v| c.set_click_mode(v))
         })
     }
-    pub fn command(self, value: Option<sys::ComPtr<sys::IAvnCommand>>) -> Self {
-        self.with_op(move |_, control| control.set_command(value.as_ref()))
+    pub fn command(self, value: impl crate::view::IntoCommandProp + 'static) -> Self {
+        self.with_op(move |_, control| {
+            let cmd = value.into_command_prop();
+            control.set_command(cmd.as_ref())
+        })
     }
     pub fn hot_key<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
         let binding = value.into_prop();
@@ -81405,6 +85665,24 @@ impl UniformGrid {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -82138,6 +86416,18 @@ impl AsRef<AvaloniaObject> for UniformGrid {
     }
 }
 
+unsafe impl crate::Downcast<UniformGrid> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnUniformGrid>().is_ok()
+    }
+    fn downcast(&self) -> Option<UniformGrid> {
+        self.raw
+            .query_interface::<sys::IAvnUniformGrid>()
+            .ok()
+            .map(|raw| UniformGrid { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for UniformGrid {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -82152,6 +86442,18 @@ unsafe impl crate::Upcast<StyledElement> for UniformGrid {
 impl AsRef<StyledElement> for UniformGrid {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<UniformGrid> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnUniformGrid>().is_ok()
+    }
+    fn downcast(&self) -> Option<UniformGrid> {
+        self.raw
+            .query_interface::<sys::IAvnUniformGrid>()
+            .ok()
+            .map(|raw| UniformGrid { raw })
     }
 }
 
@@ -82172,6 +86474,18 @@ impl AsRef<Control> for UniformGrid {
     }
 }
 
+unsafe impl crate::Downcast<UniformGrid> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnUniformGrid>().is_ok()
+    }
+    fn downcast(&self) -> Option<UniformGrid> {
+        self.raw
+            .query_interface::<sys::IAvnUniformGrid>()
+            .ok()
+            .map(|raw| UniformGrid { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Panel> for UniformGrid {
     fn upcast(&self) -> Panel {
         Panel {
@@ -82186,6 +86500,18 @@ unsafe impl crate::Upcast<Panel> for UniformGrid {
 impl AsRef<Panel> for UniformGrid {
     fn as_ref(&self) -> &Panel {
         <Self as crate::Upcast<Panel>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<UniformGrid> for Panel {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnUniformGrid>().is_ok()
+    }
+    fn downcast(&self) -> Option<UniformGrid> {
+        self.raw
+            .query_interface::<sys::IAvnUniformGrid>()
+            .ok()
+            .map(|raw| UniformGrid { raw })
     }
 }
 
@@ -82626,6 +86952,24 @@ impl ProgressBar {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -83536,6 +87880,18 @@ impl AsRef<AvaloniaObject> for ProgressBar {
     }
 }
 
+unsafe impl crate::Downcast<ProgressBar> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnProgressBar>().is_ok()
+    }
+    fn downcast(&self) -> Option<ProgressBar> {
+        self.raw
+            .query_interface::<sys::IAvnProgressBar>()
+            .ok()
+            .map(|raw| ProgressBar { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for ProgressBar {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -83550,6 +87906,18 @@ unsafe impl crate::Upcast<StyledElement> for ProgressBar {
 impl AsRef<StyledElement> for ProgressBar {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ProgressBar> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnProgressBar>().is_ok()
+    }
+    fn downcast(&self) -> Option<ProgressBar> {
+        self.raw
+            .query_interface::<sys::IAvnProgressBar>()
+            .ok()
+            .map(|raw| ProgressBar { raw })
     }
 }
 
@@ -83570,6 +87938,18 @@ impl AsRef<Control> for ProgressBar {
     }
 }
 
+unsafe impl crate::Downcast<ProgressBar> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnProgressBar>().is_ok()
+    }
+    fn downcast(&self) -> Option<ProgressBar> {
+        self.raw
+            .query_interface::<sys::IAvnProgressBar>()
+            .ok()
+            .map(|raw| ProgressBar { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for ProgressBar {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -83587,6 +87967,18 @@ impl AsRef<TemplatedControl> for ProgressBar {
     }
 }
 
+unsafe impl crate::Downcast<ProgressBar> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnProgressBar>().is_ok()
+    }
+    fn downcast(&self) -> Option<ProgressBar> {
+        self.raw
+            .query_interface::<sys::IAvnProgressBar>()
+            .ok()
+            .map(|raw| ProgressBar { raw })
+    }
+}
+
 unsafe impl crate::Upcast<RangeBase> for ProgressBar {
     fn upcast(&self) -> RangeBase {
         RangeBase {
@@ -83601,6 +87993,18 @@ unsafe impl crate::Upcast<RangeBase> for ProgressBar {
 impl AsRef<RangeBase> for ProgressBar {
     fn as_ref(&self) -> &RangeBase {
         <Self as crate::Upcast<RangeBase>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ProgressBar> for RangeBase {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnProgressBar>().is_ok()
+    }
+    fn downcast(&self) -> Option<ProgressBar> {
+        self.raw
+            .query_interface::<sys::IAvnProgressBar>()
+            .ok()
+            .map(|raw| ProgressBar { raw })
     }
 }
 
@@ -84137,6 +88541,24 @@ impl RadioButton {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -85131,6 +89553,18 @@ impl AsRef<AvaloniaObject> for RadioButton {
     }
 }
 
+unsafe impl crate::Downcast<RadioButton> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnRadioButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<RadioButton> {
+        self.raw
+            .query_interface::<sys::IAvnRadioButton>()
+            .ok()
+            .map(|raw| RadioButton { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for RadioButton {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -85145,6 +89579,18 @@ unsafe impl crate::Upcast<StyledElement> for RadioButton {
 impl AsRef<StyledElement> for RadioButton {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<RadioButton> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnRadioButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<RadioButton> {
+        self.raw
+            .query_interface::<sys::IAvnRadioButton>()
+            .ok()
+            .map(|raw| RadioButton { raw })
     }
 }
 
@@ -85165,6 +89611,18 @@ impl AsRef<Control> for RadioButton {
     }
 }
 
+unsafe impl crate::Downcast<RadioButton> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnRadioButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<RadioButton> {
+        self.raw
+            .query_interface::<sys::IAvnRadioButton>()
+            .ok()
+            .map(|raw| RadioButton { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for RadioButton {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -85179,6 +89637,18 @@ unsafe impl crate::Upcast<TemplatedControl> for RadioButton {
 impl AsRef<TemplatedControl> for RadioButton {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<RadioButton> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnRadioButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<RadioButton> {
+        self.raw
+            .query_interface::<sys::IAvnRadioButton>()
+            .ok()
+            .map(|raw| RadioButton { raw })
     }
 }
 
@@ -85199,6 +89669,18 @@ impl AsRef<ContentControl> for RadioButton {
     }
 }
 
+unsafe impl crate::Downcast<RadioButton> for ContentControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnRadioButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<RadioButton> {
+        self.raw
+            .query_interface::<sys::IAvnRadioButton>()
+            .ok()
+            .map(|raw| RadioButton { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Button> for RadioButton {
     fn upcast(&self) -> Button {
         Button {
@@ -85216,6 +89698,18 @@ impl AsRef<Button> for RadioButton {
     }
 }
 
+unsafe impl crate::Downcast<RadioButton> for Button {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnRadioButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<RadioButton> {
+        self.raw
+            .query_interface::<sys::IAvnRadioButton>()
+            .ok()
+            .map(|raw| RadioButton { raw })
+    }
+}
+
 unsafe impl crate::Upcast<ToggleButton> for RadioButton {
     fn upcast(&self) -> ToggleButton {
         ToggleButton {
@@ -85230,6 +89724,18 @@ unsafe impl crate::Upcast<ToggleButton> for RadioButton {
 impl AsRef<ToggleButton> for RadioButton {
     fn as_ref(&self) -> &ToggleButton {
         <Self as crate::Upcast<ToggleButton>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<RadioButton> for ToggleButton {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnRadioButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<RadioButton> {
+        self.raw
+            .query_interface::<sys::IAvnRadioButton>()
+            .ok()
+            .map(|raw| RadioButton { raw })
     }
 }
 
@@ -85561,8 +90067,11 @@ impl crate::view::El<RadioButton> {
             crate::view::apply_prop(control, binding, |c, v| c.set_click_mode(v))
         })
     }
-    pub fn command(self, value: Option<sys::ComPtr<sys::IAvnCommand>>) -> Self {
-        self.with_op(move |_, control| control.set_command(value.as_ref()))
+    pub fn command(self, value: impl crate::view::IntoCommandProp + 'static) -> Self {
+        self.with_op(move |_, control| {
+            let cmd = value.into_command_prop();
+            control.set_command(cmd.as_ref())
+        })
     }
     pub fn hot_key<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
         let binding = value.into_prop();
@@ -85796,6 +90305,24 @@ impl RefreshContainer {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -86700,6 +91227,18 @@ impl AsRef<AvaloniaObject> for RefreshContainer {
     }
 }
 
+unsafe impl crate::Downcast<RefreshContainer> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnRefreshContainer>().is_ok()
+    }
+    fn downcast(&self) -> Option<RefreshContainer> {
+        self.raw
+            .query_interface::<sys::IAvnRefreshContainer>()
+            .ok()
+            .map(|raw| RefreshContainer { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for RefreshContainer {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -86714,6 +91253,18 @@ unsafe impl crate::Upcast<StyledElement> for RefreshContainer {
 impl AsRef<StyledElement> for RefreshContainer {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<RefreshContainer> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnRefreshContainer>().is_ok()
+    }
+    fn downcast(&self) -> Option<RefreshContainer> {
+        self.raw
+            .query_interface::<sys::IAvnRefreshContainer>()
+            .ok()
+            .map(|raw| RefreshContainer { raw })
     }
 }
 
@@ -86734,6 +91285,18 @@ impl AsRef<Control> for RefreshContainer {
     }
 }
 
+unsafe impl crate::Downcast<RefreshContainer> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnRefreshContainer>().is_ok()
+    }
+    fn downcast(&self) -> Option<RefreshContainer> {
+        self.raw
+            .query_interface::<sys::IAvnRefreshContainer>()
+            .ok()
+            .map(|raw| RefreshContainer { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for RefreshContainer {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -86751,6 +91314,18 @@ impl AsRef<TemplatedControl> for RefreshContainer {
     }
 }
 
+unsafe impl crate::Downcast<RefreshContainer> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnRefreshContainer>().is_ok()
+    }
+    fn downcast(&self) -> Option<RefreshContainer> {
+        self.raw
+            .query_interface::<sys::IAvnRefreshContainer>()
+            .ok()
+            .map(|raw| RefreshContainer { raw })
+    }
+}
+
 unsafe impl crate::Upcast<ContentControl> for RefreshContainer {
     fn upcast(&self) -> ContentControl {
         ContentControl {
@@ -86765,6 +91340,18 @@ unsafe impl crate::Upcast<ContentControl> for RefreshContainer {
 impl AsRef<ContentControl> for RefreshContainer {
     fn as_ref(&self) -> &ContentControl {
         <Self as crate::Upcast<ContentControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<RefreshContainer> for ContentControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnRefreshContainer>().is_ok()
+    }
+    fn downcast(&self) -> Option<RefreshContainer> {
+        self.raw
+            .query_interface::<sys::IAvnRefreshContainer>()
+            .ok()
+            .map(|raw| RefreshContainer { raw })
     }
 }
 
@@ -87276,6 +91863,24 @@ impl RelativePanel {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -88023,6 +92628,18 @@ impl AsRef<AvaloniaObject> for RelativePanel {
     }
 }
 
+unsafe impl crate::Downcast<RelativePanel> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnRelativePanel>().is_ok()
+    }
+    fn downcast(&self) -> Option<RelativePanel> {
+        self.raw
+            .query_interface::<sys::IAvnRelativePanel>()
+            .ok()
+            .map(|raw| RelativePanel { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for RelativePanel {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -88037,6 +92654,18 @@ unsafe impl crate::Upcast<StyledElement> for RelativePanel {
 impl AsRef<StyledElement> for RelativePanel {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<RelativePanel> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnRelativePanel>().is_ok()
+    }
+    fn downcast(&self) -> Option<RelativePanel> {
+        self.raw
+            .query_interface::<sys::IAvnRelativePanel>()
+            .ok()
+            .map(|raw| RelativePanel { raw })
     }
 }
 
@@ -88057,6 +92686,18 @@ impl AsRef<Control> for RelativePanel {
     }
 }
 
+unsafe impl crate::Downcast<RelativePanel> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnRelativePanel>().is_ok()
+    }
+    fn downcast(&self) -> Option<RelativePanel> {
+        self.raw
+            .query_interface::<sys::IAvnRelativePanel>()
+            .ok()
+            .map(|raw| RelativePanel { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Panel> for RelativePanel {
     fn upcast(&self) -> Panel {
         Panel {
@@ -88071,6 +92712,18 @@ unsafe impl crate::Upcast<Panel> for RelativePanel {
 impl AsRef<Panel> for RelativePanel {
     fn as_ref(&self) -> &Panel {
         <Self as crate::Upcast<Panel>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<RelativePanel> for Panel {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnRelativePanel>().is_ok()
+    }
+    fn downcast(&self) -> Option<RelativePanel> {
+        self.raw
+            .query_interface::<sys::IAvnRelativePanel>()
+            .ok()
+            .map(|raw| RelativePanel { raw })
     }
 }
 
@@ -88481,6 +93134,24 @@ impl RepeatButton {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -89451,6 +94122,18 @@ impl AsRef<AvaloniaObject> for RepeatButton {
     }
 }
 
+unsafe impl crate::Downcast<RepeatButton> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnRepeatButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<RepeatButton> {
+        self.raw
+            .query_interface::<sys::IAvnRepeatButton>()
+            .ok()
+            .map(|raw| RepeatButton { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for RepeatButton {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -89465,6 +94148,18 @@ unsafe impl crate::Upcast<StyledElement> for RepeatButton {
 impl AsRef<StyledElement> for RepeatButton {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<RepeatButton> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnRepeatButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<RepeatButton> {
+        self.raw
+            .query_interface::<sys::IAvnRepeatButton>()
+            .ok()
+            .map(|raw| RepeatButton { raw })
     }
 }
 
@@ -89485,6 +94180,18 @@ impl AsRef<Control> for RepeatButton {
     }
 }
 
+unsafe impl crate::Downcast<RepeatButton> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnRepeatButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<RepeatButton> {
+        self.raw
+            .query_interface::<sys::IAvnRepeatButton>()
+            .ok()
+            .map(|raw| RepeatButton { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for RepeatButton {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -89499,6 +94206,18 @@ unsafe impl crate::Upcast<TemplatedControl> for RepeatButton {
 impl AsRef<TemplatedControl> for RepeatButton {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<RepeatButton> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnRepeatButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<RepeatButton> {
+        self.raw
+            .query_interface::<sys::IAvnRepeatButton>()
+            .ok()
+            .map(|raw| RepeatButton { raw })
     }
 }
 
@@ -89519,6 +94238,18 @@ impl AsRef<ContentControl> for RepeatButton {
     }
 }
 
+unsafe impl crate::Downcast<RepeatButton> for ContentControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnRepeatButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<RepeatButton> {
+        self.raw
+            .query_interface::<sys::IAvnRepeatButton>()
+            .ok()
+            .map(|raw| RepeatButton { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Button> for RepeatButton {
     fn upcast(&self) -> Button {
         Button {
@@ -89533,6 +94264,18 @@ unsafe impl crate::Upcast<Button> for RepeatButton {
 impl AsRef<Button> for RepeatButton {
     fn as_ref(&self) -> &Button {
         <Self as crate::Upcast<Button>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<RepeatButton> for Button {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnRepeatButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<RepeatButton> {
+        self.raw
+            .query_interface::<sys::IAvnRepeatButton>()
+            .ok()
+            .map(|raw| RepeatButton { raw })
     }
 }
 
@@ -89864,8 +94607,11 @@ impl crate::view::El<RepeatButton> {
             crate::view::apply_prop(control, binding, |c, v| c.set_click_mode(v))
         })
     }
-    pub fn command(self, value: Option<sys::ComPtr<sys::IAvnCommand>>) -> Self {
-        self.with_op(move |_, control| control.set_command(value.as_ref()))
+    pub fn command(self, value: impl crate::view::IntoCommandProp + 'static) -> Self {
+        self.with_op(move |_, control| {
+            let cmd = value.into_command_prop();
+            control.set_command(cmd.as_ref())
+        })
     }
     pub fn hot_key<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
         let binding = value.into_prop();
@@ -90080,6 +94826,24 @@ impl ScrollViewer {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -91117,6 +95881,18 @@ impl AsRef<AvaloniaObject> for ScrollViewer {
     }
 }
 
+unsafe impl crate::Downcast<ScrollViewer> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnScrollViewer>().is_ok()
+    }
+    fn downcast(&self) -> Option<ScrollViewer> {
+        self.raw
+            .query_interface::<sys::IAvnScrollViewer>()
+            .ok()
+            .map(|raw| ScrollViewer { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for ScrollViewer {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -91131,6 +95907,18 @@ unsafe impl crate::Upcast<StyledElement> for ScrollViewer {
 impl AsRef<StyledElement> for ScrollViewer {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ScrollViewer> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnScrollViewer>().is_ok()
+    }
+    fn downcast(&self) -> Option<ScrollViewer> {
+        self.raw
+            .query_interface::<sys::IAvnScrollViewer>()
+            .ok()
+            .map(|raw| ScrollViewer { raw })
     }
 }
 
@@ -91151,6 +95939,18 @@ impl AsRef<Control> for ScrollViewer {
     }
 }
 
+unsafe impl crate::Downcast<ScrollViewer> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnScrollViewer>().is_ok()
+    }
+    fn downcast(&self) -> Option<ScrollViewer> {
+        self.raw
+            .query_interface::<sys::IAvnScrollViewer>()
+            .ok()
+            .map(|raw| ScrollViewer { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for ScrollViewer {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -91168,6 +95968,18 @@ impl AsRef<TemplatedControl> for ScrollViewer {
     }
 }
 
+unsafe impl crate::Downcast<ScrollViewer> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnScrollViewer>().is_ok()
+    }
+    fn downcast(&self) -> Option<ScrollViewer> {
+        self.raw
+            .query_interface::<sys::IAvnScrollViewer>()
+            .ok()
+            .map(|raw| ScrollViewer { raw })
+    }
+}
+
 unsafe impl crate::Upcast<ContentControl> for ScrollViewer {
     fn upcast(&self) -> ContentControl {
         ContentControl {
@@ -91182,6 +95994,18 @@ unsafe impl crate::Upcast<ContentControl> for ScrollViewer {
 impl AsRef<ContentControl> for ScrollViewer {
     fn as_ref(&self) -> &ContentControl {
         <Self as crate::Upcast<ContentControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ScrollViewer> for ContentControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnScrollViewer>().is_ok()
+    }
+    fn downcast(&self) -> Option<ScrollViewer> {
+        self.raw
+            .query_interface::<sys::IAvnScrollViewer>()
+            .ok()
+            .map(|raw| ScrollViewer { raw })
     }
 }
 
@@ -91753,6 +96577,24 @@ impl SelectableTextBlock {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -92665,6 +97507,18 @@ impl AsRef<AvaloniaObject> for SelectableTextBlock {
     }
 }
 
+unsafe impl crate::Downcast<SelectableTextBlock> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSelectableTextBlock>().is_ok()
+    }
+    fn downcast(&self) -> Option<SelectableTextBlock> {
+        self.raw
+            .query_interface::<sys::IAvnSelectableTextBlock>()
+            .ok()
+            .map(|raw| SelectableTextBlock { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for SelectableTextBlock {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -92679,6 +97533,18 @@ unsafe impl crate::Upcast<StyledElement> for SelectableTextBlock {
 impl AsRef<StyledElement> for SelectableTextBlock {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<SelectableTextBlock> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSelectableTextBlock>().is_ok()
+    }
+    fn downcast(&self) -> Option<SelectableTextBlock> {
+        self.raw
+            .query_interface::<sys::IAvnSelectableTextBlock>()
+            .ok()
+            .map(|raw| SelectableTextBlock { raw })
     }
 }
 
@@ -92699,6 +97565,18 @@ impl AsRef<Control> for SelectableTextBlock {
     }
 }
 
+unsafe impl crate::Downcast<SelectableTextBlock> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSelectableTextBlock>().is_ok()
+    }
+    fn downcast(&self) -> Option<SelectableTextBlock> {
+        self.raw
+            .query_interface::<sys::IAvnSelectableTextBlock>()
+            .ok()
+            .map(|raw| SelectableTextBlock { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TextBlock> for SelectableTextBlock {
     fn upcast(&self) -> TextBlock {
         TextBlock {
@@ -92713,6 +97591,18 @@ unsafe impl crate::Upcast<TextBlock> for SelectableTextBlock {
 impl AsRef<TextBlock> for SelectableTextBlock {
     fn as_ref(&self) -> &TextBlock {
         <Self as crate::Upcast<TextBlock>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<SelectableTextBlock> for TextBlock {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSelectableTextBlock>().is_ok()
+    }
+    fn downcast(&self) -> Option<SelectableTextBlock> {
+        self.raw
+            .query_interface::<sys::IAvnSelectableTextBlock>()
+            .ok()
+            .map(|raw| SelectableTextBlock { raw })
     }
 }
 
@@ -93239,6 +98129,24 @@ impl Separator {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -94059,6 +98967,18 @@ impl AsRef<AvaloniaObject> for Separator {
     }
 }
 
+unsafe impl crate::Downcast<Separator> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSeparator>().is_ok()
+    }
+    fn downcast(&self) -> Option<Separator> {
+        self.raw
+            .query_interface::<sys::IAvnSeparator>()
+            .ok()
+            .map(|raw| Separator { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for Separator {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -94073,6 +98993,18 @@ unsafe impl crate::Upcast<StyledElement> for Separator {
 impl AsRef<StyledElement> for Separator {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Separator> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSeparator>().is_ok()
+    }
+    fn downcast(&self) -> Option<Separator> {
+        self.raw
+            .query_interface::<sys::IAvnSeparator>()
+            .ok()
+            .map(|raw| Separator { raw })
     }
 }
 
@@ -94093,6 +99025,18 @@ impl AsRef<Control> for Separator {
     }
 }
 
+unsafe impl crate::Downcast<Separator> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSeparator>().is_ok()
+    }
+    fn downcast(&self) -> Option<Separator> {
+        self.raw
+            .query_interface::<sys::IAvnSeparator>()
+            .ok()
+            .map(|raw| Separator { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for Separator {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -94107,6 +99051,18 @@ unsafe impl crate::Upcast<TemplatedControl> for Separator {
 impl AsRef<TemplatedControl> for Separator {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Separator> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSeparator>().is_ok()
+    }
+    fn downcast(&self) -> Option<Separator> {
+        self.raw
+            .query_interface::<sys::IAvnSeparator>()
+            .ok()
+            .map(|raw| Separator { raw })
     }
 }
 
@@ -94576,6 +99532,24 @@ impl Arc {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -95357,6 +100331,18 @@ impl AsRef<AvaloniaObject> for Arc {
     }
 }
 
+unsafe impl crate::Downcast<Arc> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnArc>().is_ok()
+    }
+    fn downcast(&self) -> Option<Arc> {
+        self.raw
+            .query_interface::<sys::IAvnArc>()
+            .ok()
+            .map(|raw| Arc { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for Arc {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -95371,6 +100357,18 @@ unsafe impl crate::Upcast<StyledElement> for Arc {
 impl AsRef<StyledElement> for Arc {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Arc> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnArc>().is_ok()
+    }
+    fn downcast(&self) -> Option<Arc> {
+        self.raw
+            .query_interface::<sys::IAvnArc>()
+            .ok()
+            .map(|raw| Arc { raw })
     }
 }
 
@@ -95391,6 +100389,18 @@ impl AsRef<Control> for Arc {
     }
 }
 
+unsafe impl crate::Downcast<Arc> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnArc>().is_ok()
+    }
+    fn downcast(&self) -> Option<Arc> {
+        self.raw
+            .query_interface::<sys::IAvnArc>()
+            .ok()
+            .map(|raw| Arc { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Shape> for Arc {
     fn upcast(&self) -> Shape {
         Shape {
@@ -95405,6 +100415,18 @@ unsafe impl crate::Upcast<Shape> for Arc {
 impl AsRef<Shape> for Arc {
     fn as_ref(&self) -> &Shape {
         <Self as crate::Upcast<Shape>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Arc> for Shape {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnArc>().is_ok()
+    }
+    fn downcast(&self) -> Option<Arc> {
+        self.raw
+            .query_interface::<sys::IAvnArc>()
+            .ok()
+            .map(|raw| Arc { raw })
     }
 }
 
@@ -95856,6 +100878,24 @@ impl Ellipse {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -96621,6 +101661,18 @@ impl AsRef<AvaloniaObject> for Ellipse {
     }
 }
 
+unsafe impl crate::Downcast<Ellipse> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnEllipse>().is_ok()
+    }
+    fn downcast(&self) -> Option<Ellipse> {
+        self.raw
+            .query_interface::<sys::IAvnEllipse>()
+            .ok()
+            .map(|raw| Ellipse { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for Ellipse {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -96635,6 +101687,18 @@ unsafe impl crate::Upcast<StyledElement> for Ellipse {
 impl AsRef<StyledElement> for Ellipse {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Ellipse> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnEllipse>().is_ok()
+    }
+    fn downcast(&self) -> Option<Ellipse> {
+        self.raw
+            .query_interface::<sys::IAvnEllipse>()
+            .ok()
+            .map(|raw| Ellipse { raw })
     }
 }
 
@@ -96655,6 +101719,18 @@ impl AsRef<Control> for Ellipse {
     }
 }
 
+unsafe impl crate::Downcast<Ellipse> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnEllipse>().is_ok()
+    }
+    fn downcast(&self) -> Option<Ellipse> {
+        self.raw
+            .query_interface::<sys::IAvnEllipse>()
+            .ok()
+            .map(|raw| Ellipse { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Shape> for Ellipse {
     fn upcast(&self) -> Shape {
         Shape {
@@ -96669,6 +101745,18 @@ unsafe impl crate::Upcast<Shape> for Ellipse {
 impl AsRef<Shape> for Ellipse {
     fn as_ref(&self) -> &Shape {
         <Self as crate::Upcast<Shape>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Ellipse> for Shape {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnEllipse>().is_ok()
+    }
+    fn downcast(&self) -> Option<Ellipse> {
+        self.raw
+            .query_interface::<sys::IAvnEllipse>()
+            .ok()
+            .map(|raw| Ellipse { raw })
     }
 }
 
@@ -97108,6 +102196,24 @@ impl Line {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -97893,6 +102999,18 @@ impl AsRef<AvaloniaObject> for Line {
     }
 }
 
+unsafe impl crate::Downcast<Line> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnLine>().is_ok()
+    }
+    fn downcast(&self) -> Option<Line> {
+        self.raw
+            .query_interface::<sys::IAvnLine>()
+            .ok()
+            .map(|raw| Line { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for Line {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -97907,6 +103025,18 @@ unsafe impl crate::Upcast<StyledElement> for Line {
 impl AsRef<StyledElement> for Line {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Line> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnLine>().is_ok()
+    }
+    fn downcast(&self) -> Option<Line> {
+        self.raw
+            .query_interface::<sys::IAvnLine>()
+            .ok()
+            .map(|raw| Line { raw })
     }
 }
 
@@ -97927,6 +103057,18 @@ impl AsRef<Control> for Line {
     }
 }
 
+unsafe impl crate::Downcast<Line> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnLine>().is_ok()
+    }
+    fn downcast(&self) -> Option<Line> {
+        self.raw
+            .query_interface::<sys::IAvnLine>()
+            .ok()
+            .map(|raw| Line { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Shape> for Line {
     fn upcast(&self) -> Shape {
         Shape {
@@ -97941,6 +103083,18 @@ unsafe impl crate::Upcast<Shape> for Line {
 impl AsRef<Shape> for Line {
     fn as_ref(&self) -> &Shape {
         <Self as crate::Upcast<Shape>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Line> for Shape {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnLine>().is_ok()
+    }
+    fn downcast(&self) -> Option<Line> {
+        self.raw
+            .query_interface::<sys::IAvnLine>()
+            .ok()
+            .map(|raw| Line { raw })
     }
 }
 
@@ -98392,6 +103546,24 @@ impl Path {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -99168,6 +104340,18 @@ impl AsRef<AvaloniaObject> for Path {
     }
 }
 
+unsafe impl crate::Downcast<Path> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnPath>().is_ok()
+    }
+    fn downcast(&self) -> Option<Path> {
+        self.raw
+            .query_interface::<sys::IAvnPath>()
+            .ok()
+            .map(|raw| Path { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for Path {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -99182,6 +104366,18 @@ unsafe impl crate::Upcast<StyledElement> for Path {
 impl AsRef<StyledElement> for Path {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Path> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnPath>().is_ok()
+    }
+    fn downcast(&self) -> Option<Path> {
+        self.raw
+            .query_interface::<sys::IAvnPath>()
+            .ok()
+            .map(|raw| Path { raw })
     }
 }
 
@@ -99202,6 +104398,18 @@ impl AsRef<Control> for Path {
     }
 }
 
+unsafe impl crate::Downcast<Path> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnPath>().is_ok()
+    }
+    fn downcast(&self) -> Option<Path> {
+        self.raw
+            .query_interface::<sys::IAvnPath>()
+            .ok()
+            .map(|raw| Path { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Shape> for Path {
     fn upcast(&self) -> Shape {
         Shape {
@@ -99216,6 +104424,18 @@ unsafe impl crate::Upcast<Shape> for Path {
 impl AsRef<Shape> for Path {
     fn as_ref(&self) -> &Shape {
         <Self as crate::Upcast<Shape>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Path> for Shape {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnPath>().is_ok()
+    }
+    fn downcast(&self) -> Option<Path> {
+        self.raw
+            .query_interface::<sys::IAvnPath>()
+            .ok()
+            .map(|raw| Path { raw })
     }
 }
 
@@ -99661,6 +104881,24 @@ impl Polygon {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -100448,6 +105686,18 @@ impl AsRef<AvaloniaObject> for Polygon {
     }
 }
 
+unsafe impl crate::Downcast<Polygon> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnPolygon>().is_ok()
+    }
+    fn downcast(&self) -> Option<Polygon> {
+        self.raw
+            .query_interface::<sys::IAvnPolygon>()
+            .ok()
+            .map(|raw| Polygon { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for Polygon {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -100462,6 +105712,18 @@ unsafe impl crate::Upcast<StyledElement> for Polygon {
 impl AsRef<StyledElement> for Polygon {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Polygon> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnPolygon>().is_ok()
+    }
+    fn downcast(&self) -> Option<Polygon> {
+        self.raw
+            .query_interface::<sys::IAvnPolygon>()
+            .ok()
+            .map(|raw| Polygon { raw })
     }
 }
 
@@ -100482,6 +105744,18 @@ impl AsRef<Control> for Polygon {
     }
 }
 
+unsafe impl crate::Downcast<Polygon> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnPolygon>().is_ok()
+    }
+    fn downcast(&self) -> Option<Polygon> {
+        self.raw
+            .query_interface::<sys::IAvnPolygon>()
+            .ok()
+            .map(|raw| Polygon { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Shape> for Polygon {
     fn upcast(&self) -> Shape {
         Shape {
@@ -100496,6 +105770,18 @@ unsafe impl crate::Upcast<Shape> for Polygon {
 impl AsRef<Shape> for Polygon {
     fn as_ref(&self) -> &Shape {
         <Self as crate::Upcast<Shape>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Polygon> for Shape {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnPolygon>().is_ok()
+    }
+    fn downcast(&self) -> Option<Polygon> {
+        self.raw
+            .query_interface::<sys::IAvnPolygon>()
+            .ok()
+            .map(|raw| Polygon { raw })
     }
 }
 
@@ -100947,6 +106233,24 @@ impl Polyline {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -101734,6 +107038,18 @@ impl AsRef<AvaloniaObject> for Polyline {
     }
 }
 
+unsafe impl crate::Downcast<Polyline> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnPolyline>().is_ok()
+    }
+    fn downcast(&self) -> Option<Polyline> {
+        self.raw
+            .query_interface::<sys::IAvnPolyline>()
+            .ok()
+            .map(|raw| Polyline { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for Polyline {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -101748,6 +107064,18 @@ unsafe impl crate::Upcast<StyledElement> for Polyline {
 impl AsRef<StyledElement> for Polyline {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Polyline> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnPolyline>().is_ok()
+    }
+    fn downcast(&self) -> Option<Polyline> {
+        self.raw
+            .query_interface::<sys::IAvnPolyline>()
+            .ok()
+            .map(|raw| Polyline { raw })
     }
 }
 
@@ -101768,6 +107096,18 @@ impl AsRef<Control> for Polyline {
     }
 }
 
+unsafe impl crate::Downcast<Polyline> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnPolyline>().is_ok()
+    }
+    fn downcast(&self) -> Option<Polyline> {
+        self.raw
+            .query_interface::<sys::IAvnPolyline>()
+            .ok()
+            .map(|raw| Polyline { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Shape> for Polyline {
     fn upcast(&self) -> Shape {
         Shape {
@@ -101782,6 +107122,18 @@ unsafe impl crate::Upcast<Shape> for Polyline {
 impl AsRef<Shape> for Polyline {
     fn as_ref(&self) -> &Shape {
         <Self as crate::Upcast<Shape>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Polyline> for Shape {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnPolyline>().is_ok()
+    }
+    fn downcast(&self) -> Option<Polyline> {
+        self.raw
+            .query_interface::<sys::IAvnPolyline>()
+            .ok()
+            .map(|raw| Polyline { raw })
     }
 }
 
@@ -102233,6 +107585,24 @@ impl Rectangle {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -103014,6 +108384,18 @@ impl AsRef<AvaloniaObject> for Rectangle {
     }
 }
 
+unsafe impl crate::Downcast<Rectangle> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnRectangle>().is_ok()
+    }
+    fn downcast(&self) -> Option<Rectangle> {
+        self.raw
+            .query_interface::<sys::IAvnRectangle>()
+            .ok()
+            .map(|raw| Rectangle { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for Rectangle {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -103028,6 +108410,18 @@ unsafe impl crate::Upcast<StyledElement> for Rectangle {
 impl AsRef<StyledElement> for Rectangle {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Rectangle> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnRectangle>().is_ok()
+    }
+    fn downcast(&self) -> Option<Rectangle> {
+        self.raw
+            .query_interface::<sys::IAvnRectangle>()
+            .ok()
+            .map(|raw| Rectangle { raw })
     }
 }
 
@@ -103048,6 +108442,18 @@ impl AsRef<Control> for Rectangle {
     }
 }
 
+unsafe impl crate::Downcast<Rectangle> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnRectangle>().is_ok()
+    }
+    fn downcast(&self) -> Option<Rectangle> {
+        self.raw
+            .query_interface::<sys::IAvnRectangle>()
+            .ok()
+            .map(|raw| Rectangle { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Shape> for Rectangle {
     fn upcast(&self) -> Shape {
         Shape {
@@ -103062,6 +108468,18 @@ unsafe impl crate::Upcast<Shape> for Rectangle {
 impl AsRef<Shape> for Rectangle {
     fn as_ref(&self) -> &Shape {
         <Self as crate::Upcast<Shape>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Rectangle> for Shape {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnRectangle>().is_ok()
+    }
+    fn downcast(&self) -> Option<Rectangle> {
+        self.raw
+            .query_interface::<sys::IAvnRectangle>()
+            .ok()
+            .map(|raw| Rectangle { raw })
     }
 }
 
@@ -103513,6 +108931,24 @@ impl Sector {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -104294,6 +109730,18 @@ impl AsRef<AvaloniaObject> for Sector {
     }
 }
 
+unsafe impl crate::Downcast<Sector> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSector>().is_ok()
+    }
+    fn downcast(&self) -> Option<Sector> {
+        self.raw
+            .query_interface::<sys::IAvnSector>()
+            .ok()
+            .map(|raw| Sector { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for Sector {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -104308,6 +109756,18 @@ unsafe impl crate::Upcast<StyledElement> for Sector {
 impl AsRef<StyledElement> for Sector {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Sector> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSector>().is_ok()
+    }
+    fn downcast(&self) -> Option<Sector> {
+        self.raw
+            .query_interface::<sys::IAvnSector>()
+            .ok()
+            .map(|raw| Sector { raw })
     }
 }
 
@@ -104328,6 +109788,18 @@ impl AsRef<Control> for Sector {
     }
 }
 
+unsafe impl crate::Downcast<Sector> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSector>().is_ok()
+    }
+    fn downcast(&self) -> Option<Sector> {
+        self.raw
+            .query_interface::<sys::IAvnSector>()
+            .ok()
+            .map(|raw| Sector { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Shape> for Sector {
     fn upcast(&self) -> Shape {
         Shape {
@@ -104342,6 +109814,18 @@ unsafe impl crate::Upcast<Shape> for Sector {
 impl AsRef<Shape> for Sector {
     fn as_ref(&self) -> &Shape {
         <Self as crate::Upcast<Shape>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Sector> for Shape {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSector>().is_ok()
+    }
+    fn downcast(&self) -> Option<Sector> {
+        self.raw
+            .query_interface::<sys::IAvnSector>()
+            .ok()
+            .map(|raw| Sector { raw })
     }
 }
 
@@ -104787,6 +110271,24 @@ pub struct Shape {
 }
 
 impl Shape {
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
+    }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
     }
@@ -105551,6 +111053,18 @@ impl AsRef<AvaloniaObject> for Shape {
     }
 }
 
+unsafe impl crate::Downcast<Shape> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnShape>().is_ok()
+    }
+    fn downcast(&self) -> Option<Shape> {
+        self.raw
+            .query_interface::<sys::IAvnShape>()
+            .ok()
+            .map(|raw| Shape { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for Shape {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -105568,6 +111082,18 @@ impl AsRef<StyledElement> for Shape {
     }
 }
 
+unsafe impl crate::Downcast<Shape> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnShape>().is_ok()
+    }
+    fn downcast(&self) -> Option<Shape> {
+        self.raw
+            .query_interface::<sys::IAvnShape>()
+            .ok()
+            .map(|raw| Shape { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Control> for Shape {
     fn upcast(&self) -> Control {
         Control {
@@ -105582,6 +111108,18 @@ unsafe impl crate::Upcast<Control> for Shape {
 impl AsRef<Control> for Shape {
     fn as_ref(&self) -> &Control {
         <Self as crate::Upcast<Control>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Shape> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnShape>().is_ok()
+    }
+    fn downcast(&self) -> Option<Shape> {
+        self.raw
+            .query_interface::<sys::IAvnShape>()
+            .ok()
+            .map(|raw| Shape { raw })
     }
 }
 
@@ -105604,6 +111142,24 @@ impl Slider {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -106532,6 +112088,18 @@ impl AsRef<AvaloniaObject> for Slider {
     }
 }
 
+unsafe impl crate::Downcast<Slider> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSlider>().is_ok()
+    }
+    fn downcast(&self) -> Option<Slider> {
+        self.raw
+            .query_interface::<sys::IAvnSlider>()
+            .ok()
+            .map(|raw| Slider { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for Slider {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -106546,6 +112114,18 @@ unsafe impl crate::Upcast<StyledElement> for Slider {
 impl AsRef<StyledElement> for Slider {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Slider> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSlider>().is_ok()
+    }
+    fn downcast(&self) -> Option<Slider> {
+        self.raw
+            .query_interface::<sys::IAvnSlider>()
+            .ok()
+            .map(|raw| Slider { raw })
     }
 }
 
@@ -106566,6 +112146,18 @@ impl AsRef<Control> for Slider {
     }
 }
 
+unsafe impl crate::Downcast<Slider> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSlider>().is_ok()
+    }
+    fn downcast(&self) -> Option<Slider> {
+        self.raw
+            .query_interface::<sys::IAvnSlider>()
+            .ok()
+            .map(|raw| Slider { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for Slider {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -106583,6 +112175,18 @@ impl AsRef<TemplatedControl> for Slider {
     }
 }
 
+unsafe impl crate::Downcast<Slider> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSlider>().is_ok()
+    }
+    fn downcast(&self) -> Option<Slider> {
+        self.raw
+            .query_interface::<sys::IAvnSlider>()
+            .ok()
+            .map(|raw| Slider { raw })
+    }
+}
+
 unsafe impl crate::Upcast<RangeBase> for Slider {
     fn upcast(&self) -> RangeBase {
         RangeBase {
@@ -106597,6 +112201,18 @@ unsafe impl crate::Upcast<RangeBase> for Slider {
 impl AsRef<RangeBase> for Slider {
     fn as_ref(&self) -> &RangeBase {
         <Self as crate::Upcast<RangeBase>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Slider> for RangeBase {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSlider>().is_ok()
+    }
+    fn downcast(&self) -> Option<Slider> {
+        self.raw
+            .query_interface::<sys::IAvnSlider>()
+            .ok()
+            .map(|raw| Slider { raw })
     }
 }
 
@@ -107139,6 +112755,24 @@ pub struct Spinner {
 }
 
 impl Spinner {
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
+    }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
     }
@@ -108028,6 +113662,18 @@ impl AsRef<AvaloniaObject> for Spinner {
     }
 }
 
+unsafe impl crate::Downcast<Spinner> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSpinner>().is_ok()
+    }
+    fn downcast(&self) -> Option<Spinner> {
+        self.raw
+            .query_interface::<sys::IAvnSpinner>()
+            .ok()
+            .map(|raw| Spinner { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for Spinner {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -108042,6 +113688,18 @@ unsafe impl crate::Upcast<StyledElement> for Spinner {
 impl AsRef<StyledElement> for Spinner {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Spinner> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSpinner>().is_ok()
+    }
+    fn downcast(&self) -> Option<Spinner> {
+        self.raw
+            .query_interface::<sys::IAvnSpinner>()
+            .ok()
+            .map(|raw| Spinner { raw })
     }
 }
 
@@ -108062,6 +113720,18 @@ impl AsRef<Control> for Spinner {
     }
 }
 
+unsafe impl crate::Downcast<Spinner> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSpinner>().is_ok()
+    }
+    fn downcast(&self) -> Option<Spinner> {
+        self.raw
+            .query_interface::<sys::IAvnSpinner>()
+            .ok()
+            .map(|raw| Spinner { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for Spinner {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -108079,6 +113749,18 @@ impl AsRef<TemplatedControl> for Spinner {
     }
 }
 
+unsafe impl crate::Downcast<Spinner> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSpinner>().is_ok()
+    }
+    fn downcast(&self) -> Option<Spinner> {
+        self.raw
+            .query_interface::<sys::IAvnSpinner>()
+            .ok()
+            .map(|raw| Spinner { raw })
+    }
+}
+
 unsafe impl crate::Upcast<ContentControl> for Spinner {
     fn upcast(&self) -> ContentControl {
         ContentControl {
@@ -108093,6 +113775,18 @@ unsafe impl crate::Upcast<ContentControl> for Spinner {
 impl AsRef<ContentControl> for Spinner {
     fn as_ref(&self) -> &ContentControl {
         <Self as crate::Upcast<ContentControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Spinner> for ContentControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSpinner>().is_ok()
+    }
+    fn downcast(&self) -> Option<Spinner> {
+        self.raw
+            .query_interface::<sys::IAvnSpinner>()
+            .ok()
+            .map(|raw| Spinner { raw })
     }
 }
 
@@ -108115,6 +113809,24 @@ impl SplitButton {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -109041,6 +114753,18 @@ impl AsRef<AvaloniaObject> for SplitButton {
     }
 }
 
+unsafe impl crate::Downcast<SplitButton> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSplitButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<SplitButton> {
+        self.raw
+            .query_interface::<sys::IAvnSplitButton>()
+            .ok()
+            .map(|raw| SplitButton { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for SplitButton {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -109055,6 +114779,18 @@ unsafe impl crate::Upcast<StyledElement> for SplitButton {
 impl AsRef<StyledElement> for SplitButton {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<SplitButton> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSplitButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<SplitButton> {
+        self.raw
+            .query_interface::<sys::IAvnSplitButton>()
+            .ok()
+            .map(|raw| SplitButton { raw })
     }
 }
 
@@ -109075,6 +114811,18 @@ impl AsRef<Control> for SplitButton {
     }
 }
 
+unsafe impl crate::Downcast<SplitButton> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSplitButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<SplitButton> {
+        self.raw
+            .query_interface::<sys::IAvnSplitButton>()
+            .ok()
+            .map(|raw| SplitButton { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for SplitButton {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -109092,6 +114840,18 @@ impl AsRef<TemplatedControl> for SplitButton {
     }
 }
 
+unsafe impl crate::Downcast<SplitButton> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSplitButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<SplitButton> {
+        self.raw
+            .query_interface::<sys::IAvnSplitButton>()
+            .ok()
+            .map(|raw| SplitButton { raw })
+    }
+}
+
 unsafe impl crate::Upcast<ContentControl> for SplitButton {
     fn upcast(&self) -> ContentControl {
         ContentControl {
@@ -109106,6 +114866,18 @@ unsafe impl crate::Upcast<ContentControl> for SplitButton {
 impl AsRef<ContentControl> for SplitButton {
     fn as_ref(&self) -> &ContentControl {
         <Self as crate::Upcast<ContentControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<SplitButton> for ContentControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSplitButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<SplitButton> {
+        self.raw
+            .query_interface::<sys::IAvnSplitButton>()
+            .ok()
+            .map(|raw| SplitButton { raw })
     }
 }
 
@@ -109431,8 +115203,11 @@ impl crate::view::El<SplitButton> {
             crate::view::apply_prop(control, binding, |c, v| c.set_vertical_content_alignment(v))
         })
     }
-    pub fn command(self, value: Option<sys::ComPtr<sys::IAvnCommand>>) -> Self {
-        self.with_op(move |_, control| control.set_command(value.as_ref()))
+    pub fn command(self, value: impl crate::view::IntoCommandProp + 'static) -> Self {
+        self.with_op(move |_, control| {
+            let cmd = value.into_command_prop();
+            control.set_command(cmd.as_ref())
+        })
     }
     pub fn command_parameter<M>(self, value: impl crate::view::IntoProp<Variant, M> + 'static) -> Self {
         let binding = value.into_prop();
@@ -109623,6 +115398,24 @@ impl SplitView {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -110628,6 +116421,18 @@ impl AsRef<AvaloniaObject> for SplitView {
     }
 }
 
+unsafe impl crate::Downcast<SplitView> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSplitView>().is_ok()
+    }
+    fn downcast(&self) -> Option<SplitView> {
+        self.raw
+            .query_interface::<sys::IAvnSplitView>()
+            .ok()
+            .map(|raw| SplitView { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for SplitView {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -110642,6 +116447,18 @@ unsafe impl crate::Upcast<StyledElement> for SplitView {
 impl AsRef<StyledElement> for SplitView {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<SplitView> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSplitView>().is_ok()
+    }
+    fn downcast(&self) -> Option<SplitView> {
+        self.raw
+            .query_interface::<sys::IAvnSplitView>()
+            .ok()
+            .map(|raw| SplitView { raw })
     }
 }
 
@@ -110662,6 +116479,18 @@ impl AsRef<Control> for SplitView {
     }
 }
 
+unsafe impl crate::Downcast<SplitView> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSplitView>().is_ok()
+    }
+    fn downcast(&self) -> Option<SplitView> {
+        self.raw
+            .query_interface::<sys::IAvnSplitView>()
+            .ok()
+            .map(|raw| SplitView { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for SplitView {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -110679,6 +116508,18 @@ impl AsRef<TemplatedControl> for SplitView {
     }
 }
 
+unsafe impl crate::Downcast<SplitView> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSplitView>().is_ok()
+    }
+    fn downcast(&self) -> Option<SplitView> {
+        self.raw
+            .query_interface::<sys::IAvnSplitView>()
+            .ok()
+            .map(|raw| SplitView { raw })
+    }
+}
+
 unsafe impl crate::Upcast<ContentControl> for SplitView {
     fn upcast(&self) -> ContentControl {
         ContentControl {
@@ -110693,6 +116534,18 @@ unsafe impl crate::Upcast<ContentControl> for SplitView {
 impl AsRef<ContentControl> for SplitView {
     fn as_ref(&self) -> &ContentControl {
         <Self as crate::Upcast<ContentControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<SplitView> for ContentControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnSplitView>().is_ok()
+    }
+    fn downcast(&self) -> Option<SplitView> {
+        self.raw
+            .query_interface::<sys::IAvnSplitView>()
+            .ok()
+            .map(|raw| SplitView { raw })
     }
 }
 
@@ -111261,6 +117114,24 @@ impl StackPanel {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -111989,6 +117860,18 @@ impl AsRef<AvaloniaObject> for StackPanel {
     }
 }
 
+unsafe impl crate::Downcast<StackPanel> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnStackPanel>().is_ok()
+    }
+    fn downcast(&self) -> Option<StackPanel> {
+        self.raw
+            .query_interface::<sys::IAvnStackPanel>()
+            .ok()
+            .map(|raw| StackPanel { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for StackPanel {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -112003,6 +117886,18 @@ unsafe impl crate::Upcast<StyledElement> for StackPanel {
 impl AsRef<StyledElement> for StackPanel {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<StackPanel> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnStackPanel>().is_ok()
+    }
+    fn downcast(&self) -> Option<StackPanel> {
+        self.raw
+            .query_interface::<sys::IAvnStackPanel>()
+            .ok()
+            .map(|raw| StackPanel { raw })
     }
 }
 
@@ -112023,6 +117918,18 @@ impl AsRef<Control> for StackPanel {
     }
 }
 
+unsafe impl crate::Downcast<StackPanel> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnStackPanel>().is_ok()
+    }
+    fn downcast(&self) -> Option<StackPanel> {
+        self.raw
+            .query_interface::<sys::IAvnStackPanel>()
+            .ok()
+            .map(|raw| StackPanel { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Panel> for StackPanel {
     fn upcast(&self) -> Panel {
         Panel {
@@ -112037,6 +117944,18 @@ unsafe impl crate::Upcast<Panel> for StackPanel {
 impl AsRef<Panel> for StackPanel {
     fn as_ref(&self) -> &Panel {
         <Self as crate::Upcast<Panel>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<StackPanel> for Panel {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnStackPanel>().is_ok()
+    }
+    fn downcast(&self) -> Option<StackPanel> {
+        self.raw
+            .query_interface::<sys::IAvnStackPanel>()
+            .ok()
+            .map(|raw| StackPanel { raw })
     }
 }
 
@@ -112471,6 +118390,24 @@ impl TabControl {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -113455,6 +119392,18 @@ impl AsRef<AvaloniaObject> for TabControl {
     }
 }
 
+unsafe impl crate::Downcast<TabControl> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTabControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<TabControl> {
+        self.raw
+            .query_interface::<sys::IAvnTabControl>()
+            .ok()
+            .map(|raw| TabControl { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for TabControl {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -113469,6 +119418,18 @@ unsafe impl crate::Upcast<StyledElement> for TabControl {
 impl AsRef<StyledElement> for TabControl {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<TabControl> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTabControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<TabControl> {
+        self.raw
+            .query_interface::<sys::IAvnTabControl>()
+            .ok()
+            .map(|raw| TabControl { raw })
     }
 }
 
@@ -113489,6 +119450,18 @@ impl AsRef<Control> for TabControl {
     }
 }
 
+unsafe impl crate::Downcast<TabControl> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTabControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<TabControl> {
+        self.raw
+            .query_interface::<sys::IAvnTabControl>()
+            .ok()
+            .map(|raw| TabControl { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for TabControl {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -113503,6 +119476,18 @@ unsafe impl crate::Upcast<TemplatedControl> for TabControl {
 impl AsRef<TemplatedControl> for TabControl {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<TabControl> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTabControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<TabControl> {
+        self.raw
+            .query_interface::<sys::IAvnTabControl>()
+            .ok()
+            .map(|raw| TabControl { raw })
     }
 }
 
@@ -113523,6 +119508,18 @@ impl AsRef<ItemsControl> for TabControl {
     }
 }
 
+unsafe impl crate::Downcast<TabControl> for ItemsControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTabControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<TabControl> {
+        self.raw
+            .query_interface::<sys::IAvnTabControl>()
+            .ok()
+            .map(|raw| TabControl { raw })
+    }
+}
+
 unsafe impl crate::Upcast<SelectingItemsControl> for TabControl {
     fn upcast(&self) -> SelectingItemsControl {
         SelectingItemsControl {
@@ -113537,6 +119534,18 @@ unsafe impl crate::Upcast<SelectingItemsControl> for TabControl {
 impl AsRef<SelectingItemsControl> for TabControl {
     fn as_ref(&self) -> &SelectingItemsControl {
         <Self as crate::Upcast<SelectingItemsControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<TabControl> for SelectingItemsControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTabControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<TabControl> {
+        self.raw
+            .query_interface::<sys::IAvnTabControl>()
+            .ok()
+            .map(|raw| TabControl { raw })
     }
 }
 
@@ -114101,6 +120110,24 @@ impl TabItem {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -115043,6 +121070,18 @@ impl AsRef<AvaloniaObject> for TabItem {
     }
 }
 
+unsafe impl crate::Downcast<TabItem> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTabItem>().is_ok()
+    }
+    fn downcast(&self) -> Option<TabItem> {
+        self.raw
+            .query_interface::<sys::IAvnTabItem>()
+            .ok()
+            .map(|raw| TabItem { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for TabItem {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -115057,6 +121096,18 @@ unsafe impl crate::Upcast<StyledElement> for TabItem {
 impl AsRef<StyledElement> for TabItem {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<TabItem> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTabItem>().is_ok()
+    }
+    fn downcast(&self) -> Option<TabItem> {
+        self.raw
+            .query_interface::<sys::IAvnTabItem>()
+            .ok()
+            .map(|raw| TabItem { raw })
     }
 }
 
@@ -115077,6 +121128,18 @@ impl AsRef<Control> for TabItem {
     }
 }
 
+unsafe impl crate::Downcast<TabItem> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTabItem>().is_ok()
+    }
+    fn downcast(&self) -> Option<TabItem> {
+        self.raw
+            .query_interface::<sys::IAvnTabItem>()
+            .ok()
+            .map(|raw| TabItem { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for TabItem {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -115091,6 +121154,18 @@ unsafe impl crate::Upcast<TemplatedControl> for TabItem {
 impl AsRef<TemplatedControl> for TabItem {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<TabItem> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTabItem>().is_ok()
+    }
+    fn downcast(&self) -> Option<TabItem> {
+        self.raw
+            .query_interface::<sys::IAvnTabItem>()
+            .ok()
+            .map(|raw| TabItem { raw })
     }
 }
 
@@ -115111,6 +121186,18 @@ impl AsRef<ContentControl> for TabItem {
     }
 }
 
+unsafe impl crate::Downcast<TabItem> for ContentControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTabItem>().is_ok()
+    }
+    fn downcast(&self) -> Option<TabItem> {
+        self.raw
+            .query_interface::<sys::IAvnTabItem>()
+            .ok()
+            .map(|raw| TabItem { raw })
+    }
+}
+
 unsafe impl crate::Upcast<HeaderedContentControl> for TabItem {
     fn upcast(&self) -> HeaderedContentControl {
         HeaderedContentControl {
@@ -115125,6 +121212,18 @@ unsafe impl crate::Upcast<HeaderedContentControl> for TabItem {
 impl AsRef<HeaderedContentControl> for TabItem {
     fn as_ref(&self) -> &HeaderedContentControl {
         <Self as crate::Upcast<HeaderedContentControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<TabItem> for HeaderedContentControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTabItem>().is_ok()
+    }
+    fn downcast(&self) -> Option<TabItem> {
+        self.raw
+            .query_interface::<sys::IAvnTabItem>()
+            .ok()
+            .map(|raw| TabItem { raw })
     }
 }
 
@@ -115645,6 +121744,24 @@ impl TableView {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -116598,6 +122715,18 @@ impl AsRef<AvaloniaObject> for TableView {
     }
 }
 
+unsafe impl crate::Downcast<TableView> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTableView>().is_ok()
+    }
+    fn downcast(&self) -> Option<TableView> {
+        self.raw
+            .query_interface::<sys::IAvnTableView>()
+            .ok()
+            .map(|raw| TableView { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for TableView {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -116612,6 +122741,18 @@ unsafe impl crate::Upcast<StyledElement> for TableView {
 impl AsRef<StyledElement> for TableView {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<TableView> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTableView>().is_ok()
+    }
+    fn downcast(&self) -> Option<TableView> {
+        self.raw
+            .query_interface::<sys::IAvnTableView>()
+            .ok()
+            .map(|raw| TableView { raw })
     }
 }
 
@@ -116632,6 +122773,18 @@ impl AsRef<Control> for TableView {
     }
 }
 
+unsafe impl crate::Downcast<TableView> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTableView>().is_ok()
+    }
+    fn downcast(&self) -> Option<TableView> {
+        self.raw
+            .query_interface::<sys::IAvnTableView>()
+            .ok()
+            .map(|raw| TableView { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for TableView {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -116646,6 +122799,18 @@ unsafe impl crate::Upcast<TemplatedControl> for TableView {
 impl AsRef<TemplatedControl> for TableView {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<TableView> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTableView>().is_ok()
+    }
+    fn downcast(&self) -> Option<TableView> {
+        self.raw
+            .query_interface::<sys::IAvnTableView>()
+            .ok()
+            .map(|raw| TableView { raw })
     }
 }
 
@@ -116666,6 +122831,18 @@ impl AsRef<ItemsControl> for TableView {
     }
 }
 
+unsafe impl crate::Downcast<TableView> for ItemsControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTableView>().is_ok()
+    }
+    fn downcast(&self) -> Option<TableView> {
+        self.raw
+            .query_interface::<sys::IAvnTableView>()
+            .ok()
+            .map(|raw| TableView { raw })
+    }
+}
+
 unsafe impl crate::Upcast<SelectingItemsControl> for TableView {
     fn upcast(&self) -> SelectingItemsControl {
         SelectingItemsControl {
@@ -116683,6 +122860,18 @@ impl AsRef<SelectingItemsControl> for TableView {
     }
 }
 
+unsafe impl crate::Downcast<TableView> for SelectingItemsControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTableView>().is_ok()
+    }
+    fn downcast(&self) -> Option<TableView> {
+        self.raw
+            .query_interface::<sys::IAvnTableView>()
+            .ok()
+            .map(|raw| TableView { raw })
+    }
+}
+
 unsafe impl crate::Upcast<ListBox> for TableView {
     fn upcast(&self) -> ListBox {
         ListBox {
@@ -116697,6 +122886,18 @@ unsafe impl crate::Upcast<ListBox> for TableView {
 impl AsRef<ListBox> for TableView {
     fn as_ref(&self) -> &ListBox {
         <Self as crate::Upcast<ListBox>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<TableView> for ListBox {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTableView>().is_ok()
+    }
+    fn downcast(&self) -> Option<TableView> {
+        self.raw
+            .query_interface::<sys::IAvnTableView>()
+            .ok()
+            .map(|raw| TableView { raw })
     }
 }
 
@@ -117249,6 +123450,24 @@ impl TableViewCell {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -118120,6 +124339,18 @@ impl AsRef<AvaloniaObject> for TableViewCell {
     }
 }
 
+unsafe impl crate::Downcast<TableViewCell> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTableViewCell>().is_ok()
+    }
+    fn downcast(&self) -> Option<TableViewCell> {
+        self.raw
+            .query_interface::<sys::IAvnTableViewCell>()
+            .ok()
+            .map(|raw| TableViewCell { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for TableViewCell {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -118134,6 +124365,18 @@ unsafe impl crate::Upcast<StyledElement> for TableViewCell {
 impl AsRef<StyledElement> for TableViewCell {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<TableViewCell> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTableViewCell>().is_ok()
+    }
+    fn downcast(&self) -> Option<TableViewCell> {
+        self.raw
+            .query_interface::<sys::IAvnTableViewCell>()
+            .ok()
+            .map(|raw| TableViewCell { raw })
     }
 }
 
@@ -118154,6 +124397,18 @@ impl AsRef<Control> for TableViewCell {
     }
 }
 
+unsafe impl crate::Downcast<TableViewCell> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTableViewCell>().is_ok()
+    }
+    fn downcast(&self) -> Option<TableViewCell> {
+        self.raw
+            .query_interface::<sys::IAvnTableViewCell>()
+            .ok()
+            .map(|raw| TableViewCell { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for TableViewCell {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -118171,6 +124426,18 @@ impl AsRef<TemplatedControl> for TableViewCell {
     }
 }
 
+unsafe impl crate::Downcast<TableViewCell> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTableViewCell>().is_ok()
+    }
+    fn downcast(&self) -> Option<TableViewCell> {
+        self.raw
+            .query_interface::<sys::IAvnTableViewCell>()
+            .ok()
+            .map(|raw| TableViewCell { raw })
+    }
+}
+
 unsafe impl crate::Upcast<ContentControl> for TableViewCell {
     fn upcast(&self) -> ContentControl {
         ContentControl {
@@ -118185,6 +124452,18 @@ unsafe impl crate::Upcast<ContentControl> for TableViewCell {
 impl AsRef<ContentControl> for TableViewCell {
     fn as_ref(&self) -> &ContentControl {
         <Self as crate::Upcast<ContentControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<TableViewCell> for ContentControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTableViewCell>().is_ok()
+    }
+    fn downcast(&self) -> Option<TableViewCell> {
+        self.raw
+            .query_interface::<sys::IAvnTableViewCell>()
+            .ok()
+            .map(|raw| TableViewCell { raw })
     }
 }
 
@@ -118679,6 +124958,24 @@ impl TableViewColumn {
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
     }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
+    }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
     }
@@ -118903,6 +125200,18 @@ impl AsRef<AvaloniaObject> for TableViewColumn {
     }
 }
 
+unsafe impl crate::Downcast<TableViewColumn> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTableViewColumn>().is_ok()
+    }
+    fn downcast(&self) -> Option<TableViewColumn> {
+        self.raw
+            .query_interface::<sys::IAvnTableViewColumn>()
+            .ok()
+            .map(|raw| TableViewColumn { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for TableViewColumn {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -118917,6 +125226,18 @@ unsafe impl crate::Upcast<StyledElement> for TableViewColumn {
 impl AsRef<StyledElement> for TableViewColumn {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<TableViewColumn> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTableViewColumn>().is_ok()
+    }
+    fn downcast(&self) -> Option<TableViewColumn> {
+        self.raw
+            .query_interface::<sys::IAvnTableViewColumn>()
+            .ok()
+            .map(|raw| TableViewColumn { raw })
     }
 }
 
@@ -119030,6 +125351,24 @@ impl TableViewRow {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -119909,6 +126248,18 @@ impl AsRef<AvaloniaObject> for TableViewRow {
     }
 }
 
+unsafe impl crate::Downcast<TableViewRow> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTableViewRow>().is_ok()
+    }
+    fn downcast(&self) -> Option<TableViewRow> {
+        self.raw
+            .query_interface::<sys::IAvnTableViewRow>()
+            .ok()
+            .map(|raw| TableViewRow { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for TableViewRow {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -119923,6 +126274,18 @@ unsafe impl crate::Upcast<StyledElement> for TableViewRow {
 impl AsRef<StyledElement> for TableViewRow {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<TableViewRow> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTableViewRow>().is_ok()
+    }
+    fn downcast(&self) -> Option<TableViewRow> {
+        self.raw
+            .query_interface::<sys::IAvnTableViewRow>()
+            .ok()
+            .map(|raw| TableViewRow { raw })
     }
 }
 
@@ -119943,6 +126306,18 @@ impl AsRef<Control> for TableViewRow {
     }
 }
 
+unsafe impl crate::Downcast<TableViewRow> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTableViewRow>().is_ok()
+    }
+    fn downcast(&self) -> Option<TableViewRow> {
+        self.raw
+            .query_interface::<sys::IAvnTableViewRow>()
+            .ok()
+            .map(|raw| TableViewRow { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for TableViewRow {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -119957,6 +126332,18 @@ unsafe impl crate::Upcast<TemplatedControl> for TableViewRow {
 impl AsRef<TemplatedControl> for TableViewRow {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<TableViewRow> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTableViewRow>().is_ok()
+    }
+    fn downcast(&self) -> Option<TableViewRow> {
+        self.raw
+            .query_interface::<sys::IAvnTableViewRow>()
+            .ok()
+            .map(|raw| TableViewRow { raw })
     }
 }
 
@@ -119977,6 +126364,18 @@ impl AsRef<ContentControl> for TableViewRow {
     }
 }
 
+unsafe impl crate::Downcast<TableViewRow> for ContentControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTableViewRow>().is_ok()
+    }
+    fn downcast(&self) -> Option<TableViewRow> {
+        self.raw
+            .query_interface::<sys::IAvnTableViewRow>()
+            .ok()
+            .map(|raw| TableViewRow { raw })
+    }
+}
+
 unsafe impl crate::Upcast<ListBoxItem> for TableViewRow {
     fn upcast(&self) -> ListBoxItem {
         ListBoxItem {
@@ -119991,6 +126390,18 @@ unsafe impl crate::Upcast<ListBoxItem> for TableViewRow {
 impl AsRef<ListBoxItem> for TableViewRow {
     fn as_ref(&self) -> &ListBoxItem {
         <Self as crate::Upcast<ListBoxItem>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<TableViewRow> for ListBoxItem {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTableViewRow>().is_ok()
+    }
+    fn downcast(&self) -> Option<TableViewRow> {
+        self.raw
+            .query_interface::<sys::IAvnTableViewRow>()
+            .ok()
+            .map(|raw| TableViewRow { raw })
     }
 }
 
@@ -120490,6 +126901,24 @@ impl TextBlock {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -121344,6 +127773,18 @@ impl AsRef<AvaloniaObject> for TextBlock {
     }
 }
 
+unsafe impl crate::Downcast<TextBlock> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTextBlock>().is_ok()
+    }
+    fn downcast(&self) -> Option<TextBlock> {
+        self.raw
+            .query_interface::<sys::IAvnTextBlock>()
+            .ok()
+            .map(|raw| TextBlock { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for TextBlock {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -121361,6 +127802,18 @@ impl AsRef<StyledElement> for TextBlock {
     }
 }
 
+unsafe impl crate::Downcast<TextBlock> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTextBlock>().is_ok()
+    }
+    fn downcast(&self) -> Option<TextBlock> {
+        self.raw
+            .query_interface::<sys::IAvnTextBlock>()
+            .ok()
+            .map(|raw| TextBlock { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Control> for TextBlock {
     fn upcast(&self) -> Control {
         Control {
@@ -121375,6 +127828,18 @@ unsafe impl crate::Upcast<Control> for TextBlock {
 impl AsRef<Control> for TextBlock {
     fn as_ref(&self) -> &Control {
         <Self as crate::Upcast<Control>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<TextBlock> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTextBlock>().is_ok()
+    }
+    fn downcast(&self) -> Option<TextBlock> {
+        self.raw
+            .query_interface::<sys::IAvnTextBlock>()
+            .ok()
+            .map(|raw| TextBlock { raw })
     }
 }
 
@@ -121871,6 +128336,24 @@ impl TextBox {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -123073,6 +129556,18 @@ impl AsRef<AvaloniaObject> for TextBox {
     }
 }
 
+unsafe impl crate::Downcast<TextBox> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTextBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<TextBox> {
+        self.raw
+            .query_interface::<sys::IAvnTextBox>()
+            .ok()
+            .map(|raw| TextBox { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for TextBox {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -123087,6 +129582,18 @@ unsafe impl crate::Upcast<StyledElement> for TextBox {
 impl AsRef<StyledElement> for TextBox {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<TextBox> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTextBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<TextBox> {
+        self.raw
+            .query_interface::<sys::IAvnTextBox>()
+            .ok()
+            .map(|raw| TextBox { raw })
     }
 }
 
@@ -123107,6 +129614,18 @@ impl AsRef<Control> for TextBox {
     }
 }
 
+unsafe impl crate::Downcast<TextBox> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTextBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<TextBox> {
+        self.raw
+            .query_interface::<sys::IAvnTextBox>()
+            .ok()
+            .map(|raw| TextBox { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for TextBox {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -123121,6 +129640,18 @@ unsafe impl crate::Upcast<TemplatedControl> for TextBox {
 impl AsRef<TemplatedControl> for TextBox {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<TextBox> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTextBox>().is_ok()
+    }
+    fn downcast(&self) -> Option<TextBox> {
+        self.raw
+            .query_interface::<sys::IAvnTextBox>()
+            .ok()
+            .map(|raw| TextBox { raw })
     }
 }
 
@@ -123822,6 +130353,24 @@ impl ThemeVariantScope {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -124529,6 +131078,18 @@ impl AsRef<AvaloniaObject> for ThemeVariantScope {
     }
 }
 
+unsafe impl crate::Downcast<ThemeVariantScope> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnThemeVariantScope>().is_ok()
+    }
+    fn downcast(&self) -> Option<ThemeVariantScope> {
+        self.raw
+            .query_interface::<sys::IAvnThemeVariantScope>()
+            .ok()
+            .map(|raw| ThemeVariantScope { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for ThemeVariantScope {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -124543,6 +131104,18 @@ unsafe impl crate::Upcast<StyledElement> for ThemeVariantScope {
 impl AsRef<StyledElement> for ThemeVariantScope {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ThemeVariantScope> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnThemeVariantScope>().is_ok()
+    }
+    fn downcast(&self) -> Option<ThemeVariantScope> {
+        self.raw
+            .query_interface::<sys::IAvnThemeVariantScope>()
+            .ok()
+            .map(|raw| ThemeVariantScope { raw })
     }
 }
 
@@ -124563,6 +131136,18 @@ impl AsRef<Control> for ThemeVariantScope {
     }
 }
 
+unsafe impl crate::Downcast<ThemeVariantScope> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnThemeVariantScope>().is_ok()
+    }
+    fn downcast(&self) -> Option<ThemeVariantScope> {
+        self.raw
+            .query_interface::<sys::IAvnThemeVariantScope>()
+            .ok()
+            .map(|raw| ThemeVariantScope { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Decorator> for ThemeVariantScope {
     fn upcast(&self) -> Decorator {
         Decorator {
@@ -124577,6 +131162,18 @@ unsafe impl crate::Upcast<Decorator> for ThemeVariantScope {
 impl AsRef<Decorator> for ThemeVariantScope {
     fn as_ref(&self) -> &Decorator {
         <Self as crate::Upcast<Decorator>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ThemeVariantScope> for Decorator {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnThemeVariantScope>().is_ok()
+    }
+    fn downcast(&self) -> Option<ThemeVariantScope> {
+        self.raw
+            .query_interface::<sys::IAvnThemeVariantScope>()
+            .ok()
+            .map(|raw| ThemeVariantScope { raw })
     }
 }
 
@@ -124983,6 +131580,24 @@ impl TimePicker {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -125872,6 +132487,18 @@ impl AsRef<AvaloniaObject> for TimePicker {
     }
 }
 
+unsafe impl crate::Downcast<TimePicker> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTimePicker>().is_ok()
+    }
+    fn downcast(&self) -> Option<TimePicker> {
+        self.raw
+            .query_interface::<sys::IAvnTimePicker>()
+            .ok()
+            .map(|raw| TimePicker { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for TimePicker {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -125886,6 +132513,18 @@ unsafe impl crate::Upcast<StyledElement> for TimePicker {
 impl AsRef<StyledElement> for TimePicker {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<TimePicker> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTimePicker>().is_ok()
+    }
+    fn downcast(&self) -> Option<TimePicker> {
+        self.raw
+            .query_interface::<sys::IAvnTimePicker>()
+            .ok()
+            .map(|raw| TimePicker { raw })
     }
 }
 
@@ -125906,6 +132545,18 @@ impl AsRef<Control> for TimePicker {
     }
 }
 
+unsafe impl crate::Downcast<TimePicker> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTimePicker>().is_ok()
+    }
+    fn downcast(&self) -> Option<TimePicker> {
+        self.raw
+            .query_interface::<sys::IAvnTimePicker>()
+            .ok()
+            .map(|raw| TimePicker { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for TimePicker {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -125920,6 +132571,18 @@ unsafe impl crate::Upcast<TemplatedControl> for TimePicker {
 impl AsRef<TemplatedControl> for TimePicker {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<TimePicker> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTimePicker>().is_ok()
+    }
+    fn downcast(&self) -> Option<TimePicker> {
+        self.raw
+            .query_interface::<sys::IAvnTimePicker>()
+            .ok()
+            .map(|raw| TimePicker { raw })
     }
 }
 
@@ -126431,6 +133094,24 @@ impl ToggleSplitButton {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -127378,6 +134059,18 @@ impl AsRef<AvaloniaObject> for ToggleSplitButton {
     }
 }
 
+unsafe impl crate::Downcast<ToggleSplitButton> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnToggleSplitButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<ToggleSplitButton> {
+        self.raw
+            .query_interface::<sys::IAvnToggleSplitButton>()
+            .ok()
+            .map(|raw| ToggleSplitButton { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for ToggleSplitButton {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -127392,6 +134085,18 @@ unsafe impl crate::Upcast<StyledElement> for ToggleSplitButton {
 impl AsRef<StyledElement> for ToggleSplitButton {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ToggleSplitButton> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnToggleSplitButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<ToggleSplitButton> {
+        self.raw
+            .query_interface::<sys::IAvnToggleSplitButton>()
+            .ok()
+            .map(|raw| ToggleSplitButton { raw })
     }
 }
 
@@ -127412,6 +134117,18 @@ impl AsRef<Control> for ToggleSplitButton {
     }
 }
 
+unsafe impl crate::Downcast<ToggleSplitButton> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnToggleSplitButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<ToggleSplitButton> {
+        self.raw
+            .query_interface::<sys::IAvnToggleSplitButton>()
+            .ok()
+            .map(|raw| ToggleSplitButton { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for ToggleSplitButton {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -127426,6 +134143,18 @@ unsafe impl crate::Upcast<TemplatedControl> for ToggleSplitButton {
 impl AsRef<TemplatedControl> for ToggleSplitButton {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ToggleSplitButton> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnToggleSplitButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<ToggleSplitButton> {
+        self.raw
+            .query_interface::<sys::IAvnToggleSplitButton>()
+            .ok()
+            .map(|raw| ToggleSplitButton { raw })
     }
 }
 
@@ -127446,6 +134175,18 @@ impl AsRef<ContentControl> for ToggleSplitButton {
     }
 }
 
+unsafe impl crate::Downcast<ToggleSplitButton> for ContentControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnToggleSplitButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<ToggleSplitButton> {
+        self.raw
+            .query_interface::<sys::IAvnToggleSplitButton>()
+            .ok()
+            .map(|raw| ToggleSplitButton { raw })
+    }
+}
+
 unsafe impl crate::Upcast<SplitButton> for ToggleSplitButton {
     fn upcast(&self) -> SplitButton {
         SplitButton {
@@ -127460,6 +134201,18 @@ unsafe impl crate::Upcast<SplitButton> for ToggleSplitButton {
 impl AsRef<SplitButton> for ToggleSplitButton {
     fn as_ref(&self) -> &SplitButton {
         <Self as crate::Upcast<SplitButton>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ToggleSplitButton> for SplitButton {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnToggleSplitButton>().is_ok()
+    }
+    fn downcast(&self) -> Option<ToggleSplitButton> {
+        self.raw
+            .query_interface::<sys::IAvnToggleSplitButton>()
+            .ok()
+            .map(|raw| ToggleSplitButton { raw })
     }
 }
 
@@ -127785,8 +134538,11 @@ impl crate::view::El<ToggleSplitButton> {
             crate::view::apply_prop(control, binding, |c, v| c.set_vertical_content_alignment(v))
         })
     }
-    pub fn command(self, value: Option<sys::ComPtr<sys::IAvnCommand>>) -> Self {
-        self.with_op(move |_, control| control.set_command(value.as_ref()))
+    pub fn command(self, value: impl crate::view::IntoCommandProp + 'static) -> Self {
+        self.with_op(move |_, control| {
+            let cmd = value.into_command_prop();
+            control.set_command(cmd.as_ref())
+        })
     }
     pub fn command_parameter<M>(self, value: impl crate::view::IntoProp<Variant, M> + 'static) -> Self {
         let binding = value.into_prop();
@@ -127989,6 +134745,24 @@ impl ToggleSwitch {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -129014,6 +135788,18 @@ impl AsRef<AvaloniaObject> for ToggleSwitch {
     }
 }
 
+unsafe impl crate::Downcast<ToggleSwitch> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnToggleSwitch>().is_ok()
+    }
+    fn downcast(&self) -> Option<ToggleSwitch> {
+        self.raw
+            .query_interface::<sys::IAvnToggleSwitch>()
+            .ok()
+            .map(|raw| ToggleSwitch { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for ToggleSwitch {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -129028,6 +135814,18 @@ unsafe impl crate::Upcast<StyledElement> for ToggleSwitch {
 impl AsRef<StyledElement> for ToggleSwitch {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ToggleSwitch> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnToggleSwitch>().is_ok()
+    }
+    fn downcast(&self) -> Option<ToggleSwitch> {
+        self.raw
+            .query_interface::<sys::IAvnToggleSwitch>()
+            .ok()
+            .map(|raw| ToggleSwitch { raw })
     }
 }
 
@@ -129048,6 +135846,18 @@ impl AsRef<Control> for ToggleSwitch {
     }
 }
 
+unsafe impl crate::Downcast<ToggleSwitch> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnToggleSwitch>().is_ok()
+    }
+    fn downcast(&self) -> Option<ToggleSwitch> {
+        self.raw
+            .query_interface::<sys::IAvnToggleSwitch>()
+            .ok()
+            .map(|raw| ToggleSwitch { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for ToggleSwitch {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -129062,6 +135872,18 @@ unsafe impl crate::Upcast<TemplatedControl> for ToggleSwitch {
 impl AsRef<TemplatedControl> for ToggleSwitch {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ToggleSwitch> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnToggleSwitch>().is_ok()
+    }
+    fn downcast(&self) -> Option<ToggleSwitch> {
+        self.raw
+            .query_interface::<sys::IAvnToggleSwitch>()
+            .ok()
+            .map(|raw| ToggleSwitch { raw })
     }
 }
 
@@ -129082,6 +135904,18 @@ impl AsRef<ContentControl> for ToggleSwitch {
     }
 }
 
+unsafe impl crate::Downcast<ToggleSwitch> for ContentControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnToggleSwitch>().is_ok()
+    }
+    fn downcast(&self) -> Option<ToggleSwitch> {
+        self.raw
+            .query_interface::<sys::IAvnToggleSwitch>()
+            .ok()
+            .map(|raw| ToggleSwitch { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Button> for ToggleSwitch {
     fn upcast(&self) -> Button {
         Button {
@@ -129099,6 +135933,18 @@ impl AsRef<Button> for ToggleSwitch {
     }
 }
 
+unsafe impl crate::Downcast<ToggleSwitch> for Button {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnToggleSwitch>().is_ok()
+    }
+    fn downcast(&self) -> Option<ToggleSwitch> {
+        self.raw
+            .query_interface::<sys::IAvnToggleSwitch>()
+            .ok()
+            .map(|raw| ToggleSwitch { raw })
+    }
+}
+
 unsafe impl crate::Upcast<ToggleButton> for ToggleSwitch {
     fn upcast(&self) -> ToggleButton {
         ToggleButton {
@@ -129113,6 +135959,18 @@ unsafe impl crate::Upcast<ToggleButton> for ToggleSwitch {
 impl AsRef<ToggleButton> for ToggleSwitch {
     fn as_ref(&self) -> &ToggleButton {
         <Self as crate::Upcast<ToggleButton>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ToggleSwitch> for ToggleButton {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnToggleSwitch>().is_ok()
+    }
+    fn downcast(&self) -> Option<ToggleSwitch> {
+        self.raw
+            .query_interface::<sys::IAvnToggleSwitch>()
+            .ok()
+            .map(|raw| ToggleSwitch { raw })
     }
 }
 
@@ -129444,8 +136302,11 @@ impl crate::view::El<ToggleSwitch> {
             crate::view::apply_prop(control, binding, |c, v| c.set_click_mode(v))
         })
     }
-    pub fn command(self, value: Option<sys::ComPtr<sys::IAvnCommand>>) -> Self {
-        self.with_op(move |_, control| control.set_command(value.as_ref()))
+    pub fn command(self, value: impl crate::view::IntoCommandProp + 'static) -> Self {
+        self.with_op(move |_, control| {
+            let cmd = value.into_command_prop();
+            control.set_command(cmd.as_ref())
+        })
     }
     pub fn hot_key<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
         let binding = value.into_prop();
@@ -129691,6 +136552,24 @@ impl ToolTip {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -130644,6 +137523,18 @@ impl AsRef<AvaloniaObject> for ToolTip {
     }
 }
 
+unsafe impl crate::Downcast<ToolTip> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnToolTip>().is_ok()
+    }
+    fn downcast(&self) -> Option<ToolTip> {
+        self.raw
+            .query_interface::<sys::IAvnToolTip>()
+            .ok()
+            .map(|raw| ToolTip { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for ToolTip {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -130658,6 +137549,18 @@ unsafe impl crate::Upcast<StyledElement> for ToolTip {
 impl AsRef<StyledElement> for ToolTip {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ToolTip> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnToolTip>().is_ok()
+    }
+    fn downcast(&self) -> Option<ToolTip> {
+        self.raw
+            .query_interface::<sys::IAvnToolTip>()
+            .ok()
+            .map(|raw| ToolTip { raw })
     }
 }
 
@@ -130678,6 +137581,18 @@ impl AsRef<Control> for ToolTip {
     }
 }
 
+unsafe impl crate::Downcast<ToolTip> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnToolTip>().is_ok()
+    }
+    fn downcast(&self) -> Option<ToolTip> {
+        self.raw
+            .query_interface::<sys::IAvnToolTip>()
+            .ok()
+            .map(|raw| ToolTip { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for ToolTip {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -130695,6 +137610,18 @@ impl AsRef<TemplatedControl> for ToolTip {
     }
 }
 
+unsafe impl crate::Downcast<ToolTip> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnToolTip>().is_ok()
+    }
+    fn downcast(&self) -> Option<ToolTip> {
+        self.raw
+            .query_interface::<sys::IAvnToolTip>()
+            .ok()
+            .map(|raw| ToolTip { raw })
+    }
+}
+
 unsafe impl crate::Upcast<ContentControl> for ToolTip {
     fn upcast(&self) -> ContentControl {
         ContentControl {
@@ -130709,6 +137636,18 @@ unsafe impl crate::Upcast<ContentControl> for ToolTip {
 impl AsRef<ContentControl> for ToolTip {
     fn as_ref(&self) -> &ContentControl {
         <Self as crate::Upcast<ContentControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<ToolTip> for ContentControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnToolTip>().is_ok()
+    }
+    fn downcast(&self) -> Option<ToolTip> {
+        self.raw
+            .query_interface::<sys::IAvnToolTip>()
+            .ok()
+            .map(|raw| ToolTip { raw })
     }
 }
 
@@ -131202,6 +138141,24 @@ impl TransitioningContentControl {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -132092,6 +139049,18 @@ impl AsRef<AvaloniaObject> for TransitioningContentControl {
     }
 }
 
+unsafe impl crate::Downcast<TransitioningContentControl> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTransitioningContentControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<TransitioningContentControl> {
+        self.raw
+            .query_interface::<sys::IAvnTransitioningContentControl>()
+            .ok()
+            .map(|raw| TransitioningContentControl { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for TransitioningContentControl {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -132106,6 +139075,18 @@ unsafe impl crate::Upcast<StyledElement> for TransitioningContentControl {
 impl AsRef<StyledElement> for TransitioningContentControl {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<TransitioningContentControl> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTransitioningContentControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<TransitioningContentControl> {
+        self.raw
+            .query_interface::<sys::IAvnTransitioningContentControl>()
+            .ok()
+            .map(|raw| TransitioningContentControl { raw })
     }
 }
 
@@ -132126,6 +139107,18 @@ impl AsRef<Control> for TransitioningContentControl {
     }
 }
 
+unsafe impl crate::Downcast<TransitioningContentControl> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTransitioningContentControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<TransitioningContentControl> {
+        self.raw
+            .query_interface::<sys::IAvnTransitioningContentControl>()
+            .ok()
+            .map(|raw| TransitioningContentControl { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for TransitioningContentControl {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -132143,6 +139136,18 @@ impl AsRef<TemplatedControl> for TransitioningContentControl {
     }
 }
 
+unsafe impl crate::Downcast<TransitioningContentControl> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTransitioningContentControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<TransitioningContentControl> {
+        self.raw
+            .query_interface::<sys::IAvnTransitioningContentControl>()
+            .ok()
+            .map(|raw| TransitioningContentControl { raw })
+    }
+}
+
 unsafe impl crate::Upcast<ContentControl> for TransitioningContentControl {
     fn upcast(&self) -> ContentControl {
         ContentControl {
@@ -132157,6 +139162,18 @@ unsafe impl crate::Upcast<ContentControl> for TransitioningContentControl {
 impl AsRef<ContentControl> for TransitioningContentControl {
     fn as_ref(&self) -> &ContentControl {
         <Self as crate::Upcast<ContentControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<TransitioningContentControl> for ContentControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTransitioningContentControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<TransitioningContentControl> {
+        self.raw
+            .query_interface::<sys::IAvnTransitioningContentControl>()
+            .ok()
+            .map(|raw| TransitioningContentControl { raw })
     }
 }
 
@@ -132663,6 +139680,24 @@ impl TrayIcon {
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
     }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
+    }
     pub fn get_command(&self) -> Result<Option<sys::ComPtr<sys::IAvnCommand>>> {
         Ok(self.raw.get_command()?)
     }
@@ -132753,10 +139788,25 @@ impl AsRef<AvaloniaObject> for TrayIcon {
     }
 }
 
+unsafe impl crate::Downcast<TrayIcon> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTrayIcon>().is_ok()
+    }
+    fn downcast(&self) -> Option<TrayIcon> {
+        self.raw
+            .query_interface::<sys::IAvnTrayIcon>()
+            .ok()
+            .map(|raw| TrayIcon { raw })
+    }
+}
+
 
 impl crate::view::El<TrayIcon> {
-    pub fn command(self, value: Option<sys::ComPtr<sys::IAvnCommand>>) -> Self {
-        self.with_op(move |_, control| control.set_command(value.as_ref()))
+    pub fn command(self, value: impl crate::view::IntoCommandProp + 'static) -> Self {
+        self.with_op(move |_, control| {
+            let cmd = value.into_command_prop();
+            control.set_command(cmd.as_ref())
+        })
     }
     pub fn command_parameter<M>(self, value: impl crate::view::IntoProp<Variant, M> + 'static) -> Self {
         let binding = value.into_prop();
@@ -132803,6 +139853,24 @@ impl TreeView {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -133720,6 +140788,18 @@ impl AsRef<AvaloniaObject> for TreeView {
     }
 }
 
+unsafe impl crate::Downcast<TreeView> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTreeView>().is_ok()
+    }
+    fn downcast(&self) -> Option<TreeView> {
+        self.raw
+            .query_interface::<sys::IAvnTreeView>()
+            .ok()
+            .map(|raw| TreeView { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for TreeView {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -133734,6 +140814,18 @@ unsafe impl crate::Upcast<StyledElement> for TreeView {
 impl AsRef<StyledElement> for TreeView {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<TreeView> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTreeView>().is_ok()
+    }
+    fn downcast(&self) -> Option<TreeView> {
+        self.raw
+            .query_interface::<sys::IAvnTreeView>()
+            .ok()
+            .map(|raw| TreeView { raw })
     }
 }
 
@@ -133754,6 +140846,18 @@ impl AsRef<Control> for TreeView {
     }
 }
 
+unsafe impl crate::Downcast<TreeView> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTreeView>().is_ok()
+    }
+    fn downcast(&self) -> Option<TreeView> {
+        self.raw
+            .query_interface::<sys::IAvnTreeView>()
+            .ok()
+            .map(|raw| TreeView { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for TreeView {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -133771,6 +140875,18 @@ impl AsRef<TemplatedControl> for TreeView {
     }
 }
 
+unsafe impl crate::Downcast<TreeView> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTreeView>().is_ok()
+    }
+    fn downcast(&self) -> Option<TreeView> {
+        self.raw
+            .query_interface::<sys::IAvnTreeView>()
+            .ok()
+            .map(|raw| TreeView { raw })
+    }
+}
+
 unsafe impl crate::Upcast<ItemsControl> for TreeView {
     fn upcast(&self) -> ItemsControl {
         ItemsControl {
@@ -133785,6 +140901,18 @@ unsafe impl crate::Upcast<ItemsControl> for TreeView {
 impl AsRef<ItemsControl> for TreeView {
     fn as_ref(&self) -> &ItemsControl {
         <Self as crate::Upcast<ItemsControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<TreeView> for ItemsControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTreeView>().is_ok()
+    }
+    fn downcast(&self) -> Option<TreeView> {
+        self.raw
+            .query_interface::<sys::IAvnTreeView>()
+            .ok()
+            .map(|raw| TreeView { raw })
     }
 }
 
@@ -134300,6 +141428,24 @@ impl TreeViewItem {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -135232,6 +142378,18 @@ impl AsRef<AvaloniaObject> for TreeViewItem {
     }
 }
 
+unsafe impl crate::Downcast<TreeViewItem> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTreeViewItem>().is_ok()
+    }
+    fn downcast(&self) -> Option<TreeViewItem> {
+        self.raw
+            .query_interface::<sys::IAvnTreeViewItem>()
+            .ok()
+            .map(|raw| TreeViewItem { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for TreeViewItem {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -135246,6 +142404,18 @@ unsafe impl crate::Upcast<StyledElement> for TreeViewItem {
 impl AsRef<StyledElement> for TreeViewItem {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<TreeViewItem> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTreeViewItem>().is_ok()
+    }
+    fn downcast(&self) -> Option<TreeViewItem> {
+        self.raw
+            .query_interface::<sys::IAvnTreeViewItem>()
+            .ok()
+            .map(|raw| TreeViewItem { raw })
     }
 }
 
@@ -135266,6 +142436,18 @@ impl AsRef<Control> for TreeViewItem {
     }
 }
 
+unsafe impl crate::Downcast<TreeViewItem> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTreeViewItem>().is_ok()
+    }
+    fn downcast(&self) -> Option<TreeViewItem> {
+        self.raw
+            .query_interface::<sys::IAvnTreeViewItem>()
+            .ok()
+            .map(|raw| TreeViewItem { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for TreeViewItem {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -135280,6 +142462,18 @@ unsafe impl crate::Upcast<TemplatedControl> for TreeViewItem {
 impl AsRef<TemplatedControl> for TreeViewItem {
     fn as_ref(&self) -> &TemplatedControl {
         <Self as crate::Upcast<TemplatedControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<TreeViewItem> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTreeViewItem>().is_ok()
+    }
+    fn downcast(&self) -> Option<TreeViewItem> {
+        self.raw
+            .query_interface::<sys::IAvnTreeViewItem>()
+            .ok()
+            .map(|raw| TreeViewItem { raw })
     }
 }
 
@@ -135300,6 +142494,18 @@ impl AsRef<ItemsControl> for TreeViewItem {
     }
 }
 
+unsafe impl crate::Downcast<TreeViewItem> for ItemsControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTreeViewItem>().is_ok()
+    }
+    fn downcast(&self) -> Option<TreeViewItem> {
+        self.raw
+            .query_interface::<sys::IAvnTreeViewItem>()
+            .ok()
+            .map(|raw| TreeViewItem { raw })
+    }
+}
+
 unsafe impl crate::Upcast<HeaderedItemsControl> for TreeViewItem {
     fn upcast(&self) -> HeaderedItemsControl {
         HeaderedItemsControl {
@@ -135314,6 +142520,18 @@ unsafe impl crate::Upcast<HeaderedItemsControl> for TreeViewItem {
 impl AsRef<HeaderedItemsControl> for TreeViewItem {
     fn as_ref(&self) -> &HeaderedItemsControl {
         <Self as crate::Upcast<HeaderedItemsControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<TreeViewItem> for HeaderedItemsControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnTreeViewItem>().is_ok()
+    }
+    fn downcast(&self) -> Option<TreeViewItem> {
+        self.raw
+            .query_interface::<sys::IAvnTreeViewItem>()
+            .ok()
+            .map(|raw| TreeViewItem { raw })
     }
 }
 
@@ -135838,6 +143056,24 @@ impl UserControl {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -136709,6 +143945,18 @@ impl AsRef<AvaloniaObject> for UserControl {
     }
 }
 
+unsafe impl crate::Downcast<UserControl> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnUserControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<UserControl> {
+        self.raw
+            .query_interface::<sys::IAvnUserControl>()
+            .ok()
+            .map(|raw| UserControl { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for UserControl {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -136723,6 +143971,18 @@ unsafe impl crate::Upcast<StyledElement> for UserControl {
 impl AsRef<StyledElement> for UserControl {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<UserControl> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnUserControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<UserControl> {
+        self.raw
+            .query_interface::<sys::IAvnUserControl>()
+            .ok()
+            .map(|raw| UserControl { raw })
     }
 }
 
@@ -136743,6 +144003,18 @@ impl AsRef<Control> for UserControl {
     }
 }
 
+unsafe impl crate::Downcast<UserControl> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnUserControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<UserControl> {
+        self.raw
+            .query_interface::<sys::IAvnUserControl>()
+            .ok()
+            .map(|raw| UserControl { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for UserControl {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -136760,6 +144032,18 @@ impl AsRef<TemplatedControl> for UserControl {
     }
 }
 
+unsafe impl crate::Downcast<UserControl> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnUserControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<UserControl> {
+        self.raw
+            .query_interface::<sys::IAvnUserControl>()
+            .ok()
+            .map(|raw| UserControl { raw })
+    }
+}
+
 unsafe impl crate::Upcast<ContentControl> for UserControl {
     fn upcast(&self) -> ContentControl {
         ContentControl {
@@ -136774,6 +144058,18 @@ unsafe impl crate::Upcast<ContentControl> for UserControl {
 impl AsRef<ContentControl> for UserControl {
     fn as_ref(&self) -> &ContentControl {
         <Self as crate::Upcast<ContentControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<UserControl> for ContentControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnUserControl>().is_ok()
+    }
+    fn downcast(&self) -> Option<UserControl> {
+        self.raw
+            .query_interface::<sys::IAvnUserControl>()
+            .ok()
+            .map(|raw| UserControl { raw })
     }
 }
 
@@ -137267,6 +144563,24 @@ impl Viewbox {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -137975,6 +145289,18 @@ impl AsRef<AvaloniaObject> for Viewbox {
     }
 }
 
+unsafe impl crate::Downcast<Viewbox> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnViewbox>().is_ok()
+    }
+    fn downcast(&self) -> Option<Viewbox> {
+        self.raw
+            .query_interface::<sys::IAvnViewbox>()
+            .ok()
+            .map(|raw| Viewbox { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for Viewbox {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -137992,6 +145318,18 @@ impl AsRef<StyledElement> for Viewbox {
     }
 }
 
+unsafe impl crate::Downcast<Viewbox> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnViewbox>().is_ok()
+    }
+    fn downcast(&self) -> Option<Viewbox> {
+        self.raw
+            .query_interface::<sys::IAvnViewbox>()
+            .ok()
+            .map(|raw| Viewbox { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Control> for Viewbox {
     fn upcast(&self) -> Control {
         Control {
@@ -138006,6 +145344,18 @@ unsafe impl crate::Upcast<Control> for Viewbox {
 impl AsRef<Control> for Viewbox {
     fn as_ref(&self) -> &Control {
         <Self as crate::Upcast<Control>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Viewbox> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnViewbox>().is_ok()
+    }
+    fn downcast(&self) -> Option<Viewbox> {
+        self.raw
+            .query_interface::<sys::IAvnViewbox>()
+            .ok()
+            .map(|raw| Viewbox { raw })
     }
 }
 
@@ -138412,6 +145762,24 @@ impl Window {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -139447,6 +146815,18 @@ impl AsRef<AvaloniaObject> for Window {
     }
 }
 
+unsafe impl crate::Downcast<Window> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnWindow>().is_ok()
+    }
+    fn downcast(&self) -> Option<Window> {
+        self.raw
+            .query_interface::<sys::IAvnWindow>()
+            .ok()
+            .map(|raw| Window { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for Window {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -139461,6 +146841,18 @@ unsafe impl crate::Upcast<StyledElement> for Window {
 impl AsRef<StyledElement> for Window {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Window> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnWindow>().is_ok()
+    }
+    fn downcast(&self) -> Option<Window> {
+        self.raw
+            .query_interface::<sys::IAvnWindow>()
+            .ok()
+            .map(|raw| Window { raw })
     }
 }
 
@@ -139481,6 +146873,18 @@ impl AsRef<Control> for Window {
     }
 }
 
+unsafe impl crate::Downcast<Window> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnWindow>().is_ok()
+    }
+    fn downcast(&self) -> Option<Window> {
+        self.raw
+            .query_interface::<sys::IAvnWindow>()
+            .ok()
+            .map(|raw| Window { raw })
+    }
+}
+
 unsafe impl crate::Upcast<TemplatedControl> for Window {
     fn upcast(&self) -> TemplatedControl {
         TemplatedControl {
@@ -139498,6 +146902,18 @@ impl AsRef<TemplatedControl> for Window {
     }
 }
 
+unsafe impl crate::Downcast<Window> for TemplatedControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnWindow>().is_ok()
+    }
+    fn downcast(&self) -> Option<Window> {
+        self.raw
+            .query_interface::<sys::IAvnWindow>()
+            .ok()
+            .map(|raw| Window { raw })
+    }
+}
+
 unsafe impl crate::Upcast<ContentControl> for Window {
     fn upcast(&self) -> ContentControl {
         ContentControl {
@@ -139512,6 +146928,18 @@ unsafe impl crate::Upcast<ContentControl> for Window {
 impl AsRef<ContentControl> for Window {
     fn as_ref(&self) -> &ContentControl {
         <Self as crate::Upcast<ContentControl>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<Window> for ContentControl {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnWindow>().is_ok()
+    }
+    fn downcast(&self) -> Option<Window> {
+        self.raw
+            .query_interface::<sys::IAvnWindow>()
+            .ok()
+            .map(|raw| Window { raw })
     }
 }
 
@@ -140101,6 +147529,24 @@ impl WrapPanel {
     }
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
     }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
@@ -140848,6 +148294,18 @@ impl AsRef<AvaloniaObject> for WrapPanel {
     }
 }
 
+unsafe impl crate::Downcast<WrapPanel> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnWrapPanel>().is_ok()
+    }
+    fn downcast(&self) -> Option<WrapPanel> {
+        self.raw
+            .query_interface::<sys::IAvnWrapPanel>()
+            .ok()
+            .map(|raw| WrapPanel { raw })
+    }
+}
+
 unsafe impl crate::Upcast<StyledElement> for WrapPanel {
     fn upcast(&self) -> StyledElement {
         StyledElement {
@@ -140862,6 +148320,18 @@ unsafe impl crate::Upcast<StyledElement> for WrapPanel {
 impl AsRef<StyledElement> for WrapPanel {
     fn as_ref(&self) -> &StyledElement {
         <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<WrapPanel> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnWrapPanel>().is_ok()
+    }
+    fn downcast(&self) -> Option<WrapPanel> {
+        self.raw
+            .query_interface::<sys::IAvnWrapPanel>()
+            .ok()
+            .map(|raw| WrapPanel { raw })
     }
 }
 
@@ -140882,6 +148352,18 @@ impl AsRef<Control> for WrapPanel {
     }
 }
 
+unsafe impl crate::Downcast<WrapPanel> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnWrapPanel>().is_ok()
+    }
+    fn downcast(&self) -> Option<WrapPanel> {
+        self.raw
+            .query_interface::<sys::IAvnWrapPanel>()
+            .ok()
+            .map(|raw| WrapPanel { raw })
+    }
+}
+
 unsafe impl crate::Upcast<Panel> for WrapPanel {
     fn upcast(&self) -> Panel {
         Panel {
@@ -140896,6 +148378,18 @@ unsafe impl crate::Upcast<Panel> for WrapPanel {
 impl AsRef<Panel> for WrapPanel {
     fn as_ref(&self) -> &Panel {
         <Self as crate::Upcast<Panel>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<WrapPanel> for Panel {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnWrapPanel>().is_ok()
+    }
+    fn downcast(&self) -> Option<WrapPanel> {
+        self.raw
+            .query_interface::<sys::IAvnWrapPanel>()
+            .ok()
+            .map(|raw| WrapPanel { raw })
     }
 }
 
@@ -141343,6 +148837,24 @@ impl StyledElement {
     pub fn el() -> crate::view::El<Self> {
         crate::view::El::new(Self::new)
     }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
+    }
     pub fn get_name(&self) -> Result<Option<String>> {
         unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
     }
@@ -141479,6 +148991,18 @@ unsafe impl crate::Upcast<AvaloniaObject> for StyledElement {
 impl AsRef<AvaloniaObject> for StyledElement {
     fn as_ref(&self) -> &AvaloniaObject {
         <Self as crate::Upcast<AvaloniaObject>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<StyledElement> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnStyledElement>().is_ok()
+    }
+    fn downcast(&self) -> Option<StyledElement> {
+        self.raw
+            .query_interface::<sys::IAvnStyledElement>()
+            .ok()
+            .map(|raw| StyledElement { raw })
     }
 }
 
