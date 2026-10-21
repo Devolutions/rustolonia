@@ -25,6 +25,34 @@ if (args.Length == 2 && args[0] == "--normalize")
     return 0;
 }
 
+if (args.Length == 3 && args[0] == "--scan-rust")
+{
+    var sourcePath = Path.GetFullPath(args[1]);
+    var irFile = Path.GetFullPath(args[2]);
+    var baseline = File.Exists(irFile) ? ViewModelIr.FromJson(File.ReadAllText(irFile)) : null;
+    var scanned = ViewModelRustScanner.ScanFileOrDirectory(sourcePath, baseline);
+    var json = scanned.ToJson().Replace(Environment.NewLine, "\n") + "\n";
+    if (checkMode)
+    {
+        if (!File.Exists(irFile))
+        {
+            Console.Error.WriteLine($"Missing view-model IR file: {irFile}");
+            return 1;
+        }
+        var current = File.ReadAllText(irFile).Replace("\r\n", "\n");
+        if (!string.Equals(current, json, StringComparison.Ordinal))
+        {
+            Console.Error.WriteLine($"View-model IR file is out of sync with Rust source: {irFile}");
+            return 1;
+        }
+        Console.WriteLine($"View-model IR scan check passed for {irFile}.");
+        return 0;
+    }
+    File.WriteAllText(irFile, json);
+    Console.WriteLine($"Scanned Rust view models into {irFile}.");
+    return 0;
+}
+
 var externalRust = args.Length == 6 && args[5] == "--external-rust";
 if (args.Length != 5 && !externalRust)
 {
@@ -32,6 +60,8 @@ if (args.Length != 5 && !externalRust)
         "Usage: Avalonia.ViewModelProjection.Tool [--check] <view-model-ir> <adapter-output-directory> <registry-output-directory> <rust-output> <contract-output> [--external-rust]");
     Console.Error.WriteLine(
         "       Avalonia.ViewModelProjection.Tool --normalize <view-model-ir>");
+    Console.Error.WriteLine(
+        "       Avalonia.ViewModelProjection.Tool [--check] --scan-rust <rust-source-path> <view-model-ir>");
     return 2;
 }
 

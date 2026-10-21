@@ -38,6 +38,7 @@ unsafe impl ComInterface for IUnknown {
     const IID: Guid = Guid::IUNKNOWN;
 }
 
+#[repr(C)]
 pub struct ComPtr<T: ComInterface> {
     ptr: NonNull<T>,
     lifetime: Option<NonNull<IUnknown>>,
@@ -104,6 +105,28 @@ impl<T: ComInterface> ComPtr<T> {
 
     pub fn as_iunknown(&self) -> Result<ComPtr<IUnknown>> {
         self.query_interface::<IUnknown>()
+    }
+
+    /// Reinterprets a borrowed `ComPtr<T>` as `&ComPtr<U>` when `T`'s vtable starts
+    /// with `U`'s vtable.
+    ///
+    /// # Safety
+    /// `T` must be a single-inheritance subtype of `U` with a prefix-compatible vtable.
+    pub unsafe fn cast_ref<U: ComInterface>(&self) -> &ComPtr<U> {
+        unsafe { &*(self as *const ComPtr<T> as *const ComPtr<U>) }
+    }
+
+    /// Clones this pointer and reinterprets it as `ComPtr<U>` without an FFI `QueryInterface` call.
+    ///
+    /// # Safety
+    /// `T` must be a single-inheritance subtype of `U` with a prefix-compatible vtable.
+    pub unsafe fn cast_clone<U: ComInterface>(&self) -> ComPtr<U> {
+        self.add_ref();
+        ComPtr {
+            ptr: self.ptr.cast(),
+            lifetime: self.clone_lifetime(),
+            _marker: PhantomData,
+        }
     }
 
     fn clone_lifetime(&self) -> Option<NonNull<IUnknown>> {

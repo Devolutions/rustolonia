@@ -11,6 +11,12 @@ fn main() -> ExitCode {
     {
         return write_baseline(&args[2..]);
     }
+    if args
+        .get(1)
+        .is_some_and(|argument| argument == "--compile-axaml")
+    {
+        return compile_axaml_cli(&args[2..]);
+    }
     let check = args.get(1).is_some_and(|argument| argument == "--check");
     let positional: Vec<_> = if check {
         args[2..].to_vec()
@@ -127,6 +133,42 @@ fn write_baseline(args: &[std::ffi::OsString]) -> ExitCode {
         }
         Err(error) => {
             eprintln!("Failed to regenerate ABI baseline: {error}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+fn compile_axaml_cli(args: &[std::ffi::OsString]) -> ExitCode {
+    if args.len() != 3 {
+        eprintln!(
+            "Usage: rustolonia-bindgen --compile-axaml <projection.ir.json> <input.axaml> <output.rs>"
+        );
+        return ExitCode::from(2);
+    }
+    let ir_json = match fs::read_to_string(&args[0]) {
+        Ok(value) => value,
+        Err(error) => {
+            eprintln!("Failed to read projection IR: {error}");
+            return ExitCode::FAILURE;
+        }
+    };
+    let axaml = match fs::read_to_string(&args[1]) {
+        Ok(value) => value,
+        Err(error) => {
+            eprintln!("Failed to read AXAML file: {error}");
+            return ExitCode::FAILURE;
+        }
+    };
+    match rustolonia_bindgen::compile_axaml_from_json(&ir_json, &axaml) {
+        Ok(rust_source) => {
+            if let Err(error) = fs::write(&args[2], rust_source) {
+                eprintln!("Failed to write compiled AXAML Rust output: {error}");
+                return ExitCode::FAILURE;
+            }
+            ExitCode::SUCCESS
+        }
+        Err(error) => {
+            eprintln!("Failed to compile AXAML: {error}");
             ExitCode::FAILURE
         }
     }

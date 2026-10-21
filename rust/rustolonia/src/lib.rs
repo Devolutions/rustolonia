@@ -4,9 +4,11 @@ mod async_runtime;
 pub mod clipboard;
 pub mod data_shapes;
 pub mod menu;
+pub mod reactive;
 mod runtime;
 pub mod storage;
 pub mod value_converter;
+pub mod view;
 pub mod view_model;
 
 pub use async_runtime::{AsyncOperation, AsyncValue};
@@ -14,9 +16,13 @@ pub use clipboard::{ClipboardCapabilities, ClipboardData, ClipboardFilesOperatio
 pub use data_shapes::{CancellationToken, MapKey, RangeBatch, RangeRequest};
 pub use generated::*;
 pub use menu::{RecentFileList, RecentFilesChange};
+pub use reactive::{
+    provide_context, use_context, Effect, Memo, NodeRef, ReactiveScope, Resource, ResourceState,
+    Signal, TwoWay,
+};
 pub use runtime::{
-    discover_host_path, App, AppContext, AppScope, AsControl, EventSubscription, ResourceValue,
-    ThemeVariant, HOST_NATIVE_LIB_ENV_VAR,
+    discover_host_path, App, AppContext, AppScope, AsControl, Downcast, EventSubscription,
+    NonOwningRef, ResourceValue, ThemeVariant, Upcast, HOST_NATIVE_LIB_ENV_VAR,
 };
 pub use storage::{
     ActivationEvent, DragDropEffects, FileDropEvent, FileTypeFilter, FolderPickerOptions,
@@ -24,6 +30,10 @@ pub use storage::{
     StorageItemKind, StorageLocation, StoragePickerOperation, WellKnownFolder,
 };
 pub use value_converter::{ConversionDirection, ScalarKind, ScalarValue};
+pub use view::{
+    data_template_reactive, theme_brush, AnyEl, Command, ControlSlot, El, For, IntoChildEl,
+    IntoCommandProp, IntoContentEl, IntoProp, IntoValue, KeyedListReconciler, PropBinding, Show,
+};
 
 /// Builds a data template from Rust closures, wrapping the sys-level CCW in
 /// the safe `DataTemplate` type the template setters accept.

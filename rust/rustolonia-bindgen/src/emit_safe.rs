@@ -45,6 +45,16 @@ pub(crate) fn emit_safe_module(ir: &ProjectionIr) -> String {
          \x20   pub(crate) fn to_abi(self) -> sys::AvnPixelPoint {\n\
          \x20       sys::AvnPixelPoint { x: self.x, y: self.y }\n\
          \x20   }\n\
+         }\n\n\
+         impl From<(i32, i32)> for PixelPoint {\n\
+         \x20   fn from((x, y): (i32, i32)) -> Self {\n\
+         \x20       Self::new(x, y)\n\
+         \x20   }\n\
+         }\n\n\
+         impl From<[i32; 2]> for PixelPoint {\n\
+         \x20   fn from([x, y]: [i32; 2]) -> Self {\n\
+         \x20       Self::new(x, y)\n\
+         \x20   }\n\
          }\n\n",
     );
     if ir
@@ -196,6 +206,16 @@ fn emit_brush() -> String {
          impl From<Color> for Brush {\n\
          \x20   fn from(color: Color) -> Self {\n\
          \x20       Self::solid(color)\n\
+         \x20   }\n\
+         }\n\n\
+         impl From<(u8, u8, u8)> for Brush {\n\
+         \x20   fn from((r, g, b): (u8, u8, u8)) -> Self {\n\
+         \x20       Self::solid(Color::rgb(r, g, b))\n\
+         \x20   }\n\
+         }\n\n\
+         impl From<(u8, u8, u8, u8)> for Brush {\n\
+         \x20   fn from((a, r, g, b): (u8, u8, u8, u8)) -> Self {\n\
+         \x20       Self::solid(Color::new(a, r, g, b))\n\
          \x20   }\n\
          }\n\n",
     )
@@ -458,6 +478,16 @@ fn emit_gradient_brush() -> String {
          \x20       Self::Solid(Brush::solid(color))\n\
          \x20   }\n\
          }\n\n\
+         impl From<(u8, u8, u8)> for Paint {\n\
+         \x20   fn from((r, g, b): (u8, u8, u8)) -> Self {\n\
+         \x20       Self::Solid(Brush::solid(Color::rgb(r, g, b)))\n\
+         \x20   }\n\
+         }\n\n\
+         impl From<(u8, u8, u8, u8)> for Paint {\n\
+         \x20   fn from((a, r, g, b): (u8, u8, u8, u8)) -> Self {\n\
+         \x20       Self::Solid(Brush::solid(Color::new(a, r, g, b)))\n\
+         \x20   }\n\
+         }\n\n\
          impl From<LinearGradientBrush> for Paint {\n\
          \x20   fn from(brush: LinearGradientBrush) -> Self {\n\
          \x20       Self::LinearGradient(brush)\n\
@@ -579,8 +609,13 @@ fn emit_type(
     flags_enums: &std::collections::HashSet<&str>,
 ) -> String {
     let safe_name = interface_suffix(&ty.name);
+    let has_text_block = ir
+        .types
+        .iter()
+        .any(|candidate| candidate.name == "IAvnTextBlock" && candidate.is_constructible);
     let mut out = format!(
-        "#[derive(Clone, Debug)]\n\
+        "#[repr(transparent)]\n\
+         #[derive(Clone, Debug)]\n\
          pub struct {safe_name} {{\n\
          \x20   pub(crate) raw: sys::ComPtr<sys::{interface_name}>,\n\
          }}\n\n\
@@ -596,6 +631,35 @@ fn emit_type(
              \x20   }}\n",
             factory_name = to_snake(safe_name)
         ));
+        if has_text_block {
+            out.push_str(
+                "    pub fn el() -> crate::view::El<Self> {\n\
+                 \x20       crate::view::El::new(Self::new)\n\
+                 \x20   }\n",
+            );
+        }
+    }
+    if has_text_block {
+        out.push_str(
+            "    pub fn object_id(&self) -> Result<i64> {\n\
+             \x20       Ok(self.raw.object_id()?)\n\
+             \x20   }\n\
+             \x20   pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {\n\
+             \x20       Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)\n\
+             \x20   }\n\
+             \x20   pub fn is<Target>(&self) -> bool\n\
+             \x20   where\n\
+             \x20       Self: crate::Downcast<Target>,\n\
+             \x20   {\n\
+             \x20       <Self as crate::Downcast<Target>>::is_instance(self)\n\
+             \x20   }\n\
+             \x20   pub fn cast<Target>(&self) -> Option<Target>\n\
+             \x20   where\n\
+             \x20       Self: crate::Downcast<Target>,\n\
+             \x20   {\n\
+             \x20       <Self as crate::Downcast<Target>>::downcast(self)\n\
+             \x20   }\n",
+        );
     }
 
     let reserved_methods: std::collections::HashSet<String> = lineage(ir, ty)
@@ -621,6 +685,35 @@ fn emit_type(
                       \x20   }\n",
                 );
             }
+            if has_text_block
+                && property.can_write
+                && property.kind == "ComInterface"
+                && property.interface_name.as_deref().map(simple_name) == Some("IAvnControl")
+            {
+                if property.name == "Content" {
+                    out.push_str(
+                        "    pub fn set_content_text(&self, value: impl AsRef<str>) -> Result<()> {\n\
+                         \x20       let text_block = TextBlock::new()?.text(value)?;\n\
+                         \x20       self.set_content(Some(&text_block))\n\
+                         \x20   }\n\
+                         \x20   pub fn content_text(self, value: impl AsRef<str>) -> Result<Self> {\n\
+                         \x20       self.set_content_text(value)?;\n\
+                         \x20       Ok(self)\n\
+                         \x20   }\n",
+                    );
+                } else if property.name == "Header" {
+                    out.push_str(
+                        "    pub fn set_header_text(&self, value: impl AsRef<str>) -> Result<()> {\n\
+                         \x20       let text_block = TextBlock::new()?.text(value)?;\n\
+                         \x20       self.set_header(Some(&text_block))\n\
+                         \x20   }\n\
+                         \x20   pub fn header_text(self, value: impl AsRef<str>) -> Result<Self> {\n\
+                         \x20       self.set_header_text(value)?;\n\
+                         \x20       Ok(self)\n\
+                         \x20   }\n",
+                    );
+                }
+            }
         }
         for method in &owner.methods {
             out.push_str(&emit_method(ty, method));
@@ -636,16 +729,164 @@ fn emit_type(
     {
         out.push_str(&emit_attached_property(property, ir));
     }
+    if is_control(ir, ty) {
+        for property in &ir.attached_properties {
+            out.push_str(&emit_inline_attached_property(property, ir));
+        }
+    }
     out.push_str("}\n\n");
 
-    if is_control(ir, ty) {
+    if let Some(base_full_name) = &ty.base_full_name {
+        let parent = ir
+            .types
+            .iter()
+            .find(|candidate| &candidate.full_name == base_full_name)
+            .expect("base type must be present in projection IR");
+        let parent_safe = interface_suffix(&parent.name);
         out.push_str(&format!(
-            "impl AsControl for {safe_name} {{\n\
-             \x20   fn as_control(&self) -> Result<sys::ComPtr<sys::IAvnControl>> {{\n\
-             \x20       Ok(self.raw.query_interface()?)\n\
+            "impl std::ops::Deref for {safe_name} {{\n\
+             \x20   type Target = {parent_safe};\n\
+             \x20   fn deref(&self) -> &Self::Target {{\n\
+             \x20       unsafe {{ &*(self as *const Self as *const Self::Target) }}\n\
              \x20   }}\n\
-             }}\n"
+             }}\n\n"
         ));
+    }
+
+    for ancestor in lineage(ir, ty) {
+        if ancestor.full_name == ty.full_name {
+            continue;
+        }
+        let ancestor_safe = interface_suffix(&ancestor.name);
+        out.push_str(&format!(
+            "unsafe impl crate::Upcast<{ancestor_safe}> for {safe_name} {{\n\
+             \x20   fn upcast(&self) -> {ancestor_safe} {{\n\
+             \x20       {ancestor_safe} {{\n\
+             \x20           raw: unsafe {{ self.raw.cast_clone() }},\n\
+             \x20       }}\n\
+             \x20   }}\n\
+             \x20   fn upcast_ref(&self) -> &{ancestor_safe} {{\n\
+             \x20       unsafe {{ &*(self as *const Self as *const {ancestor_safe}) }}\n\
+             \x20   }}\n\
+             }}\n\n\
+             impl AsRef<{ancestor_safe}> for {safe_name} {{\n\
+             \x20   fn as_ref(&self) -> &{ancestor_safe} {{\n\
+             \x20       <Self as crate::Upcast<{ancestor_safe}>>::upcast_ref(self)\n\
+             \x20   }}\n\
+             }}\n\n\
+             unsafe impl crate::Downcast<{safe_name}> for {ancestor_safe} {{\n\
+             \x20   fn is_instance(&self) -> bool {{\n\
+             \x20       self.raw.query_interface::<sys::{interface_name}>().is_ok()\n\
+             \x20   }}\n\
+             \x20   fn downcast(&self) -> Option<{safe_name}> {{\n\
+             \x20       self.raw\n\
+             \x20           .query_interface::<sys::{interface_name}>()\n\
+             \x20           .ok()\n\
+             \x20           .map(|raw| {safe_name} {{ raw }})\n\
+             \x20   }}\n\
+             }}\n\n",
+            interface_name = ty.name
+        ));
+    }
+
+    if is_control(ir, ty) {
+        if safe_name == "Control" {
+            out.push_str(
+                "impl AsControl for Control {\n\
+                 \x20   fn as_control(&self) -> Result<sys::ComPtr<sys::IAvnControl>> {\n\
+                 \x20       Ok(self.raw.clone())\n\
+                 \x20   }\n\
+                 }\n",
+            );
+        } else {
+            out.push_str(&format!(
+                "impl AsControl for {safe_name} {{\n\
+                 \x20   fn as_control(&self) -> Result<sys::ComPtr<sys::IAvnControl>> {{\n\
+                 \x20       Ok(self.raw.query_interface()?)\n\
+                 \x20   }}\n\
+                 }}\n"
+            ));
+        }
+    }
+
+    if ty.is_constructible && has_text_block {
+        out.push('\n');
+        out.push_str(&emit_el_type(ir, ty, &reserved_methods, flags_enums));
+    }
+
+    fn emit_inline_attached_property(
+        property: &crate::ir::ProjectedAttachedProperty,
+        ir: &ProjectionIr,
+    ) -> String {
+        let owner_type = &property.owner_name;
+        let owner = to_snake(owner_type);
+        let name = to_snake(&property.name);
+        if property.kind == "StringUtf16" {
+            let get_type = if property.is_nullable {
+                "Option<String>"
+            } else {
+                "String"
+            };
+            return format!(
+                "    pub fn get_{owner}_{name}(&self) -> Result<{get_type}> {{\n\
+                 \x20       {owner_type}::get_{name}(self)\n\
+                 \x20   }}\n\
+                 \x20   pub fn set_{owner}_{name}(&self, value: impl AsRef<str>) -> Result<()> {{\n\
+                 \x20       {owner_type}::set_{name}(self, value)\n\
+                 \x20   }}\n\
+                 \x20   pub fn {owner}_{name}(self, value: impl AsRef<str>) -> Result<Self> {{\n\
+                 \x20       {owner_type}::set_{name}(&self, value)?;\n\
+                 \x20       Ok(self)\n\
+                 \x20   }}\n"
+            );
+        }
+        let enum_name = simple_name(&property.managed_type_name);
+        let is_enum = ir
+            .enums
+            .iter()
+            .any(|projected_enum| projected_enum.full_name == property.managed_type_name);
+        let (get_type, set_arg, set_forward) = if is_enum {
+            (
+                enum_name.to_string(),
+                enum_name.to_string(),
+                "value".to_string(),
+            )
+        } else if property.kind == "TimeSpanI64" {
+            (
+                "std::time::Duration".to_string(),
+                "std::time::Duration".to_string(),
+                "value".to_string(),
+            )
+        } else if let Some(geometry) = geometry::find(&property.kind) {
+            if property.is_nullable {
+                (
+                    format!("Option<{}>", geometry.safe_name),
+                    format!("impl Into<Option<{}>>", geometry.safe_name),
+                    "value.into()".to_string(),
+                )
+            } else {
+                (
+                    geometry.safe_name.to_string(),
+                    format!("impl Into<{}>", geometry.safe_name),
+                    "value.into()".to_string(),
+                )
+            }
+        } else {
+            let scalar = rust_scalar_kind(&property.kind).to_string();
+            (scalar.clone(), scalar, "value".to_string())
+        };
+        format!(
+            "    pub fn get_{owner}_{name}(&self) -> Result<{get_type}> {{\n\
+             \x20       {owner_type}::get_{name}(self)\n\
+             \x20   }}\n\
+             \x20   pub fn set_{owner}_{name}(&self, value: {set_arg}) -> Result<()> {{\n\
+             \x20       {owner_type}::set_{name}(self, {set_forward})\n\
+             \x20   }}\n\
+             \x20   pub fn {owner}_{name}(self, value: {set_arg}) -> Result<Self> {{\n\
+             \x20       {owner_type}::set_{name}(&self, {set_forward})?;\n\
+             \x20       Ok(self)\n\
+             \x20   }}\n"
+        )
     }
 
     fn emit_attached_property(
@@ -739,6 +980,377 @@ fn emit_type(
              \x20   }}\n"
         )
     }
+    out
+}
+
+fn emit_el_type(
+    ir: &ProjectionIr,
+    ty: &ProjectedType,
+    reserved_methods: &std::collections::HashSet<String>,
+    flags_enums: &std::collections::HashSet<&str>,
+) -> String {
+    let safe_name = interface_suffix(&ty.name);
+    let mut out = format!("impl crate::view::El<{safe_name}> {{\n");
+    let all_events: Vec<&ProjectedEvent> = lineage(ir, ty)
+        .into_iter()
+        .flat_map(|owner| owner.events.iter())
+        .collect();
+    let has_event = |name: &str| all_events.iter().any(|event| event.name == name);
+    let all_props: Vec<&ProjectedProperty> = lineage(ir, ty)
+        .into_iter()
+        .flat_map(|owner| owner.properties.iter())
+        .collect();
+
+    for owner in lineage(ir, ty) {
+        for property in &owner.properties {
+            let snake = to_snake(&property.name);
+            let builder = if property.kind == "Bool" || property.kind == "NullableBool" {
+                match snake.strip_prefix("is_") {
+                    Some(stripped) if !reserved_methods.contains(stripped) => stripped,
+                    _ => snake.as_str(),
+                }
+            } else {
+                snake.as_str()
+            };
+
+            if property.kind == "ComCollection" && property.name == "Children" {
+                out.push_str(
+                    "    pub fn child(self, value: impl crate::view::IntoChildEl + 'static) -> Self {\n\
+                     \x20       self.with_op(move |scope, control| {\n\
+                     \x20           let built = value.into_child_el().build(scope)?;\n\
+                     \x20           control.children()?.add(built)\n\
+                     \x20       })\n\
+                     \x20   }\n\
+                     \x20   pub fn children_iter<I, C>(mut self, children: I) -> Self\n\
+                     \x20   where\n\
+                     \x20       I: IntoIterator<Item = C>,\n\
+                     \x20       C: crate::view::IntoChildEl + 'static,\n\
+                     \x20   {\n\
+                     \x20       for child in children {\n\
+                     \x20           self = self.child(child);\n\
+                     \x20       }\n\
+                     \x20       self\n\
+                     \x20   }\n",
+                );
+            }
+            if property.kind == "ComCollection" && property.name == "Items" {
+                out.push_str(
+                    "    pub fn item(self, value: impl crate::view::IntoChildEl + 'static) -> Self {\n\
+                     \x20       self.with_op(move |scope, control| {\n\
+                     \x20           let built = value.into_child_el().build(scope)?;\n\
+                     \x20           control.items()?.add(built)\n\
+                     \x20       })\n\
+                     \x20   }\n\
+                     \x20   pub fn items_iter<I, C>(mut self, items: I) -> Self\n\
+                     \x20   where\n\
+                     \x20       I: IntoIterator<Item = C>,\n\
+                     \x20       C: crate::view::IntoChildEl + 'static,\n\
+                     \x20   {\n\
+                     \x20       for item in items {\n\
+                     \x20           self = self.item(item);\n\
+                     \x20       }\n\
+                     \x20       self\n\
+                     \x20   }\n",
+                );
+            }
+
+            if !property.can_write {
+                continue;
+            }
+
+            match property.kind.as_str() {
+                "ComInterface" => {
+                    let safe = interface_suffix(simple_name(
+                        property.interface_name.as_deref().expect("interfaceName"),
+                    ));
+                    if safe == "Control" {
+                        if property.is_nullable {
+                            out.push_str(&format!(
+                                "    pub fn {builder}(self, value: impl crate::view::IntoContentEl + 'static) -> Self {{\n\
+                                 \x20       self.with_op(move |scope, control| {{\n\
+                                 \x20           let built = value.into_content_el().map(|el| el.build(scope)).transpose()?;\n\
+                                 \x20           control.set_{builder}(built.as_ref().map(|c| c as &dyn AsControl))\n\
+                                 \x20       }})\n\
+                                 \x20   }}\n"
+                            ));
+                        } else {
+                            out.push_str(&format!(
+                                "    pub fn {builder}(self, value: impl crate::view::IntoChildEl + 'static) -> Self {{\n\
+                                 \x20       self.with_op(move |scope, control| {{\n\
+                                 \x20           let built = value.into_child_el().build(scope)?;\n\
+                                 \x20           control.set_{builder}(built)\n\
+                                 \x20       }})\n\
+                                 \x20   }}\n"
+                            ));
+                        }
+                    } else if property.is_nullable {
+                        out.push_str(&format!(
+                            "    pub fn {builder}(self, value: Option<{safe}>) -> Self {{\n\
+                             \x20       self.with_op(move |_, control| control.set_{builder}(value.as_ref()))\n\
+                             \x20   }}\n"
+                        ));
+                    } else {
+                        out.push_str(&format!(
+                            "    pub fn {builder}(self, value: {safe}) -> Self {{\n\
+                             \x20       self.with_op(move |_, control| control.set_{builder}(&value))\n\
+                             \x20   }}\n"
+                        ));
+                    }
+                }
+                "ComCollection" => {}
+                "DataTemplate" => {
+                    out.push_str(&format!(
+                        "    pub fn {builder}(self, value: Option<DataTemplate>) -> Self {{\n\
+                         \x20       self.with_op(move |_, control| control.set_{builder}(value.as_ref()))\n\
+                         \x20   }}\n"
+                    ));
+                }
+                "Command" => {
+                    out.push_str(&format!(
+                        "    pub fn {builder}(self, value: impl crate::view::IntoCommandProp + 'static) -> Self {{\n\
+                         \x20       self.with_op(move |_, control| {{\n\
+                         \x20           let cmd = value.into_command_prop();\n\
+                         \x20           control.set_{builder}(cmd.as_ref())\n\
+                         \x20       }})\n\
+                         \x20   }}\n"
+                    ));
+                }
+                "ItemFilter" | "TextFilter" | "ItemSelector" | "TextSelector"
+                | "PopupPlacement" | "AsyncPopulator" => {
+                    let full =
+                        simple_name(property.interface_name.as_deref().expect("interfaceName"));
+                    out.push_str(&format!(
+                        "    pub fn {builder}(self, value: Option<sys::ComPtr<sys::{full}>>) -> Self {{\n\
+                         \x20       self.with_op(move |_, control| control.set_{builder}(value.as_ref()))\n\
+                         \x20   }}\n"
+                    ));
+                }
+                _ => {
+                    let prop_type = if property.kind == "StringUtf16" {
+                        "String".to_string()
+                    } else if property.kind == "Brush" {
+                        "Option<Brush>".to_string()
+                    } else if property.kind == "Variant" {
+                        "Variant".to_string()
+                    } else if property.kind == "TimeSpanI64" {
+                        "std::time::Duration".to_string()
+                    } else if property.kind == "PixelPointI32" {
+                        "PixelPoint".to_string()
+                    } else {
+                        safe_scalar_type(property, flags_enums)
+                    };
+
+                    if property.name == "Text"
+                        && property.kind == "StringUtf16"
+                        && property.can_read
+                        && has_event("TextChanged")
+                    {
+                        let get_expr = if property.is_nullable {
+                            "|c: &_| c.get_text().map(|v| v.unwrap_or_default())"
+                        } else {
+                            "|c: &_| c.get_text()"
+                        };
+                        out.push_str(&format!(
+                            "    pub fn {builder}<M>(self, value: impl crate::view::IntoProp<{prop_type}, M> + 'static) -> Self {{\n\
+                             \x20       let binding = value.into_prop();\n\
+                             \x20       self.with_op(move |scope, control| {{\n\
+                             \x20           crate::view::apply_two_way_prop(\n\
+                             \x20               scope,\n\
+                             \x20               control,\n\
+                             \x20               binding,\n\
+                             \x20               |c, v| c.set_{builder}(v),\n\
+                             \x20               {get_expr},\n\
+                             \x20               |c, mut cb| c.subscribe_text_changed(move |_| cb()),\n\
+                             \x20           )\n\
+                             \x20       }})\n\
+                             \x20   }}\n"
+                        ));
+                    } else if property.name == "IsChecked"
+                        && property.kind == "NullableBool"
+                        && property.can_read
+                        && has_event("IsCheckedChanged")
+                    {
+                        out.push_str(&format!(
+                            "    pub fn {builder}<M>(self, value: impl crate::view::IntoProp<{prop_type}, M> + 'static) -> Self {{\n\
+                             \x20       let binding = value.into_prop();\n\
+                             \x20       self.with_op(move |scope, control| {{\n\
+                             \x20           crate::view::apply_two_way_prop(\n\
+                             \x20               scope,\n\
+                             \x20               control,\n\
+                             \x20               binding,\n\
+                             \x20               |c, v| c.set_{builder}(v),\n\
+                             \x20               |c| c.get_is_checked(),\n\
+                             \x20               |c, mut cb| c.subscribe_is_checked_changed(move |_| cb()),\n\
+                             \x20           )\n\
+                             \x20       }})\n\
+                             \x20   }}\n"
+                        ));
+                    } else if property.name == "Value"
+                        && property.kind == "F64"
+                        && property.can_read
+                        && has_event("ValueChanged")
+                    {
+                        out.push_str(&format!(
+                            "    pub fn {builder}<M>(self, value: impl crate::view::IntoProp<{prop_type}, M> + 'static) -> Self {{\n\
+                             \x20       let binding = value.into_prop();\n\
+                             \x20       self.with_op(move |scope, control| {{\n\
+                             \x20           crate::view::apply_two_way_prop(\n\
+                             \x20               scope,\n\
+                             \x20               control,\n\
+                             \x20               binding,\n\
+                             \x20               |c, v| c.set_{builder}(v),\n\
+                             \x20               |c| c.get_value(),\n\
+                             \x20               |c, mut cb| c.subscribe_value_changed(move |_| cb()),\n\
+                             \x20           )\n\
+                             \x20       }})\n\
+                             \x20   }}\n"
+                        ));
+                    } else if property.name == "SelectedIndex"
+                        && property.kind == "I32"
+                        && property.can_read
+                        && has_event("SelectionChanged")
+                    {
+                        out.push_str(&format!(
+                            "    pub fn {builder}<M>(self, value: impl crate::view::IntoProp<{prop_type}, M> + 'static) -> Self {{\n\
+                             \x20       let binding = value.into_prop();\n\
+                             \x20       self.with_op(move |scope, control| {{\n\
+                             \x20           crate::view::apply_two_way_prop(\n\
+                             \x20               scope,\n\
+                             \x20               control,\n\
+                             \x20               binding,\n\
+                             \x20               |c, v| c.set_{builder}(v),\n\
+                             \x20               |c| c.get_selected_index(),\n\
+                             \x20               |c, mut cb| c.subscribe_selection_changed(move |_| cb()),\n\
+                             \x20           )\n\
+                             \x20       }})\n\
+                             \x20   }}\n"
+                        ));
+                    } else {
+                        out.push_str(&format!(
+                            "    pub fn {builder}<M>(self, value: impl crate::view::IntoProp<{prop_type}, M> + 'static) -> Self {{\n\
+                             \x20       let binding = value.into_prop();\n\
+                             \x20       self.with_op(move |_, control| {{\n\
+                             \x20           crate::view::apply_prop(control, binding, |c, v| c.set_{builder}(v))\n\
+                             \x20       }})\n\
+                             \x20   }}\n"
+                        ));
+                    }
+                }
+            }
+        }
+        for event in &owner.events {
+            let event_name = to_snake(&event.name);
+            let arg_type = if event.payload_kind == "Args" {
+                let args_name = simple_name(
+                    event
+                        .args_interface_name
+                        .as_deref()
+                        .expect("argsInterfaceName"),
+                );
+                format!("&mut sys::ComPtr<sys::{args_name}>")
+            } else if !event.parameters.is_empty() {
+                format!("&mut {}", event_arguments_name(event))
+            } else {
+                "()".to_string()
+            };
+            out.push_str(&format!(
+                "    pub fn on_{event_name}(self, callback: impl FnMut({arg_type}) + Send + 'static) -> Self {{\n\
+                 \x20       self.with_op(move |scope, control| {{\n\
+                 \x20           scope.retain_subscription(control.subscribe_{event_name}(callback)?);\n\
+                 \x20           Ok(())\n\
+                 \x20       }})\n\
+                 \x20   }}\n"
+            ));
+        }
+    }
+
+    if is_control(ir, ty) {
+        for property in &ir.attached_properties {
+            let owner = to_snake(&property.owner_name);
+            let name = to_snake(&property.name);
+            let enum_name = simple_name(&property.managed_type_name);
+            let is_enum = ir
+                .enums
+                .iter()
+                .any(|projected_enum| projected_enum.full_name == property.managed_type_name);
+            let prop_type = if property.kind == "StringUtf16" {
+                "String".to_string()
+            } else if is_enum {
+                enum_name.to_string()
+            } else if property.kind == "TimeSpanI64" {
+                "std::time::Duration".to_string()
+            } else if let Some(geometry) = geometry::find(&property.kind) {
+                if property.is_nullable {
+                    format!("Option<{}>", geometry.safe_name)
+                } else {
+                    geometry.safe_name.to_string()
+                }
+            } else {
+                rust_scalar_kind(&property.kind).to_string()
+            };
+            out.push_str(&format!(
+                "    pub fn {owner}_{name}<M>(self, value: impl crate::view::IntoProp<{prop_type}, M> + 'static) -> Self {{\n\
+                 \x20       let binding = value.into_prop();\n\
+                 \x20       self.with_op(move |_, control| {{\n\
+                 \x20           crate::view::apply_prop(control, binding, |c, v| c.set_{owner}_{name}(v))\n\
+                 \x20       }})\n\
+                 \x20   }}\n"
+            ));
+        }
+    }
+
+    if all_props
+        .iter()
+        .any(|p| p.kind == "ComCollection" && p.name == "Children")
+    {
+        out.push_str(
+            "    pub fn rsx_child(self, value: impl crate::view::IntoChildEl + 'static) -> Self {\n\
+             \x20       self.child(value)\n\
+             \x20   }\n",
+        );
+    } else if all_props.iter().any(|p| {
+        p.can_write
+            && p.kind == "ComInterface"
+            && p.name == "Content"
+            && p.interface_name.as_deref().map(simple_name) == Some("IAvnControl")
+    }) {
+        out.push_str(
+            "    pub fn rsx_child(self, value: impl crate::view::IntoContentEl + 'static) -> Self {\n\
+             \x20       self.content(value)\n\
+             \x20   }\n",
+        );
+    } else if all_props.iter().any(|p| {
+        p.can_write
+            && p.kind == "ComInterface"
+            && p.name == "Child"
+            && p.interface_name.as_deref().map(simple_name) == Some("IAvnControl")
+    }) {
+        out.push_str(
+            "    pub fn rsx_child(self, value: impl crate::view::IntoContentEl + 'static) -> Self {\n\
+             \x20       self.child(value)\n\
+             \x20   }\n",
+        );
+    } else if all_props
+        .iter()
+        .any(|p| p.kind == "ComCollection" && p.name == "Items")
+    {
+        out.push_str(
+            "    pub fn rsx_child(self, value: impl crate::view::IntoChildEl + 'static) -> Self {\n\
+             \x20       self.item(value)\n\
+             \x20   }\n",
+        );
+    } else if all_props
+        .iter()
+        .any(|p| p.can_write && p.kind == "StringUtf16" && p.name == "Text")
+    {
+        out.push_str(
+            "    pub fn rsx_child<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {\n\
+             \x20       self.text(value)\n\
+             \x20   }\n",
+        );
+    }
+
+    out.push_str("}\n");
     out
 }
 
@@ -1178,15 +1790,15 @@ fn safe_property_input(
     if let Some(geometry) = geometry::find(&property.kind) {
         if property.is_nullable {
             return (
-                format!("Option<{}>", geometry.safe_name),
+                format!("impl Into<Option<{}>>", geometry.safe_name),
                 String::new(),
-                format!("{}::to_optional_abi(value)", geometry.safe_name),
+                format!("{}::to_optional_abi(value.into())", geometry.safe_name),
             );
         }
         return (
-            geometry.safe_name.into(),
+            format!("impl Into<{}>", geometry.safe_name),
             String::new(),
-            "value.into()".into(),
+            "value.into().into()".into(),
         );
     }
     match property.kind.as_str() {
@@ -1287,8 +1899,8 @@ fn safe_property_input(
             "value".into(),
         ),
         "PixelPointI32" => (
-            "PixelPoint".into(),
-            "        let value = value.to_abi();\n".into(),
+            "impl Into<PixelPoint>".into(),
+            "        let value = value.into().to_abi();\n".into(),
             "value".into(),
         ),
         "I32" if is_enum_property(property, flags_enums) => (
