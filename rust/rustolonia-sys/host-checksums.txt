@@ -2,3 +2,9 @@
 # version, in `sha256sum` format. build.rs refuses to use a downloaded host
 # whose hash is not listed here. rust/prepare-release.ps1 fills this in from
 # the release build before the consumer tag or crates are published.
+d4128440d820e43478f57e0390dc2014b01175b0ccce334790faf403b7a4fbe4  rustolonia-host-12.1.1-linux-arm64.tar.gz
+5a5df2ab385289e8856d40ec083abefde0859204cd9a2f0b546f0bcf0679f761  rustolonia-host-12.1.1-linux-x64.tar.gz
+d22d774c76b0b2afc8d1a8449720fb095d6633cce3479504e0f22a58fed1a42e  rustolonia-host-12.1.1-osx-arm64.tar.gz
+a8b56f3fbe4cb6d1f372e70849b91dcf2d4258dd80f24f32a78581a0e402bb9b  rustolonia-host-12.1.1-osx-x64.tar.gz
+fdae3d82a4bd7b9357293525d48191bcf7789dc8542d554ae711dff310cfd2b3  rustolonia-host-12.1.1-win-arm64.tar.gz
+767c8337cae2987a308beac38bf008850fc737589354d31345ae4753c2aa03bb  rustolonia-host-12.1.1-win-x64.tar.gz
