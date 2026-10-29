@@ -130,8 +130,10 @@ example `IAvnRustVmSink2`, stage 29's `IAvnApplication3` desktop file
 integration capability, stage 30's `IAvnRustVmSink4` richer data shapes,
 `IAvnRustVmRangeBatch` windowed range payload, `IAvnRustRangeSource` and
 `IAvnRustViewModel2`, or stage 31's `IAvnApplication4` clipboard command
-capability and its host-owned `IAvnClipboardData` payload builder, or
-`IAvnRustVmSink5` for scalar-number collection elements), then
+capability and its host-owned `IAvnClipboardData` payload builder,
+`IAvnRustVmSink5` for scalar-number collection elements, or stage 33's
+`IAvnApplication6` desktop shell capability: shutdown mode, schema-declared
+tray icons and window handle/topmost/transparency/capture exclusion), then
 negotiate/query it as optional capability.
 A producer or host that predates an optional capability must report
 `E_NOINTERFACE` explicitly; silently dropping the affected updates is not an

@@ -7,6 +7,7 @@ internal static class HResults
     public const int E_FAIL = unchecked((int)0x80004005);
     public const int E_INVALIDARG = unchecked((int)0x80070057);
     public const int E_ABORT = unchecked((int)0x80004004);
+    public const int E_NOTIMPL = unchecked((int)0x80004001);
 
     /// <summary>Fixture-only failure used to prove PreserveSig HRESULT passthrough.</summary>
     public const int AVN_E_FIXTURE = unchecked((int)0xA7A70001);

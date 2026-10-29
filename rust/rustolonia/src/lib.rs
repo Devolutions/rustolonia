@@ -6,6 +6,7 @@ pub mod data_shapes;
 pub mod menu;
 pub mod reactive;
 mod runtime;
+pub mod shell;
 pub mod storage;
 pub mod value_converter;
 pub mod view;
@@ -24,6 +25,7 @@ pub use runtime::{
     discover_host_path, App, AppContext, AppScope, AsControl, Downcast, EventSubscription,
     NonOwningRef, ResourceValue, ThemeVariant, Upcast, HOST_NATIVE_LIB_ENV_VAR,
 };
+pub use shell::ShutdownMode;
 pub use storage::{
     ActivationEvent, DragDropEffects, FileDropEvent, FileTypeFilter, FolderPickerOptions,
     OpenFilePickerOptions, PickerOutcome, SaveFilePickerOptions, StorageCapabilities, StorageItem,

@@ -1281,6 +1281,37 @@ impl AppScope {
         self.retain_object(model);
         self.mount(Window { raw })
     }
+
+    /// Like [`AppScope::mount_dynamic_view_model`], without showing the window,
+    /// which is returned so it can be shown later (see [`Window::show`]). The
+    /// generated `mount_<view>_hidden` drops it; it is also the last entry of
+    /// [`AppScope::windows`].
+    pub fn mount_dynamic_view_model_hidden(
+        &self,
+        view_id: i32,
+        model: impl DynamicViewModel,
+    ) -> Result<Window> {
+        let model = ViewModelHandle::new(model);
+        let raw = self
+            .application()
+            .create_rust_vm_window(view_id, &model.raw)?;
+        self.retain_object(model);
+        let window = Window { raw };
+        self.mount_hidden(window.clone())?;
+        Ok(window)
+    }
+
+    /// Shows the tray icon declared as `tray_id` in the view-model schema,
+    /// bound to its own `model` instance (as a window is). The icon stays until
+    /// the application shuts down.
+    pub fn mount_dynamic_tray(&self, tray_id: i32, model: impl DynamicViewModel) -> Result<()> {
+        let model = ViewModelHandle::new(model);
+        self.application()
+            .shell()?
+            .create_rust_vm_tray(tray_id, &model.raw)?;
+        self.retain_object(model);
+        Ok(())
+    }
 }
 
 fn utf16(value: impl AsRef<str>) -> Vec<u16> {

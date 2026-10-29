@@ -17,4 +17,11 @@ internal static class RustViewRegistry
         throw new InvalidOperationException(
             $"No view is registered for view id {viewId}. Publish or compile Avalonia.Host with AvaloniaRustViewRegistryFile (application-owned generated registry) and AvaloniaRustPresentationProjects (application AXAML project).");
     }
+
+    internal static IDisposable CreateTray(int trayId, IAvnRustViewModel model)
+    {
+        ArgumentNullException.ThrowIfNull(model);
+        throw new InvalidOperationException(
+            $"No tray is registered for tray id {trayId}. Publish or compile Avalonia.Host with AvaloniaRustViewRegistryFile (application-owned generated registry) and AvaloniaRustPresentationProjects (application AXAML project).");
+    }
 }

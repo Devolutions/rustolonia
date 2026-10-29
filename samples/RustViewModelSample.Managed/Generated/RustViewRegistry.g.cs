@@ -17,6 +17,11 @@ internal static class RustViewRegistry
         _ => throw new global::System.ArgumentOutOfRangeException(nameof(viewId)),
     };
 
+    internal static IDisposable CreateTray(int trayId, IAvnRustViewModel model) => trayId switch
+    {
+        _ => throw new global::System.ArgumentOutOfRangeException(nameof(trayId)),
+    };
+
     private static TWindow CreateDynamic<TWindow>(
         IAvnRustViewModel model,
         RustViewModelDescriptor descriptor)

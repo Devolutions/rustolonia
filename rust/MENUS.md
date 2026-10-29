@@ -64,6 +64,7 @@ A model may declare menus, one recent-file list, and one display path:
 }
 ```
 
+Menu kinds are `Application`, `Context`, `Accelerators` and `Tray`.
 Item kinds are `Command`, `Separator`, `Toggle`, `Radio`, `Submenu` and
 `RecentFiles`. Validation is deliberately strict, because a menu that silently
 does nothing is worse than a schema error: a command must exist, a toggle must
@@ -110,6 +111,29 @@ Projected only as key bindings, for shortcuts that appear on no menu:
 ```csharp
 _shortcuts = SampleViewModelMenus.AttachShortcuts(this, adapter);
 ```
+
+### `Tray`
+
+The menu of a notification-area (system tray) icon. A tray is declared at the
+top level of the schema, next to `views`, and names its model, a `Tray` menu on
+it, an icon (an `avares://` resource or a file path), and optionally hover text
+and a command run when the icon itself is clicked:
+
+```json
+"trays": [
+  { "id": 1, "name": "Notify", "model": "TrayViewModel", "menu": "Tray",
+    "icon": "avares://MyApp.Presentation/Assets/app.ico",
+    "toolTip": "My App", "activateCommand": "ShowWindow" }
+]
+```
+
+Like a view, a mounted tray gets its own model instance; the generated Rust
+`mount_notify(scope, model)` shows it through the stage 33 `IAvnApplication6`
+capability, and the icon stays until the application shuts down. Tray menus
+reject gestures, since a tray menu has no keyboard focus to bind them to. A
+tray application usually also calls `scope.set_shutdown_mode(OnExplicitShutdown)`
+and mounts its windows hidden (`mount_dynamic_view_model_hidden`), so it keeps
+running with no window open.
 
 ## Accelerators
 

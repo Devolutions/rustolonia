@@ -205,12 +205,16 @@ impl AppScope {
 
     pub fn mount(&self, window: Window) -> Result<()> {
         window.raw.show()?;
+        self.record_window(window);
+        Ok(())
+    }
+
+    pub(crate) fn record_window(&self, window: Window) {
         self.state
             .windows
             .lock()
             .expect("application window scope lock poisoned")
             .push(window);
-        Ok(())
     }
 
     /// Every window mounted through [`AppScope::mount`], in mount order.

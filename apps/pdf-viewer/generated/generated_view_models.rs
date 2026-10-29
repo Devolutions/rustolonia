@@ -217,6 +217,7 @@ impl<T: MainViewModel> crate::view_model::DynamicViewModel for MainViewModelDisp
 }
 
 pub fn mount_main_window(scope: &crate::AppScope, model: impl MainViewModel) -> crate::Result<()> { scope.mount_dynamic_view_model(1, MainViewModelDispatch { model }) }
+pub fn mount_main_window_hidden(scope: &crate::AppScope, model: impl MainViewModel) -> crate::Result<()> { scope.mount_dynamic_view_model_hidden(1, MainViewModelDispatch { model }).map(drop) }
 
 #[derive(Clone, Debug)]
 pub struct OutlineItemViewModelSink(crate::view_model::ViewModelSink);

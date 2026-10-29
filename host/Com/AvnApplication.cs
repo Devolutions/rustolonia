@@ -34,7 +34,8 @@ public partial class AvnApplication : IAvnApplication, IAvnApplication2
             var startupArguments = SnapshotStartupArguments();
             var lifetime = new ClassicDesktopStyleApplicationLifetime
             {
-                ShutdownMode = ShutdownMode.OnLastWindowClose,
+                // OnLastWindowClose unless IAvnApplication6.SetShutdownMode said otherwise.
+                ShutdownMode = _shutdownMode,
                 Args = startupArguments,
             };
             _lifetime = lifetime;
@@ -58,6 +59,7 @@ public partial class AvnApplication : IAvnApplication, IAvnApplication2
         }
         finally
         {
+            ReleaseTrays();
             ReleaseDesktopFileIntegration();
         }
     }

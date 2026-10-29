@@ -3,11 +3,11 @@
   "files": [
     {
       "path": "generated_view_models.rs",
-      "sha256": "cfd1c2fc7d9982baec51e290d316f4297b85e82513d9561ecb2f8da04353598f"
+      "sha256": "7d17b2e880e9476759ad6df1da9af86e1410d87400e17911afb0bc8bf48254c9"
     },
     {
       "path": "RustViewRegistry.g.cs",
-      "sha256": "434e460c14fe7b82b96605d85037532ede47f71a50557b05ba7d00cd5f3698fe"
+      "sha256": "fef2c54b4a7001d7f6c369cd9edf1c2c5d2204c5819b22a83950860ddd18fdcb"
     },
     {
       "path": "view-model.contract.md",
