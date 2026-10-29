@@ -170,6 +170,18 @@ fn factory_creates_application() {
 }
 
 #[test]
+fn application_exposes_the_shell_capability() {
+    let host = load();
+    let factory = host.activation_factory().unwrap();
+    let app = factory.create_application().unwrap();
+    let shell = app.shell().unwrap();
+    // Out-of-range modes are rejected; a valid mode is accepted before Run.
+    assert!(shell.set_shutdown_mode(7).is_err());
+    shell.set_shutdown_mode(2).unwrap();
+    shell.set_shutdown_mode(0).unwrap();
+}
+
+#[test]
 fn factory_unknown_qi_succeeds() {
     let host = load();
     let factory = host.activation_factory().unwrap();

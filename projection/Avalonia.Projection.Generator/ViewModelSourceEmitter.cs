@@ -41,7 +41,7 @@ public static class ViewModelSourceEmitter
         foreach (var enumDefinition in ir.Enums)
             EmitRustEnum(sb, enumDefinition);
         foreach (var model in ir.Models)
-            EmitRustModel(sb, ir, model, ir.Views.Where(view => view.Model == model.Name), externalConsumer);
+            EmitRustModel(sb, ir, model, ir.Views.Where(view => view.Model == model.Name), ir.TrayIcons.Where(tray => tray.Model == model.Name), externalConsumer);
         EmitRustConverters(sb, ir.Converters, externalConsumer);
         return sb.ToString().TrimEnd() + "\n";
     }
@@ -1361,8 +1361,13 @@ public static class ViewModelSourceEmitter
                 case ViewModelMenuKind.Context:
                     EmitContextMenuFactory(sb, ir, model, menu, adapter);
                     break;
+                case ViewModelMenuKind.Tray:
+                    EmitTrayMenu(sb, ir, model, menu, adapter);
+                    break;
             }
         }
+        foreach (var tray in ir.TrayIcons.Where(tray => tray.Model == model.Name))
+            EmitTrayAttach(sb, model, tray, adapter);
 
         sb.AppendLine("}");
         foreach (var menu in model.Menus.Where(menu => menu.Kind == ViewModelMenuKind.Context))
@@ -1443,6 +1448,56 @@ public static class ViewModelSourceEmitter
         sb.AppendLine("            var keyBindings = new List<KeyBinding>();");
         sb.AppendLine($"            var menu = Create{menu.Name}(model, scope, keyBindings);");
         sb.AppendLine("            return RustMenuAttachment.Attach(target, menu, keyBindings, scope);");
+        sb.AppendLine("        }");
+        sb.AppendLine("        catch");
+        sb.AppendLine("        {");
+        sb.AppendLine("            scope.Dispose();");
+        sb.AppendLine("            throw;");
+        sb.AppendLine("        }");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+    }
+
+    private static void EmitTrayMenu(
+        StringBuilder sb,
+        ViewModelIr ir,
+        ViewModelDefinition model,
+        ViewModelMenu menu,
+        string adapter)
+    {
+        sb.AppendLine("    /// <summary>");
+        sb.AppendLine($"    /// Builds the <c>{menu.Name}</c> tray menu.");
+        sb.AppendLine("    /// </summary>");
+        sb.AppendLine($"    public static NativeMenu Create{menu.Name}({adapter} model, RustMenuScope scope)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        ArgumentNullException.ThrowIfNull(model);");
+        sb.AppendLine("        ArgumentNullException.ThrowIfNull(scope);");
+        sb.AppendLine("        var menu = new NativeMenu();");
+        EmitNativeMenuItems(sb, ir, model, menu.Items, "menu.Items", "        ", keyBindings: false);
+        sb.AppendLine("        return menu;");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+    }
+
+    private static void EmitTrayAttach(
+        StringBuilder sb,
+        ViewModelDefinition model,
+        TrayDefinition tray,
+        string adapter)
+    {
+        var activate = tray.ActivateCommand is { } command ? $"model.{command}Command" : "null";
+        sb.AppendLine("    /// <summary>");
+        sb.AppendLine($"    /// Shows the <c>{tray.Name}</c> tray icon with the <c>{tray.Menu}</c> menu. Disposing");
+        sb.AppendLine("    /// the attachment removes the icon and disposes <paramref name=\"model\"/>.");
+        sb.AppendLine("    /// </summary>");
+        sb.AppendLine($"    public static RustTrayAttachment Attach{tray.Name}Tray({adapter} model)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        ArgumentNullException.ThrowIfNull(model);");
+        sb.AppendLine("        var scope = new RustMenuScope(model);");
+        sb.AppendLine("        try");
+        sb.AppendLine("        {");
+        sb.AppendLine($"            var menu = Create{tray.Menu}(model, scope);");
+        sb.AppendLine($"            return RustTrayAttachment.Attach(menu, {CSharpString(tray.Icon)}, {CSharpString(tray.ToolTip)}, {activate}, scope, model);");
         sb.AppendLine("        }");
         sb.AppendLine("        catch");
         sb.AppendLine("        {");
@@ -1864,6 +1919,18 @@ public static class ViewModelSourceEmitter
         sb.AppendLine("        _ => throw new global::System.ArgumentOutOfRangeException(nameof(viewId)),");
         sb.AppendLine("    };");
         sb.AppendLine();
+        sb.AppendLine("    internal static IDisposable CreateTray(int trayId, IAvnRustViewModel model) => trayId switch");
+        sb.AppendLine("    {");
+        foreach (var tray in ir.TrayIcons)
+        {
+            var model = ir.Models.Single(model => model.Name == tray.Model);
+            var ns = model.ManagedNamespace;
+            sb.AppendLine(
+                $"        {tray.Id} => global::{ns}.{model.Name}Menus.Attach{tray.Name}Tray(new global::{ns}.{model.Name}Adapter(model)),");
+        }
+        sb.AppendLine("        _ => throw new global::System.ArgumentOutOfRangeException(nameof(trayId)),");
+        sb.AppendLine("    };");
+        sb.AppendLine();
         sb.AppendLine("    private static TWindow CreateDynamic<TWindow>(");
         sb.AppendLine("        IAvnRustViewModel model,");
         sb.AppendLine("        RustViewModelDescriptor descriptor)");
@@ -1899,6 +1966,7 @@ public static class ViewModelSourceEmitter
         ViewModelIr ir,
         ViewModelDefinition model,
         IEnumerable<ViewDefinition> views,
+        IEnumerable<TrayDefinition> trays,
         bool externalConsumer)
     {
         var traitName = model.Name;
@@ -2033,6 +2101,10 @@ public static class ViewModelSourceEmitter
                 sb.AppendLine($"pub fn mount_{Snake(view.Name)}(scope: &crate::AppScope, model: impl {traitName}) -> crate::Result<()> {{ scope.mount_dynamic_view_model({view.Id}, {traitName}Dispatch {{ model }}) }}");
             else
                 sb.AppendLine($"impl crate::AppScope {{ pub fn mount_{Snake(view.Name)}(&self, model: impl {traitName}) -> crate::Result<()> {{ self.mount_dynamic_view_model({view.Id}, {traitName}Dispatch {{ model }}) }} }}");
+            if (externalConsumer)
+                sb.AppendLine($"pub fn mount_{Snake(view.Name)}_hidden(scope: &crate::AppScope, model: impl {traitName}) -> crate::Result<()> {{ scope.mount_dynamic_view_model_hidden({view.Id}, {traitName}Dispatch {{ model }}).map(drop) }}");
+            else
+                sb.AppendLine($"impl crate::AppScope {{ pub fn mount_{Snake(view.Name)}_hidden(&self, model: impl {traitName}) -> crate::Result<()> {{ self.mount_dynamic_view_model_hidden({view.Id}, {traitName}Dispatch {{ model }}).map(drop) }} }}");
             if (view.Converters.Count > 0)
             {
                 if (externalConsumer)
@@ -2058,6 +2130,13 @@ public static class ViewModelSourceEmitter
                 if (!externalConsumer)
                     sb.AppendLine("}");
             }
+        }
+        foreach (var tray in trays)
+        {
+            if (externalConsumer)
+                sb.AppendLine($"pub fn mount_{Snake(tray.Name)}(scope: &crate::AppScope, model: impl {traitName}) -> crate::Result<()> {{ scope.mount_dynamic_tray({tray.Id}, {traitName}Dispatch {{ model }}) }}");
+            else
+                sb.AppendLine($"impl crate::AppScope {{ pub fn mount_{Snake(tray.Name)}(&self, model: impl {traitName}) -> crate::Result<()> {{ self.mount_dynamic_tray({tray.Id}, {traitName}Dispatch {{ model }}) }} }}");
         }
         sb.AppendLine();
     }

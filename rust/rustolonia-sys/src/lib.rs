@@ -30,6 +30,7 @@ mod filters;
 mod notification;
 mod popup_placement;
 mod selectors;
+mod shell;
 #[rustfmt::skip]
 mod generated;
 mod guid;
@@ -69,6 +70,7 @@ pub use rust_vm::{
     RustVmUpdate, RUST_VM_RANGE_FILL, RUST_VM_RANGE_INVALIDATE, RUST_VM_RANGE_RESET,
 };
 pub use selectors::{item_selector, text_selector, ItemSelector, TextSelector};
+pub use shell::{IAvnApplication6, IAVN_APPLICATION6_METHOD_COUNT};
 pub use storage::{
     activation_handler, file_drop_handler, storage_completion, ActivationArgs, FileDropArgs,
     IAvnActivationHandler, IAvnApplication3, IAvnFileDropHandler, IAvnFilePickerOptions,

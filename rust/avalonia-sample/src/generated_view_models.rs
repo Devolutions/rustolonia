@@ -405,6 +405,7 @@ impl<T: SampleViewModel> crate::view_model::DynamicViewModel for SampleViewModel
 }
 
 pub fn mount_rust_vm_window(scope: &crate::AppScope, model: impl SampleViewModel) -> crate::Result<()> { scope.mount_dynamic_view_model(1, SampleViewModelDispatch { model }) }
+pub fn mount_rust_vm_window_hidden(scope: &crate::AppScope, model: impl SampleViewModel) -> crate::Result<()> { scope.mount_dynamic_view_model_hidden(1, SampleViewModelDispatch { model }).map(drop) }
 pub fn mount_rust_vm_window_with_converters<C: ValueConverters>(
     scope: &crate::AppScope,
         model: impl SampleViewModel,
@@ -414,6 +415,7 @@ pub fn mount_rust_vm_window_with_converters<C: ValueConverters>(
         mount_rust_vm_window(scope, model)
     }
 pub fn mount_rust_dynamic_vm_window(scope: &crate::AppScope, model: impl SampleViewModel) -> crate::Result<()> { scope.mount_dynamic_view_model(2, SampleViewModelDispatch { model }) }
+pub fn mount_rust_dynamic_vm_window_hidden(scope: &crate::AppScope, model: impl SampleViewModel) -> crate::Result<()> { scope.mount_dynamic_view_model_hidden(2, SampleViewModelDispatch { model }).map(drop) }
 pub fn mount_rust_dynamic_vm_window_with_converters<C: ValueConverters>(
     scope: &crate::AppScope,
         model: impl SampleViewModel,

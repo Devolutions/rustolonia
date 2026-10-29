@@ -32,4 +32,9 @@ internal static class AvnGuids
     // the completion rides the shared async operation registry, and nothing below
     // is added to a published vtable.
     public const string IAvnApplication5 = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4D70";
+
+    // Stage 33 desktop shell integration: shutdown mode, tray icons and the
+    // window-level settings a capture tool needs. Another separately versioned
+    // capability; nothing below is added to a published vtable.
+    public const string IAvnApplication6 = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4D80";
 }

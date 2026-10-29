@@ -20,7 +20,19 @@ public sealed class ViewModelIr
     public IReadOnlyList<ViewModelEnumDefinition> Enums { get; init; } = [];
     public IReadOnlyList<ViewModelDefinition> Models { get; init; } = [];
     public IReadOnlyList<ViewDefinition> Views { get; init; } = [];
+
+    /// <summary>
+    /// Notification-area (system tray) icons, each with a menu declared on its
+    /// model. Omitted from the serialized schema when there are none.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<TrayDefinition>? Trays { get; init; }
+
     public IReadOnlyList<ValueConverterDefinition> Converters { get; init; } = [];
+
+    /// <summary><see cref="Trays"/>, empty when the schema declares none.</summary>
+    [JsonIgnore]
+    public IReadOnlyList<TrayDefinition> TrayIcons => Trays ?? [];
 
     public static ViewModelIr FromJson(string json)
     {
@@ -45,13 +57,16 @@ public sealed class ViewModelIr
         if (Version < RicherDataShapesVersion && Models.Any(HasRicherDataShapes))
             throw new InvalidOperationException(
                 $"View-model IR version {Version} does not support keyed maps, windowed collections, tree metadata, structured command results, progress or cancellation; upgrade to version {RicherDataShapesVersion}.");
-        if (Version < CommandSurfaceVersion && Models.Any(HasCommandSurfaces))
+        if (Version < CommandSurfaceVersion && (Models.Any(HasCommandSurfaces) || TrayIcons.Count > 0))
             throw new InvalidOperationException(
                 $"View-model IR version {Version} does not support menus, keyboard accelerators, recent-file lists or display paths; upgrade to version {CommandSurfaceVersion}.");
         EnsurePositiveIds(Enums, enumDefinition => enumDefinition.Id, "enum");
         EnsurePositiveIds(Models, model => model.Id, "model");
         EnsurePositiveIds(Views, view => view.Id, "view");
         EnsurePositiveIds(Converters, converter => converter.Id, "converter");
+        EnsurePositiveIds(TrayIcons, tray => tray.Id, "tray");
+        EnsureUnique(TrayIcons, tray => tray.Id, "tray ID");
+        EnsureUnique(TrayIcons, tray => tray.Name, "tray name");
         EnsureUnique(Enums, enumDefinition => enumDefinition.Id, "enum ID");
         EnsureUnique(Enums, enumDefinition => enumDefinition.Name, "enum name");
         EnsureUnique(Models, model => model.Id, "model ID");
@@ -226,7 +241,34 @@ public sealed class ViewModelIr
                 ValidateMenu(model, menu, enumsByName);
         }
 
+        foreach (var tray in TrayIcons)
+            ValidateTray(tray);
+
         ValidateAcyclicModelGraph();
+    }
+
+    /// <summary>
+    /// A tray names a model, a <see cref="ViewModelMenuKind.Tray"/> menu on it,
+    /// an icon, and optionally hover text and a command run when the icon itself
+    /// is clicked. Like a view, a mounted tray gets its own model instance.
+    /// </summary>
+    private void ValidateTray(TrayDefinition tray)
+    {
+        EnsureIdentifier(tray.Name, "Tray name");
+        EnsureNotBlank(tray.Icon, $"Icon for tray '{tray.Name}'");
+        var model = Models.SingleOrDefault(candidate => candidate.Name == tray.Model)
+            ?? throw new InvalidOperationException($"Tray '{tray.Name}' references unknown model '{tray.Model}'.");
+        var menu = model.Menus.SingleOrDefault(candidate => candidate.Name == tray.Menu)
+            ?? throw new InvalidOperationException($"Tray '{tray.Name}' references unknown menu '{model.Name}.{tray.Menu}'.");
+        if (menu.Kind != ViewModelMenuKind.Tray)
+            throw new InvalidOperationException($"Tray '{tray.Name}' menu '{model.Name}.{menu.Name}' must be a Tray menu.");
+        if (tray.ActivateCommand is { } activate)
+        {
+            var command = model.Commands.SingleOrDefault(candidate => candidate.Name == activate)
+                ?? throw new InvalidOperationException($"Tray '{tray.Name}' references unknown activate command '{model.Name}.{activate}'.");
+            if (command.ParameterProperty is not null)
+                throw new InvalidOperationException($"Tray '{tray.Name}' activate command '{model.Name}.{command.Name}' must not use parameterProperty.");
+        }
     }
 
     private static void ValidateTable(
@@ -379,6 +421,9 @@ public sealed class ViewModelIr
         model.Collections.Any(collection => collection.Window is not null || collection.Tree is not null || collection.Recursive) ||
         model.Commands.Any(command => command.ResultModelName is not null || command.SupportsProgress || command.SupportsCancellation);
 
+    private static bool HasGesture(IReadOnlyList<ViewModelMenuItem> items) =>
+        items.Any(item => item.Gesture is not null || HasGesture(item.Items));
+
     private static bool HasCommandSurfaces(ViewModelDefinition model) =>
         model.Menus.Count > 0 ||
         model.RecentFiles is not null ||
@@ -471,6 +516,9 @@ public sealed class ViewModelIr
         EnsureIdentifier(menu.Name, $"Menu name in model '{model.Name}'");
         if (menu.Items.Count == 0)
             throw new InvalidOperationException($"Menu '{model.Name}.{menu.Name}' must declare at least one item.");
+        if (menu.Kind == ViewModelMenuKind.Tray && HasGesture(menu.Items))
+            throw new InvalidOperationException(
+                $"Tray menu '{model.Name}.{menu.Name}' must not declare gestures; a tray menu has no keyboard focus to bind them to.");
         if (menu.Kind == ViewModelMenuKind.Accelerators)
         {
             foreach (var item in menu.Items)
@@ -977,6 +1025,14 @@ public enum ViewModelMenuKind
     /// bindings, for shortcuts that are not on any menu item.
     /// </summary>
     Accelerators,
+
+    /// <summary>
+    /// The menu of a notification-area (system tray) icon declared in
+    /// <see cref="ViewModelIr.Trays"/>. Projected as an Avalonia <c>NativeMenu</c>
+    /// on a <c>TrayIcon</c>; gestures are rejected because a tray menu has no
+    /// keyboard focus to bind them to.
+    /// </summary>
+    Tray,
 }
 
 /// <summary>What one declared menu item does.</summary>
@@ -1247,6 +1303,26 @@ public sealed class ViewModelCommand
 
     /// <summary>Whether the generated adapter exposes a <c>Cancel{Name}Command</c> for this async command.</summary>
     public bool SupportsCancellation { get; init; }
+}
+
+/// <summary>A notification-area (system tray) icon with a menu.</summary>
+public sealed class TrayDefinition
+{
+    public required int Id { get; init; }
+    public required string Name { get; init; }
+    public required string Model { get; init; }
+
+    /// <summary>The name of a <see cref="ViewModelMenuKind.Tray"/> menu on <see cref="Model"/>.</summary>
+    public required string Menu { get; init; }
+
+    /// <summary>An <c>avares://</c> resource URI or a file path.</summary>
+    public required string Icon { get; init; }
+
+    /// <summary>Hover text, when any.</summary>
+    public string? ToolTip { get; init; }
+
+    /// <summary>The command run when the icon itself is clicked, when any.</summary>
+    public string? ActivateCommand { get; init; }
 }
 
 public sealed class ViewDefinition
