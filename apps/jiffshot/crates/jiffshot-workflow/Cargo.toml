@@ -1,0 +1,15 @@
+[package]
+name = "jiffshot-workflow"
+description = "Jiffshot's capture side: tray, hotkeys, selection overlay, recording and the post-capture workflow"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+jiffshot-capture = { path = "../jiffshot-capture" }
+jiffshot-doc = { path = "../jiffshot-doc" }
+windows.workspace = true
+tiny-skia.workspace = true
+windows-sys.workspace = true

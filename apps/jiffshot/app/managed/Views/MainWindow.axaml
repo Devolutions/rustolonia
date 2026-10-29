@@ -1,0 +1,570 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Jiffshot.Editor.Generated"
+        xmlns:controls="using:Jiffshot.Editor.Controls"
+        x:Class="Jiffshot.Editor.Views.MainWindow"
+        x:DataType="vm:MainViewModelAdapter"
+        Width="1500" Height="960" MinWidth="900" MinHeight="600"
+        Title="{Binding Title}"
+        Icon="/Assets/jiffshot.ico"
+        Background="{DynamicResource SwWindow}">
+  <Window.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="SwWindow" Color="#1B1C1F" />
+          <SolidColorBrush x:Key="SwPanel" Color="#232428" />
+          <SolidColorBrush x:Key="SwTray" Color="#1F2023" />
+          <SolidColorBrush x:Key="SwChip" Color="#26282C" />
+          <SolidColorBrush x:Key="SwWell" Color="#2C2E33" />
+          <SolidColorBrush x:Key="SwBorder" Color="#2E3034" />
+          <SolidColorBrush x:Key="SwBorderStrong" Color="#3A3C40" />
+          <SolidColorBrush x:Key="SwMuted" Color="#8A8F98" />
+          <SolidColorBrush x:Key="SwCaption" Color="#C0C4CC" />
+          <SolidColorBrush x:Key="SwSubtle" Color="#C8CACE" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="SwWindow" Color="#F3F4F6" />
+          <SolidColorBrush x:Key="SwPanel" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="SwTray" Color="#ECEEF1" />
+          <SolidColorBrush x:Key="SwChip" Color="#E8EAED" />
+          <SolidColorBrush x:Key="SwWell" Color="#E1E4E8" />
+          <SolidColorBrush x:Key="SwBorder" Color="#D5D8DD" />
+          <SolidColorBrush x:Key="SwBorderStrong" Color="#C4C8CE" />
+          <SolidColorBrush x:Key="SwMuted" Color="#6B7280" />
+          <SolidColorBrush x:Key="SwCaption" Color="#4B5563" />
+          <SolidColorBrush x:Key="SwSubtle" Color="#374151" />
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </Window.Resources>
+  <Window.Styles>
+    <Style Selector="Button.tool">
+      <Setter Property="Width" Value="60" />
+      <Setter Property="Height" Value="48" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Margin" Value="2" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.tool.active">
+      <Setter Property="Background" Value="#2F5DA8" />
+    </Style>
+    <Style Selector="Button.tool.active /template/ ContentPresenter">
+      <Setter Property="Background" Value="#2F5DA8" />
+    </Style>
+    <Style Selector="Button.tool.active TextBlock">
+      <Setter Property="Foreground" Value="White" />
+    </Style>
+    <Style Selector="Button.tool.compact">
+      <Setter Property="Width" Value="38" />
+      <Setter Property="Height" Value="34" />
+    </Style>
+    <Style Selector="Button.tool.compact TextBlock.caption">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="Button.tab">
+      <Setter Property="Padding" Value="12,5" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="CornerRadius" Value="6" />
+    </Style>
+    <Style Selector="Button.tab.on">
+      <Setter Property="Background" Value="{DynamicResource SwWell}" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="Button.bar, ToggleButton.bar">
+      <Setter Property="Padding" Value="8,2" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="TextBlock.icon">
+      <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets, Segoe UI Symbol" />
+      <Setter Property="FontSize" Value="18" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBlock.caption">
+      <Setter Property="FontSize" Value="10" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="Foreground" Value="{DynamicResource SwCaption}" />
+      <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+    <Style Selector="TextBlock.section">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{DynamicResource SwMuted}" />
+      <Setter Property="Margin" Value="0,10,0,4" />
+    </Style>
+    <Style Selector="Button.swatch">
+      <Setter Property="Width" Value="22" />
+      <Setter Property="Height" Value="22" />
+      <Setter Property="MinWidth" Value="22" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Margin" Value="0,0,4,4" />
+      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="BorderBrush" Value="#66FFFFFF" />
+    </Style>
+    <Style Selector="Button.thumb">
+      <Setter Property="Background" Value="{DynamicResource SwChip}" />
+      <Setter Property="BorderThickness" Value="2" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="CornerRadius" Value="6" />
+    </Style>
+    <Style Selector="Button.thumb.current">
+      <Setter Property="BorderBrush" Value="#3D8BFF" />
+    </Style>
+    <Style Selector="Button.thumb.picked">
+      <Setter Property="BorderBrush" Value="#F5A623" />
+    </Style>
+    <Style Selector="Button.chip">
+      <Setter Property="Padding" Value="8,3" />
+      <Setter Property="Margin" Value="0,0,4,4" />
+      <Setter Property="FontSize" Value="11.5" />
+    </Style>
+  </Window.Styles>
+
+  <DockPanel>
+    <NativeMenuBar DockPanel.Dock="Top" />
+
+    <Border DockPanel.Dock="Top" Background="{DynamicResource SwPanel}" Padding="8,4" BorderBrush="{DynamicResource SwBorder}" BorderThickness="0,0,0,1">
+      <DockPanel>
+        <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+          <StackPanel Orientation="Horizontal" Spacing="2">
+            <Button x:Name="EditorTab" Classes="tab" Classes.on="{Binding !LibraryExpanded}" Content="Editor" ToolTip.Tip="Edit the current capture" />
+            <Button x:Name="LibraryTab" Classes="tab" Classes.on="{Binding LibraryExpanded}" Content="Library" ToolTip.Tip="Browse all captures (Ctrl+L)" />
+          </StackPanel>
+          <Rectangle Width="1" Fill="{DynamicResource SwBorderStrong}" Margin="4,6" />
+          <Button Content="● Capture" ToolTip.Tip="Open the Capture window" Command="{Binding OpenCaptureWindowCommand}" Background="#B3261E" Foreground="White" />
+          <Button x:Name="CreateButton" Content="Create ▾" ToolTip.Tip="An image from a template, combined images, or a video from images" />
+          <Rectangle Width="1" Fill="{DynamicResource SwBorderStrong}" Margin="4,6" />
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+          <Rectangle Width="1" Fill="{DynamicResource SwBorderStrong}" Margin="4,6" />
+          <ToggleButton Content="✦ Effects" IsChecked="{Binding ShowEffects}" ToolTip.Tip="Show or hide the Effects panel" />
+          <Button Content="Copy All" ToolTip.Tip="Copy the whole image (Ctrl+Shift+C)" Command="{Binding CopyImageCommand}" />
+          <Button x:Name="ShareButton" Content="Share ▾" ToolTip.Tip="Send the capture to another app, a file or a printer" />
+        </StackPanel>
+        <Panel x:Name="ToolHost" Background="Transparent">
+          <StackPanel x:Name="ToolPanel" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" />
+        </Panel>
+      </DockPanel>
+    </Border>
+
+    <Border x:Name="LibraryPanel" DockPanel.Dock="Bottom" Background="{DynamicResource SwTray}" Height="164" BorderBrush="{DynamicResource SwBorder}" BorderThickness="0,1,0,0">
+      <DockPanel>
+        <DockPanel DockPanel.Dock="Top" Margin="10,6,10,0">
+          <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6">
+            <TextBox Width="170" PlaceholderText="Search name, app, site, tag" Text="{Binding LibrarySearch}" FontSize="11" Padding="6,3" MinHeight="0" Height="26" AcceptsReturn="False" TextWrapping="NoWrap" VerticalContentAlignment="Center" />
+            <ComboBox ItemsSource="{Binding LibraryFilters}" SelectedItem="{Binding LibraryFilter}" MinWidth="120" FontSize="11" ToolTip.Tip="Show only" />
+            <ComboBox ItemsSource="{Binding LibrarySorts}" SelectedItem="{Binding LibrarySort}" MinWidth="90" FontSize="11" ToolTip.Tip="Sort by" />
+            <Slider Width="80" Minimum="60" Maximum="240" Value="{Binding ThumbSize}" VerticalAlignment="Center" ToolTip.Tip="Thumbnail size" />
+            <Button Content="Combine" Command="{Binding CombineSelectedCommand}" Padding="8,2" FontSize="11" ToolTip.Tip="Combine the captures picked with Ctrl+click" />
+            <ToggleButton Content="Library view" IsChecked="{Binding LibraryExpanded}" Padding="8,2" FontSize="11" ToolTip.Tip="Show the whole library (Ctrl+L)" />
+            <Button Content="Open folder" Command="{Binding OpenLibraryFolderCommand}" Padding="8,2" FontSize="11" />
+          </StackPanel>
+          <TextBlock Text="Library" FontWeight="SemiBold" VerticalAlignment="Center" />
+          <TextBlock Text="{Binding LibraryInfo}" Margin="10,0" Foreground="{DynamicResource SwMuted}" FontSize="11" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+        </DockPanel>
+        <ScrollViewer x:Name="LibraryScroll" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+          <ItemsControl x:Name="LibraryList" ItemsSource="{Binding Library}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <WrapPanel Orientation="Horizontal" Margin="10,6" ItemSpacing="8" LineSpacing="8" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:LibraryItemViewModelAdapter">
+                <Button Classes="thumb" Classes.current="{Binding IsCurrent}" Classes.picked="{Binding IsSelected}" Command="{Binding OpenCommand}" Padding="4"
+                        ToolTip.Tip="{Binding Info}">
+                  <Button.ContextMenu>
+                    <ContextMenu>
+                      <MenuItem Header="Pin / unpin" Command="{Binding TogglePinCommand}" />
+                      <MenuItem Header="Rename">
+                        <MenuItem>
+                          <MenuItem.Header>
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                              <TextBox Width="200" Text="{Binding NewName}" />
+                              <Button Content="Rename" Command="{Binding RenameCommand}" />
+                            </StackPanel>
+                          </MenuItem.Header>
+                        </MenuItem>
+                      </MenuItem>
+                      <MenuItem Header="Tags">
+                        <MenuItem>
+                          <MenuItem.Header>
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                              <TextBox Width="200" PlaceholderText="tag, another tag" Text="{Binding TagText}" />
+                              <Button Content="Set" Command="{Binding SetTagsCommand}" />
+                            </StackPanel>
+                          </MenuItem.Header>
+                        </MenuItem>
+                      </MenuItem>
+                      <MenuItem Header="Pick (Ctrl+click)" Command="{Binding ToggleSelectCommand}" />
+                      <MenuItem Header="Show in folder" Command="{Binding ShowInFolderCommand}" />
+                      <Separator />
+                      <MenuItem Header="Close from tray" Command="{Binding CloseCommand}" />
+                      <MenuItem Header="Delete" Command="{Binding DeleteCommand}" />
+                    </ContextMenu>
+                  </Button.ContextMenu>
+                  <StackPanel Spacing="3">
+                    <Panel Height="{Binding ThumbHeight}" MinWidth="{Binding ThumbHeight}">
+                      <Image Source="{Binding Thumbnail, Converter={x:Static controls:ThumbnailConverter.Instance}}" Height="{Binding ThumbHeight}" Stretch="Uniform" />
+                      <TextBlock Text="▶" FontSize="26" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                 IsVisible="{Binding Kind, Converter={x:Static controls:EqualsConverter.Instance}, ConverterParameter=Video}" />
+                      <TextBlock Text="📌" FontSize="13" HorizontalAlignment="Left" VerticalAlignment="Top" IsVisible="{Binding IsPinned}" ToolTip.Tip="Pinned" />
+                      <Ellipse Width="10" Height="10" Fill="#F5A623" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="2" IsVisible="{Binding Unsaved}"
+                               ToolTip.Tip="Unsaved edits" />
+                      <TextBlock Text="✓" FontSize="16" FontWeight="Bold" Foreground="White" Background="#3D8BFF" Padding="4,0"
+                                 HorizontalAlignment="Right" VerticalAlignment="Bottom" IsVisible="{Binding IsSelected}" />
+                    </Panel>
+                    <TextBlock Text="{Binding Label}" FontSize="10.5" HorizontalAlignment="Center" Foreground="{DynamicResource SwCaption}"
+                               MaxWidth="{Binding ThumbHeight, Converter={x:Static controls:ScaleConverter.Instance}, ConverterParameter=2}" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding Tags}" FontSize="9.5" HorizontalAlignment="Center" Foreground="{DynamicResource SwMuted}" TextTrimming="CharacterEllipsis"
+                               MaxWidth="{Binding ThumbHeight, Converter={x:Static controls:ScaleConverter.Instance}, ConverterParameter=2}"
+                               IsVisible="{Binding Tags, Converter={x:Static controls:NotEmptyConverter.Instance}}" />
+                  </StackPanel>
+                </Button>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+      </DockPanel>
+    </Border>
+
+    <Border DockPanel.Dock="Bottom" Background="{DynamicResource SwPanel}" Padding="6,3" BorderBrush="{DynamicResource SwBorder}" BorderThickness="0,1,0,0">
+      <DockPanel>
+        <StackPanel x:Name="ZoomBar" DockPanel.Dock="Right" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+          <Button Classes="bar" x:Name="SizeButton" Content="{Binding DocumentInfo}" ToolTip.Tip="Image size; click to fit it in the window" Command="{Binding ZoomFitCommand}" />
+          <Rectangle Width="1" Fill="{DynamicResource SwBorderStrong}" Margin="6,4" />
+          <Button Classes="bar" Content="−" ToolTip.Tip="Zoom out (Ctrl+−)" Command="{Binding ZoomOutCommand}" />
+          <Slider x:Name="ZoomSlider" Width="110" Minimum="5" Maximum="800" VerticalAlignment="Center" ToolTip.Tip="Zoom" />
+          <Button Classes="bar" Content="+" ToolTip.Tip="Zoom in (Ctrl++)" Command="{Binding ZoomInCommand}" />
+          <TextBlock x:Name="ZoomText" VerticalAlignment="Center" Width="44" TextAlignment="Center" Text="100%" FontSize="12" />
+          <Button Classes="bar" Content="Fit" ToolTip.Tip="Fit to window (Ctrl+Alt+0)" Command="{Binding ZoomFitCommand}" />
+          <Button Classes="bar" Content="Actual size" ToolTip.Tip="100% (Ctrl+0)" Command="{Binding ZoomActualCommand}" />
+          <Rectangle Width="1" Fill="{DynamicResource SwBorderStrong}" Margin="6,4" />
+          <ToggleButton Classes="bar" x:Name="TrayToggle" IsChecked="{Binding ShowTray}" ToolTip.Tip="Show or hide the Recent Captures tray" />
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+          <Button Classes="bar" Content="↶" ToolTip.Tip="Undo (Ctrl+Z)" Command="{Binding UndoCommand}" FontSize="14" />
+          <Button Classes="bar" Content="↷" ToolTip.Tip="Redo (Ctrl+Y)" Command="{Binding RedoCommand}" FontSize="14" />
+        </StackPanel>
+        <TextBlock Text="{Binding Status}" Margin="10,0" VerticalAlignment="Center" FontSize="12" Foreground="{DynamicResource SwSubtle}" TextTrimming="CharacterEllipsis" />
+      </DockPanel>
+    </Border>
+
+    <Border DockPanel.Dock="Bottom" Background="#B3261E" Padding="10,6" IsVisible="{Binding Narrating}">
+      <StackPanel Orientation="Horizontal" Spacing="10">
+        <TextBlock Text="● Recording narration" Foreground="White" FontWeight="SemiBold" VerticalAlignment="Center" />
+        <Button Content="Next picture ▶" Command="{Binding NarrateNextCommand}" />
+        <Button Content="Finish" Command="{Binding NarrateFinishCommand}" />
+      </StackPanel>
+    </Border>
+
+    <Border DockPanel.Dock="Bottom" Background="{DynamicResource SwPanel}" Padding="10,6" BorderBrush="{DynamicResource SwBorder}" BorderThickness="0,1,0,0"
+            IsVisible="{Binding Mode, Converter={x:Static controls:EqualsConverter.Instance}, ConverterParameter=Video}">
+      <DockPanel>
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" Margin="0,6,0,0">
+          <TextBlock Text="GIF" VerticalAlignment="Center" Foreground="{DynamicResource SwMuted}" />
+          <Button Content="Export GIF…" Command="{Binding ExportGifCommand}" />
+          <ComboBox VerticalAlignment="Center" MinWidth="150" ToolTip.Tip="GIF frame rate and size"
+                    SelectedItem="{Binding GifPreset}">
+            <ComboBox.Items>
+              <x:String>Screen recording</x:String>
+              <x:String>High motion</x:String>
+              <x:String>Small file</x:String>
+              <x:String>Custom</x:String>
+            </ComboBox.Items>
+          </ComboBox>
+          <CheckBox Content="Loop" IsChecked="{Binding GifLoop}" VerticalAlignment="Center" />
+          <CheckBox Content="Fade out" IsChecked="{Binding GifFade}" VerticalAlignment="Center" />
+          <CheckBox Content="Dither" IsChecked="{Binding GifDither}" VerticalAlignment="Center" />
+          <TextBlock Text="Playback" VerticalAlignment="Center" Margin="12,0,0,0" Foreground="{DynamicResource SwMuted}" />
+          <ToggleButton Content="🔇" ToolTip.Tip="Mute playback" IsChecked="{Binding Muted, Mode=OneWay}" Command="{Binding ToggleMuteCommand}" />
+          <Slider Width="90" Minimum="0" Maximum="1" Value="{Binding VideoVolume}" VerticalAlignment="Center" ToolTip.Tip="Playback volume" />
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="6">
+          <Button x:Name="PlayButton" Content="▶" Width="40" Command="{Binding PlayPauseCommand}" />
+          <TextBlock VerticalAlignment="Center" Width="60" Text="{Binding VideoPosition, Converter={x:Static controls:TimeConverter.Instance}}" />
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6">
+          <TextBlock VerticalAlignment="Center" Foreground="{DynamicResource SwMuted}" Text="{Binding VideoDuration, Converter={x:Static controls:TimeConverter.Instance}}" />
+          <Button Content="Set start" Command="{Binding SetTrimStartCommand}" ToolTip.Tip="Trim everything before the playhead" />
+          <Button Content="Set end" Command="{Binding SetTrimEndCommand}" ToolTip.Tip="Trim everything after the playhead" />
+          <Button Content="◀|" ToolTip.Tip="Previous frame" Command="{Binding PrevFrameCommand}" />
+          <Button Content="|▶" ToolTip.Tip="Next frame" Command="{Binding NextFrameCommand}" />
+          <Button Content="Cut selection…" ToolTip.Tip="Save the video without the part between start and end" Command="{Binding CutSelectionCommand}" />
+          <Button Content="Save selection…" ToolTip.Tip="Save the part between start and end as a new MP4" Command="{Binding ExportVideoCommand}" />
+          <Button Content="Edit frame" Command="{Binding FrameToImageCommand}" ToolTip.Tip="Open the current frame as an image" />
+        </StackPanel>
+        <StackPanel Margin="10,0" VerticalAlignment="Center">
+          <Slider x:Name="VideoSlider" Minimum="0" Maximum="{Binding VideoDuration}" Value="{Binding VideoPosition}" />
+          <TextBlock Text="{Binding VideoInfo}" FontSize="11" Foreground="{DynamicResource SwMuted}" />
+        </StackPanel>
+      </DockPanel>
+    </Border>
+
+    <Border x:Name="SideBar" DockPanel.Dock="Right" Width="300" Background="{DynamicResource SwPanel}" BorderBrush="{DynamicResource SwBorder}" BorderThickness="1,0,0,0"
+            IsVisible="{Binding ShowSideBar}">
+      <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="14,8,14,16">
+          <TextBlock x:Name="PanelTitle" FontSize="16" FontWeight="SemiBold" Margin="0,4,0,2" />
+
+          <StackPanel x:Name="QuickStylesSection">
+            <TextBlock Classes="section" Text="QUICK STYLES" />
+            <ItemsControl ItemsSource="{Binding QuickStyles}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <WrapPanel />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:QuickStyleViewModelAdapter">
+                  <Button Command="{Binding ApplyCommand}" Width="44" Height="36" Margin="0,0,6,6" Padding="0" CornerRadius="6" ToolTip.Tip="{Binding Name}"
+                          Background="{DynamicResource SwWell}">
+                    <Button.ContextMenu>
+                      <ContextMenu>
+                        <MenuItem Header="Favorite" Command="{Binding ToggleFavoriteCommand}" />
+                        <MenuItem Header="Move earlier" Command="{Binding MoveEarlierCommand}" />
+                        <MenuItem Header="Move later" Command="{Binding MoveLaterCommand}" />
+                        <Separator />
+                        <MenuItem Header="Delete" Command="{Binding DeleteCommand}" />
+                      </ContextMenu>
+                    </Button.ContextMenu>
+                    <Panel>
+                      <Border Width="34" Height="26" CornerRadius="4" BorderThickness="3"
+                              Background="{Binding Fill, Converter={x:Static controls:ColorBrushConverter.Instance}}"
+                              BorderBrush="{Binding Stroke, Converter={x:Static controls:ColorBrushConverter.Instance}}">
+                        <TextBlock Text="Aa" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   Foreground="{Binding TextColor, Converter={x:Static controls:ColorBrushConverter.Instance}}" />
+                      </Border>
+                      <TextBlock Text="★" FontSize="10" Foreground="#F5A623" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-2,-2,0"
+                                 IsVisible="{Binding IsFavorite}" />
+                    </Panel>
+                  </Button>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <WrapPanel>
+              <Button Classes="chip" Content="Save current style" Command="{Binding SaveQuickStyleCommand}" />
+              <ComboBox x:Name="StyleThemeBox" ItemsSource="{Binding TemplateThemes}" PlaceholderText="Theme…" MinWidth="90" FontSize="11"
+                        ToolTip.Tip="Recolor this tool's quick styles with a theme" Margin="0,0,6,6" />
+              <Button x:Name="StyleReset" Classes="chip" Content="Reset" ToolTip.Tip="Back to the built-in quick styles" />
+            </WrapPanel>
+            <TextBlock Text="Right-click a style to favorite, move or delete it." FontSize="10.5" Foreground="{DynamicResource SwMuted}" />
+          </StackPanel>
+
+          <StackPanel x:Name="Section_variant">
+            <TextBlock Classes="section" Text="TYPE" />
+            <ComboBox x:Name="VariantBox" ItemsSource="{Binding Variants}" HorizontalAlignment="Stretch" />
+            <Button x:Name="AddStamp" Classes="chip" Content="Add stamps from files…" Margin="0,6,0,0" />
+          </StackPanel>
+
+          <StackPanel x:Name="Section_tails">
+            <TextBlock Classes="section" Text="TAILS" />
+            <WrapPanel>
+              <Button x:Name="TailAdd" Classes="chip" Content="Add tail" ToolTip.Tip="Point the callout at one more place" />
+              <Button x:Name="TailRemove" Classes="chip" Content="Remove tail" />
+            </WrapPanel>
+          </StackPanel>
+
+          <StackPanel x:Name="Section_zone">
+            <TextBlock Classes="section" Text="DROP ZONE" />
+            <TextBlock Text="Drop an image here from the tray or Explorer. Drag inside a selected zone to move its picture." TextWrapping="Wrap" FontSize="11"
+                       Foreground="{DynamicResource SwMuted}" Margin="0,0,0,6" />
+            <WrapPanel>
+              <ToggleButton x:Name="ZoneFill" Classes="chip" Content="Fill" ToolTip.Tip="Fill the zone, cropping the picture" IsChecked="{Binding !ZoneFit, Mode=OneWay}" />
+              <ToggleButton x:Name="ZoneFit" Classes="chip" Content="Fit" ToolTip.Tip="Show the whole picture" IsChecked="{Binding ZoneFit, Mode=OneWay}" />
+              <Button x:Name="ZonePick" Classes="chip" Content="Choose image…" />
+              <Button x:Name="ZoneSwap" Classes="chip" Content="Swap" ToolTip.Tip="Swap the pictures of two zones picked with Shift+click" />
+              <Button x:Name="ZoneEmpty" Classes="chip" Content="Empty" />
+            </WrapPanel>
+          </StackPanel>
+
+          <StackPanel x:Name="Section_backfill">
+            <TextBlock Classes="section" Text="BACKGROUND FILL" />
+            <ComboBox x:Name="BackFillBox" HorizontalAlignment="Stretch" ToolTip.Tip="What fills the area a lifted part leaves behind" />
+          </StackPanel>
+
+          <StackPanel x:Name="Section_text">
+            <TextBlock Classes="section" Text="TEXT" />
+            <TextBox x:Name="TextEditor" Text="{Binding Text}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="64" MaxHeight="220" PlaceholderText="Type the text…" />
+          </StackPanel>
+
+          <StackPanel x:Name="Section_font">
+            <TextBlock Classes="section" Text="FONT" />
+            <ComboBox x:Name="FontBox" ItemsSource="{Binding Fonts}" HorizontalAlignment="Stretch" />
+            <DockPanel Margin="0,6,0,0">
+              <TextBlock DockPanel.Dock="Right" Width="36" TextAlignment="Right" VerticalAlignment="Center" Text="{Binding FontSize}" />
+              <Slider Minimum="6" Maximum="160" Value="{Binding FontSize}" />
+            </DockPanel>
+            <StackPanel Orientation="Horizontal" Spacing="4">
+              <ToggleButton Content="B" FontWeight="Bold" Width="34" IsChecked="{Binding Bold}" />
+              <ToggleButton Content="I" FontStyle="Italic" Width="34" IsChecked="{Binding Italic}" />
+              <Rectangle Width="8" />
+              <Button x:Name="AlignLeft" Content="⯇ Left" Classes="chip" />
+              <Button x:Name="AlignCenter" Content="Center" Classes="chip" />
+              <Button x:Name="AlignRight" Content="Right ⯈" Classes="chip" />
+            </StackPanel>
+          </StackPanel>
+
+          <StackPanel x:Name="Section_textopts">
+            <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,6,0,0">
+              <ToggleButton Content="U" Width="34" IsChecked="{Binding Underline}" ToolTip.Tip="Underline" />
+              <ToggleButton Content="S" Width="34" IsChecked="{Binding Strike}" ToolTip.Tip="Strikethrough" />
+              <ComboBox x:Name="VAlignBox" Width="110" ToolTip.Tip="Vertical alignment" />
+            </StackPanel>
+            <TextBlock Classes="section" Text="LETTER OUTLINE" />
+            <WrapPanel x:Name="OutlineSwatches" />
+            <DockPanel>
+              <TextBlock DockPanel.Dock="Right" Width="36" TextAlignment="Right" VerticalAlignment="Center" Text="{Binding OutlineWidth}" />
+              <Slider Minimum="0" Maximum="12" Value="{Binding OutlineWidth}" />
+            </DockPanel>
+            <TextBlock Classes="section" Text="PADDING (−1 = AUTO)" />
+            <DockPanel>
+              <TextBlock DockPanel.Dock="Right" Width="36" TextAlignment="Right" VerticalAlignment="Center" Text="{Binding Padding}" />
+              <Slider Minimum="-1" Maximum="60" Value="{Binding Padding}" />
+            </DockPanel>
+          </StackPanel>
+
+          <StackPanel x:Name="Section_textcolor">
+            <TextBlock Classes="section" Text="TEXT COLOR" />
+            <WrapPanel x:Name="TextSwatches" />
+            <TextBox Text="{Binding TextColor}" FontFamily="Consolas" />
+          </StackPanel>
+
+          <StackPanel x:Name="Section_stroke">
+            <TextBlock Classes="section" Text="OUTLINE COLOR" />
+            <WrapPanel x:Name="StrokeSwatches" />
+            <TextBox Text="{Binding StrokeColor}" FontFamily="Consolas" />
+          </StackPanel>
+
+          <StackPanel x:Name="Section_fill">
+            <TextBlock Classes="section" Text="FILL COLOR" />
+            <WrapPanel x:Name="FillSwatches" />
+            <TextBox Text="{Binding FillColor}" FontFamily="Consolas" />
+          </StackPanel>
+
+          <StackPanel x:Name="Section_gradient">
+            <TextBlock Classes="section" Text="GRADIENT TO (∅ = SOLID)" />
+            <WrapPanel x:Name="Fill2Swatches" />
+            <DockPanel>
+              <CheckBox DockPanel.Dock="Right" Content="Radial" IsChecked="{Binding GradientRadial}" />
+              <Slider Minimum="0" Maximum="360" Value="{Binding GradientAngle}" ToolTip.Tip="Angle of a linear gradient" />
+            </DockPanel>
+          </StackPanel>
+
+          <StackPanel x:Name="Section_width">
+            <TextBlock Classes="section" Text="WIDTH" />
+            <DockPanel>
+              <TextBlock DockPanel.Dock="Right" Width="36" TextAlignment="Right" VerticalAlignment="Center" Text="{Binding StrokeWidth}" />
+              <Slider Minimum="0" Maximum="60" Value="{Binding StrokeWidth}" />
+            </DockPanel>
+          </StackPanel>
+
+          <StackPanel x:Name="Section_caps">
+            <TextBlock Classes="section" Text="ENDS" />
+            <Grid ColumnDefinitions="*,8,*">
+              <ComboBox x:Name="StartCapBox" Grid.Column="0" HorizontalAlignment="Stretch" />
+              <ComboBox x:Name="EndCapBox" Grid.Column="2" HorizontalAlignment="Stretch" />
+            </Grid>
+            <TextBlock Classes="section" Text="HEAD SIZE" />
+            <Slider Minimum="0.3" Maximum="4" Value="{Binding HeadSize}" />
+          </StackPanel>
+
+          <StackPanel x:Name="Section_dash">
+            <TextBlock Classes="section" Text="LINE STYLE" />
+            <ComboBox x:Name="DashBox" HorizontalAlignment="Stretch" />
+          </StackPanel>
+
+          <StackPanel x:Name="Section_amount">
+            <TextBlock x:Name="AmountTitle" Classes="section" Text="AMOUNT" />
+            <DockPanel>
+              <TextBlock DockPanel.Dock="Right" Width="36" TextAlignment="Right" VerticalAlignment="Center" Text="{Binding Amount}" />
+              <Slider x:Name="AmountSlider" Minimum="0" Maximum="60" Value="{Binding Amount}" />
+            </DockPanel>
+          </StackPanel>
+
+          <StackPanel x:Name="Section_opacity">
+            <TextBlock Classes="section" Text="OPACITY" />
+            <DockPanel>
+              <TextBlock DockPanel.Dock="Right" Width="36" TextAlignment="Right" VerticalAlignment="Center" Text="{Binding Opacity}" />
+              <Slider Minimum="5" Maximum="100" Value="{Binding Opacity}" />
+            </DockPanel>
+          </StackPanel>
+
+          <StackPanel x:Name="Section_rotation">
+            <TextBlock Classes="section" Text="ROTATION" />
+            <DockPanel>
+              <TextBlock DockPanel.Dock="Right" Width="36" TextAlignment="Right" VerticalAlignment="Center" Text="{Binding Rotation}" />
+              <Slider Minimum="0" Maximum="360" Value="{Binding Rotation}" />
+            </DockPanel>
+          </StackPanel>
+
+          <StackPanel x:Name="Section_shadow">
+            <CheckBox Content="Drop shadow" IsChecked="{Binding Shadow}" Margin="0,10,0,0" />
+            <StackPanel x:Name="ShadowOptions">
+              <TextBlock Classes="section" Text="SHADOW DIRECTION" />
+              <Slider Minimum="0" Maximum="360" Value="{Binding ShadowAngle}" />
+              <TextBlock Classes="section" Text="DISTANCE" />
+              <Slider Minimum="0" Maximum="40" Value="{Binding ShadowDistance}" />
+              <TextBlock Classes="section" Text="SOFTNESS" />
+              <Slider Minimum="0" Maximum="30" Value="{Binding ShadowBlur}" />
+              <TextBox Text="{Binding ShadowColor}" FontFamily="Consolas" ToolTip.Tip="Shadow color, #AARRGGBB" />
+            </StackPanel>
+          </StackPanel>
+
+          <StackPanel x:Name="ArrangeSection">
+          <TextBlock Classes="section" Text="ARRANGE" />
+          <WrapPanel>
+            <Button Classes="chip" Content="Front" Command="{Binding BringToFrontCommand}" />
+            <Button Classes="chip" Content="Forward" Command="{Binding BringForwardCommand}" />
+            <Button Classes="chip" Content="Backward" Command="{Binding SendBackwardCommand}" />
+            <Button Classes="chip" Content="Back" Command="{Binding SendToBackCommand}" />
+            <Button Classes="chip" Content="Duplicate" Command="{Binding DuplicateCommand}" />
+            <Button Classes="chip" Content="Delete" Command="{Binding DeleteCommand}" />
+            <Button Classes="chip" Content="Group" Command="{Binding GroupCommand}" />
+            <Button Classes="chip" Content="Ungroup" Command="{Binding UngroupCommand}" />
+            <Button Classes="chip" Content="Flatten" Command="{Binding FlattenSelectedCommand}" />
+          </WrapPanel>
+          <WrapPanel>
+            <Button x:Name="AlignL" Classes="chip" Content="⇤" ToolTip.Tip="Align left" />
+            <Button x:Name="AlignC" Classes="chip" Content="↔" ToolTip.Tip="Align centers" />
+            <Button x:Name="AlignR" Classes="chip" Content="⇥" ToolTip.Tip="Align right" />
+            <Button x:Name="AlignT" Classes="chip" Content="⤒" ToolTip.Tip="Align top" />
+            <Button x:Name="AlignM" Classes="chip" Content="↕" ToolTip.Tip="Align middles" />
+            <Button x:Name="AlignB" Classes="chip" Content="⤓" ToolTip.Tip="Align bottom" />
+          </WrapPanel>
+          </StackPanel>
+
+          <StackPanel x:Name="CanvasSection">
+            <TextBlock Classes="section" Text="CANVAS COLOR" />
+            <WrapPanel x:Name="CanvasSwatches" />
+            <Button Classes="chip" Content="Expand canvas to fit objects" Command="{Binding ExpandCanvasCommand}" />
+          </StackPanel>
+
+        </StackPanel>
+      </ScrollViewer>
+    </Border>
+
+    <Border x:Name="EffectsPanel" DockPanel.Dock="Right" Width="230" Background="{DynamicResource SwPanel}" BorderBrush="{DynamicResource SwBorder}" BorderThickness="1,0,0,0"
+            IsVisible="{Binding ShowEffects}">
+      <DockPanel>
+        <DockPanel DockPanel.Dock="Top" Margin="14,10,8,0">
+          <Button x:Name="EffectsClose" DockPanel.Dock="Right" Classes="bar" Content="✕" ToolTip.Tip="Hide the Effects panel" />
+          <TextBlock Text="Effects" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" />
+        </DockPanel>
+        <TextBlock DockPanel.Dock="Top" Text="Applies to the whole image. Undo takes one back off." TextWrapping="Wrap" FontSize="11"
+                   Foreground="{DynamicResource SwMuted}" Margin="14,4,14,0" />
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+          <StackPanel x:Name="EffectGroups" Margin="14,0,14,16" />
+        </ScrollViewer>
+      </DockPanel>
+    </Border>
+
+    <controls:PixelCanvas x:Name="Canvas" />
+  </DockPanel>
+</Window>

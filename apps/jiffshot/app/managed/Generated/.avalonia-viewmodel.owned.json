@@ -1,0 +1,53 @@
+{
+  "generator": "avalonia-viewmodel",
+  "files": [
+    {
+      "path": "CaptureViewModelAdapter.g.cs",
+      "sha256": "2cc297cb2b0fb89de4876917854424cafc040fa24ed2ac22b419310e13b01507"
+    },
+    {
+      "path": "CaptureViewModelMetadata.g.cs",
+      "sha256": "8c57b3d46155917ffc13b04671b900396cae9f50552be1ad075b06f287e846b8"
+    },
+    {
+      "path": "LibraryItemViewModelAdapter.g.cs",
+      "sha256": "e0962a84266b2a5f32f89d1f2dd308111b93c7e7951618fc385c819350fd81e8"
+    },
+    {
+      "path": "LibraryItemViewModelMetadata.g.cs",
+      "sha256": "815641f3bb3052e20a6b8d15e5824ffef970828bb6053636a5eea4e14f8e277b"
+    },
+    {
+      "path": "MainViewModelAdapter.g.cs",
+      "sha256": "582f185321cb55cad73cd5d31bd4b29d549f0375c836118731b8cae511f430f6"
+    },
+    {
+      "path": "MainViewModelMenus.g.cs",
+      "sha256": "7301ad190cb10db36f6cc3b16c590b1e6bbcaf271c4b7bf278f7ce8c7740801a"
+    },
+    {
+      "path": "MainViewModelMetadata.g.cs",
+      "sha256": "404e976230850cac5ab55f69372519eaf8c8110288ae74d58369a7cc97817e65"
+    },
+    {
+      "path": "QuickStyleViewModelAdapter.g.cs",
+      "sha256": "7d863a392188b692a4e711fa815d416cf8a28db69f61589203da464284aea293"
+    },
+    {
+      "path": "QuickStyleViewModelMetadata.g.cs",
+      "sha256": "0567001f56f6aa867199e8f6aad7e3d1c86275001dbd330db035a8d906f55209"
+    },
+    {
+      "path": "TrayViewModelAdapter.g.cs",
+      "sha256": "1883b2a10c259eeb151c73f7f14d64aace7b3c953248837716647111d953a323"
+    },
+    {
+      "path": "TrayViewModelMenus.g.cs",
+      "sha256": "a122aebd92362dd70d1c2ea1261133d33b3a70385a397cdb67a3e5a9493aed9c"
+    },
+    {
+      "path": "TrayViewModelMetadata.g.cs",
+      "sha256": "f85ab3770ed6e2620facb0d00319231780730903c7fb3fdf63bfb10397f0fb0d"
+    }
+  ]
+}
