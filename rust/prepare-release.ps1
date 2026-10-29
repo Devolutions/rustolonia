@@ -80,9 +80,11 @@ if ($PSCmdlet.ParameterSetName -eq 'Version') {
         & cargo update --workspace --manifest-path (Join-Path $root 'rust' 'Cargo.toml')
         # The in-repository apps use the crates by path with their own lock
         # files; only the crates' own entries move (CI builds them --locked).
+        # Lock files without rustolonia (an app's other workspaces) stay.
         foreach ($lock in @(& git -C $root ls-files 'apps/*Cargo.lock' 'apps/**/Cargo.lock' | Sort-Object -Unique)) {
             $manifest = Join-Path $root (Split-Path -Parent $lock) 'Cargo.toml'
-            if (Test-Path -LiteralPath $manifest) {
+            $usesRustolonia = Select-String -LiteralPath (Join-Path $root $lock) -Pattern '^name = "rustolonia"$' -Quiet
+            if ($usesRustolonia -and (Test-Path -LiteralPath $manifest)) {
                 & cargo update -p rustolonia -p rustolonia-sys --manifest-path $manifest
             }
         }

@@ -1,0 +1,27 @@
+Windows Registry Editor Version 5.00
+
+; File type association for jiffshot.
+;
+; Jiffshot documents (.jsd). Replace the install path with the real one.
+; "%1" is what makes the shell pass the selected file to the executable; the
+; Rust entry point forwards it to the managed desktop lifetime, so it arrives
+; through AppScope::activation_items().
+;
+; Written under HKEY_CURRENT_USER so it can be applied and undone without
+; elevation while developing. A real installer writes the same keys under
+; HKEY_LOCAL_MACHINE\Software\Classes and owns their removal on uninstall.
+
+[HKEY_CURRENT_USER\Software\Classes\.jsd]
+@="jiffshot.Document"
+
+[HKEY_CURRENT_USER\Software\Classes\.jsd\OpenWithProgids]
+"jiffshot.Document"=""
+
+[HKEY_CURRENT_USER\Software\Classes\jiffshot.Document]
+@="Jiffshot document"
+
+[HKEY_CURRENT_USER\Software\Classes\jiffshot.Document\DefaultIcon]
+@="C:\\Program Files\\jiffshot\\jiffshot.exe,0"
+
+[HKEY_CURRENT_USER\Software\Classes\jiffshot.Document\shell\open\command]
+@="\"C:\\Program Files\\jiffshot\\jiffshot.exe\" \"%1\""

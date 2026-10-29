@@ -1,0 +1,10 @@
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]
+
+[target.aarch64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]
+
+# Jiffshot builds against this repository and its locally built host;
+# never download a release host.
+[env]
+RUSTOLONIA_NO_DOWNLOAD = "1"

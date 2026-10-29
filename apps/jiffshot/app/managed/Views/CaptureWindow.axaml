@@ -1,0 +1,193 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Jiffshot.Editor.Generated"
+        x:Class="Jiffshot.Editor.Views.CaptureWindow"
+        x:DataType="vm:CaptureViewModelAdapter"
+        Width="890" Height="290" CanResize="False"
+        Title="Jiffshot Capture"
+        Icon="/Assets/jiffshot.ico"
+        WindowStartupLocation="CenterScreen"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaTitleBarHeightHint="40"
+        Background="{DynamicResource CwBack}">
+  <Window.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="CwBack" Color="#F3F3F3" />
+          <SolidColorBrush x:Key="CwCard" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="CwEdge" Color="#E0E0E0" />
+          <SolidColorBrush x:Key="CwBox" Color="#C8C8C8" />
+          <SolidColorBrush x:Key="CwText" Color="#1F1F1F" />
+          <SolidColorBrush x:Key="CwMuted" Color="#606060" />
+          <SolidColorBrush x:Key="CwHover" Color="#E5E5E5" />
+          <SolidColorBrush x:Key="CwTabOn" Color="#1971C7" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="CwBack" Color="#1F2023" />
+          <SolidColorBrush x:Key="CwCard" Color="#2B2D31" />
+          <SolidColorBrush x:Key="CwEdge" Color="#3A3C40" />
+          <SolidColorBrush x:Key="CwBox" Color="#4A4D52" />
+          <SolidColorBrush x:Key="CwText" Color="#EDEEF0" />
+          <SolidColorBrush x:Key="CwMuted" Color="#A9ADB4" />
+          <SolidColorBrush x:Key="CwHover" Color="#34363B" />
+          <SolidColorBrush x:Key="CwTabOn" Color="#2F7FD6" />
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+      <!-- The drawn title bar without its title text and full-screen button:
+           the window's own icon and menus sit there. -->
+      <ControlTheme x:Key="CwDecorations" TargetType="WindowDrawnDecorations"
+                    BasedOn="{StaticResource {x:Type WindowDrawnDecorations}}">
+        <!-- Its visibility is template-bound, which a setter cannot override. -->
+        <Style Selector="^ /template/ Panel#PART_TitleTextPanel">
+          <Setter Property="Opacity" Value="0" />
+        </Style>
+        <Style Selector="^ /template/ Button#PART_MaximizeButton">
+          <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="^ /template/ Button#PART_FullScreenButton">
+          <Setter Property="IsVisible" Value="False" />
+        </Style>
+      </ControlTheme>
+    </ResourceDictionary>
+  </Window.Resources>
+  <Window.Styles>
+    <Style Selector="TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource CwText}" />
+    </Style>
+    <Style Selector="Button.flat">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Padding" Value="9,4" />
+      <Setter Property="CornerRadius" Value="5" />
+      <Setter Property="Foreground" Value="{DynamicResource CwText}" />
+    </Style>
+    <Style Selector="Button.drop">
+      <Setter Property="Background" Value="{DynamicResource CwCard}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource CwBox}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="Height" Value="30" />
+      <Setter Property="Padding" Value="9,0,7,0" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.tab">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Width" Value="88" />
+      <Setter Property="Height" Value="58" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.tab Border.glyph">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.tab.on Border.glyph">
+      <Setter Property="Background" Value="{DynamicResource CwTabOn}" />
+    </Style>
+    <Style Selector="Button.tab.on Border.glyph TextBlock">
+      <Setter Property="Foreground" Value="White" />
+    </Style>
+    <Style Selector="TextBlock.glyph">
+      <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets" />
+      <Setter Property="FontSize" Value="18" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button#CaptureButton">
+      <Setter Property="Background" Value="#DB3C30" />
+      <Setter Property="Foreground" Value="White" />
+      <Setter Property="BorderBrush" Value="#F5B0A8" />
+      <Setter Property="BorderThickness" Value="3" />
+    </Style>
+    <Style Selector="Button#CaptureButton:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#C73126" />
+      <Setter Property="BorderBrush" Value="#F5B0A8" />
+    </Style>
+    <Style Selector="Button#CaptureButton:pointerover TextBlock">
+      <Setter Property="Foreground" Value="White" />
+    </Style>
+    <Style Selector="Button#CaptureButton:pressed /template/ ContentPresenter">
+      <Setter Property="Background" Value="#AD281F" />
+    </Style>
+  </Window.Styles>
+
+  <Grid RowDefinitions="40,*,44">
+    <!-- The title row: the icon and the menus; the system draws minimize and close. -->
+    <Grid x:Name="TitleBar" Background="Transparent" ColumnDefinitions="Auto,Auto,*">
+      <Image Source="/Assets/jiffshot.ico" Width="20" Height="20" Margin="14,0,10,0" VerticalAlignment="Center" />
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+        <Button Classes="flat" Content="File" Tag="file" Click="OnMenuButton" />
+        <Button Classes="flat" Content="Edit" Tag="edit" Click="OnMenuButton" />
+        <Button Classes="flat" Content="View" Tag="view" Click="OnMenuButton" />
+        <Button Classes="flat" Content="Help" Tag="help" Click="OnMenuButton" />
+      </StackPanel>
+    </Grid>
+
+    <Grid Grid.Row="1" ColumnDefinitions="96,*" Margin="0,0,8,0">
+      <StackPanel Spacing="4" Margin="4,0,4,0">
+        <Button x:Name="Tab0" Classes="tab" Tag="0" Click="OnTab" ToolTip.Tip="All-in-One (Ctrl+1): select an area, then choose image, video or scrolling">
+          <StackPanel Spacing="3">
+            <Border Classes="glyph" Width="32" Height="28" CornerRadius="5"><TextBlock Classes="glyph" Text="&#xE7B3;" /></Border>
+            <TextBlock Text="All-in-One" FontSize="12" HorizontalAlignment="Center" />
+          </StackPanel>
+        </Button>
+        <Button x:Name="Tab1" Classes="tab" Tag="1" Click="OnTab" ToolTip.Tip="Image (Ctrl+2)">
+          <StackPanel Spacing="3">
+            <Border Classes="glyph" Width="32" Height="28" CornerRadius="5"><TextBlock Classes="glyph" Text="&#xE722;" /></Border>
+            <TextBlock Text="Image" FontSize="12" HorizontalAlignment="Center" />
+          </StackPanel>
+        </Button>
+        <Button x:Name="Tab2" Classes="tab" Tag="2" Click="OnTab" ToolTip.Tip="Video (Ctrl+3)">
+          <StackPanel Spacing="3">
+            <Border Classes="glyph" Width="32" Height="28" CornerRadius="5"><TextBlock Classes="glyph" Text="&#xE714;" /></Border>
+            <TextBlock Text="Video" FontSize="12" HorizontalAlignment="Center" />
+          </StackPanel>
+        </Button>
+      </StackPanel>
+
+      <Border Grid.Column="1" Background="{DynamicResource CwCard}" BorderBrush="{DynamicResource CwEdge}" BorderThickness="1" CornerRadius="8">
+        <Grid ColumnDefinitions="340,*,170">
+          <StackPanel x:Name="Fields" Spacing="14" Margin="10,16,0,0" />
+          <StackPanel x:Name="Switches" Grid.Column="1" Margin="26,10,6,0" />
+          <Grid Grid.Column="2">
+            <Button Classes="flat" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,4,4,0" Click="OnReset"
+                    ToolTip.Tip="Reset this tab's options">
+              <TextBlock Classes="glyph" FontSize="15" Text="&#xE72C;" />
+            </Button>
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="9" Margin="0,8,0,0">
+              <Button x:Name="CaptureButton" Width="104" Height="104" CornerRadius="52" Click="OnCapture"
+                      HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+                <TextBlock x:Name="CaptureLabel" Text="Capture" FontSize="17" FontWeight="SemiBold" Foreground="White" />
+              </Button>
+              <TextBlock x:Name="CaptureHint" HorizontalAlignment="Center" FontSize="12.5" />
+            </StackPanel>
+          </Grid>
+        </Grid>
+      </Border>
+    </Grid>
+
+    <DockPanel Grid.Row="2" Margin="8,0">
+      <Button DockPanel.Dock="Right" Classes="flat" Click="OnEditor" VerticalAlignment="Center">
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <TextBlock Classes="glyph" FontSize="14" Text="&#xE8A7;" Foreground="{DynamicResource CwMuted}" />
+          <TextBlock Text="Open Jiffshot Editor" VerticalAlignment="Center" />
+        </StackPanel>
+      </Button>
+      <StackPanel Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+        <Button Classes="flat" Tag="presets" Click="OnMenuButton" ToolTip.Tip="Run, edit, import or export presets">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Classes="glyph" FontSize="15" Text="&#xE713;" />
+            <TextBlock Text="Presets" VerticalAlignment="Center" />
+          </StackPanel>
+        </Button>
+        <Button Classes="flat" Tag="new-preset" Click="OnMenuButton" ToolTip.Tip="New preset from these settings">
+          <StackPanel Orientation="Horizontal" Spacing="4">
+            <TextBlock Classes="glyph" FontSize="14" Text="&#xE710;" />
+            <TextBlock Classes="glyph" FontSize="9" Text="&#xE70D;" />
+          </StackPanel>
+        </Button>
+      </StackPanel>
+    </DockPanel>
+  </Grid>
+</Window>
