@@ -11,7 +11,8 @@ Two steps, each followed by a commit:
      Sets the version of rustolonia, rustolonia-sys and rustolonia-bindgen,
      the exact `rustolonia-sys` pin in rustolonia, `rustoloniaVersion` in
      rust/release-manifest.json and <Version> in build/SharedVersion.props,
-     clears rust/rustolonia-sys/host-checksums.txt and refreshes Cargo.lock.
+     clears rust/rustolonia-sys/host-checksums.txt and refreshes Cargo.lock
+     (and the crates' entries in the in-repository apps' lock files).
      Commit to master, then dispatch .github/workflows/release.yml with
      phase=build. It stages host tarballs and SHA256SUMS as Actions artifacts.
 
@@ -75,7 +76,17 @@ if ($PSCmdlet.ParameterSetName -eq 'Version') {
     Set-Content-Replace (Join-Path $root 'build' 'SharedVersion.props') '<Version>[^<]+</Version>' "<Version>$Version</Version>"
     Write-Utf8Lf $checksumFile "$checksumHeader`n"
 
-    if (-not $SkipCargoUpdate) { & cargo update --workspace --manifest-path (Join-Path $root 'rust' 'Cargo.toml') }
+    if (-not $SkipCargoUpdate) {
+        & cargo update --workspace --manifest-path (Join-Path $root 'rust' 'Cargo.toml')
+        # The in-repository apps use the crates by path with their own lock
+        # files; only the crates' own entries move (CI builds them --locked).
+        foreach ($lock in @(& git -C $root ls-files 'apps/*Cargo.lock' 'apps/**/Cargo.lock' | Sort-Object -Unique)) {
+            $manifest = Join-Path $root (Split-Path -Parent $lock) 'Cargo.toml'
+            if (Test-Path -LiteralPath $manifest) {
+                & cargo update -p rustolonia -p rustolonia-sys --manifest-path $manifest
+            }
+        }
+    }
     $null = Get-RustoloniaReleaseVersion -RustoloniaRoot $root
     Write-Host "Version set to $Version. Commit to master, then dispatch phase=build (no tag needed)."
     return
