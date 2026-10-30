@@ -257,10 +257,6 @@ impl MainViewModel for Model {
     command!(clear_library_selection, |app| app.clear_library_selection());
     command!(show_closed, |app| app.show_closed());
     command!(reset_toolbar, |app| app.run("toolbar:reset"));
-    command!(toggle_side_bar, |app| app.layout(|l| l.side_bar ^= true));
-    command!(toggle_effects, |app| app.layout(|l| l.effects ^= true));
-    command!(toggle_tray, |app| app.layout(|l| l.tray ^= true));
-    command!(toggle_tool_labels, |app| app.layout(|l| l.labels ^= true));
     command!(open_capture_window, |app| app.open_capture_window());
     command!(auto_trim, |app| app.auto_trim());
     command!(tool_crop_menu, |app| app.set_tool(jiffshot_doc::Tool::Crop));
@@ -489,7 +485,7 @@ fn main() -> rustolonia::Result<()> {
     let mut editor = Editor::new(Document::blank(1280, 720, Rgba::WHITE));
     editor.analyzer = Some(Box::new(ocr::Recognizer));
     *canvas::EDITOR.lock() = Some(editor);
-    App::load_from_env()?.run(move |scope| {
+    let result = App::load_from_env()?.run(move |scope| {
         let opening = scope.activation_items()?.iter().find_map(|item| item.local_path().map(|p| p.to_path_buf()));
         vm_support::install(scope);
         app::install(scope.clone(), opening);
@@ -540,5 +536,7 @@ fn main() -> rustolonia::Result<()> {
             ui::mount_tray(scope, tray::TrayModel)?;
         }
         Ok(())
-    })
+    });
+    ui::detach_all();
+    result
 }

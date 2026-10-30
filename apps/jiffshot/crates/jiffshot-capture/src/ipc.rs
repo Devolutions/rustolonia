@@ -1,6 +1,6 @@
-//! Single-instance hand-off between the capture tool and the editor: the
-//! running editor listens on a per-session named pipe, and new captures are
-//! sent to it instead of starting another editor.
+//! Single-instance hand-off: the running Jiffshot listens on a per-session
+//! named pipe, and a second launch sends it the file to open instead of
+//! starting another editor.
 
 use crate::wide;
 use std::io;

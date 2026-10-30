@@ -4,9 +4,9 @@
 //!
 //! The state lives in a thread-local `RefCell`. Model calls change state
 //! and queue one [`App::sync`] on the dispatcher instead of publishing
-//! directly: Rustolonia holds the model's lock during a call, and a
-//! published value can make a control write a coerced value straight back
-//! (a slider clamping to a new range), which would re-enter that lock.
+//! directly: the window's model is busy during a call, and a published
+//! value can make a control write a coerced value straight back (a slider
+//! clamping to a new range), which would re-enter it.
 //! Writes that arrive while a sync is publishing find the state borrowed
 //! and are dropped, which is right for echoes.
 
@@ -281,7 +281,7 @@ impl App {
         if let Some(path) = self.opening.take() {
             self.open_path(&path);
         } else {
-            self.set_status("Capture with PrtScn (jiffshot-capture), open an image, or paste one.");
+            self.set_status("Capture with Print Screen or the tray icon, open an image, or paste one.");
         }
         self.refresh_library();
         self.load_stamps();
@@ -865,7 +865,7 @@ impl App {
         }
     }
 
-    /// Opens the capture tool's Capture window; the editor stays open.
+    /// Opens the Capture window; the editor stays open.
     pub fn open_capture_window(&mut self) {
         if let Err(error) = winutil::open_capture_window() {
             self.set_status(error);
@@ -1007,7 +1007,7 @@ impl App {
         self.stop_video();
     }
 
-    /// Shows a notice from the capture side as a toast (see `Toast` in the IR).
+    /// Shows a notice from the capture side as a toast (the `toast` signal).
     pub fn toast(&mut self, title: &str, text: &str, problem: bool) {
         self.toasts += 1;
         let value = format!("{}\u{1f}{title}\u{1f}{text}\u{1f}{}", self.toasts, problem as u8);
@@ -1018,31 +1018,31 @@ impl App {
         crate::capture_window::show(&self.scope);
     }
 
-    /// Shows Grab Text's result in its window (see `GrabText` in the IR).
+    /// Shows Grab Text's result in its window (the `grab_text` signal).
     pub fn show_grab_text(&mut self, text: &str) {
         self.toasts += 1;
         let value = format!("{}\u{1f}{text}", self.toasts);
         self.put_str("GrabText", &value, |k, v| k.set_grab_text(v));
     }
 
-    /// The selection overlay to show, or empty (see `Overlay` in the IR).
+    /// The selection overlay to show, or empty (the `overlay` signal).
     pub fn set_overlay(&mut self, json: &str) {
         self.put_str("Overlay", json, |k, v| k.set_overlay(v));
     }
 
-    /// Screen Draw to show, or empty (see `ScreenDraw` in the IR).
+    /// Screen Draw to show, or empty (the `screen_draw` signal).
     pub fn set_screen_draw(&mut self, json: &str) {
         self.put_str("ScreenDraw", json, |k, v| k.set_screen_draw(v));
     }
 
-    /// Opens the Preferences dialog on `tab` (see `Prefs` in the IR).
+    /// Opens the Preferences dialog on `tab` (the `prefs` signal).
     pub fn open_prefs(&mut self, tab: &str) {
         self.toasts += 1;
         let value = format!("{}\u{1f}{}", self.toasts, crate::prefs::dialog(self, tab));
         self.put_str("Prefs", &value, |k, v| k.set_prefs(v));
     }
 
-    /// The capture side's panels and outlines (see `Hud` in the IR).
+    /// The capture side's panels and outlines (the `hud` signal).
     pub fn set_hud(&mut self, json: &str) {
         self.put_str("Hud", json, |k, v| k.set_hud(v));
     }

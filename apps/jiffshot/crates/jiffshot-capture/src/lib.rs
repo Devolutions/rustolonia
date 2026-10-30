@@ -1,4 +1,4 @@
-//! Screen capture primitives shared by the Jiffshot capture tool and editor.
+//! Screen capture primitives for Jiffshot's capture side and editor.
 //!
 //! Everything here works in physical screen pixels; callers must make the
 //! process per-monitor DPI aware (see [`screen::enable_per_monitor_dpi`])

@@ -1,7 +1,7 @@
-// Shared by the build scripts of the capture tool and the editor (through
-// `include!`): turns `assets/jiffshot.ico` into a compiled resource file
-// holding the program icon, and hands it to the linker. MSVC's linker takes
-// `.res` files directly, so no resource compiler (or Windows SDK) is needed.
+// Included by the app's build script: turns `assets/jiffshot.ico` into a
+// compiled resource file holding the program icon, and hands it to the
+// linker. MSVC's linker takes `.res` files directly, so no resource compiler
+// (or Windows SDK) is needed.
 
 use std::path::Path;
 

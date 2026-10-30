@@ -1,4 +1,4 @@
-//! Local share destinations used by the capture tool and the editor:
+//! Local share destinations used by the capture side and the editor:
 //! other programs, the default mail program, the printer and folders.
 
 use crate::wide;

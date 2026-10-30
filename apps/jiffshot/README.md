@@ -69,6 +69,20 @@ and the build copies it next to `jiffshot.exe`, so `target/release` runs as
 it is; zip `jiffshot.exe` and the host DLLs beside it, with
 `app/README-portable.txt`, for the portable app.
 
+### Outside this repository
+
+The `apps/jiffshot` folder builds on its own: nothing in it refers to the
+rest of the repository except two lines. Once a Rustolonia release with the
+stage 34 capability exists:
+
+1. In `Cargo.toml`'s `[workspace.dependencies]`, replace the two `path`
+   entries for `rustolonia` and `rustolonia-sys` with the release's git tag
+   (the commented lines above them).
+2. Delete the `[env]` section of `.cargo/config.toml`; `rustolonia-sys`
+   then downloads the release's prebuilt host and checks its checksum.
+3. `cargo build --release -p jiffshot`; no .NET SDK or Rustolonia checkout
+   is needed.
+
 With no arguments Jiffshot starts in the tray. `jiffshot.exe FILE` opens a
 file in the editor, `--capture`, `--record`, `--window` and the other capture
 flags start a capture, and `--quit` ends it; a second launch hands its request

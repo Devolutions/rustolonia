@@ -1,9 +1,9 @@
-//! The C ABI the app's overlay and Screen Draw windows call, on the UI
-//! thread: input in, what to draw out, published as a table of function
-//! pointers ([`address`]).
+//! What the app's overlay and Screen Draw windows call, on the UI thread:
+//! input in, what to draw out.
 
 use crate::overlay::{self, View};
 use crate::screendraw;
+use jiffshot_capture::Rect;
 use jiffshot_doc::Pt;
 use windows_sys::Win32::UI::WindowsAndMessaging::SetCursorPos;
 
@@ -15,8 +15,8 @@ pub const INPUT_KEY: i32 = 4;
 pub const INPUT_CANCEL: i32 = 5;
 // Any other kind only refreshes the state (and the modifier keys).
 
-const MOD_SHIFT: i32 = 1;
-const MOD_CTRL: i32 = 2;
+pub const MOD_SHIFT: i32 = 1;
+pub const MOD_CTRL: i32 = 2;
 
 pub const FLAG_DONE: i32 = 1;
 pub const FLAG_MAGNIFIER: i32 = 2;
@@ -25,9 +25,19 @@ pub const FLAG_GUIDES: i32 = 8;
 pub const FLAG_COLOR: i32 = 16;
 pub const FLAG_DRAGGING: i32 = 32;
 
+/// Texts for [`overlay_text`].
+pub const TEXT_TITLE: i32 = 0;
+pub const TEXT_SIZE: i32 = 1;
+pub const TEXT_HINT: i32 = 2;
+pub const TEXT_HELP: i32 = 3;
+
+/// Integer lists for [`overlay_points`].
+pub const POINTS_PATH: i32 = 0;
+pub const POINTS_REGIONS: i32 = 1;
+pub const POINTS_GUIDES: i32 = 2;
+
 /// What the overlay shows, in desktop pixels (see [`View`]).
-#[repr(C)]
-#[derive(Default)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct OverlayState {
     pub flags: i32,
     pub cursor: [i32; 2],
@@ -40,60 +50,25 @@ pub struct OverlayState {
     pub region_count: i32,
 }
 
-#[repr(C)]
-pub struct UiApi {
-    /// Input for overlay `session` (desktop pixels; `value` is the wheel
-    /// delta or the virtual key), then the state.
-    pub overlay_input: extern "C" fn(session: u64, kind: i32, x: f64, y: f64, value: i32, mods: i32, out: *mut OverlayState),
-    /// UTF-16 text: 0 the title, 1 the size, 2 the hint, 3 the help (lines
-    /// joined by '\n'). Returns the length, at most `cap`.
-    pub overlay_text: extern "C" fn(session: u64, which: i32, buf: *mut u16, cap: i32) -> i32,
-    /// Integers: 0 the freehand path (x, y), 1 the multi-area regions
-    /// (x, y, w, h), 2 the video guides (w, h). Returns how many integers.
-    pub overlay_points: extern "C" fn(session: u64, which: i32, buf: *mut i32, cap: i32) -> i32,
-    /// Copies the snapshot's `x, y, w, h` (desktop pixels) as BGRA into
-    /// `dst`; false when the session is over.
-    pub overlay_copy: extern "C" fn(session: u64, x: i32, y: i32, w: i32, h: i32, dst: *mut u8, stride: i32) -> i32,
-    /// The overlay is on screen (for the timing log).
-    pub overlay_shown: extern "C" fn(session: u64),
-    /// Input for Screen Draw `session` (area pixels); true when the marks
-    /// changed.
-    pub draw_input: extern "C" fn(session: u64, kind: i32, x: f64, y: f64, value: i32) -> i32,
-    /// Re-renders fading marks; true when they changed.
-    pub draw_tick: extern "C" fn(session: u64) -> i32,
-    /// Copies the marks (premultiplied BGRA, `w` × `h`) into `dst`, clear
-    /// where there are none; false when the session is over.
-    pub draw_copy: extern "C" fn(session: u64, dst: *mut u8, stride: i32, w: i32, h: i32) -> i32,
-    /// Starts a demo overlay (see `overlay::demo`) and writes its
-    /// announcement as UTF-16; returns the length. For the UI self-test.
-    pub overlay_demo: extern "C" fn(mode: i32, buf: *mut u16, cap: i32) -> i32,
-    /// Ends a demo overlay.
-    pub overlay_end_demo: extern "C" fn(session: u64),
-    /// Starts Screen Draw over `x, y, w, h` without a recording and writes
-    /// its announcement as UTF-16; returns the length. For the UI self-test.
-    pub draw_demo: extern "C" fn(x: i32, y: i32, w: i32, h: i32, buf: *mut u16, cap: i32) -> i32,
-    /// Ends Screen Draw.
-    pub draw_end: extern "C" fn(),
-}
+impl OverlayState {
+    pub fn has(&self, flag: i32) -> bool {
+        self.flags & flag != 0
+    }
 
-pub static API: UiApi =
-    UiApi { overlay_input, overlay_text, overlay_points, overlay_copy, overlay_shown, draw_input, draw_tick, draw_copy, overlay_demo, overlay_end_demo, draw_demo, draw_end };
+    pub fn lit(&self) -> Rect {
+        let [x, y, w, h] = self.lit;
+        Rect::new(x, y, w, h)
+    }
 
-/// The table's address, for the app to publish.
-pub fn address() -> i64 {
-    &API as *const UiApi as i64
-}
-
-fn write<T>(out: *mut T, value: T) {
-    if !out.is_null() {
-        // SAFETY: the caller passes a valid, writable struct.
-        unsafe { out.write(value) };
+    pub fn monitor(&self) -> Rect {
+        let [x, y, w, h] = self.monitor;
+        Rect::new(x, y, w, h)
     }
 }
 
 fn state_of(view: &View, done: bool, path: usize, regions: usize) -> OverlayState {
     let flag = |on: bool, f: i32| if on { f } else { 0 };
-    let r = |r: jiffshot_capture::Rect| [r.x, r.y, r.width, r.height];
+    let r = |r: Rect| [r.x, r.y, r.width, r.height];
     OverlayState {
         flags: flag(done, FLAG_DONE)
             | flag(view.magnifier, FLAG_MAGNIFIER)
@@ -112,11 +87,13 @@ fn state_of(view: &View, done: bool, path: usize, regions: usize) -> OverlayStat
     }
 }
 
-extern "C" fn overlay_input(session: u64, kind: i32, x: f64, y: f64, value: i32, mods: i32, out: *mut OverlayState) {
+/// Input for overlay `session` (desktop pixels; `value` is the wheel delta
+/// or the virtual key), then the state. A session that is over answers
+/// [`FLAG_DONE`].
+pub fn overlay_input(session: u64, kind: i32, x: f64, y: f64, value: i32, mods: i32) -> OverlayState {
     let mut guard = overlay::session();
     let Some(s) = guard.as_mut().filter(|s| s.id == session) else {
-        write(out, OverlayState { flags: FLAG_DONE, ..OverlayState::default() });
-        return;
+        return OverlayState { flags: FLAG_DONE, ..OverlayState::default() };
     };
     let o = &mut s.overlay;
     let shift = mods & MOD_SHIFT != 0;
@@ -146,76 +123,63 @@ extern "C" fn overlay_input(session: u64, kind: i32, x: f64, y: f64, value: i32,
         // Wake the capture thread, which waits for the outcome.
         crate::on_capture_thread(|| {});
     }
-    write(out, state);
+    state
 }
 
-fn copy_utf16(text: &str, buf: *mut u16, cap: i32) -> i32 {
-    let units: Vec<u16> = text.encode_utf16().take(cap.max(0) as usize).collect();
-    if !buf.is_null() {
-        // SAFETY: the caller's buffer holds `cap` units.
-        unsafe { std::ptr::copy_nonoverlapping(units.as_ptr(), buf, units.len()) };
-    }
-    units.len() as i32
-}
-
-extern "C" fn overlay_text(session: u64, which: i32, buf: *mut u16, cap: i32) -> i32 {
+/// One of the overlay's texts ([`TEXT_TITLE`]…); the help's lines are
+/// joined by '\n'.
+pub fn overlay_text(session: u64, which: i32) -> String {
     let mut guard = overlay::session();
-    let Some(s) = guard.as_mut().filter(|s| s.id == session) else { return 0 };
+    let Some(s) = guard.as_mut().filter(|s| s.id == session) else { return String::new() };
     let view = s.overlay.view();
-    let text = match which {
-        0 => view.title.unwrap_or_default(),
-        1 => view.size,
-        2 => view.hint.to_owned(),
+    match which {
+        TEXT_TITLE => view.title.unwrap_or_default(),
+        TEXT_SIZE => view.size,
+        TEXT_HINT => view.hint.to_owned(),
         _ => overlay::HELP.join("\n"),
-    };
-    copy_utf16(&text, buf, cap)
-}
-
-extern "C" fn overlay_points(session: u64, which: i32, buf: *mut i32, cap: i32) -> i32 {
-    let guard = overlay::session();
-    let Some(s) = guard.as_ref().filter(|s| s.id == session) else { return 0 };
-    let values: Vec<i32> = match which {
-        0 => s.overlay.path().flat_map(|(x, y)| [x, y]).collect(),
-        1 => s.overlay.regions().flat_map(|r| [r.x, r.y, r.width, r.height]).collect(),
-        _ => overlay::GUIDES.iter().flat_map(|&(w, h)| [w, h]).collect(),
-    };
-    let n = values.len().min(cap.max(0) as usize);
-    if !buf.is_null() {
-        // SAFETY: the caller's buffer holds `cap` integers.
-        unsafe { std::ptr::copy_nonoverlapping(values.as_ptr(), buf, n) };
     }
-    n as i32
 }
 
-extern "C" fn overlay_copy(session: u64, x: i32, y: i32, w: i32, h: i32, dst: *mut u8, stride: i32) -> i32 {
+/// One of the overlay's integer lists ([`POINTS_PATH`]…): the freehand path
+/// (x, y), the multi-area regions (x, y, w, h) or the video guides (w, h).
+pub fn overlay_points(session: u64, which: i32) -> Vec<i32> {
     let guard = overlay::session();
-    let Some(s) = guard.as_ref().filter(|s| s.id == session) else { return 0 };
-    if dst.is_null() || w <= 0 || h <= 0 {
-        return 0;
+    let Some(s) = guard.as_ref().filter(|s| s.id == session) else { return Vec::new() };
+    match which {
+        POINTS_PATH => s.overlay.path().flat_map(|(x, y)| [x, y]).collect(),
+        POINTS_REGIONS => s.overlay.regions().flat_map(|r| [r.x, r.y, r.width, r.height]).collect(),
+        _ => overlay::GUIDES.iter().flat_map(|&(w, h)| [w, h]).collect(),
+    }
+}
+
+/// Copies the snapshot's `r` (desktop pixels) as BGRA into `dst`, rows
+/// `stride` bytes apart; false when the session is over or `dst` is too
+/// small.
+pub fn overlay_copy(session: u64, r: Rect, dst: &mut [u8], stride: usize) -> bool {
+    let guard = overlay::session();
+    let Some(s) = guard.as_ref().filter(|s| s.id == session) else { return false };
+    let (w, h) = (r.width, r.height);
+    if w <= 0 || h <= 0 || stride < w as usize * 4 || dst.len() < stride * h as usize {
+        return false;
     }
     let snap = &s.overlay.snapshot;
-    let (ox, oy) = (x - s.overlay.origin.0, y - s.overlay.origin.1);
+    let (ox, oy) = (r.x - s.overlay.origin.0, r.y - s.overlay.origin.1);
     let src_stride = snap.stride();
-    let dst_addr = dst as usize;
     // Rows split across cores: this is between the hotkey and the overlay
     // appearing.
     let threads = std::thread::available_parallelism().map_or(4, |n| n.get().min(8));
     let per = (h as usize).div_ceil(threads);
     std::thread::scope(|scope| {
-        for t in 0..threads {
-            let rows = (t * per)..((t + 1) * per).min(h as usize);
+        for (band, rows) in dst[..stride * h as usize].chunks_mut(per * stride).enumerate() {
             scope.spawn(move || {
-                for row in rows {
-                    let sy = oy + row as i32;
-                    // SAFETY: each thread writes its own rows of the caller's
-                    // `h` × `stride` buffer.
-                    let line = unsafe { std::slice::from_raw_parts_mut((dst_addr + row * stride as usize) as *mut u8, w as usize * 4) };
+                for (i, line) in rows.chunks_mut(stride).enumerate() {
+                    let line = &mut line[..w as usize * 4];
+                    line.fill(0);
+                    let sy = oy + (band * per + i) as i32;
                     if sy < 0 || sy >= snap.height as i32 {
-                        line.fill(0);
                         continue;
                     }
                     let (x0, x1) = (ox.max(0), (ox + w).min(snap.width as i32));
-                    line.fill(0);
                     if x1 > x0 {
                         let from = sy as usize * src_stride + x0 as usize * 4;
                         let at = (x0 - ox) as usize * 4;
@@ -225,79 +189,76 @@ extern "C" fn overlay_copy(session: u64, x: i32, y: i32, w: i32, h: i32, dst: *m
             });
         }
     });
-    1
+    true
 }
 
-extern "C" fn overlay_demo(mode: i32, buf: *mut u16, cap: i32) -> i32 {
-    copy_utf16(&overlay::demo(mode), buf, cap)
-}
-
-extern "C" fn overlay_end_demo(session: u64) {
-    let mut guard = overlay::session();
-    if guard.as_ref().is_some_and(|s| s.id == session) {
-        *guard = None;
-    }
-}
-
-extern "C" fn draw_demo(x: i32, y: i32, w: i32, h: i32, buf: *mut u16, cap: i32) -> i32 {
-    screendraw::show(jiffshot_capture::Rect::new(x, y, w, h), std::time::Duration::ZERO);
-    let guard = screendraw::state();
-    let Some(s) = guard.as_ref() else { return 0 };
-    let json = serde_json::json!({ "id": s.id, "area": [x, y, w, h] }).to_string();
-    copy_utf16(&json, buf, cap)
-}
-
-extern "C" fn draw_end() {
-    screendraw::hide();
-}
-
-extern "C" fn overlay_shown(session: u64) {
+/// The overlay is on screen (for the timing log).
+pub fn overlay_shown(session: u64) {
     let guard = overlay::session();
     if let Some(started) = guard.as_ref().filter(|s| s.id == session).and_then(|s| s.overlay.started) {
         crate::log(&format!("overlay on screen {:.0} ms after the hotkey", started.elapsed().as_secs_f64() * 1000.0));
     }
 }
 
-extern "C" fn draw_input(session: u64, kind: i32, x: f64, y: f64, value: i32) -> i32 {
+/// Starts a demo overlay (see `overlay::demo`) and returns its
+/// announcement. For the UI self-test.
+pub fn overlay_demo(mode: i32) -> String {
+    overlay::demo(mode)
+}
+
+/// Ends a demo overlay.
+pub fn overlay_end_demo(session: u64) {
+    let mut guard = overlay::session();
+    if guard.as_ref().is_some_and(|s| s.id == session) {
+        *guard = None;
+    }
+}
+
+/// Input for Screen Draw `session` (area pixels); true when the marks
+/// changed.
+pub fn draw_input(session: u64, kind: i32, x: f64, y: f64, value: i32) -> bool {
     let p = Pt::new(x as f32, y as f32);
     let ended = {
         let mut guard = screendraw::state();
-        let Some(s) = guard.as_mut().filter(|s| s.id == session) else { return 0 };
+        let Some(s) = guard.as_mut().filter(|s| s.id == session) else { return false };
         match kind {
             INPUT_PRESS => s.press(p),
-            INPUT_MOVE => return s.moved(p) as i32,
+            INPUT_MOVE => return s.moved(p),
             INPUT_RELEASE => s.release(),
             INPUT_KEY => {
                 s.key(value as u16);
-                return 0;
+                return false;
             }
             INPUT_CANCEL => {}
-            _ => return 0,
+            _ => return false,
         }
         kind == INPUT_CANCEL
     };
     if ended {
         screendraw::hide();
     }
-    1
+    true
 }
 
-extern "C" fn draw_tick(session: u64) -> i32 {
-    screendraw::state().as_mut().filter(|s| s.id == session).is_some_and(|s| s.tick()) as i32
+/// Re-renders fading marks; true when they changed.
+pub fn draw_tick(session: u64) -> bool {
+    screendraw::state().as_mut().filter(|s| s.id == session).is_some_and(|s| s.tick())
 }
 
-extern "C" fn draw_copy(session: u64, dst: *mut u8, stride: i32, w: i32, h: i32) -> i32 {
+/// Copies the marks (premultiplied BGRA, `w` × `h`, tightly packed) into
+/// `dst`, clear where there are none; false when the session is over or
+/// `dst` is too small.
+pub fn draw_copy(session: u64, dst: &mut [u8], w: u32, h: u32) -> bool {
     let image = {
         let guard = screendraw::state();
-        let Some(s) = guard.as_ref().filter(|s| s.id == session) else { return 0 };
+        let Some(s) = guard.as_ref().filter(|s| s.id == session) else { return false };
         s.image.clone()
     };
-    if dst.is_null() || w <= 0 || h <= 0 {
-        return 0;
+    let stride = w as usize * 4;
+    if w == 0 || h == 0 || dst.len() < stride * h as usize {
+        return false;
     }
-    for row in 0..h as usize {
-        // SAFETY: the caller's buffer holds `h` rows of `stride` bytes.
-        let line = unsafe { std::slice::from_raw_parts_mut(dst.add(row * stride as usize), w as usize * 4) };
+    for (row, line) in dst.chunks_mut(stride).take(h as usize).enumerate() {
         line.fill(0);
         let Some(image) = &image else { continue };
         if row >= image.height() as usize {
@@ -309,5 +270,19 @@ extern "C" fn draw_copy(session: u64, dst: *mut u8, stride: i32, w: i32, h: i32)
             d.copy_from_slice(&[s[2], s[1], s[0], s[3]]);
         }
     }
-    1
+    true
+}
+
+/// Starts Screen Draw over `r` without a recording and returns its
+/// announcement. For the UI self-test.
+pub fn draw_demo(r: Rect) -> String {
+    screendraw::show(r, std::time::Duration::ZERO);
+    let guard = screendraw::state();
+    let Some(s) = guard.as_ref() else { return String::new() };
+    serde_json::json!({ "id": s.id, "area": [r.x, r.y, r.width, r.height] }).to_string()
+}
+
+/// Ends Screen Draw.
+pub fn draw_end() {
+    screendraw::hide();
 }

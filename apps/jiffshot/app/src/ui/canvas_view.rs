@@ -10,7 +10,6 @@
 //! [`crate::canvas`]); the middle or right button, or Alt with the left one,
 //! pans instead, and the wheel zooms around the pointer.
 
-#[path = "canvas_overlay.rs"]
 mod canvas_overlay;
 
 use super::UiOnly;

@@ -18,7 +18,7 @@ mod selftest;
 mod toast;
 mod tray;
 
-use crate::vm::{CaptureBinding, CaptureViewModel, MainBinding, MainViewModel, TrayViewModel};
+use crate::vm::{CaptureBinding, CaptureViewModel, MainBinding, MainViewModel, TrayBinding, TrayViewModel};
 use rustolonia::{AppScope, Result, Window};
 use std::cell::RefCell;
 use std::mem::ManuallyDrop;
@@ -28,6 +28,7 @@ use std::thread::ThreadId;
 thread_local! {
     static MAIN: RefCell<Option<MainBinding>> = const { RefCell::new(None) };
     static CAPTURE: RefCell<Option<CaptureBinding>> = const { RefCell::new(None) };
+    static TRAY: RefCell<Option<TrayBinding>> = const { RefCell::new(None) };
     static MAIN_WINDOW: RefCell<Option<(AppScope, Window)>> = const { RefCell::new(None) };
     static CANVAS: RefCell<Option<canvas_view::CanvasView>> = const { RefCell::new(None) };
 }
@@ -181,5 +182,21 @@ pub fn mount_capture_window(scope: &AppScope, model: impl CaptureViewModel) -> R
 
 /// Shows the tray icon.
 pub fn mount_tray(scope: &AppScope, model: impl TrayViewModel) -> Result<()> {
-    tray::mount(scope, model)
+    let binding = tray::mount(scope, model)?;
+    TRAY.with(|t| *t.borrow_mut() = Some(binding));
+    Ok(())
+}
+
+/// Detaches every view model (the editor saves its work), once the
+/// application has stopped running, however it stopped.
+pub fn detach_all() {
+    if let Some(main) = MAIN.with(|m| m.borrow_mut().take()) {
+        main.model.run(|m| m.detach());
+    }
+    if let Some(capture) = CAPTURE.with(|c| c.borrow_mut().take()) {
+        capture.model.run(|m| m.detach());
+    }
+    if let Some(tray) = TRAY.with(|t| t.borrow_mut().take()) {
+        tray.model.run(|m| m.detach());
+    }
 }

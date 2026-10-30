@@ -66,49 +66,6 @@ pub fn publish_update<T: Send + 'static>(signal: Signal<T>, f: impl FnOnce(&mut 
     Ok(())
 }
 
-fn index(i: i32, len: usize) -> Option<usize> {
-    usize::try_from(i).ok().filter(|&i| i < len)
-}
-
-pub fn list_insert<T: Send + 'static>(signal: Signal<Vec<T>>, at: i32, value: T) -> Result<()> {
-    publish_update(signal, move |list| {
-        let at = usize::try_from(at).unwrap_or(0).min(list.len());
-        list.insert(at, value);
-    })
-}
-
-pub fn list_replace<T: Send + 'static>(signal: Signal<Vec<T>>, at: i32, value: T) -> Result<()> {
-    publish_update(signal, move |list| {
-        if let Some(at) = index(at, list.len()) {
-            list[at] = value;
-        }
-    })
-}
-
-pub fn list_remove<T: Send + 'static>(signal: Signal<Vec<T>>, at: i32) -> Result<()> {
-    publish_update(signal, move |list| {
-        if let Some(at) = index(at, list.len()) {
-            list.remove(at);
-        }
-    })
-}
-
-/// Moves an element; for element models too, since moving does not touch
-/// what an element holds.
-pub fn list_move<T: 'static>(signal: Signal<Vec<T>>, from: i32, to: i32) -> Result<()> {
-    on_ui(move || {
-        as_publisher(|| {
-            signal.update(|list| {
-                if let (Some(from), Some(to)) = (index(from, list.len()), index(to, list.len())) {
-                    let item = list.remove(from);
-                    list.insert(to, item);
-                }
-            })
-        })
-    });
-    Ok(())
-}
-
 /// A model shared by its window's controls. Calls that arrive while it is
 /// already in a call (a control echoing what the model just published) are
 /// dropped.
@@ -306,65 +263,6 @@ impl<F: Clone + Default + PartialEq + 'static, M: ?Sized + 'static> Element<F, M
         on_ui(move || {
             let element = Self::make(value, boxed, attach, detach);
             as_publisher(|| list.update(|l| l.push(element)));
-        });
-        Ok(())
-    }
-
-    pub fn insert<V: Send + 'static>(
-        list: Signal<Vec<Rc<Self>>>,
-        at: i32,
-        value: V,
-        boxed: fn(V) -> Box<M>,
-        attach: Attach<M, F>,
-        detach: fn(&mut M) -> Result<()>,
-    ) -> Result<()> {
-        on_ui(move || {
-            let element = Self::make(value, boxed, attach, detach);
-            as_publisher(|| {
-                list.update(|l| {
-                    let at = usize::try_from(at).unwrap_or(0).min(l.len());
-                    l.insert(at, element);
-                })
-            });
-        });
-        Ok(())
-    }
-
-    pub fn replace<V: Send + 'static>(
-        list: Signal<Vec<Rc<Self>>>,
-        at: i32,
-        value: V,
-        boxed: fn(V) -> Box<M>,
-        attach: Attach<M, F>,
-        detach: fn(&mut M) -> Result<()>,
-    ) -> Result<()> {
-        on_ui(move || {
-            let element = Self::make(value, boxed, attach, detach);
-            let mut old = None;
-            as_publisher(|| {
-                list.update(|l| {
-                    if let Some(at) = index(at, l.len()) {
-                        old = Some(std::mem::replace(&mut l[at], element));
-                    }
-                })
-            });
-            // Detached once no view holds it any more.
-            drop(old);
-        });
-        Ok(())
-    }
-
-    pub fn remove(list: Signal<Vec<Rc<Self>>>, at: i32) -> Result<()> {
-        on_ui(move || {
-            let mut old = None;
-            as_publisher(|| {
-                list.update(|l| {
-                    if let Some(at) = index(at, l.len()) {
-                        old = Some(l.remove(at));
-                    }
-                })
-            });
-            drop(old);
         });
         Ok(())
     }

@@ -8,7 +8,6 @@
 //! option panel or a note under the control that asked for it. This module
 //! only lays them out and sends back actions.
 
-#[path = "capture_parts.rs"]
 pub(super) mod parts;
 
 use self::parts::{on_click, payload, post, Form, Input, Subscriptions, CTRL, GLYPHS};

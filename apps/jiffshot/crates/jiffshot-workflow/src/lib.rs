@@ -35,7 +35,7 @@ pub mod panel;
 pub mod prefs;
 pub mod settings;
 mod tray;
-mod ui_api;
+pub mod ui_api;
 mod workflow;
 
 use overlay::Overlay;
@@ -73,17 +73,11 @@ pub struct Hooks {
     pub hud: Box<dyn Fn(String) + Send + Sync>,
     /// The selection overlay to show, as JSON (session, desktop, monitors;
     /// see `overlay.rs`), or empty to take it down. The app draws it and
-    /// feeds it input through [`ui_api_address`].
+    /// feeds it input through [`ui_api`].
     pub overlay: Box<dyn Fn(String) + Send + Sync>,
     /// Screen Draw to show over an area while recording, as JSON (session,
     /// area), or empty to end it.
     pub screen_draw: Box<dyn Fn(String) + Send + Sync>,
-}
-
-/// The address of the function table the app's overlay and Screen Draw
-/// windows call (see `ui_api.rs`).
-pub fn ui_api_address() -> i64 {
-    ui_api::address()
 }
 
 /// Button `button` of capture panel `id` was pressed (`None`: the panel was

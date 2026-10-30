@@ -8,9 +8,7 @@
 //! answers `hud:ID:INDEX`, a toolbar's `hud:ID:act:NAME`, through the main
 //! view model's `run`.
 
-#[path = "hud_toolbar.rs"]
 mod hud_toolbar;
-#[path = "hud_native.rs"]
 pub(in crate::ui) mod native;
 
 use hud_toolbar::RecordingToolbar;

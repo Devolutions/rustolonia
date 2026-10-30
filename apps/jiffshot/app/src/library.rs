@@ -165,8 +165,8 @@ pub struct Item {
     current: Arc<Mutex<bool>>,
     selected: Arc<Mutex<bool>>,
     unsaved: Arc<Mutex<bool>>,
-    new_name: Arc<Mutex<String>>,
-    tag_text: Arc<Mutex<String>>,
+    new_name: String,
+    tag_text: String,
     thumb_height: f64,
     sink: ItemSink,
 }
@@ -176,8 +176,8 @@ impl Item {
         let tags = entry.tags().join(", ");
         Item {
             path: entry.path.clone(),
-            new_name: Arc::new(Mutex::new(entry.name())),
-            tag_text: Arc::new(Mutex::new(tags)),
+            new_name: entry.name(),
+            tag_text: tags,
             entry,
             current: Arc::new(Mutex::new(current)),
             selected: Arc::new(Mutex::new(selected)),
@@ -249,8 +249,8 @@ impl LibraryItemViewModel for Item {
         sink.set_is_pinned(self.entry.pinned())?;
         sink.set_tags(self.entry.tags().join(", "))?;
         sink.set_info(self.entry.info())?;
-        sink.set_new_name(self.new_name.lock().unwrap().clone())?;
-        sink.set_tag_text(self.tag_text.lock().unwrap().clone())?;
+        sink.set_new_name(self.new_name.clone())?;
+        sink.set_tag_text(self.tag_text.clone())?;
         sink.set_thumb_height(self.thumb_height)?;
         let thumb = thumbnail_path(&self.path);
         if thumb.exists() {
@@ -268,16 +268,6 @@ impl LibraryItemViewModel for Item {
     fn open(&mut self) -> Result<()> {
         let path = self.path.clone();
         app::post(move |app| app.open_path(&path));
-        Ok(())
-    }
-
-    fn set_new_name(&mut self, value: String) -> Result<()> {
-        *self.new_name.lock().unwrap() = value;
-        Ok(())
-    }
-
-    fn set_tag_text(&mut self, value: String) -> Result<()> {
-        *self.tag_text.lock().unwrap() = value;
         Ok(())
     }
 

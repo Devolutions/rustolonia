@@ -181,7 +181,7 @@ fn clicked(binding: &TrayBinding, event: TrayEvent) {
 }
 
 /// Shows the tray icon for `model`; it stays until the application exits.
-pub fn mount(scope: &AppScope, model: impl TrayViewModel) -> Result<()> {
+pub fn mount(scope: &AppScope, model: impl TrayViewModel) -> Result<TrayBinding> {
     let binding = TrayBinding::new(model)?;
     let handler_binding = binding.clone();
     // The handler runs on the UI thread; the binding never leaves it.
@@ -202,6 +202,5 @@ pub fn mount(scope: &AppScope, model: impl TrayViewModel) -> Result<()> {
         }
         tray.set_menu(&menu(&sink))
     })?;
-    std::mem::forget(binding);
-    Ok(())
+    Ok(binding)
 }

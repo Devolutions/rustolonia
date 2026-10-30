@@ -10,9 +10,7 @@
 //! The model code (`app.rs`, `library.rs`, `tray.rs`, `capture_window.rs`)
 //! uses these names; keep them when adding members.
 
-#![allow(dead_code)]
-
-use crate::vm_support::{list_insert, list_move, list_remove, list_replace, publish, publish_update, watch, Element, ElementSink, ModelCell};
+use crate::vm_support::{publish, publish_update, watch, Element, ElementSink, ModelCell};
 use rustolonia::{Result, Signal};
 
 
@@ -149,10 +147,6 @@ pub trait MainViewModel: Send + 'static {
     fn narrate_images(&mut self) -> Result<()>;
     fn narrate_next(&mut self) -> Result<()>;
     fn narrate_finish(&mut self) -> Result<()>;
-    fn toggle_side_bar(&mut self) -> Result<()>;
-    fn toggle_effects(&mut self) -> Result<()>;
-    fn toggle_tray(&mut self) -> Result<()>;
-    fn toggle_tool_labels(&mut self) -> Result<()>;
     fn open_capture_window(&mut self) -> Result<()>;
     fn open_recent_file(&mut self, value: String) -> Result<()>;
     fn auto_trim(&mut self) -> Result<()>;
@@ -362,8 +356,6 @@ pub struct MainViewModelSink {
     pub frame_to_image_enabled: Signal<bool>,
     /// Whether `record_video` can run now.
     pub record_video_enabled: Signal<bool>,
-    /// Whether `canvas_changed` can run now.
-    pub canvas_changed_enabled: Signal<bool>,
     /// Whether `select_all` can run now.
     pub select_all_enabled: Signal<bool>,
     /// Whether `deselect_all` can run now.
@@ -414,8 +406,6 @@ pub struct MainViewModelSink {
     pub toggle_library_view_enabled: Signal<bool>,
     /// Whether `combine_selected` can run now.
     pub combine_selected_enabled: Signal<bool>,
-    /// Whether `clear_library_selection` can run now.
-    pub clear_library_selection_enabled: Signal<bool>,
     /// Whether `show_closed` can run now.
     pub show_closed_enabled: Signal<bool>,
     /// Whether `reset_toolbar` can run now.
@@ -426,14 +416,6 @@ pub struct MainViewModelSink {
     pub narrate_next_enabled: Signal<bool>,
     /// Whether `narrate_finish` can run now.
     pub narrate_finish_enabled: Signal<bool>,
-    /// Whether `toggle_side_bar` can run now.
-    pub toggle_side_bar_enabled: Signal<bool>,
-    /// Whether `toggle_effects` can run now.
-    pub toggle_effects_enabled: Signal<bool>,
-    /// Whether `toggle_tray` can run now.
-    pub toggle_tray_enabled: Signal<bool>,
-    /// Whether `toggle_tool_labels` can run now.
-    pub toggle_tool_labels_enabled: Signal<bool>,
     /// Whether `open_capture_window` can run now.
     pub open_capture_window_enabled: Signal<bool>,
     /// Whether `open_recent_file` can run now.
@@ -482,8 +464,6 @@ pub struct MainViewModelSink {
     pub tool_smart_move_enabled: Signal<bool>,
     /// Whether `tool_text_replace` can run now.
     pub tool_text_replace_enabled: Signal<bool>,
-    /// Whether `run` can run now.
-    pub run_enabled: Signal<bool>,
 }
 
 impl MainViewModelSink {
@@ -628,7 +608,6 @@ impl MainViewModelSink {
             export_gif_enabled: Signal::new(true),
             frame_to_image_enabled: Signal::new(true),
             record_video_enabled: Signal::new(true),
-            canvas_changed_enabled: Signal::new(true),
             select_all_enabled: Signal::new(true),
             deselect_all_enabled: Signal::new(true),
             invert_selection_enabled: Signal::new(true),
@@ -654,16 +633,11 @@ impl MainViewModelSink {
             toggle_mute_enabled: Signal::new(true),
             toggle_library_view_enabled: Signal::new(true),
             combine_selected_enabled: Signal::new(true),
-            clear_library_selection_enabled: Signal::new(true),
             show_closed_enabled: Signal::new(true),
             reset_toolbar_enabled: Signal::new(true),
             narrate_images_enabled: Signal::new(true),
             narrate_next_enabled: Signal::new(true),
             narrate_finish_enabled: Signal::new(true),
-            toggle_side_bar_enabled: Signal::new(true),
-            toggle_effects_enabled: Signal::new(true),
-            toggle_tray_enabled: Signal::new(true),
-            toggle_tool_labels_enabled: Signal::new(true),
             open_capture_window_enabled: Signal::new(true),
             open_recent_file_enabled: Signal::new(true),
             auto_trim_enabled: Signal::new(true),
@@ -688,7 +662,6 @@ impl MainViewModelSink {
             tool_eyedropper_enabled: Signal::new(true),
             tool_smart_move_enabled: Signal::new(true),
             tool_text_replace_enabled: Signal::new(true),
-            run_enabled: Signal::new(true),
         }
     }
 
@@ -770,9 +743,6 @@ impl MainViewModelSink {
     pub fn set_zoom_request(&self, value: impl AsRef<str>) -> Result<()> {
         publish(self.zoom_request, value.as_ref().to_owned())
     }
-    pub fn set_action(&self, value: impl AsRef<str>) -> Result<()> {
-        publish(self.action, value.as_ref().to_owned())
-    }
     pub fn set_mode(&self, value: impl AsRef<str>) -> Result<()> {
         publish(self.mode, value.as_ref().to_owned())
     }
@@ -850,9 +820,6 @@ impl MainViewModelSink {
     }
     pub fn set_gradient_angle(&self, value: f64) -> Result<()> {
         publish(self.gradient_angle, value)
-    }
-    pub fn set_canvas_color(&self, value: impl AsRef<str>) -> Result<()> {
-        publish(self.canvas_color, value.as_ref().to_owned())
     }
     pub fn set_theme(&self, value: impl AsRef<str>) -> Result<()> {
         publish(self.theme, value.as_ref().to_owned())
@@ -947,47 +914,11 @@ impl MainViewModelSink {
     pub fn set_prefs(&self, value: impl AsRef<str>) -> Result<()> {
         publish(self.prefs, value.as_ref().to_owned())
     }
-    pub fn set_new_image_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.new_image_enabled, enabled)
-    }
-    pub fn set_open_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.open_enabled, enabled)
-    }
-    pub fn set_save_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.save_enabled, enabled)
-    }
-    pub fn set_save_as_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.save_as_enabled, enabled)
-    }
-    pub fn set_export_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.export_enabled, enabled)
-    }
-    pub fn set_copy_image_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.copy_image_enabled, enabled)
-    }
-    pub fn set_paste_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.paste_enabled, enabled)
-    }
-    pub fn set_new_capture_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.new_capture_enabled, enabled)
-    }
-    pub fn set_combine_images_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.combine_images_enabled, enabled)
-    }
-    pub fn set_open_library_folder_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.open_library_folder_enabled, enabled)
-    }
-    pub fn set_exit_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.exit_enabled, enabled)
-    }
     pub fn set_undo_enabled(&self, enabled: bool) -> Result<()> {
         publish(self.undo_enabled, enabled)
     }
     pub fn set_redo_enabled(&self, enabled: bool) -> Result<()> {
         publish(self.redo_enabled, enabled)
-    }
-    pub fn set_copy_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.copy_enabled, enabled)
     }
     pub fn set_cut_enabled(&self, enabled: bool) -> Result<()> {
         publish(self.cut_enabled, enabled)
@@ -1010,267 +941,9 @@ impl MainViewModelSink {
     pub fn set_send_to_back_enabled(&self, enabled: bool) -> Result<()> {
         publish(self.send_to_back_enabled, enabled)
     }
-    pub fn set_save_quick_style_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.save_quick_style_enabled, enabled)
-    }
-    pub fn set_rotate_left_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.rotate_left_enabled, enabled)
-    }
-    pub fn set_rotate_right_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.rotate_right_enabled, enabled)
-    }
-    pub fn set_flip_horizontal_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.flip_horizontal_enabled, enabled)
-    }
-    pub fn set_flip_vertical_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.flip_vertical_enabled, enabled)
-    }
-    pub fn set_resize50_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.resize50_enabled, enabled)
-    }
-    pub fn set_resize200_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.resize200_enabled, enabled)
-    }
-    pub fn set_flatten_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.flatten_enabled, enabled)
-    }
-    pub fn set_zoom_in_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.zoom_in_enabled, enabled)
-    }
-    pub fn set_zoom_out_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.zoom_out_enabled, enabled)
-    }
-    pub fn set_zoom_fit_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.zoom_fit_enabled, enabled)
-    }
-    pub fn set_zoom_actual_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.zoom_actual_enabled, enabled)
-    }
-    pub fn set_grab_text_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.grab_text_enabled, enabled)
-    }
-    pub fn set_simplify_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.simplify_enabled, enabled)
-    }
-    pub fn set_play_pause_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.play_pause_enabled, enabled)
-    }
-    pub fn set_set_trim_start_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.set_trim_start_enabled, enabled)
-    }
-    pub fn set_set_trim_end_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.set_trim_end_enabled, enabled)
-    }
-    pub fn set_export_video_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.export_video_enabled, enabled)
-    }
-    pub fn set_export_gif_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.export_gif_enabled, enabled)
-    }
-    pub fn set_frame_to_image_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.frame_to_image_enabled, enabled)
-    }
-    pub fn set_record_video_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.record_video_enabled, enabled)
-    }
-    pub fn set_canvas_changed_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.canvas_changed_enabled, enabled)
-    }
-    pub fn set_select_all_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.select_all_enabled, enabled)
-    }
-    pub fn set_deselect_all_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.deselect_all_enabled, enabled)
-    }
-    pub fn set_invert_selection_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.invert_selection_enabled, enabled)
-    }
-    pub fn set_group_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.group_enabled, enabled)
-    }
-    pub fn set_ungroup_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.ungroup_enabled, enabled)
-    }
-    pub fn set_flatten_selected_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.flatten_selected_enabled, enabled)
-    }
-    pub fn set_smart_redact_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.smart_redact_enabled, enabled)
-    }
-    pub fn set_new_from_clipboard_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.new_from_clipboard_enabled, enabled)
-    }
-    pub fn set_print_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.print_enabled, enabled)
-    }
-    pub fn set_close_file_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.close_file_enabled, enabled)
-    }
-    pub fn set_duplicate_file_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.duplicate_file_enabled, enabled)
-    }
-    pub fn set_delete_file_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.delete_file_enabled, enabled)
-    }
-    pub fn set_tool_magic_wand_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.tool_magic_wand_enabled, enabled)
-    }
-    pub fn set_tool_eraser_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.tool_eraser_enabled, enabled)
-    }
-    pub fn set_expand_canvas_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.expand_canvas_enabled, enabled)
-    }
-    pub fn set_cycle_theme_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.cycle_theme_enabled, enabled)
-    }
-    pub fn set_prev_frame_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.prev_frame_enabled, enabled)
-    }
-    pub fn set_next_frame_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.next_frame_enabled, enabled)
-    }
-    pub fn set_cut_selection_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.cut_selection_enabled, enabled)
-    }
-    pub fn set_silent_copy_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.silent_copy_enabled, enabled)
-    }
-    pub fn set_combine_videos_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.combine_videos_enabled, enabled)
-    }
-    pub fn set_video_from_images_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.video_from_images_enabled, enabled)
-    }
-    pub fn set_toggle_mute_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.toggle_mute_enabled, enabled)
-    }
-    pub fn set_toggle_library_view_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.toggle_library_view_enabled, enabled)
-    }
-    pub fn set_combine_selected_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.combine_selected_enabled, enabled)
-    }
-    pub fn set_clear_library_selection_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.clear_library_selection_enabled, enabled)
-    }
-    pub fn set_show_closed_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.show_closed_enabled, enabled)
-    }
-    pub fn set_reset_toolbar_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.reset_toolbar_enabled, enabled)
-    }
-    pub fn set_narrate_images_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.narrate_images_enabled, enabled)
-    }
-    pub fn set_narrate_next_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.narrate_next_enabled, enabled)
-    }
-    pub fn set_narrate_finish_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.narrate_finish_enabled, enabled)
-    }
-    pub fn set_toggle_side_bar_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.toggle_side_bar_enabled, enabled)
-    }
-    pub fn set_toggle_effects_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.toggle_effects_enabled, enabled)
-    }
-    pub fn set_toggle_tray_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.toggle_tray_enabled, enabled)
-    }
-    pub fn set_toggle_tool_labels_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.toggle_tool_labels_enabled, enabled)
-    }
-    pub fn set_open_capture_window_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.open_capture_window_enabled, enabled)
-    }
-    pub fn set_open_recent_file_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.open_recent_file_enabled, enabled)
-    }
-    pub fn set_auto_trim_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.auto_trim_enabled, enabled)
-    }
-    pub fn set_tool_crop_menu_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.tool_crop_menu_enabled, enabled)
-    }
-    pub fn set_tool_select_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.tool_select_enabled, enabled)
-    }
-    pub fn set_tool_arrow_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.tool_arrow_enabled, enabled)
-    }
-    pub fn set_tool_line_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.tool_line_enabled, enabled)
-    }
-    pub fn set_tool_shape_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.tool_shape_enabled, enabled)
-    }
-    pub fn set_tool_text_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.tool_text_enabled, enabled)
-    }
-    pub fn set_tool_callout_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.tool_callout_enabled, enabled)
-    }
-    pub fn set_tool_step_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.tool_step_enabled, enabled)
-    }
-    pub fn set_tool_pen_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.tool_pen_enabled, enabled)
-    }
-    pub fn set_tool_highlight_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.tool_highlight_enabled, enabled)
-    }
-    pub fn set_tool_blur_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.tool_blur_enabled, enabled)
-    }
-    pub fn set_tool_magnify_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.tool_magnify_enabled, enabled)
-    }
-    pub fn set_tool_spotlight_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.tool_spotlight_enabled, enabled)
-    }
-    pub fn set_tool_stamp_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.tool_stamp_enabled, enabled)
-    }
-    pub fn set_tool_fill_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.tool_fill_enabled, enabled)
-    }
-    pub fn set_tool_crop_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.tool_crop_enabled, enabled)
-    }
-    pub fn set_tool_cut_out_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.tool_cut_out_enabled, enabled)
-    }
-    pub fn set_tool_selection_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.tool_selection_enabled, enabled)
-    }
-    pub fn set_tool_eyedropper_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.tool_eyedropper_enabled, enabled)
-    }
-    pub fn set_tool_smart_move_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.tool_smart_move_enabled, enabled)
-    }
-    pub fn set_tool_text_replace_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.tool_text_replace_enabled, enabled)
-    }
-    pub fn set_run_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.run_enabled, enabled)
-    }
     pub fn add_variants(&self, value: impl AsRef<str>) -> Result<()> {
         let value = value.as_ref().to_owned();
         publish_update(self.variants, move |list| list.push(value))
-    }
-    pub fn insert_variants(&self, index: i32, value: impl AsRef<str>) -> Result<()> {
-        list_insert(self.variants, index, value.as_ref().to_owned())
-    }
-    pub fn replace_variants(&self, index: i32, value: impl AsRef<str>) -> Result<()> {
-        list_replace(self.variants, index, value.as_ref().to_owned())
-    }
-    pub fn remove_variants(&self, index: i32) -> Result<()> {
-        list_remove(self.variants, index)
-    }
-    pub fn move_variants(&self, from_index: i32, to_index: i32) -> Result<()> {
-        list_move(self.variants, from_index, to_index)
     }
     pub fn clear_variants(&self) -> Result<()> {
         publish_update(self.variants, Vec::clear)
@@ -1279,53 +952,14 @@ impl MainViewModelSink {
         let value = value.as_ref().to_owned();
         publish_update(self.fonts, move |list| list.push(value))
     }
-    pub fn insert_fonts(&self, index: i32, value: impl AsRef<str>) -> Result<()> {
-        list_insert(self.fonts, index, value.as_ref().to_owned())
-    }
-    pub fn replace_fonts(&self, index: i32, value: impl AsRef<str>) -> Result<()> {
-        list_replace(self.fonts, index, value.as_ref().to_owned())
-    }
-    pub fn remove_fonts(&self, index: i32) -> Result<()> {
-        list_remove(self.fonts, index)
-    }
-    pub fn move_fonts(&self, from_index: i32, to_index: i32) -> Result<()> {
-        list_move(self.fonts, from_index, to_index)
-    }
-    pub fn clear_fonts(&self) -> Result<()> {
-        publish_update(self.fonts, Vec::clear)
-    }
     pub fn add_library(&self, value: impl LibraryItemViewModel) -> Result<()> {
         Element::add(self.library, value, |m| Box::new(m) as Box<dyn LibraryItemViewModel>, |m, sink| m.attach(LibraryItemViewModelSink(sink)), |m| m.detach())
-    }
-    pub fn insert_library(&self, index: i32, value: impl LibraryItemViewModel) -> Result<()> {
-        Element::insert(self.library, index, value, |m| Box::new(m) as Box<dyn LibraryItemViewModel>, |m, sink| m.attach(LibraryItemViewModelSink(sink)), |m| m.detach())
-    }
-    pub fn replace_library(&self, index: i32, value: impl LibraryItemViewModel) -> Result<()> {
-        Element::replace(self.library, index, value, |m| Box::new(m) as Box<dyn LibraryItemViewModel>, |m, sink| m.attach(LibraryItemViewModelSink(sink)), |m| m.detach())
-    }
-    pub fn remove_library(&self, index: i32) -> Result<()> {
-        Element::remove(self.library, index)
-    }
-    pub fn move_library(&self, from_index: i32, to_index: i32) -> Result<()> {
-        list_move(self.library, from_index, to_index)
     }
     pub fn clear_library(&self) -> Result<()> {
         Element::clear(self.library)
     }
     pub fn add_quick_styles(&self, value: impl QuickStyleViewModel) -> Result<()> {
         Element::add(self.quick_styles, value, |m| Box::new(m) as Box<dyn QuickStyleViewModel>, |m, sink| m.attach(QuickStyleViewModelSink(sink)), |m| m.detach())
-    }
-    pub fn insert_quick_styles(&self, index: i32, value: impl QuickStyleViewModel) -> Result<()> {
-        Element::insert(self.quick_styles, index, value, |m| Box::new(m) as Box<dyn QuickStyleViewModel>, |m, sink| m.attach(QuickStyleViewModelSink(sink)), |m| m.detach())
-    }
-    pub fn replace_quick_styles(&self, index: i32, value: impl QuickStyleViewModel) -> Result<()> {
-        Element::replace(self.quick_styles, index, value, |m| Box::new(m) as Box<dyn QuickStyleViewModel>, |m, sink| m.attach(QuickStyleViewModelSink(sink)), |m| m.detach())
-    }
-    pub fn remove_quick_styles(&self, index: i32) -> Result<()> {
-        Element::remove(self.quick_styles, index)
-    }
-    pub fn move_quick_styles(&self, from_index: i32, to_index: i32) -> Result<()> {
-        list_move(self.quick_styles, from_index, to_index)
     }
     pub fn clear_quick_styles(&self) -> Result<()> {
         Element::clear(self.quick_styles)
@@ -1334,55 +968,13 @@ impl MainViewModelSink {
         let value = value.as_ref().to_owned();
         publish_update(self.effects, move |list| list.push(value))
     }
-    pub fn insert_effects(&self, index: i32, value: impl AsRef<str>) -> Result<()> {
-        list_insert(self.effects, index, value.as_ref().to_owned())
-    }
-    pub fn replace_effects(&self, index: i32, value: impl AsRef<str>) -> Result<()> {
-        list_replace(self.effects, index, value.as_ref().to_owned())
-    }
-    pub fn remove_effects(&self, index: i32) -> Result<()> {
-        list_remove(self.effects, index)
-    }
-    pub fn move_effects(&self, from_index: i32, to_index: i32) -> Result<()> {
-        list_move(self.effects, from_index, to_index)
-    }
-    pub fn clear_effects(&self) -> Result<()> {
-        publish_update(self.effects, Vec::clear)
-    }
     pub fn add_templates(&self, value: impl AsRef<str>) -> Result<()> {
         let value = value.as_ref().to_owned();
         publish_update(self.templates, move |list| list.push(value))
     }
-    pub fn insert_templates(&self, index: i32, value: impl AsRef<str>) -> Result<()> {
-        list_insert(self.templates, index, value.as_ref().to_owned())
-    }
-    pub fn replace_templates(&self, index: i32, value: impl AsRef<str>) -> Result<()> {
-        list_replace(self.templates, index, value.as_ref().to_owned())
-    }
-    pub fn remove_templates(&self, index: i32) -> Result<()> {
-        list_remove(self.templates, index)
-    }
-    pub fn move_templates(&self, from_index: i32, to_index: i32) -> Result<()> {
-        list_move(self.templates, from_index, to_index)
-    }
-    pub fn clear_templates(&self) -> Result<()> {
-        publish_update(self.templates, Vec::clear)
-    }
     pub fn add_shares(&self, value: impl AsRef<str>) -> Result<()> {
         let value = value.as_ref().to_owned();
         publish_update(self.shares, move |list| list.push(value))
-    }
-    pub fn insert_shares(&self, index: i32, value: impl AsRef<str>) -> Result<()> {
-        list_insert(self.shares, index, value.as_ref().to_owned())
-    }
-    pub fn replace_shares(&self, index: i32, value: impl AsRef<str>) -> Result<()> {
-        list_replace(self.shares, index, value.as_ref().to_owned())
-    }
-    pub fn remove_shares(&self, index: i32) -> Result<()> {
-        list_remove(self.shares, index)
-    }
-    pub fn move_shares(&self, from_index: i32, to_index: i32) -> Result<()> {
-        list_move(self.shares, from_index, to_index)
     }
     pub fn clear_shares(&self) -> Result<()> {
         publish_update(self.shares, Vec::clear)
@@ -1391,36 +983,12 @@ impl MainViewModelSink {
         let value = value.as_ref().to_owned();
         publish_update(self.library_filters, move |list| list.push(value))
     }
-    pub fn insert_library_filters(&self, index: i32, value: impl AsRef<str>) -> Result<()> {
-        list_insert(self.library_filters, index, value.as_ref().to_owned())
-    }
-    pub fn replace_library_filters(&self, index: i32, value: impl AsRef<str>) -> Result<()> {
-        list_replace(self.library_filters, index, value.as_ref().to_owned())
-    }
-    pub fn remove_library_filters(&self, index: i32) -> Result<()> {
-        list_remove(self.library_filters, index)
-    }
-    pub fn move_library_filters(&self, from_index: i32, to_index: i32) -> Result<()> {
-        list_move(self.library_filters, from_index, to_index)
-    }
     pub fn clear_library_filters(&self) -> Result<()> {
         publish_update(self.library_filters, Vec::clear)
     }
     pub fn add_library_sorts(&self, value: impl AsRef<str>) -> Result<()> {
         let value = value.as_ref().to_owned();
         publish_update(self.library_sorts, move |list| list.push(value))
-    }
-    pub fn insert_library_sorts(&self, index: i32, value: impl AsRef<str>) -> Result<()> {
-        list_insert(self.library_sorts, index, value.as_ref().to_owned())
-    }
-    pub fn replace_library_sorts(&self, index: i32, value: impl AsRef<str>) -> Result<()> {
-        list_replace(self.library_sorts, index, value.as_ref().to_owned())
-    }
-    pub fn remove_library_sorts(&self, index: i32) -> Result<()> {
-        list_remove(self.library_sorts, index)
-    }
-    pub fn move_library_sorts(&self, from_index: i32, to_index: i32) -> Result<()> {
-        list_move(self.library_sorts, from_index, to_index)
     }
     pub fn clear_library_sorts(&self) -> Result<()> {
         publish_update(self.library_sorts, Vec::clear)
@@ -1429,36 +997,9 @@ impl MainViewModelSink {
         let value = value.as_ref().to_owned();
         publish_update(self.template_themes, move |list| list.push(value))
     }
-    pub fn insert_template_themes(&self, index: i32, value: impl AsRef<str>) -> Result<()> {
-        list_insert(self.template_themes, index, value.as_ref().to_owned())
-    }
-    pub fn replace_template_themes(&self, index: i32, value: impl AsRef<str>) -> Result<()> {
-        list_replace(self.template_themes, index, value.as_ref().to_owned())
-    }
-    pub fn remove_template_themes(&self, index: i32) -> Result<()> {
-        list_remove(self.template_themes, index)
-    }
-    pub fn move_template_themes(&self, from_index: i32, to_index: i32) -> Result<()> {
-        list_move(self.template_themes, from_index, to_index)
-    }
-    pub fn clear_template_themes(&self) -> Result<()> {
-        publish_update(self.template_themes, Vec::clear)
-    }
     pub fn add_recent_files(&self, value: impl AsRef<str>) -> Result<()> {
         let value = value.as_ref().to_owned();
         publish_update(self.recent_files, move |list| list.push(value))
-    }
-    pub fn insert_recent_files(&self, index: i32, value: impl AsRef<str>) -> Result<()> {
-        list_insert(self.recent_files, index, value.as_ref().to_owned())
-    }
-    pub fn replace_recent_files(&self, index: i32, value: impl AsRef<str>) -> Result<()> {
-        list_replace(self.recent_files, index, value.as_ref().to_owned())
-    }
-    pub fn remove_recent_files(&self, index: i32) -> Result<()> {
-        list_remove(self.recent_files, index)
-    }
-    pub fn move_recent_files(&self, from_index: i32, to_index: i32) -> Result<()> {
-        list_move(self.recent_files, from_index, to_index)
     }
     pub fn clear_recent_files(&self) -> Result<()> {
         publish_update(self.recent_files, Vec::clear)
@@ -1542,8 +1083,6 @@ impl MainBinding {
 pub trait LibraryItemViewModel: Send + 'static {
     fn attach(&mut self, sink: LibraryItemViewModelSink) -> Result<()>;
     fn detach(&mut self) -> Result<()>;
-    fn set_new_name(&mut self, value: String) -> Result<()>;
-    fn set_tag_text(&mut self, value: String) -> Result<()>;
     fn open(&mut self) -> Result<()>;
     fn toggle_pin(&mut self) -> Result<()>;
     fn close(&mut self) -> Result<()>;
@@ -1765,52 +1304,6 @@ pub struct TrayViewModelSink {
     pub schedule: Signal<bool>,
     pub can_repeat: Signal<bool>,
     pub recent_captures: Signal<Vec<String>>,
-    /// Whether `capture` can run now.
-    pub capture_enabled: Signal<bool>,
-    /// Whether `capture_delayed` can run now.
-    pub capture_delayed_enabled: Signal<bool>,
-    /// Whether `capture_screen` can run now.
-    pub capture_screen_enabled: Signal<bool>,
-    /// Whether `repeat_last` can run now.
-    pub repeat_last_enabled: Signal<bool>,
-    /// Whether `capture_window` can run now.
-    pub capture_window_enabled: Signal<bool>,
-    /// Whether `show_editor` can run now.
-    pub show_editor_enabled: Signal<bool>,
-    /// Whether `scrolling` can run now.
-    pub scrolling_enabled: Signal<bool>,
-    /// Whether `scrolling_horizontal` can run now.
-    pub scrolling_horizontal_enabled: Signal<bool>,
-    /// Whether `scrolling_both` can run now.
-    pub scrolling_both_enabled: Signal<bool>,
-    /// Whether `panoramic` can run now.
-    pub panoramic_enabled: Signal<bool>,
-    /// Whether `freehand` can run now.
-    pub freehand_enabled: Signal<bool>,
-    /// Whether `multiple_areas` can run now.
-    pub multiple_areas_enabled: Signal<bool>,
-    /// Whether `fixed_size` can run now.
-    pub fixed_size_enabled: Signal<bool>,
-    /// Whether `menu_capture` can run now.
-    pub menu_capture_enabled: Signal<bool>,
-    /// Whether `grab_text` can run now.
-    pub grab_text_enabled: Signal<bool>,
-    /// Whether `step_capture` can run now.
-    pub step_capture_enabled: Signal<bool>,
-    /// Whether `from_clipboard` can run now.
-    pub from_clipboard_enabled: Signal<bool>,
-    /// Whether `from_file` can run now.
-    pub from_file_enabled: Signal<bool>,
-    /// Whether `record_video` can run now.
-    pub record_video_enabled: Signal<bool>,
-    /// Whether `open_library_folder` can run now.
-    pub open_library_folder_enabled: Signal<bool>,
-    /// Whether `exit` can run now.
-    pub exit_enabled: Signal<bool>,
-    /// Whether `preferences` can run now.
-    pub preferences_enabled: Signal<bool>,
-    /// Whether `open_recent_capture` can run now.
-    pub open_recent_capture_enabled: Signal<bool>,
 }
 
 impl TrayViewModelSink {
@@ -1826,29 +1319,6 @@ impl TrayViewModelSink {
             schedule: Signal::new(false),
             can_repeat: Signal::new(false),
             recent_captures: Signal::new(Vec::new()),
-            capture_enabled: Signal::new(true),
-            capture_delayed_enabled: Signal::new(true),
-            capture_screen_enabled: Signal::new(true),
-            repeat_last_enabled: Signal::new(true),
-            capture_window_enabled: Signal::new(true),
-            show_editor_enabled: Signal::new(true),
-            scrolling_enabled: Signal::new(true),
-            scrolling_horizontal_enabled: Signal::new(true),
-            scrolling_both_enabled: Signal::new(true),
-            panoramic_enabled: Signal::new(true),
-            freehand_enabled: Signal::new(true),
-            multiple_areas_enabled: Signal::new(true),
-            fixed_size_enabled: Signal::new(true),
-            menu_capture_enabled: Signal::new(true),
-            grab_text_enabled: Signal::new(true),
-            step_capture_enabled: Signal::new(true),
-            from_clipboard_enabled: Signal::new(true),
-            from_file_enabled: Signal::new(true),
-            record_video_enabled: Signal::new(true),
-            open_library_folder_enabled: Signal::new(true),
-            exit_enabled: Signal::new(true),
-            preferences_enabled: Signal::new(true),
-            open_recent_capture_enabled: Signal::new(true),
         }
     }
 
@@ -1876,90 +1346,9 @@ impl TrayViewModelSink {
     pub fn set_can_repeat(&self, value: bool) -> Result<()> {
         publish(self.can_repeat, value)
     }
-    pub fn set_capture_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.capture_enabled, enabled)
-    }
-    pub fn set_capture_delayed_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.capture_delayed_enabled, enabled)
-    }
-    pub fn set_capture_screen_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.capture_screen_enabled, enabled)
-    }
-    pub fn set_repeat_last_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.repeat_last_enabled, enabled)
-    }
-    pub fn set_capture_window_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.capture_window_enabled, enabled)
-    }
-    pub fn set_show_editor_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.show_editor_enabled, enabled)
-    }
-    pub fn set_scrolling_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.scrolling_enabled, enabled)
-    }
-    pub fn set_scrolling_horizontal_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.scrolling_horizontal_enabled, enabled)
-    }
-    pub fn set_scrolling_both_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.scrolling_both_enabled, enabled)
-    }
-    pub fn set_panoramic_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.panoramic_enabled, enabled)
-    }
-    pub fn set_freehand_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.freehand_enabled, enabled)
-    }
-    pub fn set_multiple_areas_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.multiple_areas_enabled, enabled)
-    }
-    pub fn set_fixed_size_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.fixed_size_enabled, enabled)
-    }
-    pub fn set_menu_capture_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.menu_capture_enabled, enabled)
-    }
-    pub fn set_grab_text_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.grab_text_enabled, enabled)
-    }
-    pub fn set_step_capture_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.step_capture_enabled, enabled)
-    }
-    pub fn set_from_clipboard_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.from_clipboard_enabled, enabled)
-    }
-    pub fn set_from_file_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.from_file_enabled, enabled)
-    }
-    pub fn set_record_video_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.record_video_enabled, enabled)
-    }
-    pub fn set_open_library_folder_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.open_library_folder_enabled, enabled)
-    }
-    pub fn set_exit_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.exit_enabled, enabled)
-    }
-    pub fn set_preferences_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.preferences_enabled, enabled)
-    }
-    pub fn set_open_recent_capture_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.open_recent_capture_enabled, enabled)
-    }
     pub fn add_recent_captures(&self, value: impl AsRef<str>) -> Result<()> {
         let value = value.as_ref().to_owned();
         publish_update(self.recent_captures, move |list| list.push(value))
-    }
-    pub fn insert_recent_captures(&self, index: i32, value: impl AsRef<str>) -> Result<()> {
-        list_insert(self.recent_captures, index, value.as_ref().to_owned())
-    }
-    pub fn replace_recent_captures(&self, index: i32, value: impl AsRef<str>) -> Result<()> {
-        list_replace(self.recent_captures, index, value.as_ref().to_owned())
-    }
-    pub fn remove_recent_captures(&self, index: i32) -> Result<()> {
-        list_remove(self.recent_captures, index)
-    }
-    pub fn move_recent_captures(&self, from_index: i32, to_index: i32) -> Result<()> {
-        list_move(self.recent_captures, from_index, to_index)
     }
     pub fn clear_recent_captures(&self) -> Result<()> {
         publish_update(self.recent_captures, Vec::clear)
@@ -2007,8 +1396,6 @@ pub struct CaptureViewModelSink {
     pub panel: Signal<String>,
     pub problem: Signal<String>,
     pub action: Signal<String>,
-    /// Whether `run` can run now.
-    pub run_enabled: Signal<bool>,
 }
 
 impl CaptureViewModelSink {
@@ -2020,7 +1407,6 @@ impl CaptureViewModelSink {
             panel: Signal::new(String::new()),
             problem: Signal::new(String::new()),
             action: Signal::new(String::new()),
-            run_enabled: Signal::new(true),
         }
     }
 
@@ -2035,12 +1421,6 @@ impl CaptureViewModelSink {
     }
     pub fn set_problem(&self, value: impl AsRef<str>) -> Result<()> {
         publish(self.problem, value.as_ref().to_owned())
-    }
-    pub fn set_action(&self, value: impl AsRef<str>) -> Result<()> {
-        publish(self.action, value.as_ref().to_owned())
-    }
-    pub fn set_run_enabled(&self, enabled: bool) -> Result<()> {
-        publish(self.run_enabled, enabled)
     }
 }
 

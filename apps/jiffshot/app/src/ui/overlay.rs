@@ -9,9 +9,7 @@
 //! side owns the selection; the windows send it their input and draw what
 //! it says (see [`overlay_api`]).
 
-#[path = "overlay_api.rs"]
 pub(super) mod overlay_api;
-#[path = "overlay_view.rs"]
 mod overlay_view;
 
 use super::hud::native;

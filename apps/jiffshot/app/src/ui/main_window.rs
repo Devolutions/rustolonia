@@ -7,17 +7,11 @@
 //! Text, toasts, Preferences, the overlay, Screen Draw and the capture HUD)
 //! is handled by those windows' `install` functions, not here.
 
-#[path = "main_bars.rs"]
 mod main_bars;
-#[path = "main_common.rs"]
 mod main_common;
-#[path = "main_library.rs"]
 mod main_library;
-#[path = "main_menu.rs"]
 mod main_menu;
-#[path = "main_panel.rs"]
 mod main_panel;
-#[path = "main_tools.rs"]
 mod main_tools;
 
 use super::canvas_view::{CanvasView, FLAG_CHANGED};
