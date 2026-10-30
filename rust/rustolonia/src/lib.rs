@@ -4,6 +4,7 @@ mod async_runtime;
 pub mod clipboard;
 pub mod data_shapes;
 pub mod menu;
+pub mod pixel_surface;
 pub mod reactive;
 mod runtime;
 pub mod shell;
@@ -17,6 +18,7 @@ pub use clipboard::{ClipboardCapabilities, ClipboardData, ClipboardFilesOperatio
 pub use data_shapes::{CancellationToken, MapKey, RangeBatch, RangeRequest};
 pub use generated::*;
 pub use menu::{RecentFileList, RecentFilesChange};
+pub use pixel_surface::{PixelSurface, SurfaceInput};
 pub use reactive::{
     provide_context, use_context, Effect, Memo, NodeRef, ReactiveScope, Resource, ResourceState,
     Signal, TwoWay,
@@ -25,7 +27,7 @@ pub use runtime::{
     discover_host_path, App, AppContext, AppScope, AsControl, Downcast, EventSubscription,
     NonOwningRef, ResourceValue, ThemeVariant, Upcast, HOST_NATIVE_LIB_ENV_VAR,
 };
-pub use shell::ShutdownMode;
+pub use shell::{ShellTray, ShutdownMode, TrayEvent, TrayMenuItem};
 pub use storage::{
     ActivationEvent, DragDropEffects, FileDropEvent, FileTypeFilter, FolderPickerOptions,
     OpenFilePickerOptions, PickerOutcome, SaveFilePickerOptions, StorageCapabilities, StorageItem,
