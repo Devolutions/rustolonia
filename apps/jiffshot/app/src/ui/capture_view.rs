@@ -1,6 +1,6 @@
 //! The Capture window: the tabs on the left, the current tab's dropdowns
 //! and switches, the big Capture button, and menus in the title bar and
-//! the bottom bar. Port of `CaptureWindow.axaml` and `CaptureWindow.axaml.cs`.
+//! the bottom bar.
 //!
 //! Rust decides what it shows (`crate::capture_window`, in
 //! `jiffshot_workflow::panel`'s JSON): the `view` signal lays out the tab,
@@ -21,7 +21,7 @@ use rustolonia::{
 use serde::Deserialize;
 use std::cell::RefCell;
 
-/// The window's colors (`CwBack`, `CwCard`… in the AXAML).
+/// The window's colors.
 struct Palette {
     back: Color,
     card: Color,
@@ -385,7 +385,7 @@ pub fn build(scope: &AppScope, binding: &CaptureBinding) -> Result<Window> {
     Ok(window)
 }
 
-/// Follows the model's signals. As in the C# window, each is handled after
+/// Follows the model's signals. Each is handled after
 /// the action that changed it has returned: rebuilding the rows from inside
 /// a row's own click would end the subscription that is running.
 fn follow(scope: &AppScope, binding: &CaptureBinding) -> Result<()> {

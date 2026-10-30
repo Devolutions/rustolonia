@@ -1,5 +1,5 @@
 //! The editor canvas: the document raster on a Rustolonia pixel surface,
-//! with zoom, pan and the selection overlay. Port of `PixelCanvas.cs`.
+//! with zoom, pan and the selection overlay.
 //!
 //! The surface has two layers: the document bitmap, placed at its zoomed and
 //! panned rectangle so the compositor scales it, and a control-sized overlay
@@ -382,7 +382,7 @@ impl Inner {
             }
         }
         if notice.zoom {
-            // After the current pass, as the managed canvas did: a handler
+            // After the current pass: a handler
             // that sets the zoom again does not reenter this update.
             let carried = UiOnly::new(self.clone());
             report(

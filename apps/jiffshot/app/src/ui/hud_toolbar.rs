@@ -4,7 +4,7 @@
 //! Minimized, it keeps the time and Stop. The capture side sends its state
 //! (`recorder.rs`, `toolbar_state`) and takes its actions
 //! (`hud:ID:act:NAME`). It never takes the focus and is left out of screen
-//! captures. Port of `RecordingToolbar.cs`.
+//! captures.
 
 use super::{native, place_beside, run};
 use jiffshot_capture::Rect;

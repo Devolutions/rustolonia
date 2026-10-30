@@ -1,9 +1,9 @@
 # Jiffshot
 
-A screen capture tool and image editor for Windows, written in Rust with its
-UI on Rustolonia. It runs as one program, `jiffshot.exe`: the tray icon and
-capture side on their own thread, the editor and every other window on
-Avalonia.
+A screen capture tool and image editor for Windows, written entirely in Rust
+with its UI on Rustolonia's code-first API (no AXAML, no C#). It runs as one
+program, `jiffshot.exe`: the tray icon and capture side on their own thread,
+the editor and every other window on Avalonia.
 
 ## Features
 
@@ -49,23 +49,25 @@ and captures go to `Pictures\Jiffshot` unless changed.
 | `crates/jiffshot-capture/` | Monitors and DPI, screen grabs, window targets, clipboard, OCR, media (recording and playback), the library, settings |
 | `crates/jiffshot-doc/` | Documents: annotation objects, rendering, editing and undo, effects, smart tools, `.jsd` and image files |
 | `crates/jiffshot-workflow/` | The capture side: tray, hotkeys, selection overlay, recording, capture panels, post-capture workflow, command-line modes |
-| `app/` | `jiffshot.exe`: the editor (Rust model in `src/`, Avalonia presentation in `managed/`, view-model IR from `tools/gen_ir.py`) and the capture side, in one process |
+| `app/` | `jiffshot.exe`: the editor's model (`src/app.rs`, view models in `src/vm.rs`), every window (`src/ui/`) and the capture side, in one process |
 
 ## Building
 
-Jiffshot builds against this repository: Rust 1.88+, the .NET 10 SDK,
-Python (for the view-model IR) and the `avalonia-src` submodule. From the
-repository root:
+Jiffshot needs Rust 1.88+ and a Rustolonia host with the stage 34 capability
+(pixel surfaces and Rust-built tray icons). Until a release ships it, build
+the host from this repository once (the .NET 10 SDK and the `avalonia-src`
+submodule, see the repository README), then use Cargo:
 
 ```powershell
-git submodule update --init avalonia-src
-pwsh apps/jiffshot/app/build.ps1          # -Rid win-arm64 for ARM64; -ProducerRoot for another producer checkout
-./apps/jiffshot/app/artifacts/win-x64/jiffshot.exe
+pwsh rust/build.ps1                       # once: publishes the host into rust/target/
+cd apps/jiffshot
+cargo run --release -p jiffshot
 ```
 
-`app/build.ps1` regenerates `view-model.ir.json` from `app/tools/gen_ir.py`
-and runs Rustolonia's `build-app.ps1`. `app/README-portable.txt` is the
-README that goes into a portable zip of the build output.
+`apps/jiffshot/.cargo/config.toml` points `RUSTOLONIA_HOST_DIR` at that host,
+and the build copies it next to `jiffshot.exe`, so `target/release` runs as
+it is; zip `jiffshot.exe` and the host DLLs beside it, with
+`app/README-portable.txt`, for the portable app.
 
 With no arguments Jiffshot starts in the tray. `jiffshot.exe FILE` opens a
 file in the editor, `--capture`, `--record`, `--window` and the other capture
@@ -77,15 +79,17 @@ to the one already running. Closing the editor keeps Jiffshot in the tray.
 From `apps/jiffshot`:
 
 ```powershell
-cargo test --release --workspace                          # capture side, documents, media, library
-cd app; cargo test --release; cd ..                       # editor model
-./app/artifacts/win-x64/jiffshot.exe --selftest DIR           # overlay logic, offscreen
-./app/artifacts/win-x64/jiffshot.exe --record-selftest DIR 4  # records its own test window
+cargo test --release --workspace                          # capture side, documents, media, library, editor
+./target/release/jiffshot.exe --selftest DIR                  # overlay logic, offscreen
+./target/release/jiffshot.exe --record-selftest DIR 4         # records its own test window
 ```
 
 The editor drives its own UI when `JIFFSHOT_UITEST=DIR` is set (with
-`JIFFSHOT_UITEST_IMAGE`, `JIFFSHOT_UITEST_VIDEO` and an isolated
-`JIFFSHOT_LIBRARY`), writing screenshots and `ui-log.txt` to `DIR`.
+`JIFFSHOT_UITEST_IMAGE`, `JIFFSHOT_UITEST_VIDEO`, an isolated
+`JIFFSHOT_LIBRARY` and, to leave your settings alone, scratch `APPDATA` and
+`LOCALAPPDATA`), writing screenshots of every window and `ui-log.txt` to
+`DIR`. `cargo run -p jiffshot-doc --example synthetic -- OUT.png` writes the
+test image its coordinates assume.
 The capture panels and outlines are left out of screen captures; set
 `JIFFSHOT_HUD_CAPTURABLE=1` to see them in screenshots while checking them.
 `JIFFSHOT_CAPTURE_DRY_RUN=1` runs the selection overlay for real but only logs

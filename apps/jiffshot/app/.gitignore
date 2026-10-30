@@ -1,6 +1,0 @@
-.avalonia/
-bin/
-obj/
-target/
-*.user
-*.suo

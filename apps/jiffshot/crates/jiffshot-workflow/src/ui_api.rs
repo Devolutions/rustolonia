@@ -1,7 +1,6 @@
 //! The C ABI the app's overlay and Screen Draw windows call, on the UI
-//! thread: input in, what to draw out. Published to the managed side as a
-//! table of function pointers ([`address`]); the host is loaded into this
-//! process, so pointers and pixels are shared directly.
+//! thread: input in, what to draw out, published as a table of function
+//! pointers ([`address`]).
 
 use crate::overlay::{self, View};
 use crate::screendraw;

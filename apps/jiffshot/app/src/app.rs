@@ -30,7 +30,7 @@ thread_local! {
 }
 
 /// Runs `f` on the app state, unless it is already in use further up the
-/// stack (a re-entrant echo from the managed side).
+/// stack (a re-entrant echo from a window).
 pub fn with<R>(f: impl FnOnce(&mut App) -> R) -> Option<R> {
     APP.with(|cell| {
         let mut guard = cell.try_borrow_mut().ok()?;
@@ -110,7 +110,7 @@ pub fn install(scope: AppScope, opening: Option<PathBuf>) {
     });
 }
 
-/// Values last sent to the managed side, so unchanged ones are not resent.
+/// Values last sent to the windows, so unchanged ones are not resent.
 #[derive(Default)]
 pub struct Shown {
     strings: std::collections::HashMap<&'static str, String>,

@@ -1,7 +1,6 @@
 //! What the editor window's parts share: model calls and commands, the
-//! window's theme colors (the `Sw*` resources of `MainWindow.axaml`), its
-//! recurring little controls (the `section`, `chip` and `bar` styles), lists
-//! that refill themselves, and the value conversions of `Converters.cs`.
+//! window's theme colors, its recurring little controls (sections, chips
+//! and bars), lists that refill themselves, and value conversions.
 
 use crate::ui::canvas_view::CanvasView;
 use crate::ui::UiOnly;
@@ -159,7 +158,7 @@ pub const ORANGE: u32 = 0xFFF5A623;
 /// Capture and narration.
 pub const RED: u32 = 0xFFB3261E;
 
-// ---- converters (Converters.cs) ---------------------------------------------
+// ---- converters ---------------------------------------------------------------
 
 /// `#AARRGGBB` text to a brush; transparent when it does not parse
 /// (`ColorBrushConverter`).
@@ -273,8 +272,7 @@ where
     })
 }
 
-/// A list of strings bound to a string property (the AXAML's
-/// `ItemsSource` + `SelectedItem`): picking an entry sets `value`, and
+/// A list of strings bound to a string property: picking an entry sets `value`, and
 /// `value` selects its entry (none when it is not listed).
 pub fn choice_box(theme: Theme, items: impl Fn() -> Vec<String> + 'static, value: Signal<String>) -> El<ComboBox> {
     choices(theme, items, move || value.get(), move |picked| value.set_if_changed(picked))

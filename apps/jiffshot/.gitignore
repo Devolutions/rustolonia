@@ -1,12 +1,2 @@
 # Rust
 /target/
-
-# Build output (Rustolonia build-app.ps1)
-/app/artifacts/
-/app/.avalonia/
-
-# .NET
-bin/
-obj/
-*.user
-*.suo

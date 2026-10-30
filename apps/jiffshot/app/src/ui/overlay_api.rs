@@ -3,8 +3,7 @@
 //! texts, points and pixels out.
 //!
 //! The workflow crate publishes them as a C function table
-//! ([`jiffshot_workflow::ui_api_address`]), the way the managed windows
-//! called them; [`Table`] mirrors its layout. Everything here runs on the UI
+//! ([`jiffshot_workflow::ui_api_address`]); [`Table`] mirrors its layout. Everything here runs on the UI
 //! thread.
 
 use jiffshot_capture::Rect;

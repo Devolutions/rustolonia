@@ -111,7 +111,7 @@ pub fn list_move<T: 'static>(signal: Signal<Vec<T>>, from: i32, to: i32) -> Resu
 
 /// A model shared by its window's controls. Calls that arrive while it is
 /// already in a call (a control echoing what the model just published) are
-/// dropped, as they were with the generated adapters.
+/// dropped.
 pub struct ModelCell<M: ?Sized>(Rc<RefCell<Box<M>>>);
 
 impl<M: ?Sized> Clone for ModelCell<M> {

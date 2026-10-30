@@ -1,5 +1,5 @@
-//! The notification-area icon. Its menu is declared in the view-model IR
-//! (`tools/gen_ir.py`); every command runs on the capture side's thread
+//! The notification-area icon's model (the menu is built in `ui/tray.rs`);
+//! every command runs on the capture side's thread
 //! ([`TrayAction::post`]), and the switches show what the capture side last
 //! published ([`publish`]).
 

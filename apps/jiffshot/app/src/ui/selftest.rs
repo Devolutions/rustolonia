@@ -5,7 +5,6 @@
 //! `JIFFSHOT_UITEST_IMAGE` optionally names the image to annotate (and turns
 //! on the image-tool, template and window steps), `JIFFSHOT_UITEST_VIDEO` a
 //! video to step through; `JIFFSHOT_UITEST_KEEP` leaves the editor open.
-//! Port of `UiSelfTest.cs`.
 //!
 //! The steps run one after another on the UI thread, each followed by a pause
 //! so the windows can render; screenshots come from the windows themselves
@@ -316,7 +315,7 @@ fn editor_walk(s: &mut Script) {
     });
 }
 
-/// Everything the C# test did, in order.
+/// The whole walk, in order.
 fn script() -> Script {
     let mut s = Script(VecDeque::new());
     let image = env("JIFFSHOT_UITEST_IMAGE");

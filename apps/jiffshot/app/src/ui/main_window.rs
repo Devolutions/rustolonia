@@ -1,4 +1,4 @@
-//! The editor window. Port of `MainWindow.axaml` and `MainWindow.axaml.cs`:
+//! The editor window:
 //! the menu bar and toolbar on top, the library, status, narration and video
 //! bars along the bottom, the properties and Effects panels on the right and
 //! the canvas in the middle. The parts are built in the `main_*` modules.

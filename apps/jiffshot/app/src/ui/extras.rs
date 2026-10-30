@@ -1,6 +1,5 @@
 //! The Capture Widget (the `widget` signal) and Grab Text's result window
-//! (the `grab_text` signal, "serial\x1ftext"). Port of `CaptureExtras.cs`
-//! (`WidgetWindow`, `GrabTextWindow`).
+//! (the `grab_text` signal, "serial\x1ftext").
 //!
 //! Both windows are built the first time they are asked for and then shown
 //! and hidden, instead of being closed and made again.

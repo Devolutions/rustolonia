@@ -1,5 +1,5 @@
 //! Jiffshot's one Preferences dialog: Capture, Editor, Library, Share and
-//! Hotkeys. Port of `PreferencesWindow.cs`.
+//! Hotkeys.
 //!
 //! The model asks with the `prefs` signal ("serial\x1fJSON", from
 //! `crate::prefs::dialog`): the tabs and their rows, in the Capture window's

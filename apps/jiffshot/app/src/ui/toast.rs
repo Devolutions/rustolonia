@@ -1,8 +1,7 @@
 //! Notices from the capture side ("Capture saved", "Recording failed"…):
 //! a small borderless window in the bottom-right corner of the primary
 //! screen that does not take the focus and goes away after a few seconds or
-//! a click. One shows at a time; a new notice replaces the last. Port of
-//! `ToastWindow.cs`.
+//! a click. One shows at a time; a new notice replaces the last.
 //!
 //! The model asks with the `toast` signal: "serial\x1ftitle\x1ftext\x1f1"
 //! (the last field is 1 for a problem). The window is built once and shown

@@ -1,5 +1,5 @@
 //! The editor's small modal dialogs: keyboard shortcuts, About, resize image
-//! and trim (Preferences is its own window). Port of `Dialogs.cs`.
+//! and trim (Preferences is its own window).
 
 use rustolonia::{
     AppScope, AsControl, Button, CheckBox, Dock, DockPanel, FontWeight, Grid, HorizontalAlignment, NumericUpDown, Orientation, Result, StackPanel, TextBlock, TextWrapping, Thickness, VerticalAlignment, Window,

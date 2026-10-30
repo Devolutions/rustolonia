@@ -7,9 +7,8 @@
 //! changes it (a two-way binding), the model's setter runs. Values the model
 //! publishes itself are not sent back (see [`crate::vm_support`]).
 //!
-//! The members and their initial values were the view-model schema of the
-//! AXAML version; keep the names when adding to them, since the model code
-//! (`app.rs`, `library.rs`, `tray.rs`, `capture_window.rs`) uses them.
+//! The model code (`app.rs`, `library.rs`, `tray.rs`, `capture_window.rs`)
+//! uses these names; keep them when adding members.
 
 #![allow(dead_code)]
 

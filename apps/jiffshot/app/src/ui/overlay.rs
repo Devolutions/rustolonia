@@ -1,5 +1,5 @@
 //! The selection overlay (the `overlay` signal), one window per monitor, and
-//! Screen Draw (the `screen_draw` signal). Port of `OverlayWindows.cs`.
+//! Screen Draw (the `screen_draw` signal).
 //!
 //! The overlay's windows are made ahead of time (at startup, see
 //! [`install`]) and only hidden natively between captures, so putting the

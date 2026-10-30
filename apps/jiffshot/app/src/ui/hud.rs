@@ -1,7 +1,6 @@
 //! The capture side's on-screen furniture (the `hud` signal): control panels
 //! next to the area being captured (countdown, recording, scrolling, Step
-//! Capture…), red outlines just outside it, and the recording toolbar. Port
-//! of `HudWindows.cs` and `RecordingToolbar.cs`.
+//! Capture…), red outlines just outside it, and the recording toolbar.
 //!
 //! The capture side owns the state and sends all of it as JSON each time
 //! (`jiffshot_workflow`'s `hud.rs`); [`apply`] makes the windows match. None
