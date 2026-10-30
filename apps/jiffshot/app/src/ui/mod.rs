@@ -6,10 +6,19 @@
 //! callbacks reach the main and Capture windows' bindings through [`main`]
 //! and [`capture`], and carry anything else in a [`UiOnly`].
 
+pub mod canvas_view;
+mod capture_view;
+pub mod dialogs;
+mod extras;
+mod hud;
+mod main_window;
+mod overlay;
+mod prefs_window;
+mod toast;
 mod tray;
 
 use crate::vm::{CaptureBinding, CaptureViewModel, MainBinding, MainViewModel, TrayViewModel};
-use rustolonia::{AppScope, Result, TextBlock, Window};
+use rustolonia::{AppScope, Result, Window};
 use std::cell::RefCell;
 use std::mem::ManuallyDrop;
 use std::path::PathBuf;
@@ -113,31 +122,26 @@ pub fn percent_decode(text: &str) -> String {
 pub fn mount_main_window(scope: &AppScope, model: impl MainViewModel, show: bool) -> Result<()> {
     let binding = MainBinding::new(model)?;
     MAIN.with(|m| *m.borrow_mut() = Some(binding.clone()));
-    let sink = binding.sink;
-    let window = Window::el()
-        .title(sink.title)
-        .width(1280.0)
-        .height(800.0)
-        .icon(icon_file())
-        .content(TextBlock::el().text(sink.status))
-        .build(scope)?;
+    let window = main_window::build(scope, &binding)?;
     if show {
-        scope.mount(window)
+        scope.mount(window)?;
     } else {
-        scope.mount_hidden(window)
+        scope.mount_hidden(window)?;
     }
+    // The windows the main view model asks for.
+    toast::install(scope)?;
+    extras::install(scope)?;
+    prefs_window::install(scope)?;
+    overlay::install(scope)?;
+    hud::install(scope)?;
+    Ok(())
 }
 
 /// Mounts the Capture window, hidden.
 pub fn mount_capture_window(scope: &AppScope, model: impl CaptureViewModel) -> Result<Window> {
     let binding = CaptureBinding::new(model)?;
     CAPTURE.with(|m| *m.borrow_mut() = Some(binding.clone()));
-    let window = Window::el()
-        .title("Jiffshot Capture")
-        .width(720.0)
-        .height(520.0)
-        .icon(icon_file())
-        .build(scope)?;
+    let window = capture_view::build(scope, &binding)?;
     scope.mount_hidden(window.clone())?;
     Ok(window)
 }
