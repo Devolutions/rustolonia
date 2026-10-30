@@ -31,11 +31,6 @@ pub static EDITOR: Mutex<Option<Editor>> = Mutex::new(None);
 /// handle on its next sync.
 pub static PENDING_EVENTS: AtomicU32 = AtomicU32::new(0);
 
-/// Placeholder for the removed C ABI table the managed canvas called:
-/// `App::attach` still publishes its address as `canvas_api`, which nothing
-/// reads any more. Delete it with that line.
-pub static API: u8 = 0;
-
 /// What a canvas call changed: the display rectangle to copy (empty when
 /// nothing changed), the `FLAG_*` bits and the pointer cursor to show (a
 /// `jiffshot_doc::editor::Cursor` code).

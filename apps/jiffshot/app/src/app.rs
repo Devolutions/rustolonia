@@ -235,8 +235,6 @@ struct Snapshot {
 
 impl App {
     pub fn attach(&mut self, sink: MainViewModelSink) -> Result<()> {
-        sink.set_canvas_api(&crate::canvas::API as *const _ as i64)?;
-        sink.set_ui_api(jiffshot_workflow::ui_api_address())?;
         for f in jiffshot_doc::text::FAMILIES {
             sink.add_fonts(*f)?;
         }

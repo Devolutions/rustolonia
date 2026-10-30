@@ -186,7 +186,6 @@ pub struct MainViewModelSink {
     pub title: Signal<String>,
     pub status: Signal<String>,
     pub tool: Signal<String>,
-    pub canvas_api: Signal<i64>,
     pub frame_id: Signal<i64>,
     pub stroke_color: Signal<String>,
     pub fill_color: Signal<String>,
@@ -266,7 +265,6 @@ pub struct MainViewModelSink {
     pub grab_text: Signal<String>,
     pub widget: Signal<bool>,
     pub hud: Signal<String>,
-    pub ui_api: Signal<i64>,
     pub overlay: Signal<String>,
     pub screen_draw: Signal<String>,
     pub prefs: Signal<String>,
@@ -496,7 +494,6 @@ impl MainViewModelSink {
             title: Signal::new(String::from("Jiffshot Editor")),
             status: Signal::new(String::from("Ready")),
             tool: Signal::new(String::from("Arrow")),
-            canvas_api: Signal::new(0),
             frame_id: Signal::new(0),
             stroke_color: Signal::new(String::from("#FFE53935")),
             fill_color: Signal::new(String::from("#00000000")),
@@ -576,7 +573,6 @@ impl MainViewModelSink {
             grab_text: Signal::new(String::new()),
             widget: Signal::new(false),
             hud: Signal::new(String::new()),
-            ui_api: Signal::new(0),
             overlay: Signal::new(String::new()),
             screen_draw: Signal::new(String::new()),
             prefs: Signal::new(String::new()),
@@ -705,9 +701,6 @@ impl MainViewModelSink {
     }
     pub fn set_tool(&self, value: impl AsRef<str>) -> Result<()> {
         publish(self.tool, value.as_ref().to_owned())
-    }
-    pub fn set_canvas_api(&self, value: i64) -> Result<()> {
-        publish(self.canvas_api, value)
     }
     pub fn set_frame_id(&self, value: i64) -> Result<()> {
         publish(self.frame_id, value)
@@ -945,9 +938,6 @@ impl MainViewModelSink {
     }
     pub fn set_hud(&self, value: impl AsRef<str>) -> Result<()> {
         publish(self.hud, value.as_ref().to_owned())
-    }
-    pub fn set_ui_api(&self, value: i64) -> Result<()> {
-        publish(self.ui_api, value)
     }
     pub fn set_overlay(&self, value: impl AsRef<str>) -> Result<()> {
         publish(self.overlay, value.as_ref().to_owned())
