@@ -451,6 +451,7 @@ dependencies = [
  "jiffshot-workflow",
  "parking_lot",
  "rustolonia",
+ "rustolonia-sys",
  "serde",
  "serde_json",
  "tiny-skia",

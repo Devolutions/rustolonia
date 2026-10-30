@@ -7,6 +7,8 @@ publish.workspace = true
 
 [dependencies]
 rustolonia = { path = "../../../rust/rustolonia" }
+# Only for its build script to find the staged host (DEP_RUSTOLONIA_HOST_HOST_DIR).
+rustolonia-sys = { path = "../../../rust/rustolonia-sys", default-features = false }
 image = { version = "0.25", default-features = false, features = ["png", "gif"] }
 tiny-skia.workspace = true
 parking_lot = "0.12"
