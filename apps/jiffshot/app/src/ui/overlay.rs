@@ -10,7 +10,7 @@
 //! it says (see [`overlay_api`]).
 
 #[path = "overlay_api.rs"]
-mod overlay_api;
+pub(super) mod overlay_api;
 #[path = "overlay_view.rs"]
 mod overlay_view;
 

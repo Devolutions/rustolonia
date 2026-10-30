@@ -83,10 +83,10 @@ struct Table {
     draw_tick: extern "C" fn(session: u64) -> i32,
     draw_copy: extern "C" fn(session: u64, dst: *mut u8, stride: i32, w: i32, h: i32) -> i32,
     // The UI self-test's entry points.
-    _overlay_demo: extern "C" fn(mode: i32, buf: *mut u16, cap: i32) -> i32,
-    _overlay_end_demo: extern "C" fn(session: u64),
-    _draw_demo: extern "C" fn(x: i32, y: i32, w: i32, h: i32, buf: *mut u16, cap: i32) -> i32,
-    _draw_end: extern "C" fn(),
+    overlay_demo: extern "C" fn(mode: i32, buf: *mut u16, cap: i32) -> i32,
+    overlay_end_demo: extern "C" fn(session: u64),
+    draw_demo: extern "C" fn(x: i32, y: i32, w: i32, h: i32, buf: *mut u16, cap: i32) -> i32,
+    draw_end: extern "C" fn(),
 }
 
 fn table() -> &'static Table {
@@ -155,6 +155,34 @@ pub fn draw_copy(session: u64, dst: &mut [u8], w: u32, h: u32) -> bool {
         return false;
     }
     (table().draw_copy)(session, dst.as_mut_ptr(), stride as i32, w as i32, h as i32) != 0
+}
+
+fn utf16_out(f: impl FnOnce(*mut u16, i32) -> i32) -> String {
+    let mut buf = vec![0u16; 1 << 16];
+    let n = f(buf.as_mut_ptr(), buf.len() as i32);
+    String::from_utf16_lossy(&buf[..n.clamp(0, buf.len() as i32) as usize])
+}
+
+/// Starts a demo overlay session over the capture side's generated desktop
+/// (the UI self-test): mode 0 normal, 1 freehand, 2 multiple areas, 3 video.
+/// Returns the overlay JSON to show.
+pub fn demo(mode: i32) -> String {
+    utf16_out(|buf, cap| (table().overlay_demo)(mode, buf, cap))
+}
+
+/// Ends a demo overlay session.
+pub fn end_demo(session: u64) {
+    (table().overlay_end_demo)(session)
+}
+
+/// Starts Screen Draw over `r` for the self-test; returns its JSON.
+pub fn draw_demo(r: Rect) -> String {
+    utf16_out(|buf, cap| (table().draw_demo)(r.x, r.y, r.width, r.height, buf, cap))
+}
+
+/// Ends Screen Draw.
+pub fn draw_end() {
+    (table().draw_end)()
 }
 
 /// The Windows virtual key for a key (0 for keys the capture side ignores).
