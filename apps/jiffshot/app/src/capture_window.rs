@@ -7,7 +7,7 @@
 //! `apply:ID:[values]`, `capture`, `editor`, `closed`.
 
 use crate::app;
-use crate::generated_view_models::{CaptureViewModel, CaptureViewModelSink};
+use crate::vm::{CaptureViewModel, CaptureViewModelSink};
 use jiffshot_workflow::panel::{self, Applied, Pick};
 use jiffshot_workflow::settings::Settings;
 use jiffshot_workflow::{capture, TrayAction, TrayState};

@@ -1,0 +1,12 @@
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]
+
+[target.aarch64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]
+
+# Jiffshot needs Rustolonia's stage 34 capability (pixel surfaces and
+# Rust-built tray icons), which no published host has yet: it builds against
+# the host from this repository's `rust/build.ps1` instead of downloading one.
+[env]
+RUSTOLONIA_NO_DOWNLOAD = "1"
+RUSTOLONIA_HOST_DIR = { value = "../../rust/target/dotnet-win-x64/publish/Avalonia.Host/release_win-x64", relative = true }

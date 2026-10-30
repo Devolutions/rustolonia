@@ -1,23 +1,18 @@
 [package]
 name = "jiffshot"
-version = "0.1.0"
-edition = "2021"
-publish = false
-description = "Jiffshot image and video editor"
+description = "Jiffshot, a screen capture tool and image and video editor"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
 
 [dependencies]
 rustolonia = { path = "../../../rust/rustolonia" }
 image = { version = "0.25", default-features = false, features = ["png", "gif"] }
-tiny-skia = "0.11"
+tiny-skia.workspace = true
 parking_lot = "0.12"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde.workspace = true
+serde_json.workspace = true
 jiffshot-capture = { path = "../crates/jiffshot-capture" }
 jiffshot-workflow = { path = "../crates/jiffshot-workflow" }
 jiffshot-doc = { path = "../crates/jiffshot-doc" }
-windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_Media", "Win32_Media_Audio", "Win32_System_Threading", "Win32_Security", "Win32_Security_Credentials", "Win32_System_LibraryLoader", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging"] }
-
-[profile.release]
-debug = "line-tables-only"
-
-[workspace]
+windows-sys = { workspace = true, features = ["Win32_Media_Audio", "Win32_Security_Credentials"] }

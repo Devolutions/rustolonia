@@ -3,7 +3,7 @@
 //! ([`TrayAction::post`]), and the switches show what the capture side last
 //! published ([`publish`]).
 
-use crate::generated_view_models::{TrayViewModel, TrayViewModelSink};
+use crate::vm::{TrayViewModel, TrayViewModelSink};
 use jiffshot_workflow::{TrayAction, TrayState};
 use rustolonia::Result;
 use std::cell::RefCell;

@@ -11,7 +11,7 @@
 //! and are dropped, which is right for echoes.
 
 use crate::canvas::{with_editor, EDITOR, PENDING_EVENTS};
-use crate::generated_view_models::*;
+use crate::vm::*;
 use crate::{library, settings, winutil};
 use rustolonia::storage::{FileTypeFilter, OpenFilePickerOptions, PickerOutcome, SaveFilePickerOptions, WellKnownFolder};
 use rustolonia::{AppScope, Result};

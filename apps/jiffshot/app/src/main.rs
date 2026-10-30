@@ -1,24 +1,11 @@
-//! Jiffshot editor. This crate owns the application state; the document
-//! model, rendering and file formats live in `jiffshot-doc`.
-//! `generated/generated_view_models.rs` is emitted from
-//! `view-model.ir.json` by the Rustolonia consumer build tool.
+//! Jiffshot: one process, every window on Rustolonia's code-first API. This
+//! crate owns the editor's state (`app.rs`) and builds its windows (`ui`);
+//! the document model, rendering and file formats live in `jiffshot-doc`,
+//! capture in `jiffshot-capture` and the capture side's flows in
+//! `jiffshot-workflow`.
 
 // A GUI program in every build, not a console one.
 #![windows_subsystem = "windows"]
-
-pub use rustolonia::{
-    AppScope, CancellationToken, ClipboardData, ConversionDirection, Error, MapKey, RangeBatch, RangeRequest, RecentFileList,
-    Result, ScalarKind, ScalarValue,
-};
-pub mod view_model {
-    pub use rustolonia::view_model::{BatchCompletion, DynamicViewModel, ViewModelBatch, ViewModelSink};
-}
-pub mod value_converter {
-    pub use rustolonia::value_converter::ValueConverterDispatch;
-}
-
-#[path = "../generated/generated_view_models.rs"]
-mod generated_view_models;
 
 mod app;
 mod canvas;
@@ -30,12 +17,15 @@ mod share;
 mod trace;
 mod prefs;
 mod tray;
+mod ui;
 mod video;
+mod vm;
+mod vm_support;
 mod winutil;
 
 use app::act;
-use generated_view_models::{mount_capture_window_hidden, mount_main_window, mount_main_window_hidden, mount_tray, MainViewModel, MainViewModelSink};
-use rustolonia::App;
+use rustolonia::{App, Result};
+use vm::{MainViewModel, MainViewModelSink};
 use jiffshot_doc::editor::Tool;
 use jiffshot_doc::object::{Cap, Dash, VAlign};
 use jiffshot_doc::text::Align;
@@ -501,6 +491,7 @@ fn main() -> rustolonia::Result<()> {
     *canvas::EDITOR.lock() = Some(editor);
     App::load_from_env()?.run(move |scope| {
         let opening = scope.activation_items()?.iter().find_map(|item| item.local_path().map(|p| p.to_path_buf()));
+        vm_support::install(scope);
         app::install(scope.clone(), opening);
         // A second editor hands its file to this one (see the capture
         // tool's hand-off); the pipe belongs to the first editor.
@@ -509,20 +500,14 @@ fn main() -> rustolonia::Result<()> {
             // The tray keeps Jiffshot running with the editor closed.
             scope.set_shutdown_mode(rustolonia::ShutdownMode::OnExplicitShutdown)?;
         }
-        if show_editor {
-            mount_main_window(scope, Model)?;
-        } else {
-            mount_main_window_hidden(scope, Model)?;
-        }
+        ui::mount_main_window(scope, Model, show_editor)?;
         if let Some(window) = scope.main_window() {
             winutil::set_main_hwnd(scope.platform_handle(&window).unwrap_or(0));
         }
         // The Capture window, hidden until asked for (the UI self-test
         // drives it too).
-        mount_capture_window_hidden(scope, capture_window::CaptureModel)?;
-        if let Some(window) = scope.windows().last() {
-            capture_window::set_window(window.clone());
-        }
+        let window = ui::mount_capture_window(scope, capture_window::CaptureModel)?;
+        capture_window::set_window(window);
         if tray {
             let hooks = jiffshot_workflow::Hooks {
                 open_in_editor: Box::new(|path| {
@@ -552,7 +537,7 @@ fn main() -> rustolonia::Result<()> {
             if let Err(error) = jiffshot_workflow::start_engine(capture, hooks) {
                 eprintln!("the capture side did not start: {error}");
             }
-            mount_tray(scope, tray::TrayModel)?;
+            ui::mount_tray(scope, tray::TrayModel)?;
         }
         Ok(())
     })

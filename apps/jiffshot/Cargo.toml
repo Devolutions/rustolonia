@@ -1,8 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/jiffshot-capture", "crates/jiffshot-doc", "crates/jiffshot-workflow"]
-# jiffshot.exe is built by Rustolonia's build-app.ps1 with its own lockfile.
-exclude = ["app"]
+members = ["app", "crates/jiffshot-capture", "crates/jiffshot-doc", "crates/jiffshot-workflow"]
 
 [workspace.package]
 version = "0.1.0"

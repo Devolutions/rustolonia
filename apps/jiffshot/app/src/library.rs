@@ -4,7 +4,7 @@
 //! tagged, renamed, closed from the tray and deleted.
 
 use crate::app::{self, ItemSink};
-use crate::generated_view_models::{LibraryItemViewModel, LibraryItemViewModelSink};
+use crate::vm::{LibraryItemViewModel, LibraryItemViewModelSink};
 use rustolonia::Result;
 use jiffshot_capture::library::CaptureMeta;
 use jiffshot_doc::{io, raster, Document, Pixmap};
