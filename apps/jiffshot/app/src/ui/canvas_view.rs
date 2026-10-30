@@ -24,10 +24,7 @@ use std::rc::Rc;
 use std::sync::{Arc, OnceLock};
 
 /// Damage flags reported to [`CanvasView::on_changed`] (see `crate::canvas`).
-pub use crate::canvas::{FLAG_CHANGED, FLAG_FOCUS_TEXT, FLAG_FULL};
-
-/// The zoom from which View ▸ Pixel grid draws its lines.
-pub use canvas_overlay::GRID_ZOOM;
+pub use crate::canvas::{FLAG_CHANGED, FLAG_FULL};
 
 const DOCUMENT_LAYER: usize = 0;
 const OVERLAY_LAYER: usize = 1;
@@ -301,11 +298,6 @@ impl CanvasView {
         self.inner.state.try_borrow().is_ok_and(|st| st.grid)
     }
 
-    /// A point in the control (device-independent pixels) in document pixels.
-    pub fn document_point(&self, x: f64, y: f64) -> (f64, f64) {
-        self.inner.state.try_borrow().map_or((x, y), |st| st.to_document(x, y))
-    }
-
     /// The document's size in pixels (0×0 before the first frame).
     pub fn document_size(&self) -> (u32, u32) {
         self.inner.state.try_borrow().map_or((0, 0), |st| st.image)
@@ -320,11 +312,6 @@ impl CanvasView {
             inner.present(st, damage, false)
         });
         self.inner.notify(notice);
-    }
-
-    /// Moves keyboard focus to the canvas.
-    pub fn focus(&self) {
-        report("focus", self.inner.surface.focus());
     }
 
     /// Follows the editor's color theme ("Dark", "Light" or "System") for the

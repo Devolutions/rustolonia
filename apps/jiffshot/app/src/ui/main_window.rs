@@ -44,6 +44,7 @@ pub fn build(scope: &AppScope, binding: &MainBinding) -> Result<Window> {
     let sink = binding.sink;
     let canvas = CanvasView::new(scope)?;
     canvas.follow_theme(sink.theme)?;
+    super::set_canvas(canvas.clone());
     let ctx = Ctx {
         scope: scope.clone(),
         sink,

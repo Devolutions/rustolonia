@@ -480,6 +480,35 @@ fn on_draw_input(id: u64, input: &SurfaceInput) -> bool {
     handled
 }
 
+/// Input for the overlay showing (desktop pixels), as its windows would send
+/// it, for the UI self-test; the new state, or `None` with no overlay.
+pub(super) fn feed(kind: i32, x: f64, y: f64, value: i32, mods: i32) -> Option<api::OverlayState> {
+    let (state, scope) = HOST.with(|h| {
+        let mut host = h.try_borrow_mut().ok()?;
+        let scope = host.scope();
+        let session = host.session.as_mut()?;
+        session.input(kind, x, y, value, mods);
+        session.refresh();
+        Some((session.scene.state, scope))
+    })?;
+    schedule_redraw(scope.as_ref());
+    Some(state)
+}
+
+/// Input for Screen Draw (area pixels), as its window would send it, for
+/// the UI self-test.
+pub(super) fn feed_draw(kind: i32, x: f64, y: f64, value: i32) {
+    DRAW.with(|d| {
+        if let Ok(mut current) = d.try_borrow_mut() {
+            if let Some(draw) = current.as_mut() {
+                if api::draw_input(draw.id, kind, x, y, value) || kind == api::KEY {
+                    draw.refresh();
+                }
+            }
+        }
+    });
+}
+
 fn close_draw() {
     if let Some(draw) = DRAW.with(|d| d.try_borrow_mut().ok().and_then(|mut d| d.take())) {
         draw.close();
