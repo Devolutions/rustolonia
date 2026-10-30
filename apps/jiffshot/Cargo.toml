@@ -1,0 +1,67 @@
+[workspace]
+resolver = "2"
+members = ["app", "crates/jiffshot-capture", "crates/jiffshot-doc", "crates/jiffshot-workflow"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[workspace.dependencies]
+# Rustolonia's release: its prebuilt host is downloaded and checked against
+# the checksums pinned at the tag.
+rustolonia = { git = "https://github.com/Devolutions/rustolonia", tag = "v12.1.2" }
+rustolonia-sys = { git = "https://github.com/Devolutions/rustolonia", tag = "v12.1.2", default-features = false }
+ab_glyph = "0.2"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "bmp", "gif", "webp"] }
+zip = { version = "2", default-features = false, features = ["deflate"] }
+png = "0.17"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tiny-skia = "0.11"
+windows = { version = "0.62", features = [
+    "Foundation",
+    "Foundation_Collections",
+    "Globalization",
+    "Graphics_Imaging",
+    "Media_Ocr",
+    "Storage_Streams",
+    "Win32_Media_Audio",
+    "Win32_Media_KernelStreaming",
+    "Win32_Media_MediaFoundation",
+    "Win32_Media_Multimedia",
+    "Win32_System_Com",
+    "Win32_System_Com_StructuredStorage",
+    "Win32_System_Ole",
+    "Win32_System_Variant",
+    "Win32_System_WinRT",
+    "Win32_UI_Accessibility",
+] }
+windows-sys = { version = "0.59", features = [
+    "Win32_Foundation",
+    "Win32_Media",
+    "Win32_Graphics_Dwm",
+    "Win32_Graphics_Gdi",
+    "Win32_Security",
+    "Win32_Storage_FileSystem",
+    "Win32_Storage_Xps",
+    "Win32_System_Com",
+    "Win32_System_Console",
+    "Win32_System_DataExchange",
+    "Win32_System_LibraryLoader",
+    "Win32_System_IO",
+    "Win32_System_Memory",
+    "Win32_System_Pipes",
+    "Win32_System_RemoteDesktop",
+    "Win32_System_Registry",
+    "Win32_System_SystemInformation",
+    "Win32_System_Threading",
+    "Win32_UI_Controls_Dialogs",
+    "Win32_UI_HiDpi",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+] }
+
+[profile.release]
+debug = "line-tables-only"

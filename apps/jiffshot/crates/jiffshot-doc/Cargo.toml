@@ -1,0 +1,14 @@
+[package]
+name = "jiffshot-doc"
+description = "Jiffshot documents: annotation objects, rendering, history, effects and file formats"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+ab_glyph.workspace = true
+image.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tiny-skia.workspace = true
+zip.workspace = true

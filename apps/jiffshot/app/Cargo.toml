@@ -1,0 +1,20 @@
+[package]
+name = "jiffshot"
+description = "Jiffshot, a screen capture tool and image and video editor"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+rustolonia.workspace = true
+# Only for the build script to find the staged host (DEP_RUSTOLONIA_HOST_HOST_DIR).
+rustolonia-sys.workspace = true
+image = { version = "0.25", default-features = false, features = ["png", "gif"] }
+tiny-skia.workspace = true
+parking_lot = "0.12"
+serde.workspace = true
+serde_json.workspace = true
+jiffshot-capture = { path = "../crates/jiffshot-capture" }
+jiffshot-workflow = { path = "../crates/jiffshot-workflow" }
+jiffshot-doc = { path = "../crates/jiffshot-doc" }
+windows-sys = { workspace = true, features = ["Win32_Media_Audio", "Win32_Security_Credentials"] }
