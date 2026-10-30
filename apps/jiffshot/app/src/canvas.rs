@@ -1,25 +1,22 @@
-//! The C ABI the managed `PixelCanvas` control calls. Rust owns the
-//! document and the display raster (in [`EDITOR`]); the control copies the
-//! damaged part of the raster into its bitmap after each call and draws the
-//! selection overlay from [`Overlay`].
-//!
-//! The managed side reaches these functions through [`CanvasApi`], a table
-//! of function pointers published as an integer view-model property. The
-//! host is loaded into this process, so pointers and pixels are shared
-//! directly.
+//! The editor and the calls the canvas view makes on it. Rust owns the
+//! document and the display raster (in [`EDITOR`]); after each call the view
+//! ([`crate::ui::canvas_view`]) copies the damaged part of the raster to its
+//! surface and draws the selection overlay from [`Overlay`].
 
-use parking_lot::Mutex;
 use jiffshot_doc::editor::{Editor, Modifiers, EVENT_FOCUS_TEXT, EVENT_RESIZED};
-use jiffshot_doc::{IRect, Pt};
-use std::time::Instant;
+use jiffshot_doc::object::Handle;
+use jiffshot_doc::{Box2, IRect, Pixmap, Pt};
+use parking_lot::Mutex;
+use std::sync::atomic::{AtomicU32, Ordering};
 
 pub const POINTER_PRESSED: i32 = 0;
 pub const POINTER_MOVED: i32 = 1;
 pub const POINTER_RELEASED: i32 = 2;
 
-const MOD_SHIFT: i32 = 1;
-const MOD_CTRL: i32 = 2;
-const MOD_ALT: i32 = 4;
+/// Modifier bits of [`pointer`].
+pub const MOD_SHIFT: i32 = 1;
+pub const MOD_CTRL: i32 = 2;
+pub const MOD_ALT: i32 = 4;
 
 /// Damage flags: the view model should refresh, the whole frame must be
 /// re-read (the size changed), the text box should take focus.
@@ -32,73 +29,62 @@ pub static EDITOR: Mutex<Option<Editor>> = Mutex::new(None);
 
 /// Events taken from the editor during canvas calls, for the view model to
 /// handle on its next sync.
-pub static PENDING_EVENTS: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+pub static PENDING_EVENTS: AtomicU32 = AtomicU32::new(0);
 
-/// A view of the display raster. Only valid between `lock_frame` and
-/// `unlock_frame`.
-#[repr(C)]
-pub struct CanvasFrame {
-    pub pixels: *const u8,
-    pub width: i32,
-    pub height: i32,
-    pub stride: i32,
-}
+/// Placeholder for the removed C ABI table the managed canvas called:
+/// `App::attach` still publishes its address as `canvas_api`, which nothing
+/// reads any more. Delete it with that line.
+pub static API: u8 = 0;
 
-/// The changed rectangle (zero width when nothing changed), flags, the
-/// pointer cursor to show and the time Rust spent.
-#[repr(C)]
-pub struct CanvasDamage {
-    pub x: i32,
-    pub y: i32,
-    pub width: i32,
-    pub height: i32,
+/// What a canvas call changed: the display rectangle to copy (empty when
+/// nothing changed), the `FLAG_*` bits and the pointer cursor to show (a
+/// `jiffshot_doc::editor::Cursor` code).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Damage {
+    pub rect: IRect,
     pub flags: i32,
     pub cursor: i32,
-    pub render_micros: i64,
 }
 
-pub const MAX_HANDLES: usize = 16;
-pub const MAX_OTHERS: usize = 64;
+impl Damage {
+    /// Adds `later` to this damage: the union of the rectangles and flags,
+    /// and the later cursor.
+    pub fn merge(&mut self, later: Damage) {
+        self.rect = self.rect.union(&later.rect);
+        self.flags |= later.flags;
+        self.cursor = later.cursor;
+    }
+}
 
-/// What the control draws over the image, in document pixels: the
-/// selection's box and handles, and the marquee of crop-like tools.
-#[repr(C)]
+/// What the view draws over the image, in document pixels.
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct Overlay {
-    /// 1: selection box valid, 2: marquee valid.
-    pub flags: i32,
-    pub handle_count: i32,
+    /// The selected object's box, before `rotation` (degrees, about its
+    /// center).
+    pub selection: Option<Box2>,
     pub rotation: f32,
-    pub selection: [f32; 4],
-    pub marquee: [f32; 4],
-    pub handles: [f32; MAX_HANDLES * 2],
-    pub handle_ids: [i32; MAX_HANDLES],
-    pub other_count: i32,
-    /// Boxes of the other selected objects, x, y, w, h each.
-    pub others: [f32; MAX_OTHERS * 4],
+    /// The marquee of crop-like tools or of a box selection.
+    pub marquee: Option<Box2>,
+    /// The marquee selects objects: no crop shade or size label.
+    pub box_select: bool,
+    /// The selection's handles, or the canvas edge handles when nothing is
+    /// selected (see `canvas_handles`).
+    pub handles: Vec<(Handle, Pt)>,
+    /// `handles` are the canvas edge handles (drag to resize the canvas).
+    pub canvas_handles: bool,
+    /// Boxes of the other selected objects.
+    pub others: Vec<Box2>,
 }
-
-#[repr(C)]
-pub struct CanvasApi {
-    pub pointer: extern "C" fn(kind: i32, x: f64, y: f64, modifiers: i32, tolerance: f64, out: *mut CanvasDamage),
-    pub hover: extern "C" fn(x: f64, y: f64, tolerance: f64) -> i32,
-    pub flush: extern "C" fn(out: *mut CanvasDamage),
-    pub lock_frame: extern "C" fn(out: *mut CanvasFrame),
-    pub unlock_frame: extern "C" fn(),
-    pub overlay: extern "C" fn(out: *mut Overlay),
-    pub nudge: extern "C" fn(dx: f64, dy: f64, out: *mut CanvasDamage),
-}
-
-pub static API: CanvasApi = CanvasApi { pointer, hover, flush, lock_frame, unlock_frame, overlay, nudge };
 
 fn modifiers(bits: i32) -> Modifiers {
     Modifiers { shift: bits & MOD_SHIFT != 0, ctrl: bits & MOD_CTRL != 0, alt: bits & MOD_ALT != 0 }
 }
 
 /// Renders pending damage and reports it with the editor's new events.
-fn damage_of(editor: &mut Editor, started: Instant) -> CanvasDamage {
-    let r = editor.take_damage().unwrap_or(IRect::default());
+fn damage_of(editor: &mut Editor) -> Damage {
+    let rect = editor.take_damage().unwrap_or_default();
     let events = editor.take_events();
-    PENDING_EVENTS.fetch_or(events, std::sync::atomic::Ordering::Relaxed);
+    PENDING_EVENTS.fetch_or(events, Ordering::Relaxed);
     let mut flags = 0;
     if events != 0 {
         flags |= FLAG_CHANGED;
@@ -109,22 +95,16 @@ fn damage_of(editor: &mut Editor, started: Instant) -> CanvasDamage {
     if events & EVENT_FOCUS_TEXT != 0 {
         flags |= FLAG_FOCUS_TEXT;
     }
-    CanvasDamage { x: r.x, y: r.y, width: r.w, height: r.h, flags, cursor: 0, render_micros: started.elapsed().as_micros() as i64 }
+    Damage { rect, flags, cursor: 0 }
 }
 
-fn write<T>(out: *mut T, value: T) {
-    // SAFETY: the managed caller passes a pointer to a stack-allocated
-    // struct of this layout that outlives the call.
-    unsafe { out.write(value) };
-}
-
-extern "C" fn pointer(kind: i32, x: f64, y: f64, mods: i32, tolerance: f64, out: *mut CanvasDamage) {
+/// Feeds one pointer event at (`x`, `y`) in document pixels: `kind` is a
+/// `POINTER_*`, `mods` `MOD_*` bits and `tolerance` the hit distance in
+/// document pixels. Returns the damage and the cursor for that point.
+pub fn pointer(kind: i32, x: f64, y: f64, mods: i32, tolerance: f64) -> Damage {
     let _t = crate::trace::span("pointer");
-    let started = Instant::now();
     let mut guard = EDITOR.lock();
-    let Some(editor) = guard.as_mut() else {
-        return write(out, CanvasDamage { x: 0, y: 0, width: 0, height: 0, flags: 0, cursor: 0, render_micros: 0 });
-    };
+    let Some(editor) = guard.as_mut() else { return Damage::default() };
     let p = Pt::new(x as f32, y as f32);
     let m = modifiers(mods);
     match kind {
@@ -133,113 +113,65 @@ extern "C" fn pointer(kind: i32, x: f64, y: f64, mods: i32, tolerance: f64, out:
         POINTER_RELEASED => editor.pointer_up(p, m),
         _ => {}
     }
-    let mut damage = damage_of(editor, started);
+    let mut damage = damage_of(editor);
     damage.cursor = editor.hover(p, tolerance as f32) as i32;
-    write(out, damage);
+    damage
 }
 
-extern "C" fn hover(x: f64, y: f64, tolerance: f64) -> i32 {
+/// The cursor code for the pointer resting at (`x`, `y`) in document pixels.
+pub fn hover(x: f64, y: f64, tolerance: f64) -> i32 {
     let _t = crate::trace::span("hover");
     EDITOR.lock().as_ref().map_or(0, |e| e.hover(Pt::new(x as f32, y as f32), tolerance as f32) as i32)
 }
 
-extern "C" fn flush(out: *mut CanvasDamage) {
+/// Renders whatever changed since the last call (edits made outside the
+/// canvas) and reports it.
+pub fn flush() -> Damage {
     let _t = crate::trace::span("flush");
-    let started = Instant::now();
-    let mut guard = EDITOR.lock();
-    let damage = match guard.as_mut() {
-        Some(editor) => damage_of(editor, started),
-        None => CanvasDamage { x: 0, y: 0, width: 0, height: 0, flags: 0, cursor: 0, render_micros: 0 },
-    };
-    write(out, damage);
+    EDITOR.lock().as_mut().map(damage_of).unwrap_or_default()
 }
 
-extern "C" fn nudge(dx: f64, dy: f64, out: *mut CanvasDamage) {
+/// Moves the selection by (`dx`, `dy`) document pixels.
+pub fn nudge(dx: f64, dy: f64) -> Damage {
     let _t = crate::trace::span("nudge");
-    let started = Instant::now();
     let mut guard = EDITOR.lock();
-    let damage = match guard.as_mut() {
-        Some(editor) => {
-            editor.nudge(dx as f32, dy as f32);
-            damage_of(editor, started)
-        }
-        None => CanvasDamage { x: 0, y: 0, width: 0, height: 0, flags: 0, cursor: 0, render_micros: 0 },
-    };
-    write(out, damage);
+    let Some(editor) = guard.as_mut() else { return Damage::default() };
+    editor.nudge(dx as f32, dy as f32);
+    damage_of(editor)
 }
 
-/// Locks the editor and describes the display raster. The lock is held
-/// until `unlock_frame`, so the managed copy never races an edit.
-extern "C" fn lock_frame(out: *mut CanvasFrame) {
-    let _t = crate::trace::span("lock_frame");
-    let guard = EDITOR.lock();
-    let frame = match guard.as_ref() {
-        Some(editor) => {
-            let d = editor.display();
-            CanvasFrame { pixels: d.data().as_ptr(), width: d.width() as i32, height: d.height() as i32, stride: d.width() as i32 * 4 }
-        }
-        None => CanvasFrame { pixels: std::ptr::null(), width: 0, height: 0, stride: 0 },
-    };
-    std::mem::forget(guard);
-    write(out, frame);
+/// Runs `f` on the display raster (premultiplied RGBA, tightly packed rows)
+/// with the editor locked, so the copy never races an edit.
+pub fn with_display<R>(f: impl FnOnce(&Pixmap) -> R) -> Option<R> {
+    let _t = crate::trace::span("with_display");
+    EDITOR.lock().as_ref().map(|e| f(e.display()))
 }
 
-extern "C" fn unlock_frame() {
-    let _t = crate::trace::span("unlock_frame");
-    // SAFETY: paired with the guard forgotten in `lock_frame`, on the same
-    // (UI) thread.
-    unsafe { EDITOR.force_unlock() };
-}
-
-extern "C" fn overlay(out: *mut Overlay) {
+/// The selection overlay as it is now.
+pub fn overlay() -> Overlay {
     let _t = crate::trace::span("overlay");
-    let mut o = Overlay {
-        flags: 0,
-        handle_count: 0,
-        rotation: 0.0,
-        selection: [0.0; 4],
-        marquee: [0.0; 4],
-        handles: [0.0; MAX_HANDLES * 2],
-        handle_ids: [0; MAX_HANDLES],
-        other_count: 0,
-        others: [0.0; MAX_OTHERS * 4],
-    };
-    if let Some(editor) = EDITOR.lock().as_ref() {
-        if let Some(b) = editor.selection_box() {
-            o.flags |= 1;
-            o.selection = [b.x0, b.y0, b.width(), b.height()];
-            o.rotation = editor.selected().map_or(0.0, |s| if s.rotatable() { s.rotation } else { 0.0 });
-        }
-        for (i, (id, p)) in editor.selection_handles().into_iter().take(MAX_HANDLES).enumerate() {
-            o.handles[i * 2] = p.x;
-            o.handles[i * 2 + 1] = p.y;
-            o.handle_ids[i] = id as i32;
-            o.handle_count = i as i32 + 1;
-        }
-        if let Some(m) = editor.marquee() {
-            o.flags |= 2;
-            o.marquee = [m.x0, m.y0, m.width(), m.height()];
-            // Box selection, not an area of the image: no shade or size.
-            if editor.tool() == jiffshot_doc::Tool::Select {
-                o.flags |= 4;
-            }
-        }
+    let mut o = Overlay::default();
+    let guard = EDITOR.lock();
+    let Some(editor) = guard.as_ref() else { return o };
+    if let Some(b) = editor.selection_box() {
+        o.selection = Some(b);
+        o.rotation = editor.selected().map_or(0.0, |s| if s.rotatable() { s.rotation } else { 0.0 });
+        o.handles = editor.selection_handles();
+    }
+    if let Some(m) = editor.marquee() {
+        o.marquee = Some(m);
+        // Box selection, not an area of the image: no shade or size.
+        o.box_select = editor.tool() == jiffshot_doc::Tool::Select;
+    }
+    if o.selection.is_none() {
         let canvas = editor.canvas_handles();
-        if !canvas.is_empty() && o.flags & 1 == 0 {
-            o.flags |= 8;
-            for (i, (id, p)) in canvas.into_iter().enumerate() {
-                o.handles[i * 2] = p.x;
-                o.handles[i * 2 + 1] = p.y;
-                o.handle_ids[i] = id as i32;
-                o.handle_count = i as i32 + 1;
-            }
-        }
-        for (i, b) in editor.other_boxes().into_iter().take(MAX_OTHERS).enumerate() {
-            o.others[i * 4..i * 4 + 4].copy_from_slice(&[b.x0, b.y0, b.width(), b.height()]);
-            o.other_count = i as i32 + 1;
+        if !canvas.is_empty() {
+            o.handles = canvas;
+            o.canvas_handles = true;
         }
     }
-    write(out, o);
+    o.others = editor.other_boxes();
+    o
 }
 
 /// Runs `f` on the editor (if started) without holding the lock afterwards.
