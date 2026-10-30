@@ -37,4 +37,13 @@ internal static class AvnGuids
     // window-level settings a capture tool needs. Another separately versioned
     // capability; nothing below is added to a published vtable.
     public const string IAvnApplication6 = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4D80";
+
+    // Stage 34 Rust-drawn surfaces: bitmap layers Rust fills and the raw
+    // pointer stream. Another separately versioned capability; nothing below is
+    // added to a published vtable.
+    public const string IAvnApplication7 = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4D90";
+    public const string IAvnPixelSurface = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4D91";
+    public const string IAvnPixelSurfaceHandler = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4D92";
+    public const string IAvnShellTray = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4D93";
+    public const string IAvnShellTrayHandler = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4D94";
 }

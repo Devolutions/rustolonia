@@ -66,6 +66,14 @@ The prebuilt release covers code-first applications. Applications with
 compiled AXAML and view-model IR still build their own host from a source
 checkout.
 
+Two things the projected controls cannot express are covered from Rust
+directly: `pixel_surface::PixelSurface` is a control that draws bitmap layers
+Rust fills and reports the raw pointer stream (press, move, release, wheel)
+and keys to a Rust closure, for canvases, overlays and custom charts (see
+`examples/pixel_surface.rs`); `ShellTray` is a notification-area icon whose
+menu Rust builds, with no schema compiled into the host. Both need a host with
+the stage 34 capability.
+
 Application view-model schemas are owned by the consuming crate. In this
 repository the flagship sample is [`../avalonia-sample`](../avalonia-sample),
 and [`../templates/avalonia-app`](../templates/avalonia-app) (or

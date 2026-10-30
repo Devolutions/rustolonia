@@ -182,6 +182,36 @@ fn application_exposes_the_shell_capability() {
 }
 
 #[test]
+fn application_exposes_the_code_first_desktop_capability() {
+    let host = load();
+    let factory = host.activation_factory().unwrap();
+    let app = factory.create_application().unwrap();
+    let surfaces = app.pixel_surfaces().unwrap();
+    // Both need Avalonia's UI thread, which is whichever test thread touched
+    // the dispatcher first: elsewhere they fail cleanly instead of crashing.
+    let handler = rustolonia_sys::pixel_surface_handler(|_| Ok(false));
+    if let Ok(surface) = surfaces.create_pixel_surface(Some(&handler)) {
+        let _ = surface.control().unwrap();
+        // Bitmaps need the platform Run initializes; arguments are checked first.
+        assert!(surface.set_layer(8, 2, 2, 0).is_err());
+        assert!(surface.set_layer(0, 2, 2, 5).is_err());
+        assert!(surface.write_layer(0, 0, 0, 2, 2, &[255; 8], 8).is_err());
+        assert!(surface.place_layer(0, 0.0, 0.0, 1.0, 1.0, false, 9, 1.0).is_err());
+        assert!(surface.set_cursor(999).is_err());
+        surface.place_layer(0, 0.0, 0.0, 10.0, 10.0, false, 1, 0.5).unwrap();
+        assert_eq!((0.0, 0.0, 1.0), surface.metrics().unwrap());
+        surface.detach().unwrap();
+    }
+    let tray = rustolonia_sys::tray_handler(|_| Ok(()));
+    if let Ok(icon) = surfaces.create_tray_icon(Some(&tray)) {
+        icon.add_menu_item(0, 1, 0, Some("Item"), 0).unwrap();
+        assert!(icon.add_menu_item(0, 1, 0, Some("Again"), 0).is_err());
+        icon.update_menu_item(1, None, 1).unwrap();
+        icon.remove().unwrap();
+    }
+}
+
+#[test]
 fn factory_unknown_qi_succeeds() {
     let host = load();
     let factory = host.activation_factory().unwrap();

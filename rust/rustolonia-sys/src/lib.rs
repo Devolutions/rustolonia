@@ -28,6 +28,7 @@ mod event_callback;
 mod factory;
 mod filters;
 mod notification;
+mod pixel_surface;
 mod popup_placement;
 mod selectors;
 mod shell;
@@ -59,6 +60,13 @@ pub use hresult::{
     E_NOTIMPL, E_POINTER, S_OK,
 };
 pub use notification::{notification, Notification, NotificationSpec};
+pub use pixel_surface::{
+    pixel_surface_handler, tray_handler, IAvnApplication7, IAvnPixelSurface,
+    IAvnPixelSurfaceHandler, IAvnShellTray, IAvnShellTrayHandler, PixelSurfaceInput, TrayInput,
+    IAVN_APPLICATION7_METHOD_COUNT, IAVN_PIXEL_SURFACE_HANDLER_METHOD_COUNT,
+    IAVN_PIXEL_SURFACE_METHOD_COUNT, IAVN_SHELL_TRAY_HANDLER_METHOD_COUNT,
+    IAVN_SHELL_TRAY_METHOD_COUNT,
+};
 pub use popup_placement::{popup_placement, PopupPlacement, PopupPlacementResult};
 pub use rust_vm::{
     rust_view_model, rust_view_model_with_control, rust_vm_range_batch, rust_vm_update_batch,

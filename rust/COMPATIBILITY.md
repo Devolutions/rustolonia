@@ -131,9 +131,12 @@ integration capability, stage 30's `IAvnRustVmSink4` richer data shapes,
 `IAvnRustVmRangeBatch` windowed range payload, `IAvnRustRangeSource` and
 `IAvnRustViewModel2`, or stage 31's `IAvnApplication4` clipboard command
 capability and its host-owned `IAvnClipboardData` payload builder,
-`IAvnRustVmSink5` for scalar-number collection elements, or stage 33's
+`IAvnRustVmSink5` for scalar-number collection elements, stage 33's
 `IAvnApplication6` desktop shell capability: shutdown mode, schema-declared
-tray icons and window handle/topmost/transparency/capture exclusion), then
+tray icons and window handle/topmost/transparency/capture exclusion, or
+stage 34's `IAvnApplication7` code-first desktop capability: pixel surfaces
+(`IAvnPixelSurface` with its Rust-implemented `IAvnPixelSurfaceHandler`) and
+Rust-built tray icons (`IAvnShellTray`, `IAvnShellTrayHandler`)), then
 negotiate/query it as optional capability.
 A producer or host that predates an optional capability must report
 `E_NOINTERFACE` explicitly; silently dropping the affected updates is not an
