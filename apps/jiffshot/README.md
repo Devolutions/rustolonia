@@ -53,35 +53,24 @@ and captures go to `Pictures\Jiffshot` unless changed.
 
 ## Building
 
-Jiffshot needs Rust 1.88+ and a Rustolonia host with the stage 34 capability
-(pixel surfaces and Rust-built tray icons). Until a release ships it, build
-the host from this repository once (the .NET 10 SDK and the `avalonia-src`
-submodule, see the repository README), then use Cargo:
+Jiffshot needs Rust 1.88+ and nothing else: it depends on Rustolonia's
+`v12.1.2` release, and the first build downloads that release's prebuilt
+host (checked against the checksums pinned at the tag). No .NET SDK or
+Rustolonia checkout is involved.
 
 ```powershell
-pwsh rust/build.ps1                       # once: publishes the host into rust/target/
 cd apps/jiffshot
 cargo run --release -p jiffshot
 ```
 
-`apps/jiffshot/.cargo/config.toml` points `RUSTOLONIA_HOST_DIR` at that host,
-and the build copies it next to `jiffshot.exe`, so `target/release` runs as
+The build copies the host next to `jiffshot.exe`, so `target/release` runs as
 it is; zip `jiffshot.exe` and the host DLLs beside it, with
 `app/README-portable.txt`, for the portable app.
 
-### Outside this repository
-
-The `apps/jiffshot` folder builds on its own: nothing in it refers to the
-rest of the repository except two lines. Once a Rustolonia release with the
-stage 34 capability exists:
-
-1. In `Cargo.toml`'s `[workspace.dependencies]`, replace the two `path`
-   entries for `rustolonia` and `rustolonia-sys` with the release's git tag
-   (the commented lines above them).
-2. Delete the `[env]` section of `.cargo/config.toml`; `rustolonia-sys`
-   then downloads the release's prebuilt host and checks its checksum.
-3. `cargo build --release -p jiffshot`; no .NET SDK or Rustolonia checkout
-   is needed.
+The `apps/jiffshot` folder builds the same way outside this repository: copy
+it anywhere. Its `.cargo/config.toml` only undoes this repository's
+`RUSTOLONIA_NO_DOWNLOAD=1` for the folder. To move to a newer Rustolonia,
+change the tag on the two lines in `Cargo.toml`'s `[workspace.dependencies]`.
 
 With no arguments Jiffshot starts in the tray. `jiffshot.exe FILE` opens a
 file in the editor, `--capture`, `--record`, `--window` and the other capture

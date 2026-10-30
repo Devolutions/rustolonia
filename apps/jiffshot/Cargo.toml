@@ -8,12 +8,10 @@ edition = "2021"
 publish = false
 
 [workspace.dependencies]
-# Rustolonia from this repository. Outside it, use the first release with the
-# stage 34 capability instead (see the README):
-#   rustolonia = { git = "https://github.com/Devolutions/rustolonia", tag = "vX.Y.Z" }
-#   rustolonia-sys = { git = "https://github.com/Devolutions/rustolonia", tag = "vX.Y.Z", default-features = false }
-rustolonia = { path = "../../rust/rustolonia" }
-rustolonia-sys = { path = "../../rust/rustolonia-sys", default-features = false }
+# Rustolonia's release: its prebuilt host is downloaded and checked against
+# the checksums pinned at the tag.
+rustolonia = { git = "https://github.com/Devolutions/rustolonia", tag = "v12.1.2" }
+rustolonia-sys = { git = "https://github.com/Devolutions/rustolonia", tag = "v12.1.2", default-features = false }
 ab_glyph = "0.2"
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "bmp", "gif", "webp"] }
 zip = { version = "2", default-features = false, features = ["deflate"] }

@@ -4,9 +4,9 @@ rustflags = ["-C", "target-feature=+crt-static"]
 [target.aarch64-pc-windows-msvc]
 rustflags = ["-C", "target-feature=+crt-static"]
 
-# In this repository Jiffshot builds against the host from `rust/build.ps1`
-# (it needs Rustolonia's stage 34 capability) instead of downloading one.
-# Outside it, delete this section: the release's host is downloaded.
+# Jiffshot uses Rustolonia's release and its prebuilt host. The repository's
+# own .cargo/config.toml turns host downloads off for everything else in this
+# checkout; this turns them back on here (outside the repository it changes
+# nothing).
 [env]
-RUSTOLONIA_NO_DOWNLOAD = "1"
-RUSTOLONIA_HOST_DIR = { value = "../../rust/target/dotnet-win-x64/publish/Avalonia.Host/release_win-x64", relative = true }
+RUSTOLONIA_NO_DOWNLOAD = "0"
