@@ -729,6 +729,34 @@ version = "0.1.0"
     [IO.File]::WriteAllLines($sumsFile, [string[]]($sumsLines | Select-Object -Skip 2))
     Assert-Throws { & $prepareRelease -Checksums -SumsFile $sumsFile -RustoloniaRoot $releaseRoot } 'no entry for rustolonia-host-9\.8\.7-rc\.1-win-x64'
 
+    # phase=all commits the checksums on the build source and tags it.
+    [IO.File]::WriteAllLines($sumsFile, [string[]]$sumsLines)
+    & $prepareRelease -Version 9.8.7-rc.1 -SkipCargoUpdate -RustoloniaRoot $releaseRoot | Out-Null
+    & git -C $releaseRoot init --quiet
+    foreach ($setting in @('user.name=Release Test', 'user.email=release@example.invalid', 'commit.gpgsign=false', 'tag.gpgsign=false', 'core.autocrlf=false')) {
+        $key, $value = $setting -split '=', 2
+        & git -C $releaseRoot config $key $value
+    }
+    & git -C $releaseRoot add --all
+    & git -C $releaseRoot commit --quiet -m 'Prepare release 9.8.7-rc.1'
+    $releaseSource = (& git -C $releaseRoot rev-parse HEAD).Trim()
+    Assert-Throws { & $prepareRelease -Checksums -SumsFile $sumsFile -RustoloniaRoot $releaseRoot -SourceRevision $releaseSource } 'only used with -CommitAndTag'
+    $propsPath = Join-Path $releaseRoot 'build/SharedVersion.props'
+    Add-Content -LiteralPath $propsPath -Value '<!-- dirty -->'
+    Assert-Throws { & $prepareRelease -Checksums -SumsFile $sumsFile -CommitAndTag -SourceRevision $releaseSource -RustoloniaRoot $releaseRoot } 'working tree has changes'
+    & git -C $releaseRoot checkout --quiet -- build/SharedVersion.props
+    & $prepareRelease -Checksums -SumsFile $sumsFile -CommitAndTag -SourceRevision $releaseSource -RustoloniaRoot $releaseRoot | Out-Null
+    Assert-True ((& git -C $releaseRoot rev-parse 'HEAD^').Trim() -eq $releaseSource) 'The checksum commit must sit directly on the build source.'
+    Assert-True ((& git -C $releaseRoot rev-parse 'v9.8.7-rc.1^{commit}').Trim() -eq (& git -C $releaseRoot rev-parse HEAD).Trim()) 'The release tag must point at the checksum commit.'
+    Assert-True ((& git -C $releaseRoot cat-file -t 'v9.8.7-rc.1').Trim() -eq 'tag') 'The release tag must be annotated.'
+    Assert-True (((& git -C $releaseRoot diff --name-only $releaseSource HEAD) -join ',') -eq 'rust/rustolonia-sys/host-checksums.txt') 'The checksum commit must change only host-checksums.txt.'
+    Assert-True ((& git -C $releaseRoot log -1 --format=%s).Trim() -eq 'Pin rustolonia 9.8.7-rc.1 release host checksums') 'Unexpected checksum commit message.'
+    Assert-True (@(& git -C $releaseRoot status --porcelain).Count -eq 0) 'The checksum commit must leave a clean tree.'
+    Assert-Throws { & $prepareRelease -Checksums -SumsFile $sumsFile -CommitAndTag -SourceRevision $releaseSource -RustoloniaRoot $releaseRoot } 'is not the build source revision'
+    Assert-Throws { & $prepareRelease -Checksums -SumsFile $sumsFile -CommitAndTag -RustoloniaRoot $releaseRoot } 'Tag v9\.8\.7-rc\.1 already exists'
+    & git -C $releaseRoot tag -d v9.8.7-rc.1 | Out-Null
+    Assert-Throws { & $prepareRelease -Checksums -SumsFile $sumsFile -CommitAndTag -RustoloniaRoot $releaseRoot } 'already lists these hashes'
+
     if ($RunNativeSmoke) {
         $nativeTempRoot = [IO.Path]::GetTempPath()
         if ($IsMacOS) {

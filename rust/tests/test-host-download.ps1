@@ -15,6 +15,9 @@ With -AppManifest, builds that standalone Cargo package (binary -AppName)
 instead of a repository example. -ShipHost copies the cached host next to the
 executable before launching, as a distributable build without the
 `dev-host-path` feature requires.
+
+An osx-x64 -Rid on Apple silicon builds for x86_64-apple-darwin and
+launches through Rosetta 2, which must be installed.
 #>
 param(
     [Parameter(Mandatory)]
@@ -77,15 +80,24 @@ foreach ($name in $overrides.Keys) {
 try {
     $targetDir = Join-Path $WorkDirectory 'target'
     $exeSuffix = if ($IsWindows) { '.exe' } else { '' }
+    $ridTarget = Get-RidTargetInfo -Rid $Rid
+    $cargoTarget = @()
+    $outputDir = Join-Path $targetDir 'release'
+    if ($ridTarget.Arch -ne (Get-CurrentRuntimeArchitecture)) {
+        # Apple silicon runs x64 apps through Rosetta 2; other cross RIDs cannot launch here.
+        if (-not ($IsMacOS -and $ridTarget.Arch -eq 'x64')) { throw "A $Rid app cannot be launched on this $(Get-CurrentRuntimeArchitecture) machine." }
+        $cargoTarget = @('--target', $ridTarget.Triple)
+        $outputDir = Join-Path $targetDir $ridTarget.Triple 'release'
+    }
     if ($AppManifest) {
         if (-not $AppName) { throw '-AppName is required with -AppManifest.' }
-        cargo build --manifest-path $AppManifest --release --target-dir $targetDir
-        $exe = Join-Path $targetDir 'release' ($AppName + $exeSuffix)
+        cargo build --manifest-path $AppManifest --release --target-dir $targetDir @cargoTarget
+        $exe = Join-Path $outputDir ($AppName + $exeSuffix)
         $Example = $AppName
     } else {
         cargo build --locked --manifest-path (Join-Path $RustoloniaRoot 'rust' 'Cargo.toml') `
-            -p rustolonia --example $Example --release --target-dir $targetDir
-        $exe = Join-Path $targetDir 'release' 'examples' ($Example + $exeSuffix)
+            -p rustolonia --example $Example --release --target-dir $targetDir @cargoTarget
+        $exe = Join-Path $outputDir 'examples' ($Example + $exeSuffix)
     }
 
     $hostFile = Join-Path $cache $version $Rid (Get-RidTargetInfo -Rid $Rid).HostFileName

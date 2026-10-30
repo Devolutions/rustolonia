@@ -76,10 +76,8 @@ jobs:
             rid: linux-x64
             platform: X11
             architecture: x64
-          - os: macos-15-intel
-            rid: osx-x64
-            platform: OSX
-            architecture: x64
+          # osx-x64 is covered by cross-build on Apple silicon; Intel macOS
+          # runners took about an hour for this job.
           - os: macos-14
             rid: osx-arm64
             platform: OSX
@@ -450,3 +448,18 @@ jobs:
               throw 'Downloaded cross-package executable lost its execute permission.'
             }
           }
+
+      # Release builds the osx-x64 host on Apple silicon too; rehearse that
+      # here and launch the x64 app through Rosetta 2.
+      - name: Install Rosetta 2 for the x64 smoke test
+        if: matrix.rid == 'osx-x64'
+        run: |
+          /usr/bin/arch -x86_64 /usr/bin/true 2>/dev/null || sudo softwareupdate --install-rosetta --agree-to-license
+          /usr/bin/arch -x86_64 /usr/bin/true
+
+      - name: Build and launch a standalone app against the packaged crates and a cross-built host tarball
+        if: matrix.rid == 'osx-x64'
+        shell: pwsh
+        run: |
+          ./rust/package-host.ps1 -Rid ${{ matrix.rid }} -OutputRoot rust/artifacts/host
+          ./rust/tests/test-standalone-app.ps1 -Rid ${{ matrix.rid }} -TarballDirectory rust/artifacts/host -WorkDirectory "$env:RUNNER_TEMP/standalone-app"

@@ -91,7 +91,7 @@ Release tarballs (`rust/package-host.ps1`) define the minimum OS a published
 | --- | --- | --- |
 | `win-x64`, `win-arm64` | `windows-latest` / `windows-11-arm` runners | Windows 10 1607 / Server 2016 (.NET 10 support floor) |
 | `linux-x64`, `linux-arm64` | `ubuntu-22.04` / `ubuntu-22.04-arm` runners | glibc 2.35 |
-| `osx-x64`, `osx-arm64` | `macos-15-intel` / `macos-14` runners, `MACOSX_DEPLOYMENT_TARGET=12.0` | macOS 12 |
+| `osx-x64`, `osx-arm64` | `macos-14` (Apple silicon) runners for both; osx-x64 is cross-built and smoke-tested under Rosetta 2; `MACOSX_DEPLOYMENT_TARGET=12.0` | macOS 12 |
 
 Linux hosts are glibc-only; musl RIDs are not published. They need an X11
 display (XWayland works), the X11 client libraries (`libX11`, `libICE`,
