@@ -1,24 +1,25 @@
 name: Release
 
 # Release procedure (see rust/PRODUCTIZATION.md#releasing):
-#   1. Prepare and merge the version, then dispatch phase=build from master.
-#      -> stage tarballs and SHA256SUMS as Actions artifacts (no tag/release).
-#   2. Download SHA256SUMS from that run, commit host checksums to master.
-#      Push the consumer tag vX.Y.Z on that checksum-bearing commit.
-#   3. Dispatch phase=publish with build_run_id and version X.Y.Z.
-#      -> verify a standalone git consumer, create release vX.Y.Z.
-#         Non-draft by default; draft=true stages a draft instead.
-#         Optionally publish crates after approval in `crates-io`.
+#   Prepare and merge the version, then dispatch phase=all from master:
+#     build -> stage tarballs and SHA256SUMS as Actions artifacts.
+#     pin-release -> commit host checksums on master, tag vX.Y.Z on it.
+#     publish -> verify a standalone git consumer, create release vX.Y.Z.
+#                Non-draft by default; draft=true stages a draft instead.
+#                Optionally publish crates after approval in `crates-io`.
+#   The manual fallback splits this into phase=build, a local checksum
+#   commit and tag push, then phase=publish with build_run_id.
 
 on:
   workflow_dispatch:
     inputs:
       phase:
-        description: Build hosts first; publish after committing checksums and pushing the final tag
-        default: build
+        description: all builds, pins checksums on master, tags and publishes; build and publish are the manual two-dispatch path
+        default: all
         required: true
         type: choice
         options:
+          - all
           - build
           - publish
       version:
@@ -31,7 +32,7 @@ on:
         default: false
         type: boolean
       build_run_id:
-        description: Successful build-phase run ID whose artifacts and source must match the final tag
+        description: Publish phase only; successful build-phase run ID whose artifacts and source must match the final tag
         default: ''
         type: string
       draft:
@@ -49,7 +50,7 @@ concurrency:
 jobs:
   version:
     name: check version
-    if: inputs.phase == 'build'
+    if: inputs.phase == 'build' || inputs.phase == 'all'
     runs-on: ubuntu-22.04
     permissions:
       contents: read
@@ -68,7 +69,11 @@ jobs:
           $version = Get-RustoloniaReleaseVersion -RustoloniaRoot $PWD
           if ($env:GITHUB_REF -ne 'refs/heads/master') { throw 'Dispatch the host build from master after merging the release preparation.' }
           if ($env:REQUESTED_VERSION -ne $version) { throw "Requested version $env:REQUESTED_VERSION does not match version $version." }
-          if ($env:PUBLISH_CRATES -eq 'true') { throw 'publish_crates is only valid for the publish phase.' }
+          if ($env:PHASE -eq 'build' -and $env:PUBLISH_CRATES -eq 'true') { throw 'publish_crates is only valid for the publish and all phases.' }
+          if ($env:PHASE -eq 'all') {
+            if ($env:BUILD_RUN_ID) { throw 'build_run_id is only used by the publish phase; phase=all builds its own hosts.' }
+            if ($env:DRAFT -eq 'true' -and $env:PUBLISH_CRATES -eq 'true') { throw 'Cannot publish crates for a draft release.' }
+          }
           if (@(git tag --list "v$version").Count -gt 0) { throw "Final tag v$version already exists; use the publish phase for its staged build." }
           if ((Get-Content build/SharedVersion.props -Raw) -notmatch "<Version>$([regex]::Escape($version))</Version>") {
             throw "build/SharedVersion.props does not match version $version."
@@ -77,7 +82,10 @@ jobs:
           "prerelease=$($version.Contains('-').ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
         env:
           REQUESTED_VERSION: ${{ inputs.version }}
+          PHASE: ${{ inputs.phase }}
           PUBLISH_CRATES: ${{ inputs.publish_crates }}
+          DRAFT: ${{ inputs.draft }}
+          BUILD_RUN_ID: ${{ inputs.build_run_id }}
 
   build:
     name: host (${{ matrix.rid }})
@@ -216,9 +224,77 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
+  # phase=all: commit the staged hashes on the build source and tag it, as the
+  # manual path does locally. The push is atomic and never forced, so it fails
+  # without changing anything if master moved or the tag appeared meanwhile.
+  pin-release:
+    name: pin checksums and tag v${{ needs.version.outputs.version }}
+    needs: [version, stage-release]
+    if: inputs.phase == 'all'
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    outputs:
+      commit: ${{ steps.pin.outputs.commit }}
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: rustolonia-release-${{ needs.version.outputs.version }}
+          path: ${{ runner.temp }}/release/v${{ needs.version.outputs.version }}
+
+      - name: Verify staged asset hashes
+        working-directory: ${{ runner.temp }}/release/v${{ needs.version.outputs.version }}
+        run: sha256sum --check --strict SHA256SUMS
+
+      - name: Check that master is still the build source and the tag is free
+        shell: pwsh
+        run: |
+          $master = gh api "repos/$env:GH_REPO/git/ref/heads/master" --jq .object.sha
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if ($master -ne $env:GITHUB_SHA) { throw "master moved from the build source $env:GITHUB_SHA to $master; dispatch a new release run." }
+          $tags = @(gh api "repos/$env:GH_REPO/git/matching-refs/tags/v$env:VERSION" --jq '.[].ref')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if ($tags -contains "refs/tags/v$env:VERSION") { throw "Tag v$env:VERSION already exists; use the publish phase." }
+
+      - id: pin
+        name: Commit host checksums and tag
+        shell: pwsh
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          ./rust/prepare-release.ps1 -Checksums -CommitAndTag -SourceRevision $env:GITHUB_SHA `
+            -SumsFile (Join-Path $env:RUNNER_TEMP 'release' "v$env:VERSION" 'SHA256SUMS')
+          "commit=$(git rev-parse HEAD)" >> $env:GITHUB_OUTPUT
+
+      # RELEASE_PUSH_TOKEN is only needed if rules on master or v* tags block
+      # GITHUB_TOKEN; see rust/PRODUCTIZATION.md#releasing.
+      - name: Push master and the tag
+        env:
+          PUSH_TOKEN: ${{ secrets.RELEASE_PUSH_TOKEN || github.token }}
+        run: |
+          set -euo pipefail
+          auth=$(printf 'x-access-token:%s' "$PUSH_TOKEN" | base64 -w0)
+          echo "::add-mask::$auth"
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" \
+            push --atomic "https://github.com/$GH_REPO.git" HEAD:refs/heads/master "refs/tags/v$VERSION"
+
   publish:
     name: publish ${{ inputs.version }}
-    if: github.event_name == 'workflow_dispatch' && inputs.phase == 'publish'
+    needs: pin-release
+    # The publish phase runs alone; phase=all continues once pin-release pushed the tag.
+    if: >-
+      !cancelled() && github.event_name == 'workflow_dispatch' &&
+      (inputs.phase == 'publish' || (inputs.phase == 'all' && needs.pin-release.result == 'success'))
     runs-on: ubuntu-22.04
     permissions:
       contents: write
@@ -227,7 +303,9 @@ jobs:
       VERSION: ${{ inputs.version }}
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
+      PHASE: ${{ inputs.phase }}
       BUILD_RUN_ID: ${{ inputs.build_run_id }}
+      PINNED_COMMIT: ${{ needs.pin-release.outputs.commit }}
       DRAFT: ${{ inputs.draft }}
       PUBLISH_CRATES: ${{ inputs.publish_crates }}
     steps:
@@ -253,28 +331,37 @@ jobs:
         shell: pwsh
         run: |
           if ($env:GITHUB_REF -ne 'refs/heads/master') { throw 'Dispatch publication from master.' }
-          if ($env:BUILD_RUN_ID -notmatch '^[1-9][0-9]*$') { throw 'Pass the successful build-phase build_run_id.' }
           if ($env:DRAFT -eq 'true' -and $env:PUBLISH_CRATES -eq 'true') { throw 'Cannot publish crates for a draft release.' }
-          $runJson = gh api "repos/$env:GH_REPO/actions/runs/$env:BUILD_RUN_ID"
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          $run = $runJson | ConvertFrom-Json
-          if ($run.conclusion -ne 'success' -or $run.event -ne 'workflow_dispatch' -or
-              $run.head_branch -ne 'master' -or $run.path -ne '.github/workflows/release.yml') {
-            throw 'The build must be a successful Release dispatch from master.'
+          if ($env:PHASE -eq 'all') {
+            # This run built the hosts from GITHUB_SHA and pushed the tag itself.
+            $sourceSha = $env:GITHUB_SHA
+            if ((git rev-parse HEAD) -ne $env:PINNED_COMMIT) { throw "v$env:VERSION does not point at the checksum commit $env:PINNED_COMMIT pushed by this run." }
           }
-          git merge-base --is-ancestor $run.head_sha HEAD
+          else {
+            if ($env:BUILD_RUN_ID -notmatch '^[1-9][0-9]*$') { throw 'Pass the successful build-phase build_run_id.' }
+            $runJson = gh api "repos/$env:GH_REPO/actions/runs/$env:BUILD_RUN_ID"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            $run = $runJson | ConvertFrom-Json
+            if ($run.conclusion -ne 'success' -or $run.event -ne 'workflow_dispatch' -or
+                $run.head_branch -ne 'master' -or $run.path -ne '.github/workflows/release.yml') {
+              throw 'The build must be a successful Release dispatch from master.'
+            }
+            $sourceSha = $run.head_sha
+          }
+          git merge-base --is-ancestor $sourceSha HEAD
           if ($LASTEXITCODE -ne 0) { throw 'The consumer tag must descend from the build source.' }
-          $changed = @(git diff --name-only $run.head_sha HEAD |
+          $changed = @(git diff --name-only $sourceSha HEAD |
             Where-Object { $_ -ne 'rust/rustolonia-sys/host-checksums.txt' })
           if ($LASTEXITCODE -ne 0) { throw 'Could not compare the build source and consumer tag.' }
           if ($changed.Count -gt 0) { throw "Sources changed since the build: $($changed -join ', ')" }
 
+      # Without a token, download-artifact reads this run's own artifacts (phase=all).
       - uses: actions/download-artifact@v4
         with:
           name: rustolonia-release-${{ inputs.version }}
           path: ${{ runner.temp }}/release/v${{ inputs.version }}
-          run-id: ${{ inputs.build_run_id }}
-          github-token: ${{ github.token }}
+          run-id: ${{ inputs.phase == 'publish' && inputs.build_run_id || github.run_id }}
+          github-token: ${{ inputs.phase == 'publish' && github.token || '' }}
 
       - name: Verify staged asset hashes
         shell: pwsh
@@ -321,7 +408,9 @@ jobs:
   publish-crates:
     name: publish crates ${{ inputs.version }}
     needs: publish
-    if: github.event_name == 'workflow_dispatch' && inputs.phase == 'publish' && inputs.publish_crates && !inputs.draft
+    if: >-
+      !cancelled() && needs.publish.result == 'success' && github.event_name == 'workflow_dispatch' &&
+      (inputs.phase == 'publish' || inputs.phase == 'all') && inputs.publish_crates && !inputs.draft
     runs-on: ubuntu-22.04
     environment: crates-io
     permissions:

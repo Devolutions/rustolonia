@@ -13,8 +13,9 @@ Two steps, each followed by a commit:
      rust/release-manifest.json and <Version> in build/SharedVersion.props,
      clears rust/rustolonia-sys/host-checksums.txt and refreshes Cargo.lock
      (and the crates' entries in the in-repository apps' lock files).
-     Commit to master, then dispatch .github/workflows/release.yml with
-     phase=build. It stages host tarballs and SHA256SUMS as Actions artifacts.
+     Commit to master, then dispatch .github/workflows/release.yml. With
+     phase=all (the default) that one run does everything below; with
+     phase=build it only stages host tarballs and SHA256SUMS as artifacts.
 
   2. -Checksums (-SumsFile <SHA256SUMS> | -FromRelease)
      Writes host-checksums.txt from SHA256SUMS (symbol tarballs are left out).
@@ -23,6 +24,11 @@ Two steps, each followed by a commit:
      Commit, then push `v<x.y.z>` on this commit. Dispatch phase=publish
      with build_run_id to create the GitHub release (non-draft by default).
      crates.io publishing and draft releases are opt-in.
+
+     -CommitAndTag also makes that commit (only host-checksums.txt) and the
+     annotated tag v<x.y.z>, without pushing. It refuses a dirty tree, an
+     existing tag, or a HEAD other than -SourceRevision (the build source).
+     phase=all runs it, then pushes master and the tag atomically.
 #>
 [CmdletBinding(DefaultParameterSetName = 'Version')]
 param(
@@ -38,6 +44,10 @@ param(
     [string]$SumsFile,
     [Parameter(ParameterSetName = 'Checksums')]
     [switch]$FromRelease,
+    [Parameter(ParameterSetName = 'Checksums')]
+    [switch]$CommitAndTag,
+    [Parameter(ParameterSetName = 'Checksums')]
+    [string]$SourceRevision,
 
     [string]$RustoloniaRoot = (Split-Path -Parent $PSScriptRoot)
 )
@@ -90,11 +100,22 @@ if ($PSCmdlet.ParameterSetName -eq 'Version') {
         }
     }
     $null = Get-RustoloniaReleaseVersion -RustoloniaRoot $root
-    Write-Host "Version set to $Version. Commit to master, then dispatch phase=build (no tag needed)."
+    Write-Host "Version set to $Version. Merge to master, then dispatch release.yml with phase=all (no tag needed)."
     return
 }
 
 $version = Get-RustoloniaReleaseVersion -RustoloniaRoot $root
+$checksumPath = 'rust/rustolonia-sys/host-checksums.txt'
+if ($SourceRevision -and -not $CommitAndTag) { throw '-SourceRevision is only used with -CommitAndTag.' }
+if ($CommitAndTag) {
+    $head = (& git -C $root rev-parse HEAD).Trim()
+    if ($SourceRevision) {
+        $source = (& git -C $root rev-parse --verify "$SourceRevision^{commit}").Trim()
+        if ($head -ne $source) { throw "HEAD $head is not the build source revision $source; rebuild from the current master." }
+    }
+    if (@(& git -C $root status --porcelain --untracked-files=no).Count -gt 0) { throw 'The working tree has changes; -CommitAndTag commits only host-checksums.txt.' }
+    if (@(& git -C $root tag --list "v$version").Count -gt 0) { throw "Tag v$version already exists." }
+}
 if ($FromRelease) {
     if ($SumsFile) { throw 'Pass either -SumsFile or -FromRelease, not both.' }
     $download = Join-Path ([IO.Path]::GetTempPath()) ('rustolonia-sums-' + [guid]::NewGuid().ToString('N'))
@@ -127,3 +148,15 @@ foreach ($rid in $script:RidTargets.Keys) {
 $lines = @($entries.Keys | Sort-Object -CaseSensitive | ForEach-Object { "$($entries[$_])  $_" })
 Write-Utf8Lf $checksumFile ("$checksumHeader`n" + ($lines -join "`n") + "`n")
 Write-Host "Wrote $($lines.Count) checksums for v$version to $checksumFile."
+if (-not $CommitAndTag) { return }
+
+$changed = @(& git -C $root status --porcelain --untracked-files=no | ForEach-Object { $_.Substring(3) })
+if ($changed.Count -eq 0) { throw "host-checksums.txt already lists these hashes; the build source must not carry v$version checksums." }
+if ($changed.Count -ne 1 -or $changed[0] -ne $checksumPath) { throw "Unexpected changes: $($changed -join ', ')" }
+& git -C $root add -- $checksumPath
+& git -C $root commit --quiet -m "Pin rustolonia $version release host checksums"
+& git -C $root tag -a "v$version" -m "rustolonia $version"
+$parent = (& git -C $root rev-parse 'HEAD^').Trim()
+$committed = @(& git -C $root diff --name-only $head HEAD)
+if ($parent -ne $head -or $committed.Count -ne 1 -or $committed[0] -ne $checksumPath) { throw 'The checksum commit must change only host-checksums.txt on top of the build source.' }
+Write-Host "Committed $((& git -C $root rev-parse HEAD).Trim()) and tagged v$version. Push with: git push --atomic origin HEAD:refs/heads/master v$version"

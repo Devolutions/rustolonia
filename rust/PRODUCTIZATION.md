@@ -472,12 +472,63 @@ another organization repository alone does not prove this repository allows it.
 ### Releasing
 
 Releases are driven by `.github/workflows/release.yml` and
-`rust/prepare-release.ps1`:
+`rust/prepare-release.ps1`. After the version bump is on `master`, one
+dispatch with `phase = all` (the default) builds, pins, tags, and publishes.
+
+#### One-dispatch release
 
 1. `pwsh rust/prepare-release.ps1 -Version X.Y.Z` sets the version of the
    three crates, the exact `rustolonia-sys` pin, `release-manifest.json`, and
    `build/SharedVersion.props`, clears `host-checksums.txt`, and refreshes
-   `Cargo.lock`. Commit to `master`, then dispatch `phase = build` with
+   `Cargo.lock`. Merge that change to `master` through a pull request.
+2. Dispatch **Release** from `master`:
+
+   ```powershell
+   gh workflow run release.yml --repo Devolutions/rustolonia --ref master -f phase=all -f version=12.1.2 -f publish_crates=false -f draft=false
+   ```
+
+   The run executes the build jobs described in step 2 of the manual path
+   below. Then `pin-release` verifies the staged `SHA256SUMS`, checks that
+   `master` still points at the commit the run built and that `vX.Y.Z` does
+   not exist, and runs
+   `prepare-release.ps1 -Checksums -SumsFile <SHA256SUMS> -CommitAndTag -SourceRevision <build commit>`.
+   That makes one commit, "Pin rustolonia X.Y.Z release host checksums",
+   whose parent is the build commit and which changes only
+   `host-checksums.txt`, plus the annotated tag `vX.Y.Z` on it. Both are
+   pushed with one atomic, non-forced `git push --atomic`. If `master` moved
+   or the tag appeared in the meantime, nothing is pushed. The `publish` and
+   `publish-crates` jobs then run unchanged against that tag, as in steps 4
+   and 5 below. They take the artifacts from the same run and require the tag
+   to point at the commit `pin-release` pushed. `draft` and `publish_crates`
+   behave as in the manual path. Do not merge to `master` while the run is
+   building: the run would then fail before pushing, and a new dispatch is
+   needed.
+
+The push uses `GITHUB_TOKEN` with `contents: write`, which works while
+`master` and `v*` tags have no branch protection or rulesets (true for
+12.1.2: `master` is unprotected and the repository has no rulesets). Commits
+and tags pushed with `GITHUB_TOKEN` do not start other workflows. That is
+fine here, because publication happens in the same run, but **Avalonia Rust**
+CI does not run on the checksum commit. If `master` or tags are later
+protected, either let GitHub Actions bypass those rules or add a repository
+secret named `RELEASE_PUSH_TOKEN`. Use a fine-grained personal access token
+for an account on the bypass list, with **Contents: Read and write** on
+`Devolutions/rustolonia` only. The push step uses it when present, and
+pushes made with it do trigger CI. A GitHub App installation token cannot be
+stored as this secret because it expires after an hour. If the rules
+require signed commits, use the manual path.
+
+If any job before the push fails, nothing is committed or tagged, so fix the
+cause and dispatch `phase = all` again. If `publish` or `publish-crates`
+fails after the push, the tag already exists and a new `phase = all` run
+refuses to start. Re-run only the failed jobs of the same run
+(`gh run rerun RUN_ID --failed`). They reuse its artifacts, build commit,
+and pinned commit. `phase = publish` cannot take over, because it requires
+a `build_run_id` whose run succeeded.
+
+#### Manual two-dispatch release (fallback)
+
+1. Prepare and merge the version as above, then dispatch `phase = build` with
    `version = X.Y.Z`. No build tag or GitHub release is created.
 2. The build checks that the requested version matches every version, packages the
    default host on native runners for all six RIDs, builds and launches a
@@ -491,9 +542,11 @@ Releases are driven by `.github/workflows/release.yml` and
    `pwsh rust/prepare-release.ps1 -Checksums -SumsFile <SHA256SUMS>`
    writes the default tarball hashes into
    `host-checksums.txt`. Commit only this file to `master`, then push the
-   final consumer tag `vX.Y.Z` on that commit. NativeAOT output is not
-   guaranteed to be bit-for-bit reproducible, so the hashes always come from
-   the release build itself.
+   final consumer tag `vX.Y.Z` on that commit. Adding `-CommitAndTag`
+   (optionally with `-SourceRevision <build commit>`) makes the commit and
+   tag locally, with the same checks `phase = all` uses. NativeAOT output is
+   not guaranteed to be bit-for-bit reproducible, so the hashes always come
+   from the release build itself.
 4. Run the **Release** workflow manually with `phase = publish` and `version = X.Y.Z` from
    `master`, setting `build_run_id` to the successful build-phase run ID and
    leaving `publish_crates = false` for a GitHub-only release.
@@ -516,26 +569,22 @@ Releases are driven by `.github/workflows/release.yml` and
    This cannot be combined with `draft = true`. Re-running publication for
    an existing release fails rather than overwriting assets.
 
-For the first GitHub-only release, this PR already prepares version `12.1.0`.
-After merging it, start **Release** from `master` with `phase = build`,
-`version = 12.1.0`, and `publish_crates = false`. The build phase validates
-the version and stages the six host builds without pushing any tags.
-Only the checksum-bearing `v12.1.0` tag is needed. Equivalently:
+For a GitHub-only release of 12.1.2 the manual path is, equivalently:
 
 ```powershell
-gh workflow run release.yml --ref master -f phase=build -f version=12.1.0 -f publish_crates=false
+gh workflow run release.yml --ref master -f phase=build -f version=12.1.2 -f publish_crates=false
 # Wait for the build to succeed; replace RUN_ID below with its run ID.
-gh run download RUN_ID --name rustolonia-release-12.1.0 --dir release-assets
+gh run download RUN_ID --name rustolonia-release-12.1.2 --dir release-assets
 # In an up-to-date master checkout:
 pwsh ./rust/prepare-release.ps1 -Checksums -SumsFile release-assets/SHA256SUMS
 git add rust/rustolonia-sys/host-checksums.txt
-git commit -m "Pin rustolonia 12.1.0 host checksums"
-git tag -a v12.1.0 -m "rustolonia 12.1.0"
-git push origin master v12.1.0
-gh workflow run release.yml --ref master -f phase=publish -f version=12.1.0 -f build_run_id=RUN_ID -f publish_crates=false -f draft=false
+git commit -m "Pin rustolonia 12.1.2 release host checksums"
+git tag -a v12.1.2 -m "rustolonia 12.1.2"
+git push origin master v12.1.2
+gh workflow run release.yml --ref master -f phase=publish -f version=12.1.2 -f build_run_id=RUN_ID -f publish_crates=false -f draft=false
 ```
 
-Do not push `v12.1.0` before committing the actual six host hashes: Cargo
+Do not push `vX.Y.Z` before committing the actual six host hashes: Cargo
 downloads the source at the tag, not later commits on `master`. Wait for the
 manual publication gate before telling consumers to use that tag. If any
 source change is needed after staging the host build, run a new build before
@@ -544,9 +593,11 @@ mixing changed source with the existing artifacts. `-FromRelease` remains
 available to read checksums from an existing `vX.Y.Z` release, not for staging.
 
 The repository must allow GitHub Actions and the workflow's
-`contents: write` permission to publish the release.
+`contents: write` permission to publish the release (and, for `phase = all`,
+to push the checksum commit and tag; see `RELEASE_PUSH_TOKEN` above).
 All six native runner labels must be available to the repository. No
-additional secret is required for a GitHub-only release. The provenance step
+additional secret is required for a GitHub-only release while `master` and
+tags are unprotected. The provenance step
 uses GitHub's `id-token: write` and `attestations: write` permissions.
 
 Signing is enabled by setting the `AVALONIA_RUST_SIGN_COMMAND` repository
