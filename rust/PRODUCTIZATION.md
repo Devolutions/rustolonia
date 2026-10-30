@@ -310,7 +310,10 @@ an absent target with the corresponding `rustup target add` command:
 Packaging supports same-OS cross-architecture builds when the required native
 and Rust toolchains are available. Executing a packaged application requires a
 matching native runner. Cross-build artifacts are therefore not evidence of
-native runtime coverage.
+native runtime coverage. The exception is osx-x64: CI and the release build it
+on Apple silicon and launch the x64 app through Rosetta 2 instead of using the
+slow Intel macOS runners. Rosetta covers smoke launches only. Intel hardware
+and the managed test suite on x64 macOS are no longer exercised in CI.
 
 ### Signing hook
 
@@ -531,7 +534,8 @@ a `build_run_id` whose run succeeded.
 1. Prepare and merge the version as above, then dispatch `phase = build` with
    `version = X.Y.Z`. No build tag or GitHub release is created.
 2. The build checks that the requested version matches every version, packages the
-   default host on native runners for all six RIDs, builds and launches a
+   default host for all six RIDs (osx-x64 on Apple silicon, launched under
+   Rosetta 2; the rest on native runners), builds and launches a
    standalone app against the packaged crates through the `rustolonia-sys`
    download path (`rust/tests/test-standalone-app.ps1`), and stages an Actions
    artifact named `rustolonia-release-X.Y.Z` with the six tarballs, their
@@ -595,7 +599,8 @@ available to read checksums from an existing `vX.Y.Z` release, not for staging.
 The repository must allow GitHub Actions and the workflow's
 `contents: write` permission to publish the release (and, for `phase = all`,
 to push the checksum commit and tag; see `RELEASE_PUSH_TOKEN` above).
-All six native runner labels must be available to the repository. No
+All five runner labels must be available to the repository (osx-x64 and
+osx-arm64 share `macos-14`). No
 additional secret is required for a GitHub-only release while `master` and
 tags are unprotected. The provenance step
 uses GitHub's `id-token: write` and `attestations: write` permissions.

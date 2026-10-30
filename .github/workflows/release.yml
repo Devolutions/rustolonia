@@ -105,7 +105,9 @@ jobs:
           # The oldest runner image sets the glibc floor (2.35).
           - { os: ubuntu-22.04, rid: linux-x64 }
           - { os: ubuntu-22.04-arm, rid: linux-arm64 }
-          - { os: macos-15-intel, rid: osx-x64 }
+          # Intel macOS runners are slow; Apple silicon cross-builds osx-x64
+          # and smoke-launches it through Rosetta 2.
+          - { os: macos-14, rid: osx-x64, rust-target: x86_64-apple-darwin }
           - { os: macos-14, rid: osx-arm64 }
     steps:
       - uses: actions/checkout@v4
@@ -133,13 +135,25 @@ jobs:
 
       - name: Set up Rust
         shell: pwsh
+        env:
+          RUST_TARGET: ${{ matrix.rust-target }}
         run: |
           rustup show
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if ($env:RUST_TARGET) {
+            rustup target add $env:RUST_TARGET
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
           cargo --version
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           rustc --version
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Install Rosetta 2 for the x64 smoke test
+        if: matrix.rust-target == 'x86_64-apple-darwin'
+        run: |
+          /usr/bin/arch -x86_64 /usr/bin/true 2>/dev/null || sudo softwareupdate --install-rosetta --agree-to-license
+          /usr/bin/arch -x86_64 /usr/bin/true
 
       - name: Install Linux smoke-test display
         if: runner.os == 'Linux'
