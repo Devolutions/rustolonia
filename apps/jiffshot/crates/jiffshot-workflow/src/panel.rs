@@ -324,7 +324,7 @@ pub(crate) fn key_name(key: &str) -> String {
 /// The Capture button's label and the line under it.
 pub fn capture_button(s: &Settings, tab: usize, capture_key: &str, timelapse_running: bool) -> (&'static str, String) {
     if tab == 2 {
-        return ("Capture", "Shift+F10 stops".into());
+        return ("Capture", crate::recorder::key_names().1.map_or("The toolbar stops it".into(), |k| format!("{k} stops")));
     }
     match timing(s) {
         "interval" if s.capture_window.timer => {
@@ -723,7 +723,7 @@ pub fn panel(s: &Settings, id: &str, runs_at_startup: bool, capture_key: &str) -
                     "Ctrl+Print Screen: full screen".into(),
                     "Shift+Print Screen: repeat the last region".into(),
                     "While selecting: arrow keys nudge; Shift, Ctrl, Ctrl+Shift lock square, 16:9, 4:3; M hides the magnifier; F1 shows all keys; Enter captures; Esc cancels".into(),
-                    "While recording: Shift+F9 pauses and resumes; Shift+F10 stops".into(),
+                    format!("While recording: {}", crate::recorder::keys_text("; ")),
                     "In this window: Enter captures; Ctrl+1, 2, 3 switch tabs; Esc closes".into(),
                 ]
                 .into_iter()

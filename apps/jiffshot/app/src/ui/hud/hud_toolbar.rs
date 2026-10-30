@@ -280,6 +280,8 @@ pub struct RecordingToolbar {
     state: State,
     draw: ToolButton,
     pause: ToolButton,
+    stop: ToolButton,
+    mini_stop: ToolButton,
     cursor: ToolButton,
     cursor_menu: ToolButton,
     webcam: ToolButton,
@@ -293,6 +295,8 @@ pub struct RecordingToolbar {
     note: Border,
     note_text: TextBlock,
     shown_paused: Cell<bool>,
+    /// The pause and stop tooltips shown, so they are set only when they change.
+    shown_tips: std::cell::RefCell<(String, String)>,
     _subscriptions: Vec<EventSubscription>,
 }
 
@@ -455,6 +459,8 @@ impl RecordingToolbar {
             state,
             draw,
             pause,
+            stop,
+            mini_stop,
             cursor,
             cursor_menu,
             webcam,
@@ -468,6 +474,7 @@ impl RecordingToolbar {
             note,
             note_text,
             shown_paused: Cell::new(false),
+            shown_tips: Default::default(),
             _subscriptions: subs,
         })
     }
@@ -495,9 +502,15 @@ impl RecordingToolbar {
             self.pause.set_shape(&if paused { resume_shape()? } else { pause_shape()? })?;
             self.shown_paused.set(paused);
         }
-        self.pause
-            .border
-            .set_tool_tip_tip(if paused { "Resume (Shift+F9)" } else { "Pause (Shift+F9)" })?;
+        // The keys the capture side registered: another app may hold the usual ones.
+        let key = |name: &str| state.get("keys").and_then(|k| k.get(name)).and_then(Value::as_str).map(|k| format!(" ({k})")).unwrap_or_default();
+        let tips = (format!("{}{}", if paused { "Resume" } else { "Pause" }, key("pause")), format!("Stop and save{}", key("stop")));
+        if *self.shown_tips.borrow() != tips {
+            self.pause.border.set_tool_tip_tip(&tips.0)?;
+            self.stop.border.set_tool_tip_tip(&tips.1)?;
+            self.mini_stop.border.set_tool_tip_tip(&tips.1)?;
+            *self.shown_tips.borrow_mut() = tips;
+        }
         self.draw.border.set_visible(is("draw_offered"))?;
         self.draw.fill(if is("draw") { BLUE } else { GREY })?;
         let switch = |name: &str| if is(name) { GREEN } else { GREY };

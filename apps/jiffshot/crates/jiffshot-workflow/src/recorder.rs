@@ -4,7 +4,8 @@
 //! A countdown comes first; then a toolbar below the area stops, pauses,
 //! restarts or cancels, starts Screen Draw, and switches the pointer, the
 //! webcam, system sound and the microphone on and off while recording.
-//! Shift+F9 / Shift+F10 pause and stop from anywhere.
+//! Shift+F9 / Shift+F10 pause and stop from anywhere, or the next free
+//! keys when another app holds those ([`key_names`]).
 
 use crate::hud::{self, Border};
 use crate::settings::Settings;
@@ -20,8 +21,63 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use serde_json::json;
 use windows_sys::Win32::Foundation::POINT;
-use windows_sys::Win32::UI::Input::KeyboardAndMouse::{MOD_SHIFT, VK_F10, VK_F9};
+use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
+    RegisterHotKey, UnregisterHotKey, HOT_KEY_MODIFIERS, MOD_ALT, MOD_CONTROL, MOD_NOREPEAT, MOD_SHIFT, VK_F10, VK_F9,
+};
 use windows_sys::Win32::UI::WindowsAndMessaging::GetCursorPos;
+
+/// A recording key: modifiers, virtual key and how it is written.
+type Key = (HOT_KEY_MODIFIERS, u16, &'static str);
+
+/// The pause and stop keys, best first: another app (often another capture
+/// tool) may hold Shift+F9 or Shift+F10, and a key registered by nobody
+/// does nothing when pressed.
+const PAUSE_KEYS: [Key; 3] = [(MOD_SHIFT, VK_F9, "Shift+F9"), (MOD_CONTROL | MOD_SHIFT, VK_F9, "Ctrl+Shift+F9"), (MOD_CONTROL | MOD_ALT, VK_F9, "Ctrl+Alt+F9")];
+const STOP_KEYS: [Key; 3] = [(MOD_SHIFT, VK_F10, "Shift+F10"), (MOD_CONTROL | MOD_SHIFT, VK_F10, "Ctrl+Shift+F10"), (MOD_CONTROL | MOD_ALT, VK_F10, "Ctrl+Alt+F10")];
+
+/// The pause and stop keys the last check found free.
+static KEYS: Mutex<Option<(Option<Key>, Option<Key>)>> = Mutex::new(None);
+
+/// The first of `keys` no other app holds.
+fn free(keys: &[Key]) -> Option<Key> {
+    const PROBE: i32 = 0x53F0;
+    keys.iter().copied().find(|&(modifiers, vk, _)| {
+        // SAFETY: a test registration for this thread, removed at once.
+        unsafe {
+            let ok = RegisterHotKey(std::ptr::null_mut(), PROBE, modifiers | MOD_NOREPEAT, vk as u32) != 0;
+            if ok {
+                UnregisterHotKey(std::ptr::null_mut(), PROBE);
+            }
+            ok
+        }
+    })
+}
+
+/// Finds the pause and stop keys free now. Not while recording, which holds
+/// them itself.
+pub fn check_keys() -> (Option<Key>, Option<Key>) {
+    let keys = (free(&PAUSE_KEYS), free(&STOP_KEYS));
+    *KEYS.lock().unwrap_or_else(|e| e.into_inner()) = Some(keys);
+    keys
+}
+
+/// How the pause and stop keys are written ("Shift+F9", "Shift+F10"), or
+/// `None` for one that every candidate is taken for (the toolbar's button
+/// still works).
+pub fn key_names() -> (Option<&'static str>, Option<&'static str>) {
+    let known = *KEYS.lock().unwrap_or_else(|e| e.into_inner());
+    let (pause, stop) = known.unwrap_or_else(check_keys);
+    (pause.map(|k| k.2), stop.map(|k| k.2))
+}
+
+/// "Shift+F9 pauses and resumes{sep}Shift+F10 stops", for the windows that
+/// list keys.
+pub fn keys_text(sep: &str) -> String {
+    let (pause, stop) = key_names();
+    let pause = pause.map_or("the toolbar pauses and resumes".to_owned(), |k| format!("{k} pauses and resumes"));
+    let stop = stop.map_or("the toolbar stops".to_owned(), |k| format!("{k} stops"));
+    format!("{pause}{sep}{stop}")
+}
 
 /// State shared between the recording thread and the toolbar. The
 /// switches are read on every frame, so they change a recording while it
@@ -436,6 +492,7 @@ fn toolbar_state(control: &Control, settings: &Settings) -> serde_json::Value {
         "draw": screendraw::active(),
         "draw_offered": settings.screen_draw,
         "note": control.audio.lock().unwrap().clone(),
+        "keys": { "pause": key_names().0, "stop": key_names().1 },
     })
 }
 
@@ -486,8 +543,17 @@ pub fn record(rect: Rect, settings: &Settings) -> Result<Option<PathBuf>, String
             }
             result
         });
-        // Shift+F9 (pause) and Shift+F10 (stop) work wherever the focus is.
-        let keys = [(MOD_SHIFT, VK_F9, "pause"), (MOD_SHIFT, VK_F10, "stop")];
+        // The pause and stop keys work wherever the focus is.
+        let (pause, stop) = check_keys();
+        for (key, best, what) in [(pause, PAUSE_KEYS[0].2, "pauses"), (stop, STOP_KEYS[0].2, "stops")] {
+            match key {
+                Some((.., name)) if name != best => log(&format!("{best} is held by another app; {name} {what} the recording")),
+                None => log(&format!("{best} and its alternatives are held by other apps; only the toolbar {what} the recording")),
+                _ => {}
+            }
+        }
+        let keys: Vec<(u32, u16, &str)> =
+            [(pause, "pause"), (stop, "stop")].into_iter().filter_map(|(key, action)| key.map(|(modifiers, vk, _)| (modifiers, vk, action))).collect();
         let ended = hud::run_toolbar(
             rect,
             &keys,

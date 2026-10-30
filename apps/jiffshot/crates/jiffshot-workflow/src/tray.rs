@@ -1310,6 +1310,9 @@ pub fn run(initial: Option<usize>) -> i32 {
     }
 
     let (capture_key, problems) = register_hotkeys(hwnd);
+    // Which pause and stop keys recordings will use, for the windows that
+    // show them.
+    crate::recorder::check_keys();
     log(&format!("capture side started; capture key {capture_key}"));
     for problem in &problems {
         log(problem);

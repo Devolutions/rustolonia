@@ -51,7 +51,7 @@ pub fn hotkeys(s: &Settings, capture_key: &str) -> Vec<Row> {
     let mut rows = vec![
         note(format!("{key}: capture (region, window or screen). Print Screen is used when it is free; another key while some other app holds it.")),
         note("Ctrl+Print Screen: full screen · Shift+Print Screen: repeat the last region"),
-        note("While recording: Shift+F9 pauses and resumes, Shift+F10 stops"),
+        note(format!("While recording: {}", crate::recorder::keys_text(", "))),
         note("Presets: a hotkey for each, for example Ctrl+Shift+1; empty for none."),
     ];
     rows.extend(s.presets.iter().map(|p| text(&p.name, p.hotkey.clone().unwrap_or_default())));

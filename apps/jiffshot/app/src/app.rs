@@ -73,6 +73,42 @@ pub fn post(f: impl FnOnce(&mut App) + Send + 'static) {
     }
 }
 
+/// The capture side's latest HUD, not yet shown.
+static PENDING_HUD: Mutex<Option<String>> = Mutex::new(None);
+
+/// Shows the capture side's HUD (`json`), from any thread. While recording
+/// it changes every tick: only the latest is shown, so a UI thread that
+/// falls behind skips states instead of queueing them, and showing one does
+/// not sync the editor.
+pub fn post_hud(json: String) {
+    let queued = PENDING_HUD.lock().unwrap().replace(json).is_some();
+    if queued {
+        return;
+    }
+    let scope = SCOPE.lock().unwrap().clone();
+    if let Some(scope) = scope {
+        let _ = scope.post(|| {
+            let Some(json) = PENDING_HUD.lock().unwrap().take() else { return };
+            if with(|app| app.set_hud(&json)).is_none() {
+                // The state is in use further up the stack: next turn. The
+                // last HUD (all panels gone) must not be lost.
+                post_hud(json);
+            }
+        });
+    }
+}
+
+/// Runs `f` on the UI thread without syncing the editor afterwards, for
+/// changes that only reach other windows (the overlay, Screen Draw).
+pub fn post_quiet(f: impl FnOnce(&mut App) + Send + 'static) {
+    let scope = SCOPE.lock().unwrap().clone();
+    if let Some(scope) = scope {
+        let _ = scope.post(move || {
+            with(f);
+        });
+    }
+}
+
 static SCOPE: Mutex<Option<AppScope>> = Mutex::new(None);
 
 pub fn install(scope: AppScope, opening: Option<PathBuf>) {

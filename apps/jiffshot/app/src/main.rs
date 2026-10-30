@@ -526,9 +526,9 @@ fn main() -> rustolonia::Result<()> {
                 }),
                 show_capture_window: Box::new(|| app::post(|app| app.show_capture_window())),
                 show_text: Box::new(|text| app::post(move |app| app.show_grab_text(&text))),
-                hud: Box::new(|json| app::post(move |app| app.set_hud(&json))),
-                overlay: Box::new(|json| app::post(move |app| app.set_overlay(&json))),
-                screen_draw: Box::new(|json| app::post(move |app| app.set_screen_draw(&json))),
+                hud: Box::new(app::post_hud),
+                overlay: Box::new(|json| app::post_quiet(move |app| app.set_overlay(&json))),
+                screen_draw: Box::new(|json| app::post_quiet(move |app| app.set_screen_draw(&json))),
             };
             if let Err(error) = jiffshot_workflow::start_engine(capture, hooks) {
                 eprintln!("the capture side did not start: {error}");

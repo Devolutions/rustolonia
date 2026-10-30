@@ -1,5 +1,6 @@
 //! Opt-in call tracing for diagnosing hangs: set JIFFSHOT_TRACE to a file
-//! path and every traced call appends an enter and an exit line.
+//! path and every traced call appends an enter line and an exit line with
+//! the time it took.
 
 use std::io::Write;
 use std::sync::{Mutex, OnceLock};
@@ -21,17 +22,18 @@ pub fn line(text: &str) {
     }
 }
 
-/// Logs `name` now and again when the returned guard drops.
-pub struct Span(&'static str);
+/// Logs `name` now and again, with the elapsed time, when the returned
+/// guard drops.
+pub struct Span(&'static str, std::time::Instant);
 
 pub fn span(name: &'static str) -> Option<Span> {
     file()?;
     line(&format!("> {name}"));
-    Some(Span(name))
+    Some(Span(name, std::time::Instant::now()))
 }
 
 impl Drop for Span {
     fn drop(&mut self) {
-        line(&format!("< {}", self.0));
+        line(&format!("< {} {} us", self.0, self.1.elapsed().as_micros()));
     }
 }

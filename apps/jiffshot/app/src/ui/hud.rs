@@ -49,6 +49,7 @@ fn area_of(e: &Value) -> Rect {
 
 /// `{"panels":[{"id","area":[x,y,w,h],"status","buttons":[…]} or {"id","area","toolbar":{…}}],"borders":[{"id","area"}]}`.
 fn apply(scope: &AppScope, json: &str) {
+    let _t = crate::trace::span("hud");
     if json.is_empty() {
         return;
     }
