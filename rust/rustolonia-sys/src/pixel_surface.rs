@@ -32,7 +32,8 @@ const IAVN_PIXEL_SURFACE_HANDLER_IID: Guid = stage34_iid(0x92);
 const IAVN_SHELL_TRAY_IID: Guid = stage34_iid(0x93);
 const IAVN_SHELL_TRAY_HANDLER_IID: Guid = stage34_iid(0x94);
 
-type QueryInterface = unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32;
+type QueryInterface =
+    unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32;
 type AddRef = unsafe extern "system" fn(*mut IUnknown) -> u32;
 
 #[repr(C)]
@@ -300,9 +301,17 @@ pub enum PixelSurfaceInput {
         delta_y: f64,
     },
     /// `kind`: 0 down, 1 up.
-    Key { kind: i32, key: i32, modifiers: i32 },
+    Key {
+        kind: i32,
+        key: i32,
+        modifiers: i32,
+    },
     Text(String),
-    Resize { width: f64, height: f64, scaling: f64 },
+    Resize {
+        width: f64,
+        height: f64,
+        scaling: f64,
+    },
 }
 
 type HandlerCallback = Box<dyn FnMut(&PixelSurfaceInput) -> Result<bool> + Send>;
@@ -370,7 +379,9 @@ pub fn pixel_surface_handler(
         ref_count: AtomicU32::new(1),
         callback: Mutex::new(Some(Box::new(callback))),
     }));
-    unsafe { ComPtr::from_raw(object.cast()).expect("Box allocation cannot produce a null pointer") }
+    unsafe {
+        ComPtr::from_raw(object.cast()).expect("Box allocation cannot produce a null pointer")
+    }
 }
 
 unsafe fn dispatch(this: *mut IAvnPixelSurfaceHandler, input: &PixelSurfaceInput) -> Result<bool> {
@@ -380,7 +391,9 @@ unsafe fn dispatch(this: *mut IAvnPixelSurfaceHandler, input: &PixelSurfaceInput
         Err(_) => return Err(hresult::Error(hresult::E_FAIL)),
     };
     // Re-entered from inside the callback: nothing to call.
-    let Some(mut callback) = taken else { return Ok(false) };
+    let Some(mut callback) = taken else {
+        return Ok(false);
+    };
     let outcome = catch_unwind(AssertUnwindSafe(|| callback(input)));
     if let Ok(mut slot) = (*object).callback.lock() {
         *slot = Some(callback);
@@ -388,7 +401,11 @@ unsafe fn dispatch(this: *mut IAvnPixelSurfaceHandler, input: &PixelSurfaceInput
     outcome.unwrap_or(Err(hresult::Error(hresult::E_FAIL)))
 }
 
-unsafe fn report(this: *mut IAvnPixelSurfaceHandler, input: PixelSurfaceInput, handled: *mut i32) -> i32 {
+unsafe fn report(
+    this: *mut IAvnPixelSurfaceHandler,
+    input: PixelSurfaceInput,
+    handled: *mut i32,
+) -> i32 {
     match dispatch(this, &input) {
         Ok(done) => {
             if !handled.is_null() {
@@ -467,7 +484,15 @@ unsafe extern "system" fn handler_on_key(
     modifiers: i32,
     handled: *mut i32,
 ) -> i32 {
-    report(this, PixelSurfaceInput::Key { kind, key, modifiers }, handled)
+    report(
+        this,
+        PixelSurfaceInput::Key {
+            kind,
+            key,
+            modifiers,
+        },
+        handled,
+    )
 }
 
 unsafe extern "system" fn handler_on_text_input(
@@ -686,13 +711,22 @@ mod tests {
 
     #[test]
     fn vtables_have_expected_slot_counts() {
-        assert_eq!(3 + IAVN_APPLICATION7_METHOD_COUNT, slots::<IAvnApplication7Vtbl>());
-        assert_eq!(3 + IAVN_PIXEL_SURFACE_METHOD_COUNT, slots::<IAvnPixelSurfaceVtbl>());
+        assert_eq!(
+            3 + IAVN_APPLICATION7_METHOD_COUNT,
+            slots::<IAvnApplication7Vtbl>()
+        );
+        assert_eq!(
+            3 + IAVN_PIXEL_SURFACE_METHOD_COUNT,
+            slots::<IAvnPixelSurfaceVtbl>()
+        );
         assert_eq!(
             3 + IAVN_PIXEL_SURFACE_HANDLER_METHOD_COUNT,
             slots::<IAvnPixelSurfaceHandlerVtbl>()
         );
-        assert_eq!(3 + IAVN_SHELL_TRAY_METHOD_COUNT, slots::<IAvnShellTrayVtbl>());
+        assert_eq!(
+            3 + IAVN_SHELL_TRAY_METHOD_COUNT,
+            slots::<IAvnShellTrayVtbl>()
+        );
         assert_eq!(
             3 + IAVN_SHELL_TRAY_HANDLER_METHOD_COUNT,
             slots::<IAvnShellTrayHandlerVtbl>()
@@ -739,7 +773,10 @@ mod tests {
             let mut handled = -1;
             assert_eq!(0, (vtbl.on_key)(raw, 0, 44, 2, &mut handled));
             assert_eq!(1, handled);
-            assert_eq!(0, (vtbl.on_pointer)(raw, 0, 1.5, 2.5, 1, 1, 0, 1, 0.0, 0.0, &mut handled));
+            assert_eq!(
+                0,
+                (vtbl.on_pointer)(raw, 0, 1.5, 2.5, 1, 1, 0, 1, 0.0, 0.0, &mut handled)
+            );
             assert_eq!(0, handled);
             assert_eq!(0, (vtbl.on_resize)(raw, 10.0, 20.0, 1.5));
         }

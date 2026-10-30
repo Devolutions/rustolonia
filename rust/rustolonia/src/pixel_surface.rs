@@ -58,7 +58,12 @@ pub enum Placement {
     /// Stretched over the whole control (the default).
     Fill,
     /// At a rectangle in device-independent pixels relative to the control.
-    Rect { x: f64, y: f64, width: f64, height: f64 },
+    Rect {
+        x: f64,
+        y: f64,
+        width: f64,
+        height: f64,
+    },
 }
 
 /// A standard pointer shape (Avalonia's `StandardCursorType`).
@@ -195,7 +200,11 @@ pub enum SurfaceInput {
     Pointer(PointerInput),
     /// A key went down or up while the surface had focus. `key` is `None` for
     /// a key the projection does not know.
-    Key { down: bool, key: Option<Key>, modifiers: Modifiers },
+    Key {
+        down: bool,
+        key: Option<Key>,
+        modifiers: Modifiers,
+    },
     /// Text typed while the surface had focus.
     Text(String),
     /// The surface was attached to a window, resized, or its scaling changed.
@@ -252,7 +261,11 @@ impl SurfaceInput {
                 delta_x,
                 delta_y,
             }),
-            sys::PixelSurfaceInput::Key { kind, key, modifiers } => SurfaceInput::Key {
+            sys::PixelSurfaceInput::Key {
+                kind,
+                key,
+                modifiers,
+            } => SurfaceInput::Key {
                 down: kind == 0,
                 key: Key::try_from(key).ok(),
                 modifiers: Modifiers(modifiers),
@@ -291,7 +304,13 @@ impl PixelSurface {
     /// Allocates layer `layer` as `width` by `height` transparent pixels, or
     /// removes it when either is 0. Keeps the pixels when the size and format
     /// are unchanged.
-    pub fn set_layer(&self, layer: usize, width: u32, height: u32, format: PixelFormat) -> Result<()> {
+    pub fn set_layer(
+        &self,
+        layer: usize,
+        width: u32,
+        height: u32,
+        format: PixelFormat,
+    ) -> Result<()> {
         let format = match format {
             PixelFormat::Rgba8 => 0,
             PixelFormat::Bgra8 => 1,
@@ -350,7 +369,12 @@ impl PixelSurface {
     ) -> Result<()> {
         let (x, y, width, height, fill) = match placement {
             Placement::Fill => (0.0, 0.0, 0.0, 0.0, true),
-            Placement::Rect { x, y, width, height } => (x, y, width, height, false),
+            Placement::Rect {
+                x,
+                y,
+                width,
+                height,
+            } => (x, y, width, height, false),
         };
         let interpolation = match interpolation {
             Interpolation::Default => 0,
@@ -359,9 +383,16 @@ impl PixelSurface {
             Interpolation::Medium => 3,
             Interpolation::High => 4,
         };
-        Ok(self
-            .raw
-            .place_layer(layer as i32, x, y, width, height, fill, interpolation, opacity)?)
+        Ok(self.raw.place_layer(
+            layer as i32,
+            x,
+            y,
+            width,
+            height,
+            fill,
+            interpolation,
+            opacity,
+        )?)
     }
 
     /// Fills the control under the layers; `None` leaves it transparent.
@@ -456,7 +487,9 @@ mod tests {
             delta_x: 0.0,
             delta_y: 0.0,
         });
-        let SurfaceInput::Pointer(p) = input else { panic!("not a pointer event") };
+        let SurfaceInput::Pointer(p) = input else {
+            panic!("not a pointer event")
+        };
         assert_eq!(PointerKind::Released, p.kind);
         assert_eq!(MouseButton::Left, p.button);
         assert!(!p.is_pressed(MouseButton::Left));

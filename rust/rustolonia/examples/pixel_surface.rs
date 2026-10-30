@@ -4,7 +4,7 @@
 //! `RUSTOLONIA_EXAMPLE_EXIT_AFTER_MS` closes it after a delay (for smoke runs).
 
 use rustolonia::pixel_surface::{Cursor, MouseButton, PixelFormat, PointerKind, SurfaceInput};
-use rustolonia::{App, DockPanel, Dock, PixelSurface, Result, TextBlock, Window};
+use rustolonia::{App, Dock, DockPanel, PixelSurface, Result, TextBlock, Window};
 use std::sync::{Arc, Mutex};
 
 struct Canvas {
@@ -70,7 +70,9 @@ fn main() -> Result<()> {
             let canvas = canvas.clone();
             let slot = slot.clone();
             scope.create_pixel_surface(move |input| {
-                let Some(surface) = slot.lock().unwrap().clone() else { return Ok(false) };
+                let Some(surface) = slot.lock().unwrap().clone() else {
+                    return Ok(false);
+                };
                 let mut canvas = canvas.lock().unwrap();
                 match input {
                     SurfaceInput::Resize(metrics) => {
@@ -85,7 +87,15 @@ fn main() -> Result<()> {
                             PointerKind::Pressed if p.button == MouseButton::Right => {
                                 let (w, h) = (canvas.width, canvas.height);
                                 canvas.resize(w, h);
-                                surface.write_layer(0, 0, 0, w, h, &canvas.pixels, w as usize * 4)?;
+                                surface.write_layer(
+                                    0,
+                                    0,
+                                    0,
+                                    w,
+                                    h,
+                                    &canvas.pixels,
+                                    w as usize * 4,
+                                )?;
                             }
                             PointerKind::Pressed => {
                                 canvas.drawing = true;
@@ -98,7 +108,9 @@ fn main() -> Result<()> {
                                     flush(&surface, &canvas, d)?;
                                 }
                             }
-                            PointerKind::Released | PointerKind::CaptureLost => canvas.drawing = false,
+                            PointerKind::Released | PointerKind::CaptureLost => {
+                                canvas.drawing = false
+                            }
                             _ => return Ok(false),
                         }
                     }
@@ -110,16 +122,25 @@ fn main() -> Result<()> {
         surface.set_cursor(Cursor::Cross)?;
         *slot.lock().unwrap() = Some(surface.clone());
 
-        let hint = TextBlock::new()?.text("Drag to paint, right-click to clear")?.margin(8.0)?;
+        let hint = TextBlock::new()?
+            .text("Drag to paint, right-click to clear")?
+            .margin(8.0)?;
         DockPanel::set_dock(&hint, Dock::Top)?;
         let window = Window::new()?
             .title("Pixel surface")?
             .width(640.0)?
             .height(420.0)?
-            .content(Some(&DockPanel::new()?.child(hint)?.child(surface.control().clone())?))?;
+            .content(Some(
+                &DockPanel::new()?
+                    .child(hint)?
+                    .child(surface.control().clone())?,
+            ))?;
         scope.mount(window)?;
 
-        if let Some(ms) = std::env::var("RUSTOLONIA_EXAMPLE_EXIT_AFTER_MS").ok().and_then(|v| v.parse().ok()) {
+        if let Some(ms) = std::env::var("RUSTOLONIA_EXAMPLE_EXIT_AFTER_MS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+        {
             let scope = scope.clone();
             let probe = surface.clone();
             scope.clone().spawn(async move {

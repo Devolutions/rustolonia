@@ -207,9 +207,13 @@ impl ShellTray {
                     id,
                     header,
                     enabled,
-                } => self
-                    .raw
-                    .add_menu_item(parent, item_id(*id)?, 0, Some(header), flags(false, *enabled))?,
+                } => self.raw.add_menu_item(
+                    parent,
+                    item_id(*id)?,
+                    0,
+                    Some(header),
+                    flags(false, *enabled),
+                )?,
                 TrayMenuItem::Check {
                     id,
                     header,
@@ -239,7 +243,13 @@ impl ShellTray {
     }
 
     /// Changes an entry's state, and its header unless `None`.
-    pub fn update_item(&self, id: u32, header: Option<&str>, checked: bool, enabled: bool) -> Result<()> {
+    pub fn update_item(
+        &self,
+        id: u32,
+        header: Option<&str>,
+        checked: bool,
+        enabled: bool,
+    ) -> Result<()> {
         Ok(self
             .raw
             .update_menu_item(item_id(id)?, header, flags(checked, enabled))?)

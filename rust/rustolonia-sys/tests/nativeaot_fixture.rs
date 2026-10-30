@@ -196,9 +196,13 @@ fn application_exposes_the_code_first_desktop_capability() {
         assert!(surface.set_layer(8, 2, 2, 0).is_err());
         assert!(surface.set_layer(0, 2, 2, 5).is_err());
         assert!(surface.write_layer(0, 0, 0, 2, 2, &[255; 8], 8).is_err());
-        assert!(surface.place_layer(0, 0.0, 0.0, 1.0, 1.0, false, 9, 1.0).is_err());
+        assert!(surface
+            .place_layer(0, 0.0, 0.0, 1.0, 1.0, false, 9, 1.0)
+            .is_err());
         assert!(surface.set_cursor(999).is_err());
-        surface.place_layer(0, 0.0, 0.0, 10.0, 10.0, false, 1, 0.5).unwrap();
+        surface
+            .place_layer(0, 0.0, 0.0, 10.0, 10.0, false, 1, 0.5)
+            .unwrap();
         assert_eq!((0.0, 0.0, 1.0), surface.metrics().unwrap());
         surface.detach().unwrap();
     }
