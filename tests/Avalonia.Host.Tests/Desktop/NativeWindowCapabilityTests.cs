@@ -42,6 +42,26 @@ public class NativeWindowCapabilityTests
         Assert.Equal(HResults.E_POINTER, application.SetMacOSWindowIgnoresMouseEvents(null, 1));
     }
 
+    [Fact]
+    public void MacOS_run_teardown_disposes_the_native_windowing_platform()
+    {
+        var platform = new TrackingDisposable();
+
+        AvnApplication.DisposeWindowingPlatform(isMacOS: true, platform: platform);
+
+        Assert.True(platform.IsDisposed);
+    }
+
+    [Fact]
+    public void Non_macOS_run_teardown_leaves_platform_disposal_unchanged()
+    {
+        var platform = new TrackingDisposable();
+
+        AvnApplication.DisposeWindowingPlatform(isMacOS: false, platform: platform);
+
+        Assert.False(platform.IsDisposed);
+    }
+
     [Theory]
     [InlineData("HWND", 1)]
     [InlineData("XID", 2)]
@@ -64,5 +84,12 @@ public class NativeWindowCapabilityTests
         Assert.True(window.IsVisible);
         Assert.False(window.IsActive);
         Assert.True(window.ShowActivated);
+    }
+
+    private sealed class TrackingDisposable : IDisposable
+    {
+        public bool IsDisposed { get; private set; }
+
+        public void Dispose() => IsDisposed = true;
     }
 }

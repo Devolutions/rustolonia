@@ -7,6 +7,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Host.Generated.ViewModels;
 using Avalonia.Input;
+using Avalonia.Platform;
 using Avalonia.Rust.Interop;
 using Avalonia.Styling;
 using Avalonia.Threading;
@@ -61,7 +62,17 @@ public partial class AvnApplication : IAvnApplication, IAvnApplication2
         {
             ReleaseTrays();
             ReleaseDesktopFileIntegration();
+            // Avalonia.Native owns a process-static dispatcher callback. Release
+            // its factory before the NativeAOT host runtime starts finalizing.
+            DisposeWindowingPlatform(OperatingSystem.IsMacOS(),
+                AvaloniaLocator.Current.GetService<IWindowingPlatform>() as IDisposable);
         }
+    }
+
+    internal static void DisposeWindowingPlatform(bool isMacOS, IDisposable? platform)
+    {
+        if (isMacOS)
+            platform?.Dispose();
     }
 
     public int Shutdown()
