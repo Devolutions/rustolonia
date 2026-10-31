@@ -6,6 +6,9 @@ fn main() {
         if std::env::args().any(|arg| arg == "--gate") {
             return gate_probe(scope);
         }
+        if std::env::args().any(|arg| arg == "--placement") {
+            return placement_probe(scope);
+        }
         let protected = Button::new()?.tool_tip_tip("Protected tooltip")?;
         let normal = Button::new()?.tool_tip_tip("Normal tooltip")?;
         let window = Window::new()?.title("Protected")?.content(Some(&protected))?;
@@ -36,6 +39,216 @@ fn main() {
     if let Err(error) = result {
         eprintln!("{error}: {}", host.last_error().unwrap_or_default());
         std::process::exit(1);
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn placement_probe(scope: &rustolonia::AppScope) -> rustolonia::Result<()> {
+    use rustolonia::{Button, PlacementMode, Window};
+    use rustolonia_sys::NativePopupEvent;
+    let target = Button::new()?.tool_tip_tip("Placement tooltip")?;
+    let window = Window::new()?
+        .width(300.0)?
+        .height(88.0)?
+        .content(Some(&target))?;
+    scope.mount(window.clone())?;
+    let scope = scope.clone();
+    let dispatcher = scope.clone();
+    dispatcher.post(move || {
+        let result = (|| -> rustolonia::Result<()> {
+            let owner = scope.platform_handle(&window)?;
+            let events = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+            let mut bottom_frame = None;
+            for placement in [PlacementMode::Pointer, PlacementMode::Bottom] {
+                target.set_tool_tip_placement(placement)?;
+                let mut ungated = None;
+                for gated in [false, true] {
+                    if gated {
+                        let events = events.clone();
+                        scope.set_native_popup_gate(&window, move |event| {
+                            events.lock().unwrap().push(event);
+                            Ok(())
+                        })?;
+                    }
+                    native_placement::move_owner(owner, -10000.0, -10000.0, 0.0);
+                    native_placement::move_owner(owner, 400.0, 600.0, 0.0);
+                    native_placement::move_owner(owner, 400.0, 600.0, 1.0);
+                    let baseline = native_placement::visible_frames();
+                    target.set_tool_tip_is_open(true)?;
+                    if gated {
+                        assert_eq!(native_placement::visible_frames().len(), baseline.len());
+                        let token = events.lock().unwrap().iter().rev().find_map(|event| {
+                            match event {
+                                NativePopupEvent::Preparing { token, .. } => Some(*token),
+                                _ => None,
+                            }
+                        }).expect("preparing token");
+                        scope.acknowledge_native_popup(token)?;
+                    }
+                    let popup = native_placement::visible_frames().into_iter()
+                        .find(|(number, _)| !baseline.iter().any(|(old, _)| old == number))
+                        .expect("visible tooltip").1;
+                    let owner_frame = native_placement::frame(owner);
+                    println!("placement={placement:?}, gated={gated}: owner={owner_frame:?}, popup={popup:?}");
+                    if let Some(expected) = ungated {
+                        assert!(popup.approximately_eq(expected), "gate changed tooltip placement");
+                    } else {
+                        ungated = Some(popup);
+                    }
+                    if placement == PlacementMode::Bottom {
+                        bottom_frame = Some(popup);
+                        assert!(popup.x + popup.width >= owner_frame.x);
+                        assert!(popup.x <= owner_frame.x + owner_frame.width);
+                        assert!((popup.y + popup.height - owner_frame.y).abs() < 100.0,
+                            "button-anchored tooltip must remain near moved owner");
+                    } else {
+                        assert!(popup.x < owner_frame.x - 100.0,
+                            "pointer placement without pointer events is not button placement");
+                    }
+                    target.set_tool_tip_is_open(false)?;
+                    if gated {
+                        scope.clear_native_popup_gate(&window)?;
+                    }
+                }
+            }
+            let observed = events.clone();
+            scope.set_native_popup_gate(&window, move |event| {
+                observed.lock().unwrap().push(event);
+                Ok(())
+            })?;
+            let baseline = native_placement::visible_frames();
+            target.set_tool_tip_is_open(true)?;
+            let token = events.lock().unwrap().iter().rev().find_map(|event| {
+                match event {
+                    NativePopupEvent::Preparing { token, .. } => Some(*token),
+                    _ => None,
+                }
+            }).expect("posted acknowledgement token");
+            let next_scope = scope.clone();
+            scope.post(move || {
+                next_scope.acknowledge_native_popup(token).expect("posted acknowledgement");
+                let popup = native_placement::visible_frames().into_iter()
+                    .find(|(number, _)| !baseline.iter().any(|(old, _)| old == number))
+                    .expect("visible tooltip after posted acknowledgement").1;
+                assert!(popup.approximately_eq(bottom_frame.expect("ungated bottom frame")),
+                    "posted acknowledgement changed placement");
+                println!("posted acknowledgement: popup={popup:?}");
+                target.set_tool_tip_is_open(false).expect("close posted tooltip");
+                next_scope.clear_native_popup_gate(&window).expect("clear placement gate");
+                next_scope.shutdown().expect("shutdown placement fixture");
+            })
+        })();
+        result.expect("native tooltip placement fixture");
+    })
+}
+
+#[cfg(target_os = "macos")]
+#[allow(clashing_extern_declarations)]
+mod native_placement {
+    use std::ffi::{c_char, c_void};
+
+    #[repr(C)]
+    #[derive(Clone, Copy, Debug)]
+    pub struct Frame {
+        pub x: f64,
+        pub y: f64,
+        pub width: f64,
+        pub height: f64,
+    }
+
+    impl Frame {
+        pub fn approximately_eq(self, other: Self) -> bool {
+            [
+                self.x - other.x,
+                self.y - other.y,
+                self.width - other.width,
+                self.height - other.height,
+            ]
+            .iter()
+            .all(|difference| difference.abs() <= 1.0)
+        }
+    }
+
+    #[repr(C)]
+    struct Point {
+        x: f64,
+        y: f64,
+    }
+
+    #[link(name = "objc")]
+    extern "C" {
+        fn objc_getClass(name: *const c_char) -> *mut c_void;
+        fn sel_registerName(name: *const c_char) -> *mut c_void;
+        #[link_name = "objc_msgSend"]
+        fn send(receiver: *mut c_void, selector: *mut c_void) -> *mut c_void;
+        #[link_name = "objc_msgSend"]
+        fn count(receiver: *mut c_void, selector: *mut c_void) -> usize;
+        #[link_name = "objc_msgSend"]
+        fn at(receiver: *mut c_void, selector: *mut c_void, index: usize) -> *mut c_void;
+        #[link_name = "objc_msgSend"]
+        fn boolean(receiver: *mut c_void, selector: *mut c_void) -> bool;
+        #[link_name = "objc_msgSend"]
+        fn set_point(receiver: *mut c_void, selector: *mut c_void, point: Point);
+        #[link_name = "objc_msgSend"]
+        fn set_double(receiver: *mut c_void, selector: *mut c_void, value: f64);
+        #[cfg(target_arch = "aarch64")]
+        #[link_name = "objc_msgSend"]
+        fn get_frame(receiver: *mut c_void, selector: *mut c_void) -> Frame;
+        #[cfg(target_arch = "x86_64")]
+        #[link_name = "objc_msgSend_stret"]
+        fn get_frame(out: *mut Frame, receiver: *mut c_void, selector: *mut c_void);
+    }
+
+    pub fn frame(handle: isize) -> Frame {
+        unsafe {
+            #[cfg(target_arch = "aarch64")]
+            {
+                get_frame(handle as *mut c_void, sel_registerName(c"frame".as_ptr()))
+            }
+            #[cfg(target_arch = "x86_64")]
+            {
+                let mut out = std::mem::MaybeUninit::uninit();
+                get_frame(
+                    out.as_mut_ptr(),
+                    handle as *mut c_void,
+                    sel_registerName(c"frame".as_ptr()),
+                );
+                out.assume_init()
+            }
+        }
+    }
+
+    pub fn move_owner(handle: isize, x: f64, y: f64, alpha: f64) {
+        unsafe {
+            let window = handle as *mut c_void;
+            set_double(window, sel_registerName(c"setAlphaValue:".as_ptr()), alpha);
+            set_point(
+                window,
+                sel_registerName(c"setFrameTopLeftPoint:".as_ptr()),
+                Point { x, y },
+            );
+        }
+    }
+
+    pub fn visible_frames() -> Vec<(usize, Frame)> {
+        unsafe {
+            let app = send(
+                objc_getClass(c"NSApplication".as_ptr()),
+                sel_registerName(c"sharedApplication".as_ptr()),
+            );
+            let windows = send(app, sel_registerName(c"windows".as_ptr()));
+            (0..count(windows, sel_registerName(c"count".as_ptr())))
+                .filter_map(|index| {
+                    let window = at(windows, sel_registerName(c"objectAtIndex:".as_ptr()), index);
+                    boolean(window, sel_registerName(c"isVisible".as_ptr())).then(|| {
+                        (
+                            count(window, sel_registerName(c"windowNumber".as_ptr())),
+                            frame(window as isize),
+                        )
+                    })
+                })
+                .collect()
+        }
     }
 }
 

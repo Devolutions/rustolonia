@@ -140,6 +140,15 @@ the development Mac; the capture application must still validate this on its
 supported macOS versions and assert first-frame stream pixels. No sharing-flag
 capture guarantee is claimed.
 
+Tooltips default to `PlacementMode::Pointer`, using the owner's last pointer
+event position (desktop origin if none has arrived). A programmatic
+`set_tool_tip_is_open(true)` does not simulate a hover or anchor to the button.
+For a deterministic button-anchored tooltip, first call
+`set_tool_tip_placement(PlacementMode::Bottom)`. The native placement fixture
+compares actual AppKit frames with/without gating after moving an alpha-zero
+owner from offscreen, including a dispatcher-posted acknowledgement:
+`cargo test --manifest-path rust/Cargo.toml -p rustolonia --test native_host_shutdown native_tooltip_placement -- --ignored --nocapture`.
+
 To repeat the discovery probe without requesting new privacy permission:
 `swiftc -parse-as-library rust/rustolonia/tests/native_popup_capture_probe.swift -o rust/target/popup-capture-probe`
 then run `rust/target/popup-capture-probe`. It exits with code 2 when permission
