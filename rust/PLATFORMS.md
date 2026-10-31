@@ -93,6 +93,24 @@ The tests launch the host on a child process's main thread, check process-exit
 shutdown, and exercise a mounted window with tray icon/menu setup and cleanup.
 The tray fixture uses the initialized Avalonia submodule's `Star512.png` test asset.
 
+The popup fixture opens real macOS tooltips and `MenuFlyout`s on two top-levels:
+`AppContext::set_overlay_popups(&window, true)` keeps the protected window's
+popups embedded, while the normal window continues to use native popups.
+AppKit visible-window counts verify that the embedded opens allocate no visible
+popup window. Set the policy before opening any popup; changing it does not
+migrate an already-open native popup. Nested Avalonia popups use the same host
+selection path. System-owned dialogs and native menu-bar/tray menus are outside
+this policy.
+
+For ScreenCaptureKit, Jiffshot must still cloak the owner, register its window
+number and await every active stream's filter acknowledgement before revealing
+it. This policy does not perform capture exclusion or rely on NSWindow sharing
+flags. Because embedded popups draw into the excluded owner rather than another
+NSWindow, they introduce no separate first-frame exclusion acknowledgement.
+Overlay content cannot extend outside the owner's client area; toolbars may
+need a larger host layout. Direct first-frame recording assertions remain the
+capture application's responsibility.
+
 ## Prebuilt host platform floors
 
 Release tarballs (`rust/package-host.ps1`) define the minimum OS a published

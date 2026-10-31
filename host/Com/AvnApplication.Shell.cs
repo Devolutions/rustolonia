@@ -134,8 +134,11 @@ public partial class AvnApplication : IAvnApplication6
     }
 }
 
-public partial class AvnApplication : IAvnApplication8
+public partial class AvnApplication : IAvnApplication8, IAvnApplication9
 {
+    public int SetWindowOverlayPopups(IAvnWindow? window, int enabled) =>
+        WithWindow(window, managed => managed.UseOverlayPopups = enabled != 0);
+
     private const int NativeHandleUnknown = 0;
     private const int NativeHandleHwnd = 1;
     private const int NativeHandleXid = 2;

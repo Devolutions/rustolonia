@@ -7,6 +7,10 @@
     {
       "path": "avalonia-patches/avalonia-controls.patch",
       "sha256": "a59128da0f391a0257ebd32cb3ddee6c8513560af4cdabd4909bbb04fbfae04b"
+    },
+    {
+      "path": "avalonia-patches/avalonia-overlay-popups.patch",
+      "sha256": "36b35abc7e2683137344821a80148a75f8f975e009c569053196fb61f80634f8"
     }
   ],
   "schemas": {

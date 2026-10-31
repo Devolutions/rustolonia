@@ -15,6 +15,10 @@ include = ["/src/**", "/README.md", "/LICENSE"]
 name = "native_host_shutdown"
 path = "src/native_host_shutdown.rs"
 
+[[bin]]
+name = "native_popup_host"
+path = "src/native_popup_host.rs"
+
 [features]
 default = ["dev-host-path"]
 # See rustolonia-sys: never download the prebuilt host at build time.

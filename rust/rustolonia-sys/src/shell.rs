@@ -253,10 +253,63 @@ impl ComPtr<IAvnApplication> {
 /// Number of methods `IAvnApplication8` publishes after `IUnknown`.
 pub const IAVN_APPLICATION8_METHOD_COUNT: usize = 5;
 
+#[repr(C)]
+struct IAvnApplication9Vtbl {
+    query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
+    add_ref: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    release: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    set_window_overlay_popups:
+        unsafe extern "system" fn(*mut IAvnApplication9, *mut IAvnWindow, i32) -> i32,
+}
+
+#[repr(C)]
+pub struct IAvnApplication9 {
+    vtbl: *const IAvnApplication9Vtbl,
+}
+
+unsafe impl ComInterface for IAvnApplication9 {
+    const IID: Guid = Guid {
+        data1: 0x6B2E8F10,
+        data2: 0x4C91,
+        data3: 0x4E3A,
+        data4: [0x9A, 0x77, 0x1F, 0x0C, 0x2B, 0x3A, 0x4D, 0xA1],
+    };
+}
+
+impl ComPtr<IAvnApplication9> {
+    pub fn set_window_overlay_popups(
+        &self,
+        window: &ComPtr<IAvnWindow>,
+        enabled: bool,
+    ) -> Result<()> {
+        unsafe {
+            let vtbl = (*self.as_raw()).vtbl.as_ref().unwrap();
+            hresult::check((vtbl.set_window_overlay_popups)(
+                self.as_raw(),
+                window.as_raw(),
+                i32::from(enabled),
+            ))
+        }
+    }
+}
+
+impl ComPtr<IAvnApplication> {
+    pub fn popup_hosting(&self) -> Result<ComPtr<IAvnApplication9>> {
+        self.query_interface()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::mem::size_of;
+
+    #[test]
+    fn application9_is_an_additive_single_method_capability() {
+        assert_eq!(4 * size_of::<usize>(), size_of::<IAvnApplication9Vtbl>());
+        assert_eq!(0xA1, IAvnApplication9::IID.data4[7]);
+        assert_ne!(IAvnApplication8::IID, IAvnApplication9::IID);
+    }
 
     #[test]
     fn application6_vtable_has_expected_slot_count() {

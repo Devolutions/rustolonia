@@ -1,0 +1,42 @@
+diff --git a/src/Avalonia.Controls/Primitives/OverlayPopupHost.cs b/src/Avalonia.Controls/Primitives/OverlayPopupHost.cs
+index f519e4cfe1..ec0413a551 100644
+--- a/src/Avalonia.Controls/Primitives/OverlayPopupHost.cs
++++ b/src/Avalonia.Controls/Primitives/OverlayPopupHost.cs
+@@ -168,9 +168,10 @@ void IManagedPopupPositionerPopup.MoveAndResize(Point devicePoint, Size virtualS
+         
+         internal static IPopupHost CreatePopupHost(Visual target, IAvaloniaDependencyResolver? dependencyResolver, bool shouldUseOverlayLayer)
+         {
+-            if (!shouldUseOverlayLayer)
++            var topLevel = TopLevel.GetTopLevel(target);
++            if (!shouldUseOverlayLayer && topLevel?.UseOverlayPopups != true)
+             {
+-                if (TopLevel.GetTopLevel(target) is { } topLevel && topLevel.PlatformImpl?.CreatePopup() is { } popupImpl)
++                if (topLevel?.PlatformImpl?.CreatePopup() is { } popupImpl)
+                 {
+                     return new PopupRoot(topLevel, popupImpl, dependencyResolver);
+                 }
+diff --git a/src/Avalonia.Controls/TopLevel.cs b/src/Avalonia.Controls/TopLevel.cs
+index 721b20ccab..d0c3511f82 100644
+--- a/src/Avalonia.Controls/TopLevel.cs
++++ b/src/Avalonia.Controls/TopLevel.cs
+@@ -45,6 +45,20 @@ public abstract class TopLevel : ContentControl,
+         ILogicalRoot,
+         IThemeVariantRoot
+     {
++        /// <summary>
++        /// Forces popups targeting this top-level to render inside its overlay
++        /// layer instead of creating separate platform windows.
++        /// Set before opening popups; overlay content is confined to the client area.
++        /// </summary>
++        public static readonly StyledProperty<bool> UseOverlayPopupsProperty =
++            AvaloniaProperty.Register<TopLevel, bool>(nameof(UseOverlayPopups));
++
++        public bool UseOverlayPopups
++        {
++            get => GetValue(UseOverlayPopupsProperty);
++            set => SetValue(UseOverlayPopupsProperty, value);
++        }
++
+         /// <summary>
+         /// Defines the <see cref="ClientSize"/> property.
+         /// </summary>

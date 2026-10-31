@@ -93,6 +93,25 @@ impl ShutdownMode {
 }
 
 impl AppContext {
+    /// Keeps popups targeting `window` inside its client-area overlay rather
+    /// than allocating native popup windows. Applies to tooltips, flyouts,
+    /// context menus and nested popups; other top-levels are unaffected.
+    ///
+    /// Set before opening any popups, preferably before revealing the window.
+    /// Already-open native popups are not migrated. Overlay popups cannot extend
+    /// outside the client area, so small toolbars may need a larger host area.
+    ///
+    /// This does not perform capture exclusion. On macOS, first acknowledge
+    /// exclusion of the owning window in every active ScreenCaptureKit stream
+    /// before revealing it. This API exposes no additional borrowed handles.
+    /// Older hosts return `E_NOINTERFACE`; do not reveal protected popups then.
+    pub fn set_overlay_popups(&self, window: &Window, enabled: bool) -> Result<()> {
+        Ok(self
+            .application()
+            .popup_hosting()?
+            .set_window_overlay_popups(&window.raw, enabled)?)
+    }
+
     fn shell(&self) -> Result<sys::ComPtr<sys::IAvnApplication6>> {
         Ok(self.application().shell()?)
     }

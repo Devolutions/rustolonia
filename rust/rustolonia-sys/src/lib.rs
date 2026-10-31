@@ -79,7 +79,7 @@ pub use rust_vm::{
 };
 pub use selectors::{item_selector, text_selector, ItemSelector, TextSelector};
 pub use shell::{
-    IAvnApplication6, IAvnApplication8, IAVN_APPLICATION6_METHOD_COUNT,
+    IAvnApplication6, IAvnApplication8, IAvnApplication9, IAVN_APPLICATION6_METHOD_COUNT,
     IAVN_APPLICATION8_METHOD_COUNT,
 };
 pub use storage::{
