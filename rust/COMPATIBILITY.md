@@ -141,6 +141,12 @@ negotiate/query it as optional capability.
 A producer or host that predates an optional capability must report
 `E_NOINTERFACE` explicitly; silently dropping the affected updates is not an
 acceptable degradation.
+
+Stage 35's `IAvnApplication8` adds typed native-window descriptors, AppKit
+window-number and mouse-event-passthrough operations, and explicit show versus
+activate behavior. It is an optional capability; its macOS window number is for
+ScreenCaptureKit matching and does not promise capture exclusion. Existing
+`IAvnApplication6` topmost and capture-exclusion behavior remains unchanged.
 Any unavoidable incompatible ABI change requires a new host ABI generation and
 a coordinated major release.
 

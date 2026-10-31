@@ -46,4 +46,7 @@ internal static class AvnGuids
     public const string IAvnPixelSurfaceHandler = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4D92";
     public const string IAvnShellTray = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4D93";
     public const string IAvnShellTrayHandler = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4D94";
+
+    // Stage 35 native-window operations. Queried as a separate capability.
+    public const string IAvnApplication8 = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DA0";
 }

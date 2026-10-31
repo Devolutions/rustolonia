@@ -137,6 +137,122 @@ impl ComPtr<IAvnApplication> {
 /// the same shape, and a published capability is never widened in place.
 pub const IAVN_APPLICATION6_METHOD_COUNT: usize = 6;
 
+const IAVN_APPLICATION8_IID: Guid = Guid {
+    data1: 0x6B2E8F10,
+    data2: 0x4C91,
+    data3: 0x4E3A,
+    data4: [0x9A, 0x77, 0x1F, 0x0C, 0x2B, 0x3A, 0x4D, 0xA0],
+};
+
+#[repr(C)]
+struct IAvnApplication8Vtbl {
+    query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
+    add_ref: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    release: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    get_native_window_handle: unsafe extern "system" fn(
+        *mut IAvnApplication8,
+        *mut IAvnWindow,
+        *mut i64,
+        *mut i32,
+    ) -> i32,
+    get_macos_window_number:
+        unsafe extern "system" fn(*mut IAvnApplication8, *mut IAvnWindow, *mut i32) -> i32,
+    set_macos_window_ignores_mouse_events:
+        unsafe extern "system" fn(*mut IAvnApplication8, *mut IAvnWindow, i32) -> i32,
+    show_window: unsafe extern "system" fn(*mut IAvnApplication8, *mut IAvnWindow, i32) -> i32,
+    activate_window: unsafe extern "system" fn(*mut IAvnApplication8, *mut IAvnWindow) -> i32,
+}
+
+#[repr(C)]
+pub struct IAvnApplication8 {
+    vtbl: *const IAvnApplication8Vtbl,
+}
+
+unsafe impl ComInterface for IAvnApplication8 {
+    const IID: Guid = IAVN_APPLICATION8_IID;
+}
+
+impl ComPtr<IAvnApplication8> {
+    fn vtbl(&self) -> &IAvnApplication8Vtbl {
+        unsafe { (*self.as_raw()).vtbl.as_ref().unwrap() }
+    }
+
+    /// Gets the platform handle and its Avalonia handle descriptor. A zero
+    /// handle and kind zero mean the window has no native handle yet.
+    pub fn native_window_handle(&self, window: &ComPtr<IAvnWindow>) -> Result<(i64, i32)> {
+        unsafe {
+            let mut handle = 0;
+            let mut kind = 0;
+            let hr = (self.vtbl().get_native_window_handle)(
+                self.as_raw(),
+                window.as_raw(),
+                &mut handle,
+                &mut kind,
+            );
+            hresult::check(hr).map(|_| (handle, kind))
+        }
+    }
+
+    /// Returns AppKit's `NSWindow.windowNumber` on macOS; other platforms
+    /// return `E_NOTIMPL`.
+    pub fn macos_window_number(&self, window: &ComPtr<IAvnWindow>) -> Result<i32> {
+        unsafe {
+            let mut number = 0;
+            let hr =
+                (self.vtbl().get_macos_window_number)(self.as_raw(), window.as_raw(), &mut number);
+            hresult::check(hr).map(|_| number)
+        }
+    }
+
+    /// Sets AppKit's `NSWindow.ignoresMouseEvents`; other platforms return
+    /// `E_NOTIMPL`.
+    pub fn set_macos_window_ignores_mouse_events(
+        &self,
+        window: &ComPtr<IAvnWindow>,
+        ignores: bool,
+    ) -> Result<()> {
+        unsafe {
+            hresult::check((self.vtbl().set_macos_window_ignores_mouse_events)(
+                self.as_raw(),
+                window.as_raw(),
+                i32::from(ignores),
+            ))
+        }
+    }
+
+    /// Shows a hidden window and optionally activates it. If already visible,
+    /// only `activate = true` has an effect.
+    pub fn show_window(&self, window: &ComPtr<IAvnWindow>, activate: bool) -> Result<()> {
+        unsafe {
+            hresult::check((self.vtbl().show_window)(
+                self.as_raw(),
+                window.as_raw(),
+                i32::from(activate),
+            ))
+        }
+    }
+
+    /// Activates a visible window.
+    pub fn activate_window(&self, window: &ComPtr<IAvnWindow>) -> Result<()> {
+        unsafe {
+            hresult::check((self.vtbl().activate_window)(
+                self.as_raw(),
+                window.as_raw(),
+            ))
+        }
+    }
+}
+
+impl ComPtr<IAvnApplication> {
+    /// Queries the separately versioned native-window capability.
+    pub fn native_windows(&self) -> Result<ComPtr<IAvnApplication8>> {
+        self.query_interface::<IAvnApplication8>()
+    }
+}
+
+/// Number of methods `IAvnApplication8` publishes after `IUnknown`.
+pub const IAVN_APPLICATION8_METHOD_COUNT: usize = 5;
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -156,5 +272,25 @@ mod tests {
             crate::clipboard::IAvnApplication4::IID,
             IAVN_APPLICATION6_IID
         );
+    }
+
+    #[test]
+    fn application8_vtable_has_expected_slot_count() {
+        let slots = size_of::<IAvnApplication8Vtbl>() / size_of::<usize>();
+        assert_eq!(3 + IAVN_APPLICATION8_METHOD_COUNT, slots);
+    }
+
+    #[test]
+    fn application8_iid_uses_the_next_capability_slot() {
+        assert_eq!(
+            Guid {
+                data1: 0x6B2E8F10,
+                data2: 0x4C91,
+                data3: 0x4E3A,
+                data4: [0x9A, 0x77, 0x1F, 0x0C, 0x2B, 0x3A, 0x4D, 0xA0],
+            },
+            IAVN_APPLICATION8_IID
+        );
+        assert_ne!(IAvnApplication6::IID, IAVN_APPLICATION8_IID);
     }
 }
