@@ -1,6 +1,10 @@
 #[cfg(target_os = "macos")]
 fn main() {
     use rustolonia::{App, Button, MenuFlyout, MenuItem, Window};
+    if std::env::args().any(|arg| arg == "--teardown") {
+        teardown_probe().expect("auxiliary gate teardown fixture");
+        return;
+    }
     let host = rustolonia_sys::Host::load(rustolonia::discover_host_path().unwrap()).unwrap();
     let result = App::load_from_env().unwrap().run(|scope| {
         if std::env::args().any(|arg| arg == "--gate") {
@@ -40,6 +44,111 @@ fn main() {
         eprintln!("{error}: {}", host.last_error().unwrap_or_default());
         std::process::exit(1);
     }
+}
+
+#[cfg(target_os = "macos")]
+fn teardown_probe() -> Result<(), Box<dyn std::error::Error>> {
+    use rustolonia::{AsControl, Button, MenuFlyout, MenuItem, PlacementMode, TextBlock, Window};
+    use rustolonia_sys::NativePopupEvent;
+    use std::sync::{Arc, Mutex};
+    struct HandlerLifetime(Arc<std::sync::atomic::AtomicBool>);
+    impl Drop for HandlerLifetime {
+        fn drop(&mut self) {
+            self.0.store(true, std::sync::atomic::Ordering::SeqCst);
+        }
+    }
+    let args: Vec<_> = std::env::args().collect();
+    let menu = args.iter().any(|arg| arg == "--menu");
+    let revealed = args.iter().any(|arg| arg == "--revealed");
+    let shutdown = args.iter().any(|arg| arg == "--shutdown");
+    let host = rustolonia_sys::Host::load(rustolonia::discover_host_path()?)?;
+    let gate = host
+        .activation_factory()?
+        .create_application()?
+        .popup_gate()?;
+    let events = Arc::new(Mutex::new(Vec::new()));
+    let owner_ref = Arc::new(Mutex::new(None));
+    let app = rustolonia::App::load_from_env()?;
+    app.run({
+        let events = events.clone();
+        let owner_ref = owner_ref.clone();
+        move |scope| {
+            let button = Button::new()?.tool_tip_tip("Teardown tooltip")?;
+            button.set_tool_tip_placement(PlacementMode::Bottom)?;
+            let owner = Window::new()?.content(Some(&button))?;
+            let raw = owner.as_control()?.query_interface::<rustolonia_sys::IAvnWindow>()?;
+            *owner_ref.lock().unwrap() = Some(raw.clone());
+            let observed = events.clone();
+            let released = Arc::new(std::sync::atomic::AtomicBool::new(false));
+            let lifetime = HandlerLifetime(released.clone());
+            let handler = rustolonia_sys::native_popup_handler(move |event| {
+                let _ = &lifetime;
+                println!("callback: {event:?}");
+                observed.lock().unwrap().push(event);
+                Ok(())
+            });
+            gate.set(&raw, Some(&handler))?;
+            drop(handler);
+            scope.mount(owner.clone())?;
+            scope.mount(Window::new()?.title("Keep dispatcher running")?)?;
+            let scope = scope.clone();
+            let dispatcher = scope.clone();
+            dispatcher.post(move || {
+                let flyout = MenuFlyout::new().expect("flyout");
+                flyout.items().unwrap().add(
+                    MenuItem::new().unwrap().header(Some(&TextBlock::new().unwrap().text("Entry").unwrap())).unwrap()
+                ).unwrap();
+                if menu {
+                    flyout.show_at_with_control(&button).unwrap();
+                } else {
+                    button.set_tool_tip_is_open(true).unwrap();
+                }
+                let token = events.lock().unwrap().iter().find_map(|event| match event {
+                    NativePopupEvent::Preparing { token, .. } => Some(*token),
+                    _ => None,
+                }).expect("preparing");
+                let early_clear = gate.set(&raw, None);
+                println!("clear with open popup: {early_clear:?}");
+                assert!(early_clear.is_err(), "must reject clearing an open popup");
+                if revealed {
+                    gate.acknowledge(token).unwrap();
+                }
+                if shutdown {
+                    scope.shutdown().unwrap();
+                } else {
+                    owner.close().unwrap();
+                }
+                let closed = events.lock().unwrap().iter().filter(|event| {
+                    matches!(event, NativePopupEvent::Closed { token: value } if *value == token)
+                }).count();
+                let clear = gate.set(&raw, None);
+                let stale = gate.acknowledge(token);
+                println!("menu={menu}, revealed={revealed}, shutdown={shutdown}: closed={closed}, clear={clear:?}, stale={stale:?}");
+                assert_eq!(closed, 1, "one Closed callback per popup");
+                clear.expect("clear gate with closed owner projection");
+                assert!(stale.is_err(), "closed token is invalid");
+                drop(gate);
+                drop(raw);
+                drop(owner);
+                drop(button);
+                drop(flyout);
+                println!("handler released before native-platform disposal: {}",
+                    released.load(std::sync::atomic::Ordering::SeqCst));
+                if !shutdown {
+                    scope.shutdown().unwrap();
+                }
+            })
+        }
+    })?;
+    let raw = owner_ref
+        .lock()
+        .unwrap()
+        .take()
+        .expect("owned window projection");
+    println!("after App::run: events={:?}", events.lock().unwrap());
+    drop(raw);
+    drop(host);
+    Ok(())
 }
 
 #[cfg(target_os = "macos")]

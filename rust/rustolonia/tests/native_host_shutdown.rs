@@ -4,6 +4,35 @@ use std::process::Command;
 
 #[test]
 #[ignore = "requires a macOS desktop session and a built native host"]
+fn auxiliary_popup_gate_teardown_matrix() {
+    for menu in [false, true] {
+        for revealed in [false, true] {
+            for shutdown in [false, true] {
+                let mut command = Command::new(env!("CARGO_BIN_EXE_native_popup_host"));
+                command.arg("--teardown");
+                if menu {
+                    command.arg("--menu");
+                }
+                if revealed {
+                    command.arg("--revealed");
+                }
+                if shutdown {
+                    command.arg("--shutdown");
+                }
+                let output = command.output().unwrap();
+                println!("{}", String::from_utf8_lossy(&output.stdout));
+                assert!(
+                    output.status.success(),
+                    "{}",
+                    String::from_utf8_lossy(&output.stderr)
+                );
+            }
+        }
+    }
+}
+
+#[test]
+#[ignore = "requires a macOS desktop session and a built native host"]
 fn native_tooltip_placement_matches_after_direct_appkit_owner_moves() {
     let output = Command::new(env!("CARGO_BIN_EXE_native_popup_host"))
         .arg("--placement")

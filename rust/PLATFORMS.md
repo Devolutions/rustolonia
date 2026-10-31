@@ -133,6 +133,24 @@ implicit timeout/reveal on failure. The contract exchanges values only, never
 borrowed NSWindow pointers, and applies to nested Avalonia popup owners.
 Native menu-bar/tray menus and system dialogs remain outside this policy.
 
+For an auxiliary-application COM bridge, close owner popups (or close the
+owner) on the UI thread, process their `Closed` callbacks, then call
+`SetNativePopupGate(owner, null)` on that same auxiliary instance before
+dropping its COM reference and shutting down the running application.
+Clearing while a popup is logically open is rejected. An owned projected
+`IAvnWindow` can clear the handler after `Window.close()`: the managed owner
+is still retained, although its borrowed NSWindow handle is no longer valid.
+Do not use this as permission for native-window operations after closure.
+The native auxiliary teardown matrix covers pending/revealed tooltips and
+menus with both owner close and application shutdown. All emit one `Closed`
+per token before those calls return, and clearing then succeeds. Cancellation
+of owner/application closure must still be handled by the caller.
+Managed COM wrappers may retain the callback until garbage collection even
+after clearing and releasing caller references; callback state must remain
+owned by its COM reference count, not freed manually at shutdown. Host loading
+is process-lifetime; neither this sequence nor `Closed` permits unloading the
+host library or proves a ScreenCaptureKit frame-drain fence.
+
 The macOS fixture checks hidden-before-ack, real native tooltip/MenuFlyout
 show after ack, asynchronous posted acknowledgement, and close/recreation
 races. A public ScreenCaptureKit probe confirmed hidden NSWindow discovery on
