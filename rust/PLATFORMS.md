@@ -82,6 +82,17 @@ pwsh ./rust/build.ps1
 The X11 host requires the standard Avalonia Linux runtime libraries, including
 X11, fontconfig, and OpenGL/EGL or software-rendering dependencies.
 
+## macOS native lifecycle tests
+
+For macOS desktop lifecycle regression coverage, build and stage the host with
+`pwsh ./rust/build.ps1 -Architecture arm64` (or `x64` on an Intel runner), then
+set `RUSTOLONIA_HOST_LIB` to the published `librustolonia_host.dylib` and
+`RUSTOLONIA_HOST_DIR` to its directory. Run
+`cargo test --manifest-path rust/Cargo.toml -p rustolonia --test native_host_shutdown -- --ignored`.
+The tests launch the host on a child process's main thread, check process-exit
+shutdown, and exercise a mounted window with tray icon/menu setup and cleanup.
+The tray fixture uses the initialized Avalonia submodule's `Star512.png` test asset.
+
 ## Prebuilt host platform floors
 
 Release tarballs (`rust/package-host.ps1`) define the minimum OS a published
