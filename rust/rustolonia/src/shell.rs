@@ -39,10 +39,14 @@ impl NativeWindowHandleKind {
     }
 }
 
-/// A native window handle borrowed for the lifetime of its Rustolonia window.
+/// A borrowed native window handle.
 ///
-/// The raw value is platform-specific and must not be used after the associated
-/// [`Window`] is dropped. It is also only valid on the UI thread.
+/// The raw value is platform-specific and valid only while its native
+/// top-level exists. It must not be retained past that native lifetime, used
+/// after the associated [`Window`] is dropped, or accessed outside the UI
+/// thread. Closing a window may invalidate the handle even while its Rust
+/// [`Window`] value still exists; query it again after recreating the native
+/// top-level.
 #[derive(Debug)]
 pub struct NativeWindowHandle<'window> {
     kind: NativeWindowHandleKind,
@@ -57,8 +61,9 @@ impl NativeWindowHandle<'_> {
 
     /// Returns the platform-specific native handle value.
     ///
-    /// Do not retain it beyond the associated window's lifetime or use it
-    /// outside the UI thread.
+    /// Do not retain it beyond the native top-level's lifetime or use it
+    /// outside the UI thread. Closing the window may invalidate this value
+    /// before the Rust `Window` is dropped.
     pub fn raw(&self) -> isize {
         self.raw
     }
