@@ -33,6 +33,30 @@ fn auxiliary_popup_gate_teardown_matrix() {
 
 #[test]
 #[ignore = "requires a macOS desktop session and a built native host"]
+fn auxiliary_gate_clears_in_owner_unloaded_before_automatic_shutdown() {
+    for menu in [false, true] {
+        for revealed in [false, true] {
+            let mut command = Command::new(env!("CARGO_BIN_EXE_native_popup_host"));
+            command.args(["--teardown", "--automatic"]);
+            if menu {
+                command.arg("--menu");
+            }
+            if revealed {
+                command.arg("--revealed");
+            }
+            let output = command.output().unwrap();
+            println!("{}", String::from_utf8_lossy(&output.stdout));
+            assert!(
+                output.status.success(),
+                "{}",
+                String::from_utf8_lossy(&output.stderr)
+            );
+        }
+    }
+}
+
+#[test]
+#[ignore = "requires a macOS desktop session and a built native host"]
 fn native_tooltip_placement_matches_after_direct_appkit_owner_moves() {
     let output = Command::new(env!("CARGO_BIN_EXE_native_popup_host"))
         .arg("--placement")

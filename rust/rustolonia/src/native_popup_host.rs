@@ -61,6 +61,7 @@ fn teardown_probe() -> Result<(), Box<dyn std::error::Error>> {
     let menu = args.iter().any(|arg| arg == "--menu");
     let revealed = args.iter().any(|arg| arg == "--revealed");
     let shutdown = args.iter().any(|arg| arg == "--shutdown");
+    let automatic = args.iter().any(|arg| arg == "--automatic");
     let host = rustolonia_sys::Host::load(rustolonia::discover_host_path()?)?;
     let gate = host
         .activation_factory()?
@@ -89,6 +90,35 @@ fn teardown_probe() -> Result<(), Box<dyn std::error::Error>> {
             });
             gate.set(&raw, Some(&handler))?;
             drop(handler);
+            if automatic {
+                let gate_for_unload = gate.clone();
+                let raw_for_unload = raw.clone();
+                let events_for_unload = events.clone();
+                let owner = owner.on_unloaded(scope, move |_| {
+                    let events = events_for_unload.lock().unwrap();
+                    assert!(events.iter().any(|event| matches!(event, NativePopupEvent::Closed { .. })),
+                        "popup closes before owner Unloaded");
+                    let clear = gate_for_unload.set(&raw_for_unload, None);
+                    println!("owner Unloaded: clear={clear:?}");
+                    clear.expect("clear gate during owner Unloaded");
+                })?;
+                scope.mount(owner.clone())?;
+                scope.set_shutdown_mode(rustolonia::ShutdownMode::OnLastWindowClose)?;
+                let scope = scope.clone();
+                return scope.post(move || {
+                    let flyout = MenuFlyout::new().unwrap();
+                    flyout.items().unwrap().add(MenuItem::new().unwrap()
+                        .header(Some(&TextBlock::new().unwrap().text("Entry").unwrap())).unwrap()).unwrap();
+                    if menu { flyout.show_at_with_control(&button).unwrap(); }
+                    else { button.set_tool_tip_is_open(true).unwrap(); }
+                    let token = events.lock().unwrap().iter().find_map(|event| match event {
+                        NativePopupEvent::Preparing { token, .. } => Some(*token), _ => None,
+                    }).unwrap();
+                    if revealed { gate.acknowledge(token).unwrap(); }
+                    owner.close().unwrap();
+                    println!("automatic last-window shutdown, no AppScope.shutdown call");
+                });
+            }
             scope.mount(owner.clone())?;
             scope.mount(Window::new()?.title("Keep dispatcher running")?)?;
             let scope = scope.clone();

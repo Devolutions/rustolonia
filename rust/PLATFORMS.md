@@ -151,6 +151,17 @@ owned by its COM reference count, not freed manually at shutdown. Host loading
 is process-lifetime; neither this sequence nor `Closed` permits unloading the
 host library or proves a ScreenCaptureKit frame-drain fence.
 
+The v12.1.2 Rust application handler exposes startup only, not the managed
+lifetime's `Exit` event. For automatic shutdown, register each protected
+owner's public `on_unloaded(scope, callback)` before mounting. Clear that
+owner's gate synchronously in the UI-thread callback, not with `post`.
+The native fixture verifies popup `Closed` precedes owner `Unloaded` and
+null-handler clearing succeeds there for pending/revealed tooltips and menus
+with `OnLastWindowClose`, without calling `AppScope.shutdown()`. This is a
+per-owner notification, not a global after-all-windows-close hook. Ordinary
+managed OS quit follows the same owner-close path in Avalonia; actual OS quit
+was not exercised. Forced process termination provides no cleanup guarantee.
+
 The macOS fixture checks hidden-before-ack, real native tooltip/MenuFlyout
 show after ack, asynchronous posted acknowledgement, and close/recreation
 races. A public ScreenCaptureKit probe confirmed hidden NSWindow discovery on
