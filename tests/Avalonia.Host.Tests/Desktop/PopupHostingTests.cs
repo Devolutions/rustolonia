@@ -10,6 +10,19 @@ namespace Avalonia.Host.Tests.Desktop;
 public class PopupHostingTests
 {
     [Fact]
+    public void Native_gate_rejects_unknown_tokens_and_has_a_stable_interface_shape()
+    {
+        using var app = UnitTestApplication.Start(TestServices.StyledWindow);
+        var application = new AvnApplication();
+        Assert.Equal(HResults.E_POINTER, application.SetNativePopupGate(null, null));
+        Assert.Equal(HResults.E_INVALIDARG, application.AcknowledgeNativePopup(42));
+        Assert.Equal(System.Guid.Parse("6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DA2"),
+            typeof(IAvnApplication10).GUID);
+        Assert.Equal(2, typeof(IAvnApplication10).GetMethods().Length);
+        Assert.Equal(2, typeof(IAvnNativePopupHandler).GetMethods().Length);
+    }
+
+    [Fact]
     public void Popup_hosting_is_a_separate_single_method_capability()
     {
         Assert.Equal(System.Guid.Parse("6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DA1"),

@@ -4,6 +4,21 @@ use std::process::Command;
 
 #[test]
 #[ignore = "requires a macOS desktop session and a built native host"]
+fn native_popup_gate_defers_show_and_rejects_stale_tokens() {
+    let output = Command::new(env!("CARGO_BIN_EXE_native_popup_host"))
+        .arg("--gate")
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    println!("{}", String::from_utf8_lossy(&output.stdout));
+}
+
+#[test]
+#[ignore = "requires a macOS desktop session and a built native host"]
 fn scoped_popup_hosting_uses_no_native_windows() {
     let output = Command::new(env!("CARGO_BIN_EXE_native_popup_host"))
         .output()

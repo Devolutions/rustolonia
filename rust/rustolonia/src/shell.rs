@@ -15,6 +15,7 @@
 use crate::{AppContext, AppScope, Result, Window};
 use rustolonia_sys as sys;
 use std::marker::PhantomData;
+pub use sys::NativePopupEvent;
 
 /// The descriptor of a borrowed native window handle.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -93,6 +94,43 @@ impl ShutdownMode {
 }
 
 impl AppContext {
+    /// Gates native popups belonging to this owner (including nested popups).
+    /// macOS only. Install before opening any popup; the callback runs on the
+    /// UI thread before native show and must return promptly. Preparing supplies
+    /// a unique token and window number, never a borrowed pointer. Obtain that
+    /// hidden SCWindow, update all stream filters asynchronously, then post
+    /// `acknowledge_native_popup` to the UI thread ONLY after acknowledgement.
+    /// Closed invalidates the token; stale/duplicate acknowledgement returns
+    /// E_INVALIDARG. No acknowledgement means the popup remains hidden.
+    /// This is incompatible with embedded popup hosting on the same owner.
+    pub fn set_native_popup_gate(
+        &self,
+        window: &Window,
+        mut callback: impl FnMut(sys::NativePopupEvent) -> Result<()> + Send + 'static,
+    ) -> Result<()> {
+        let handler = sys::native_popup_handler(move |event| {
+            callback(event).map_err(|error| match error {
+                crate::Error::Abi(error) => error,
+                _ => sys::Error(sys::E_FAIL),
+            })
+        });
+        Ok(self
+            .application()
+            .popup_gate()?
+            .set(&window.raw, Some(&handler))?)
+    }
+
+    /// UI thread only. Reveal the still-live popup after capture-filter acknowledgement.
+    pub fn acknowledge_native_popup(&self, token: i64) -> Result<()> {
+        Ok(self.application().popup_gate()?.acknowledge(token)?)
+    }
+
+    /// Removes an owner's gate. First close all its popups; pending popups
+    /// are never implicitly acknowledged by policy removal.
+    pub fn clear_native_popup_gate(&self, window: &Window) -> Result<()> {
+        Ok(self.application().popup_gate()?.set(&window.raw, None)?)
+    }
+
     /// Keeps popups targeting `window` inside its client-area overlay rather
     /// than allocating native popup windows. Applies to tooltips, flyouts,
     /// context menus and nested popups; other top-levels are unaffected.

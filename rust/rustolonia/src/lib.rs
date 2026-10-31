@@ -28,7 +28,8 @@ pub use runtime::{
     NonOwningRef, ResourceValue, ThemeVariant, Upcast, HOST_NATIVE_LIB_ENV_VAR,
 };
 pub use shell::{
-    NativeWindowHandle, NativeWindowHandleKind, ShellTray, ShutdownMode, TrayEvent, TrayMenuItem,
+    NativePopupEvent, NativeWindowHandle, NativeWindowHandleKind, ShellTray, ShutdownMode,
+    TrayEvent, TrayMenuItem,
 };
 pub use storage::{
     ActivationEvent, DragDropEffects, FileDropEvent, FileTypeFilter, FolderPickerOptions,

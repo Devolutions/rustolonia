@@ -137,7 +137,12 @@ public partial class AvnApplication : IAvnApplication6
 public partial class AvnApplication : IAvnApplication8, IAvnApplication9
 {
     public int SetWindowOverlayPopups(IAvnWindow? window, int enabled) =>
-        WithWindow(window, managed => managed.UseOverlayPopups = enabled != 0);
+        WithWindow(window, managed =>
+        {
+            if (enabled != 0 && managed.NativePopupShowRequested is not null)
+                throw new InvalidOperationException("Remove the native popup gate before enabling embedded popups.");
+            managed.UseOverlayPopups = enabled != 0;
+        });
 
     private const int NativeHandleUnknown = 0;
     private const int NativeHandleHwnd = 1;

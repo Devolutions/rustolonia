@@ -94,6 +94,10 @@ pub use value_converter::{
 };
 
 use libloading::Library;
+mod popup_gate;
+pub use popup_gate::{
+    native_popup_handler, IAvnApplication10, IAvnNativePopupHandler, NativePopupEvent,
+};
 use std::ffi::c_void;
 use std::mem::ManuallyDrop;
 use std::path::Path;

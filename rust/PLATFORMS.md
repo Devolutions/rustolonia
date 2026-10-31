@@ -111,6 +111,40 @@ Overlay content cannot extend outside the owner's client area; toolbars may
 need a larger host layout. Direct first-frame recording assertions remain the
 capture application's responsibility.
 
+### Native popup pre-show gate
+
+Compact excluded windows can instead use
+`AppContext::set_native_popup_gate(&window, handler)` on macOS. Set this
+independently on each protected owner (toolbar, Capture Widget, etc.) before
+opening popups. Leave `set_overlay_popups` disabled on those owners.
+`NativePopupEvent::Preparing { token, window_number }` arrives on the UI thread
+after the native popup exists but before its first show. Return promptly,
+resolve its hidden `SCWindow` with `onScreenWindowsOnly: false`, and update
+every active stream's filter asynchronously. Only after all filter updates
+acknowledge success, post `acknowledge_native_popup(token)` onto the UI thread.
+Until then there is no native show, focus transfer, or light-dismiss overlay.
+Normal popup size, screen placement and input resume at acknowledgement.
+
+`Closed { token }` invalidates the token. Closed/recreated popups use distinct
+tokens; stale and duplicate acknowledgements return `E_INVALIDARG`. Do not
+remove the exclusion until in-flight filter operations have completed safely.
+Close all owner popups before clearing/replacing the handler. There is no
+implicit timeout/reveal on failure. The contract exchanges values only, never
+borrowed NSWindow pointers, and applies to nested Avalonia popup owners.
+Native menu-bar/tray menus and system dialogs remain outside this policy.
+
+The macOS fixture checks hidden-before-ack, real native tooltip/MenuFlyout
+show after ack, asynchronous posted acknowledgement, and close/recreation
+races. A public ScreenCaptureKit probe confirmed hidden NSWindow discovery on
+the development Mac; the capture application must still validate this on its
+supported macOS versions and assert first-frame stream pixels. No sharing-flag
+capture guarantee is claimed.
+
+To repeat the discovery probe without requesting new privacy permission:
+`swiftc -parse-as-library rust/rustolonia/tests/native_popup_capture_probe.swift -o rust/target/popup-capture-probe`
+then run `rust/target/popup-capture-probe`. It exits with code 2 when permission
+is absent and code 1 if hidden-window discovery fails.
+
 ## Prebuilt host platform floors
 
 Release tarballs (`rust/package-host.ps1`) define the minimum OS a published
