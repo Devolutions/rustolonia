@@ -11,6 +11,10 @@ keywords = ["avalonia", "gui", "ui", "desktop", "xaml"]
 categories = ["gui", "api-bindings"]
 include = ["/src/**", "/README.md", "/LICENSE"]
 
+[[bin]]
+name = "native_host_shutdown"
+path = "src/native_host_shutdown.rs"
+
 [features]
 default = ["dev-host-path"]
 # See rustolonia-sys: never download the prebuilt host at build time.
