@@ -1,6 +1,10 @@
 #[cfg(target_os = "macos")]
 fn main() {
     use rustolonia::{App, Button, MenuFlyout, MenuItem, Window};
+    if std::env::args().any(|arg| arg == "--file-drag") {
+        file_drag_probe().expect("file drag gesture fixture");
+        return;
+    }
     if std::env::args().any(|arg| arg == "--termination") {
         termination_probe().expect("termination coordination fixture");
         return;
@@ -48,6 +52,159 @@ fn main() {
         eprintln!("{error}: {}", host.last_error().unwrap_or_default());
         std::process::exit(1);
     }
+}
+
+#[cfg(target_os = "macos")]
+fn file_drag_probe() -> Result<(), Box<dyn std::error::Error>> {
+    use rustolonia::{App, AsControl, Button, ShutdownMode, Window};
+    use rustolonia_sys::{FileDragEvent, IAvnApplication12};
+    use std::sync::{Arc, Mutex};
+    let host = rustolonia_sys::Host::load(rustolonia::discover_host_path()?)?;
+    let application = host
+        .activation_factory()?
+        .create_application()?
+        .query_interface::<IAvnApplication12>()?;
+    let mode = std::env::args()
+        .skip(2)
+        .next()
+        .unwrap_or_else(|| "click".into());
+    if mode.starts_with("native-") {
+        native_placement::observe_file_drag();
+    }
+    App::load_from_env()?.run(move |scope| {
+        scope.set_shutdown_mode(ShutdownMode::OnExplicitShutdown)?;
+        let clicks = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let count = clicks.clone();
+        let button = Button::new()?.width(300.0)?.height(120.0)?.content(Some(&rustolonia::TextBlock::new()?.text("Drag files")?))?
+            .on_click(scope, move |_| { count.fetch_add(1, std::sync::atomic::Ordering::SeqCst); })?;
+        let owner = Window::new()?.width(300.0)?.height(120.0)?.content(Some(&button))?;
+        scope.mount(owner.clone())?;
+        let events = Arc::new(Mutex::new(Vec::new()));
+        let observed = events.clone();
+        let reentrant = application.clone();
+        let raw = button.as_control()?;
+        let reentrant_control = raw.clone();
+        let handler = rustolonia_sys::file_drag_handler(move |event| {
+            println!("file drag: {event:?}");
+            assert!(reentrant.set_file_drag_handler(&reentrant_control, None).is_err(),
+                "registration changes must be posted outside callbacks");
+            if let FileDragEvent::Preparing { token } = event {
+                assert!(reentrant.cancel_file_drag(token).is_err(), "callback must post completion");
+            }
+            observed.lock().unwrap().push(event);
+            Ok(())
+        });
+        application.set_file_drag_handler(&raw, Some(&handler))?;
+        let other = host.activation_factory()?.create_application()?.query_interface::<IAvnApplication12>()?;
+        assert!(other.set_file_drag_handler(&raw, Some(&handler)).is_err(),
+            "auxiliary applications must not register the same target twice");
+        drop(handler);
+        let window_handle = scope.platform_handle(&owner)?;
+        let number = native_placement::window_number(window_handle);
+        let trigger_scope = scope.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(350));
+            trigger_scope.clone().post(move || {
+            native_placement::post_mouse(number, 1, 50.0, 50.0);
+            if mode == "click" {
+                native_placement::post_mouse(number, 6, 52.0, 50.0);
+                native_placement::post_mouse(number, 2, 52.0, 50.0);
+            } else {
+                native_placement::post_mouse(number, 6, 65.0, 50.0);
+            }
+            std::thread::spawn(move || {
+                std::thread::sleep(std::time::Duration::from_millis(350));
+                let next = trigger_scope.clone();
+                trigger_scope.post(move || {
+                    if mode == "click" {
+                        assert_eq!(clicks.load(std::sync::atomic::Ordering::SeqCst), 1);
+                        assert!(events.lock().unwrap().is_empty());
+                        println!("ordinary below-threshold click preserved");
+                        application.set_file_drag_handler(&raw, None).unwrap();
+                        next.shutdown().unwrap();
+                        return;
+                    }
+                    let token = events.lock().unwrap().iter().find_map(|event| match event {
+                        FileDragEvent::Preparing { token } => Some(*token), _ => None,
+                    }).expect("real AppKit gesture crossed threshold");
+                    assert_eq!(clicks.load(std::sync::atomic::Ordering::SeqCst), 0);
+                    if mode.starts_with("native-") {
+                        assert!(application.complete_file_drag(token, "[]").is_err());
+                        assert!(application.complete_file_drag(token, "[\"https://invalid/file\"]").is_err());
+                        let cwd = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap().parent().unwrap();
+                        let json = format!("[\"file://{}/host/Avalonia.Host.csproj\",\"file://{}/rust/Cargo.toml\"]",
+                            cwd.display(), cwd.display());
+                        application.complete_file_drag(token, &json).unwrap();
+                        assert!(application.complete_file_drag(token, &json).is_err());
+                        assert!(application.cancel_file_drag(token).is_err());
+                        std::thread::spawn(move || {
+                            std::thread::sleep(std::time::Duration::from_millis(350));
+                            let end = next.clone();
+                            next.post(move || {
+                                native_placement::assert_file_drag();
+                                if mode == "native-owner-close" {
+                                    owner.close().unwrap();
+                                    let completed = events.lock().unwrap().iter().any(|event| matches!(event,
+                                        FileDragEvent::Completed { token: value, .. } if *value == token));
+                                    assert_eq!(application.set_file_drag_handler(&raw, None).is_ok(), completed,
+                                        "owner close cannot clear an outstanding native session");
+                                }
+                                native_placement::post_escape(number);
+                                std::thread::spawn(move || {
+                                    std::thread::sleep(std::time::Duration::from_millis(1200));
+                                    let done = end.clone();
+                                    end.post(move || {
+                                        assert_eq!(events.lock().unwrap().iter().filter(|event| matches!(event,
+                                            FileDragEvent::Completed { token: value, effect: 0, status: 0 } if *value == token)).count(), 1,
+                                            "AppKit Escape must end the real session once");
+                                        assert_eq!(clicks.load(std::sync::atomic::Ordering::SeqCst), 0);
+                                        application.set_file_drag_handler(&raw, None).unwrap();
+                                        println!("real AppKit multi-file copy-only session cancelled");
+                                        done.shutdown().unwrap();
+                                    }).unwrap();
+                                });
+                            }).unwrap();
+                        });
+                    } else if mode == "owner-close" {
+                        owner.close().unwrap();
+                        assert!(application.complete_file_drag(token, "[\"file:///tmp/missing\"]").is_err());
+                        assert_eq!(events.lock().unwrap().iter().filter(|event| matches!(event,
+                            FileDragEvent::Completed { token: value, effect: 0, .. } if *value == token)).count(), 1);
+                        println!("owner close invalidated gesture");
+                        next.shutdown().unwrap();
+                    } else if mode == "cancel" {
+                        application.cancel_file_drag(token).unwrap();
+                        assert!(application.cancel_file_drag(token).is_err());
+                        native_placement::post_mouse(number, 2, 65.0, 50.0);
+                        let end = next.clone();
+                        next.post(move || {
+                            assert_eq!(clicks.load(std::sync::atomic::Ordering::SeqCst), 0);
+                            println!("cancelled drag does not click");
+                            native_placement::post_mouse(number, 1, 50.0, 50.0);
+                            native_placement::post_mouse(number, 2, 50.0, 50.0);
+                            assert_eq!(clicks.load(std::sync::atomic::Ordering::SeqCst), 1,
+                                "ordinary clicks recover after cancelled drag");
+                            end.shutdown().unwrap();
+                        }).unwrap();
+                    } else {
+                        native_placement::post_mouse(number, 2, 65.0, 50.0);
+                        let end = next.clone();
+                        next.post(move || {
+                            assert!(application.complete_file_drag(token, "[\"file:///tmp/missing\"]").is_err());
+                            assert_eq!(clicks.load(std::sync::atomic::Ordering::SeqCst), 0);
+                            assert_eq!(events.lock().unwrap().iter().filter(|event| matches!(event,
+                                FileDragEvent::Completed { token: value, effect: 0, .. } if *value == token)).count(), 1);
+                            println!("release before preparation invalidated gesture");
+                            end.shutdown().unwrap();
+                        }).unwrap();
+                    }
+                }).unwrap();
+            });
+            }).unwrap();
+        });
+        Ok(())
+    })?;
+    Ok(())
 }
 
 #[cfg(target_os = "macos")]
@@ -487,6 +644,38 @@ mod native_placement {
         #[link_name = "objc_msgSend"]
         fn set_double(receiver: *mut c_void, selector: *mut c_void, value: f64);
         #[link_name = "objc_msgSend"]
+        fn mouse_event(
+            receiver: *mut c_void,
+            selector: *mut c_void,
+            kind: usize,
+            location: Point,
+            modifiers: usize,
+            timestamp: f64,
+            number: isize,
+            context: *mut c_void,
+            event_number: isize,
+            clicks: isize,
+            pressure: f32,
+        ) -> *mut c_void;
+        #[link_name = "objc_msgSend"]
+        fn post_event(
+            receiver: *mut c_void,
+            selector: *mut c_void,
+            event: *mut c_void,
+            at_start: bool,
+        );
+        #[link_name = "objc_msgSend"]
+        fn next_event(
+            receiver: *mut c_void,
+            selector: *mut c_void,
+            mask: usize,
+            date: *mut c_void,
+            mode: *mut c_void,
+            dequeue: bool,
+        ) -> *mut c_void;
+        #[link_name = "objc_msgSend"]
+        fn date_after(receiver: *mut c_void, selector: *mut c_void, seconds: f64) -> *mut c_void;
+        #[link_name = "objc_msgSend"]
         fn send_arg(receiver: *mut c_void, selector: *mut c_void, arg: *mut c_void) -> *mut c_void;
         #[link_name = "objc_msgSend"]
         fn reply_code(receiver: *mut c_void, selector: *mut c_void, arg: *mut c_void) -> usize;
@@ -552,6 +741,223 @@ mod native_placement {
         #[cfg(target_arch = "x86_64")]
         #[link_name = "objc_msgSend_stret"]
         fn get_frame(out: *mut Frame, receiver: *mut c_void, selector: *mut c_void);
+    }
+
+    pub fn window_number(handle: isize) -> usize {
+        unsafe {
+            count(
+                handle as *mut c_void,
+                sel_registerName(c"windowNumber".as_ptr()),
+            )
+        }
+    }
+    static ORIGINAL_DRAG: std::sync::atomic::AtomicPtr<c_void> =
+        std::sync::atomic::AtomicPtr::new(std::ptr::null_mut());
+    static DRAG_VALID: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+    unsafe extern "C" fn begin_drag(
+        view: *mut c_void,
+        selector: *mut c_void,
+        items: *mut c_void,
+        event: *mut c_void,
+        source: *mut c_void,
+    ) -> *mut c_void {
+        unsafe extern "C" {
+            #[link_name = "objc_msgSend"]
+            fn index(receiver: *mut c_void, selector: *mut c_void, index: usize) -> *mut c_void;
+            #[link_name = "objc_msgSend"]
+            fn mask(
+                receiver: *mut c_void,
+                selector: *mut c_void,
+                session: *mut c_void,
+                context: usize,
+            ) -> usize;
+            #[link_name = "objc_msgSend"]
+            fn read_objects(
+                receiver: *mut c_void,
+                selector: *mut c_void,
+                classes: *mut c_void,
+                options: *mut c_void,
+            ) -> *mut c_void;
+            #[link_name = "objc_msgSend"]
+            fn add_object(receiver: *mut c_void, selector: *mut c_void, value: *mut c_void);
+            #[link_name = "objc_msgSend"]
+            fn write_objects(
+                receiver: *mut c_void,
+                selector: *mut c_void,
+                value: *mut c_void,
+            ) -> bool;
+            #[link_name = "objc_msgSend"]
+            fn action(receiver: *mut c_void, selector: *mut c_void);
+        }
+        let ty = string(
+            objc_getClass(c"NSString".as_ptr()),
+            sel_registerName(c"stringWithUTF8String:".as_ptr()),
+            c"public.file-url".as_ptr(),
+        );
+        let mut valid = count(items, sel_registerName(c"count".as_ptr())) == 2
+            && count(event, sel_registerName(c"type".as_ptr())) == 1;
+        let writers = index(
+            objc_getClass(c"NSMutableArray".as_ptr()),
+            sel_registerName(c"arrayWithCapacity:".as_ptr()),
+            2,
+        );
+        for i in 0..2 {
+            let dragging_item = index(items, sel_registerName(c"objectAtIndex:".as_ptr()), i);
+            let writer = send(dragging_item, sel_registerName(c"item".as_ptr()));
+            let value = send_arg(
+                writer,
+                sel_registerName(c"pasteboardPropertyListForType:".as_ptr()),
+                ty,
+            );
+            valid &= !value.is_null();
+            add_object(writers, sel_registerName(c"addObject:".as_ptr()), writer);
+        }
+        let pasteboard = send(
+            objc_getClass(c"NSPasteboard".as_ptr()),
+            sel_registerName(c"pasteboardWithUniqueName".as_ptr()),
+        );
+        valid &= write_objects(
+            pasteboard,
+            sel_registerName(c"writeObjects:".as_ptr()),
+            writers,
+        );
+        let classes = send_arg(
+            objc_getClass(c"NSArray".as_ptr()),
+            sel_registerName(c"arrayWithObject:".as_ptr()),
+            objc_getClass(c"NSURL".as_ptr()),
+        );
+        let received = read_objects(
+            pasteboard,
+            sel_registerName(c"readObjectsForClasses:options:".as_ptr()),
+            classes,
+            std::ptr::null_mut(),
+        );
+        valid &= count(received, sel_registerName(c"count".as_ptr())) == 2;
+        action(pasteboard, sel_registerName(c"releaseGlobally".as_ptr()));
+        for context in [0, 1] {
+            valid &= mask(
+                source,
+                sel_registerName(
+                    c"draggingSession:sourceOperationMaskForDraggingContext:".as_ptr(),
+                ),
+                std::ptr::null_mut(),
+                context,
+            ) == 1;
+        }
+        DRAG_VALID.store(valid, std::sync::atomic::Ordering::SeqCst);
+        let original: unsafe extern "C" fn(
+            *mut c_void,
+            *mut c_void,
+            *mut c_void,
+            *mut c_void,
+            *mut c_void,
+        ) -> *mut c_void =
+            std::mem::transmute(ORIGINAL_DRAG.load(std::sync::atomic::Ordering::SeqCst));
+        original(view, selector, items, event, source)
+    }
+    pub fn observe_file_drag() {
+        unsafe extern "C" {
+            fn class_getInstanceMethod(class: *mut c_void, selector: *mut c_void) -> *mut c_void;
+            fn method_setImplementation(
+                method: *mut c_void,
+                implementation: *mut c_void,
+            ) -> *mut c_void;
+        }
+        unsafe {
+            let method = class_getInstanceMethod(
+                objc_getClass(c"NSView".as_ptr()),
+                sel_registerName(c"beginDraggingSessionWithItems:event:source:".as_ptr()),
+            );
+            assert!(!method.is_null());
+            ORIGINAL_DRAG.store(
+                method_setImplementation(method, begin_drag as *mut c_void),
+                std::sync::atomic::Ordering::SeqCst,
+            );
+        }
+    }
+    pub fn assert_file_drag() {
+        assert!(
+            DRAG_VALID.load(std::sync::atomic::Ordering::SeqCst),
+            "two public.file-url writers, retained mouse-down, copy-only in both native contexts"
+        );
+        println!("native payload exposes two file URLs and Copy only; isolated NSPasteboard NSURL reader received both");
+    }
+    pub fn post_escape(number: usize) {
+        unsafe extern "C" {
+            #[link_name = "objc_msgSend"]
+            fn key_event(
+                receiver: *mut c_void,
+                selector: *mut c_void,
+                kind: usize,
+                location: Point,
+                modifiers: usize,
+                time: f64,
+                window: isize,
+                context: *mut c_void,
+                characters: *mut c_void,
+                ignoring: *mut c_void,
+                repeat: bool,
+                keycode: u16,
+            ) -> *mut c_void;
+        }
+        unsafe {
+            let escape = string(
+                objc_getClass(c"NSString".as_ptr()),
+                sel_registerName(c"stringWithUTF8String:".as_ptr()),
+                c"\x1b".as_ptr(),
+            );
+            let event = key_event(objc_getClass(c"NSEvent".as_ptr()),
+                sel_registerName(c"keyEventWithType:location:modifierFlags:timestamp:windowNumber:context:characters:charactersIgnoringModifiers:isARepeat:keyCode:".as_ptr()),
+                10, Point { x: 0.0, y: 0.0 }, 0, 2.0, number as isize, std::ptr::null_mut(), escape, escape, false, 53);
+            let app = send(
+                objc_getClass(c"NSApplication".as_ptr()),
+                sel_registerName(c"sharedApplication".as_ptr()),
+            );
+            post_event(
+                app,
+                sel_registerName(c"postEvent:atStart:".as_ptr()),
+                event,
+                false,
+            );
+        }
+    }
+    pub fn post_mouse(number: usize, kind: usize, x: f64, y: f64) {
+        unsafe {
+            let event = mouse_event(objc_getClass(c"NSEvent".as_ptr()),
+                sel_registerName(c"mouseEventWithType:location:modifierFlags:timestamp:windowNumber:context:eventNumber:clickCount:pressure:".as_ptr()),
+                kind, Point { x, y }, 0, 1.0, number as isize, std::ptr::null_mut(), 0, 1, 1.0);
+            assert!(!event.is_null());
+            let app = send(
+                objc_getClass(c"NSApplication".as_ptr()),
+                sel_registerName(c"sharedApplication".as_ptr()),
+            );
+            post_event(
+                app,
+                sel_registerName(c"postEvent:atStart:".as_ptr()),
+                event,
+                false,
+            );
+            let date = date_after(
+                objc_getClass(c"NSDate".as_ptr()),
+                sel_registerName(c"dateWithTimeIntervalSinceNow:".as_ptr()),
+                0.1,
+            );
+            let mode = string(
+                objc_getClass(c"NSString".as_ptr()),
+                sel_registerName(c"stringWithUTF8String:".as_ptr()),
+                c"kCFRunLoopDefaultMode".as_ptr(),
+            );
+            let delivered = next_event(
+                app,
+                sel_registerName(c"nextEventMatchingMask:untilDate:inMode:dequeue:".as_ptr()),
+                1 << kind,
+                date,
+                mode,
+                true,
+            );
+            assert!(!delivered.is_null(), "queued AppKit gesture event");
+            send_arg(app, sel_registerName(c"sendEvent:".as_ptr()), delivered);
+        }
     }
 
     unsafe extern "C" fn will_terminate(_: *mut c_void, _: *mut c_void, _: *mut c_void) {

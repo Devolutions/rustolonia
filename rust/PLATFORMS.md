@@ -245,6 +245,103 @@ To repeat the discovery probe without requesting new privacy permission:
 then run `rust/target/popup-capture-probe`. It exits with code 2 when permission
 is absent and code 1 if hidden-window discovery fails.
 
+## Additive macOS outgoing file drags
+
+The local host optionally implements `IAvnApplication12`, IID
+`6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DA6`. It leaves the published v12.1.2
+interfaces and crate pins unchanged. Consumers may declare the following
+`extern "system"` vtable slots after `QueryInterface`, `AddRef`, `Release`:
+
+```text
+HRESULT SetFileDragHandler(IAvnControl* target, IAvnFileDragHandler* handler);
+HRESULT CompleteFileDrag(int64_t token, const uint16_t* fileUrlsJson);
+HRESULT CancelFileDrag(int64_t token);
+```
+
+`IAvnFileDragHandler`, IID `6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DA7`, has
+these slots after the same three IUnknown slots:
+
+```text
+HRESULT OnPreparing(int64_t token);
+HRESULT OnCompleted(int64_t token, int32_t effect, HRESULT status);
+```
+
+Use owned COM projections and an ordinary reference-counted callback CCW.
+An auxiliary application obtained through the public v12.1.2 activation
+factory can QI I12; keep it alive and use that same application for the entire
+registration/token lifetime. All methods and callbacks run on the UI thread.
+The host retains the control, owner and callback while registered. Dropping
+the caller's callback reference after successful installation is valid;
+clearing a registration is not a synchronous managed-GC destruction fence.
+Targets must already be mounted in a Window. Overlapping targets, including
+registrations on ancestors/descendants from another auxiliary application,
+are rejected. A null handler removes a registration, cancelling a pending
+gesture; clearing/replacing during its callback or native drag is rejected.
+
+A genuine AppKit left mouse-down is retained without handling the press.
+Below five DIPs of movement, ordinary Button click/capture behavior is
+unchanged. Crossing the threshold resets pressed state through Avalonia's
+capture-lost path, recaptures the target while preparing, suppresses its click,
+and emits `OnPreparing`. Post work/completion rather than mutating UI or
+calling the bridge synchronously from callbacks. Return promptly, prepare
+edited snapshots on a worker, then post `CompleteFileDrag`. It consumes a
+NUL-terminated UTF-16 JSON array of one or more absolute, existing, local file
+URLs. It copies the string before returning; no borrowed event/control/native
+pointer is exported. Invalid payloads fail synchronously and leave the token
+pending for correction or cancellation.
+
+Successful completion submission means accepted, **not dropped**. The host
+resolves files, revalidates the gesture after each await, and invokes Avalonia's
+outgoing drag with the retained original native event and Copy only. A second
+submission while resolving/dragging fails. Release, capture loss, Escape,
+detachment or owner closure cancels preparation. Tokens are never reused on
+that application; stale, duplicate, callback-reentrant and already-started
+operations return `E_INVALIDARG`. `OnCompleted` arrives once per preparing
+token: effect 1 is copied, 0 is cancelled/no drop; a negative status is a host
+failure. A failing preparing callback cancels with that HRESULT. A native
+session is owned by AppKit and cannot be programmatically cancelled with this
+ABI; native completion remains authoritative even if its owner closes.
+Keep snapshots and the auxiliary application alive until completion. Do not
+dispose the host while a native drag is outstanding; finish/cancel through
+AppKit and clear registrations first. Forced process exit cannot promise
+completion. No move/link effect is offered, so original files are not removed.
+
+The host requires the hash-pinned `avalonia-file-drag.patch` in the native
+companion. The no-UI preflight is to load the exact staged
+`libAvaloniaNative.dylib` in a dedicated child and call its default-visible C
+export `int avn_supports_retained_file_drag_event(void)`, requiring 1. I12 QI
+alone cannot identify an old native companion. The companion also exports
+UI-thread-only `void* avn_retain_file_drag_event(int windowNumber)`,
+`int avn_set_file_drag_event(void* retainedEvent)` and
+`void avn_release_file_drag_event(void* retainedEvent)` for the host's scoped
+event selection. They are not a consumer drag API; do not change the selected
+event while the host is starting a drag.
+
+Build into separate drag-specific artifact directories, not an existing
+termination bundle:
+
+```sh
+pwsh ./avalonia-patches/apply-avalonia-patches.ps1 -AvaloniaRoot ./avalonia-src
+dotnet publish host/Avalonia.Host.csproj -c Release -r osx-arm64 \
+  -p:AvaloniaRustHostPlatform=OSX --artifacts-path rust/target/dotnet-drag-osx-arm64
+dotnet publish host/Avalonia.Host.csproj -c Release -r osx-x64 \
+  -p:AvaloniaRustHostPlatform=OSX --artifacts-path rust/target/dotnet-drag-osx-x64
+```
+
+The ignored `file_drag_preserves_clicks_and_rejects_cancelled_gestures`
+desktop fixture dispatches self-directed `NSEvent` mouse events after initial
+activation, without changing the user's cursor. It covers click preservation,
+pending release/cancel/owner-close, callback-reentrant/stale/duplicate operations,
+invalid payload retry, delayed two-file preparation and actual AppKit native
+session cancellation with Escape, including closing an active session's owner.
+A child-only NSView method observer calls the original AppKit implementation
+and verifies retained mouse-down, Copy in both dragging contexts, and both file
+URLs through an isolated NSPasteboard NSURL reader. This is real native
+session/cancellation plus receiving-data coverage, **not** a successful
+cross-application drop into Finder or a hardware-pointer gesture. Manual
+Finder/other-app successful-drop coverage, native Intel hardware and execution
+on macOS 13 remain separate integration checks.
+
 ## Prebuilt host platform floors
 
 Release tarballs (`rust/package-host.ps1`) define the minimum OS a published

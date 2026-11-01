@@ -15,6 +15,10 @@
     {
       "path": "avalonia-patches/avalonia-termination.patch",
       "sha256": "aa9feca379df7927b1cdcd1da5841e6bf941d80eac1426417a0ee89f76725243"
+    },
+    {
+      "path": "avalonia-patches/avalonia-file-drag.patch",
+      "sha256": "771ac93c5e7c88ab7ffd46299d0790192f9a8ca43d5231aa943aca69c3e23f22"
     }
   ],
   "schemas": {

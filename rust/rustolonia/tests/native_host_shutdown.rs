@@ -4,6 +4,46 @@ use std::process::Command;
 
 #[test]
 #[ignore = "requires a macOS desktop session and a built native host"]
+fn file_drag_preserves_clicks_and_rejects_cancelled_gestures() {
+    for mode in [
+        "click",
+        "release",
+        "cancel",
+        "owner-close",
+        "native-cancel",
+        "native-owner-close",
+    ] {
+        let mut child = Command::new(env!("CARGO_BIN_EXE_native_popup_host"))
+            .args(["--file-drag", mode])
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
+            .spawn()
+            .unwrap();
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(15);
+        while child.try_wait().unwrap().is_none() {
+            if std::time::Instant::now() >= deadline {
+                child.kill().unwrap();
+                let output = child.wait_with_output().unwrap();
+                panic!(
+                    "drag fixture {mode} timed out:\n{}\n{}",
+                    String::from_utf8_lossy(&output.stdout),
+                    String::from_utf8_lossy(&output.stderr)
+                );
+            }
+            std::thread::sleep(std::time::Duration::from_millis(20));
+        }
+        let output = child.wait_with_output().unwrap();
+        println!("{}", String::from_utf8_lossy(&output.stdout));
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+}
+
+#[test]
+#[ignore = "requires a macOS desktop session and a built native host"]
 fn application_termination_defers_cleanup_for_tray_only_and_popup_owners() {
     for native in [false, true] {
         for popup in [false, true] {
