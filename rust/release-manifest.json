@@ -11,6 +11,10 @@
     {
       "path": "avalonia-patches/avalonia-overlay-popups.patch",
       "sha256": "b08cc579953ab2a60f801bb0563067ad4db4671895d555b2f33bfc10b7d99134"
+    },
+    {
+      "path": "avalonia-patches/avalonia-termination.patch",
+      "sha256": "aa9feca379df7927b1cdcd1da5841e6bf941d80eac1426417a0ee89f76725243"
     }
   ],
   "schemas": {

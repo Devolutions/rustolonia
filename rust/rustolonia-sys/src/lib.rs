@@ -95,6 +95,8 @@ pub use value_converter::{
 
 use libloading::Library;
 mod popup_gate;
+mod termination;
+pub use termination::{termination_handler, IAvnApplication11, IAvnTerminationHandler, TerminationRequest};
 pub use popup_gate::{
     native_popup_handler, IAvnApplication10, IAvnNativePopupHandler, NativePopupEvent,
 };

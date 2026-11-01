@@ -1,0 +1,56 @@
+diff --git a/native/Avalonia.Native/src/OSX/app.mm b/native/Avalonia.Native/src/OSX/app.mm
+index 459bf5f8f2..00ce4dc7f9 100644
+--- a/native/Avalonia.Native/src/OSX/app.mm
++++ b/native/Avalonia.Native/src/OSX/app.mm
+@@ -7,6 +7,10 @@
+ @end
+ 
+ NSApplicationActivationPolicy AvnDesiredActivationPolicy = NSApplicationActivationPolicyRegular;
++extern "C" __attribute__((visibility("default"))) int avn_supports_deferred_termination()
++{
++    return 1;
++}
+ static NSMenu* s_dockMenu = nil;
+ 
+ static bool IsOSShutdown()
+@@ -113,8 +117,10 @@ ComPtr<IAvnApplicationEvents> _events;
+ 
+ - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender
+ {
+-    switch (_events->TryShutdown(IsOSShutdown()))
++    switch (static_cast<int>(_events->TryShutdown(IsOSShutdown())))
+     {
++        case static_cast<AvnShutdownReply>(3):
++            return NSTerminateLater;
+         case ShutdownReplyCancel:
+             return NSTerminateCancel;
+             
+diff --git a/src/Avalonia.Native/AvaloniaNativeApplicationPlatform.cs b/src/Avalonia.Native/AvaloniaNativeApplicationPlatform.cs
+index bed212a303..bf1ffb9db2 100644
+--- a/src/Avalonia.Native/AvaloniaNativeApplicationPlatform.cs
++++ b/src/Avalonia.Native/AvaloniaNativeApplicationPlatform.cs
+@@ -113,6 +113,8 @@ void IAvnApplicationEvents.OnTerminating()
+ 
+         public AvnShutdownReply TryShutdown(int isOSShutdown)
+         {
++            if (MacOSTermination.DeferRequested?.Invoke(isOSShutdown.FromComBool()) == true)
++                return (AvnShutdownReply)3; // Additive reply value; existing interface layout is unchanged.
+             if (ShutdownRequested is not { } shutdownRequested)
+                 return AvnShutdownReply.ShutdownReplyTerminateNow;
+ 
+diff --git a/src/Avalonia.Native/MacOSTermination.cs b/src/Avalonia.Native/MacOSTermination.cs
+new file mode 100644
+index 0000000000..0e892d4728
+--- /dev/null
++++ b/src/Avalonia.Native/MacOSTermination.cs
+@@ -0,0 +1,10 @@
++using System;
++
++namespace Avalonia.Native;
++
++/// <summary>Optional nonblocking coordination of AppKit termination before window teardown.</summary>
++public static class MacOSTermination
++{
++    /// <summary>Return true to hold AppKit's request until replyToApplicationShouldTerminate:.</summary>
++    public static Func<bool, bool>? DeferRequested { get; set; }
++}

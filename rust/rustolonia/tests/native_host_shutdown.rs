@@ -4,6 +4,70 @@ use std::process::Command;
 
 #[test]
 #[ignore = "requires a macOS desktop session and a built native host"]
+fn application_termination_defers_cleanup_for_tray_only_and_popup_owners() {
+    for native in [false, true] {
+        for popup in [false, true] {
+            if !native && popup {
+                continue;
+            }
+            for os in [false, true] {
+                if os && !native {
+                    continue;
+                }
+                let mut command = Command::new(env!("CARGO_BIN_EXE_native_popup_host"));
+                command.arg("--termination");
+                if native {
+                    command.arg("--native");
+                }
+                if popup {
+                    command.arg("--popup");
+                }
+                if os {
+                    command.arg("--os");
+                }
+                let mut child = command
+                    .stdout(std::process::Stdio::piped())
+                    .stderr(std::process::Stdio::piped())
+                    .spawn()
+                    .unwrap();
+                let deadline = std::time::Instant::now() + std::time::Duration::from_secs(30);
+                while child.try_wait().unwrap().is_none() {
+                    if std::time::Instant::now() >= deadline {
+                        child.kill().unwrap();
+                        let output = child.wait_with_output().unwrap();
+                        panic!(
+                            "termination fixture timed out:\n{}\n{}",
+                            String::from_utf8_lossy(&output.stdout),
+                            String::from_utf8_lossy(&output.stderr)
+                        );
+                    }
+                    std::thread::sleep(std::time::Duration::from_millis(20));
+                }
+                let output = child.wait_with_output().unwrap();
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                println!("{stdout}");
+                assert!(
+                    output.status.success(),
+                    "{}",
+                    String::from_utf8_lossy(&output.stderr)
+                );
+                assert!(stdout.contains("asynchronous cleanup complete"));
+                if native {
+                    assert!(stdout.contains("NSApplicationWillTerminateNotification after cleanup"));
+                } else {
+                    assert!(stdout.contains("App::run returned after cleanup"));
+                }
+                if popup {
+                    assert!(stdout.contains("termination popup Closed after cleanup"));
+                    assert!(stdout.contains("termination owner Unloaded after cleanup"));
+                }
+            }
+        }
+    }
+}
+
+#[test]
+#[ignore = "requires a macOS desktop session and a built native host"]
 fn auxiliary_popup_gate_teardown_matrix() {
     for menu in [false, true] {
         for revealed in [false, true] {

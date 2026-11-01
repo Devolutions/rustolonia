@@ -178,6 +178,68 @@ compares actual AppKit frames with/without gating after moving an alpha-zero
 owner from offscreen, including a dispatcher-posted acknowledgement:
 `cargo test --manifest-path rust/Cargo.toml -p rustolonia --test native_host_shutdown native_tooltip_placement -- --ignored --nocapture`.
 
+### Application-wide macOS termination coordination
+
+Optional `IAvnApplication11` can be queried from the running application or
+an auxiliary application created through the same loaded host. Install its
+handler on the UI thread inside `App::run`, before users can request quit.
+This is process/application-wide and does not require a shown window or tray.
+Only one application interface can own it. The original v12.1.2 interfaces
+and ABI-header fingerprint are unchanged; consumers pinned to those crates
+can declare these additional COM types themselves:
+
+| Interface | IID | Methods after IUnknown, in order |
+| --- | --- | --- |
+| IAvnApplication11 | `6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DA4` | `SetTerminationHandler(handler*) -> HRESULT`; `CompleteTermination(i64 token, i32 accept) -> HRESULT` |
+| IAvnTerminationHandler | `6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DA5` | `OnRequested(i64 token, i32 flags) -> HRESULT` |
+
+Methods use `extern "system"`/PreserveSig and ordinary IUnknown ownership.
+`OnRequested` runs on the UI thread before any native-quit window teardown.
+Flags are bitwise: 1 means AppKit/native request, 2 means OS logout/restart/
+shutdown reason. Zero means managed lifetime `TryShutdown` (including
+automatic shutdown). Return promptly, start idempotent async save/capture
+finalization, and post completion to the UI dispatcher. Synchronous completion
+inside the callback is rejected: AppKit has not yet received its deferred reply.
+Repeated requests reuse the pending token, OR their flags, and notify again.
+Deduplicate work by token; a request with upgraded flags is not a new cleanup.
+Callback failure is reported through host error diagnostics and remains held.
+
+AppKit receives public `NSTerminateLater`; no windows close until the consumer
+acknowledges. `CompleteTermination(token, 0)` cancels and sends
+`replyToApplicationShouldTerminate:false` for native requests. A later request
+gets a fresh token. `CompleteTermination(token, 1)` accepts: after the caller
+has finished cleanup, the host closes managed windows/popups synchronously,
+removes coordination, then replies true to AppKit. `Closed`/owner `Unloaded`
+callbacks can therefore clear popup gates after cleanup but before
+`NSApplicationWillTerminateNotification` and platform disposal. A native
+accepted quit may exit without returning from `App::run`; no mandatory cleanup
+belongs after that call. Managed acceptance instead unwinds the managed loop.
+
+Unknown/duplicate tokens and accept values other than 0/1 return E_INVALIDARG.
+Reconfiguration/removal with a pending or completing request is rejected;
+cancel it first, then set a null handler. Retain the same owning I11 reference
+through completion and release it afterward, without strong callback-reference
+cycles. Managed wrappers can retain the callback until GC; never manually free
+its state independently of COM Release. Explicit `AppScope.shutdown()` is a
+forced shutdown and intentionally bypasses this coordination. Last-window
+automatic shutdown is intercepted only after that window has already closed;
+save presentation state in window Closing when this mode is used.
+
+Both the new host and rebuilt `libAvaloniaNative.dylib` must be deployed
+together. Installation verifies the companion's additive
+`avn_supports_deferred_termination` export and fails on an older companion
+rather than accidentally accepting quit. Apply the hash-pinned
+`avalonia-termination.patch` before rebuilding producer native code.
+
+The desktop fixture tests managed automatic requests, tray-only native quit,
+repeated requests, a real deferred cancel/retry, and cleanup-before-popup/
+window/WillTerminate ordering. Its OS case sends a quit AppleEvent with a
+logout reason to its own child PID; it does not log out the machine.
+ARM64 and Rosetta x86_64 are covered; actual machine logout/restart, Intel
+hardware, macOS 13, AppKit's finite OS-termination deadline, and force-kill
+cannot be inferred from those results. No UI-thread blocking wait or timeout
+that accepts failed cleanup is introduced.
+
 To repeat the discovery probe without requesting new privacy permission:
 `swiftc -parse-as-library rust/rustolonia/tests/native_popup_capture_probe.swift -o rust/target/popup-capture-probe`
 then run `rust/target/popup-capture-probe`. It exits with code 2 when permission

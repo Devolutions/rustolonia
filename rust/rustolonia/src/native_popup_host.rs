@@ -1,6 +1,10 @@
 #[cfg(target_os = "macos")]
 fn main() {
     use rustolonia::{App, Button, MenuFlyout, MenuItem, Window};
+    if std::env::args().any(|arg| arg == "--termination") {
+        termination_probe().expect("termination coordination fixture");
+        return;
+    }
     if std::env::args().any(|arg| arg == "--teardown") {
         teardown_probe().expect("auxiliary gate teardown fixture");
         return;
@@ -44,6 +48,149 @@ fn main() {
         eprintln!("{error}: {}", host.last_error().unwrap_or_default());
         std::process::exit(1);
     }
+}
+
+#[cfg(target_os = "macos")]
+fn termination_probe() -> Result<(), Box<dyn std::error::Error>> {
+    use rustolonia::{App, Button, PlacementMode, ShutdownMode, Window};
+    use rustolonia_sys::{IAvnApplication11, NativePopupEvent};
+    use std::sync::{Arc, Mutex};
+    let args: Vec<_> = std::env::args().collect();
+    let native = args.iter().any(|arg| arg == "--native");
+    let with_popup = args.iter().any(|arg| arg == "--popup");
+    let os = args.iter().any(|arg| arg == "--os");
+    let host = rustolonia_sys::Host::load(rustolonia::discover_host_path()?)?;
+    let auxiliary = host.activation_factory()?.create_application()?;
+    let gate = auxiliary.query_interface::<IAvnApplication11>()?;
+    let popup_gate = auxiliary.popup_gate()?;
+    drop(auxiliary);
+    let requests = Arc::new(Mutex::new(Vec::new()));
+    App::load_from_env()?.run(move |scope| {
+        scope.set_shutdown_mode(if native {
+            ShutdownMode::OnExplicitShutdown
+        } else {
+            ShutdownMode::OnLastWindowClose
+        })?;
+        native_placement::observe_termination();
+        let events = requests.clone();
+        let reentrant = gate.clone();
+        let handler = rustolonia_sys::termination_handler(move |request| {
+            println!("termination request: {request:?}");
+            assert!(
+                reentrant.complete_termination(request.token, true).is_err(),
+                "completion inside native callback must be posted"
+            );
+            events.lock().unwrap().push(request);
+            Ok(())
+        });
+        gate.set_termination_handler(Some(&handler))?;
+        drop(handler);
+        let button = Button::new()?.tool_tip_tip("Pending shutdown tooltip")?;
+        button.set_tool_tip_placement(PlacementMode::Bottom)?;
+        let owner = Window::new()?.content(Some(&button))?;
+        if with_popup {
+            use rustolonia::AsControl;
+            let raw = owner
+                .as_control()?
+                .query_interface::<rustolonia_sys::IAvnWindow>()?;
+            let handler = rustolonia_sys::native_popup_handler(move |event| {
+                if matches!(event, NativePopupEvent::Closed { .. }) {
+                    assert!(
+                        native_placement::cleanup_done(),
+                        "cleanup precedes popup Closed"
+                    );
+                    println!("termination popup Closed after cleanup");
+                }
+                Ok(())
+            });
+            popup_gate.set(&raw, Some(&handler))?;
+            let owner = owner.on_unloaded(scope, move |_| {
+                assert!(
+                    native_placement::cleanup_done(),
+                    "cleanup precedes owner Unloaded"
+                );
+                popup_gate
+                    .set(&raw, None)
+                    .expect("clear popup gate in owner Unloaded");
+                println!("termination owner Unloaded after cleanup");
+            })?;
+            scope.mount(owner)?;
+        }
+        let scope = scope.clone();
+        let next = scope.clone();
+        scope.post(move || {
+            if with_popup {
+                button.set_tool_tip_is_open(true).unwrap();
+            }
+            native_placement::request_termination(native, native);
+            native_placement::request_termination(native, true);
+            let observed = requests.lock().unwrap();
+            assert_eq!(
+                observed.len(),
+                2,
+                "repeated requests notify with same token"
+            );
+            assert_eq!(observed[0].token, observed[1].token);
+            let old = observed[0].token;
+            drop(observed);
+            assert!(gate.set_termination_handler(None).is_err());
+            gate.complete_termination(old, false).unwrap();
+            assert!(gate.complete_termination(old, false).is_err());
+            println!("cancelled first request; application still running");
+            if native {
+                let cancel_gate = gate.clone();
+                let cancel_requests = requests.clone();
+                let cancel_scope = next.clone();
+                std::thread::spawn(move || {
+                    std::thread::sleep(std::time::Duration::from_millis(100));
+                    cancel_scope
+                        .post(move || {
+                            let token = cancel_requests.lock().unwrap().last().unwrap().token;
+                            assert_ne!(token, old);
+                            cancel_gate.complete_termination(token, false).unwrap();
+                            println!(
+                                "actual deferred AppKit request cancelled; cleanup not accepted"
+                            );
+                        })
+                        .unwrap();
+                });
+                native_placement::request_termination(true, false);
+                assert!(!native_placement::cleanup_done());
+            }
+            let request_scope = next.clone();
+            std::thread::spawn(move || {
+                std::thread::sleep(std::time::Duration::from_millis(250));
+                let dispatcher = request_scope.clone();
+                dispatcher
+                    .post(move || {
+                        let fresh = requests.lock().unwrap().last().copied().unwrap();
+                        assert_ne!(fresh.token, old);
+                        assert_eq!(fresh.flags & 1 != 0, native || os);
+                        assert_eq!(fresh.flags & 2 != 0, os);
+                        assert!(!native_placement::cleanup_done());
+                        // Represents asynchronous engine finalization; no UI-thread wait.
+                        native_placement::mark_cleanup_done();
+                        println!(
+                            "asynchronous cleanup complete before accepting token {}",
+                            fresh.token
+                        );
+                        gate.complete_termination(fresh.token, true).unwrap();
+                        assert!(gate.complete_termination(fresh.token, true).is_err());
+                        println!("managed acceptance returned after window teardown");
+                        drop(request_scope);
+                    })
+                    .unwrap();
+            });
+            if os {
+                native_placement::send_logout_event();
+            } else {
+                native_placement::request_termination(native, false);
+            }
+        })
+    })?;
+    assert!(native_placement::cleanup_done());
+    println!("App::run returned after cleanup");
+    Ok(())
 }
 
 #[cfg(target_os = "macos")]
@@ -285,6 +432,15 @@ fn placement_probe(scope: &rustolonia::AppScope) -> rustolonia::Result<()> {
 #[allow(clashing_extern_declarations)]
 mod native_placement {
     use std::ffi::{c_char, c_void};
+    use std::sync::atomic::{AtomicBool, Ordering};
+    static CLEANUP_DONE: AtomicBool = AtomicBool::new(false);
+
+    pub fn cleanup_done() -> bool {
+        CLEANUP_DONE.load(Ordering::SeqCst)
+    }
+    pub fn mark_cleanup_done() {
+        CLEANUP_DONE.store(true, Ordering::SeqCst);
+    }
 
     #[repr(C)]
     #[derive(Clone, Copy, Debug)]
@@ -330,12 +486,201 @@ mod native_placement {
         fn set_point(receiver: *mut c_void, selector: *mut c_void, point: Point);
         #[link_name = "objc_msgSend"]
         fn set_double(receiver: *mut c_void, selector: *mut c_void, value: f64);
+        #[link_name = "objc_msgSend"]
+        fn send_arg(receiver: *mut c_void, selector: *mut c_void, arg: *mut c_void) -> *mut c_void;
+        #[link_name = "objc_msgSend"]
+        fn reply_code(receiver: *mut c_void, selector: *mut c_void, arg: *mut c_void) -> usize;
+        fn objc_allocateClassPair(
+            base: *mut c_void,
+            name: *const c_char,
+            extra: usize,
+        ) -> *mut c_void;
+        fn objc_registerClassPair(class: *mut c_void);
+        fn class_addMethod(
+            class: *mut c_void,
+            selector: *mut c_void,
+            imp: unsafe extern "C" fn(*mut c_void, *mut c_void, *mut c_void),
+            types: *const c_char,
+        ) -> bool;
+        #[link_name = "objc_msgSend"]
+        fn add_observer(
+            center: *mut c_void,
+            selector: *mut c_void,
+            observer: *mut c_void,
+            method: *mut c_void,
+            name: *mut c_void,
+            object: *mut c_void,
+        );
+        #[link_name = "objc_msgSend"]
+        fn string(
+            receiver: *mut c_void,
+            selector: *mut c_void,
+            value: *const c_char,
+        ) -> *mut c_void;
+        #[link_name = "objc_msgSend"]
+        fn pid_descriptor(receiver: *mut c_void, selector: *mut c_void, pid: i32) -> *mut c_void;
+        #[link_name = "objc_msgSend"]
+        fn event_descriptor(
+            receiver: *mut c_void,
+            selector: *mut c_void,
+            class: u32,
+            id: u32,
+            target: *mut c_void,
+            return_id: i16,
+            transaction: i32,
+        ) -> *mut c_void;
+        #[link_name = "objc_msgSend"]
+        fn enum_descriptor(receiver: *mut c_void, selector: *mut c_void, code: u32) -> *mut c_void;
+        #[link_name = "objc_msgSend"]
+        fn set_parameter(
+            receiver: *mut c_void,
+            selector: *mut c_void,
+            descriptor: *mut c_void,
+            key: u32,
+        );
+        #[link_name = "objc_msgSend"]
+        fn send_event(
+            receiver: *mut c_void,
+            selector: *mut c_void,
+            options: usize,
+            timeout: f64,
+            error: *mut *mut c_void,
+        ) -> *mut c_void;
         #[cfg(target_arch = "aarch64")]
         #[link_name = "objc_msgSend"]
         fn get_frame(receiver: *mut c_void, selector: *mut c_void) -> Frame;
         #[cfg(target_arch = "x86_64")]
         #[link_name = "objc_msgSend_stret"]
         fn get_frame(out: *mut Frame, receiver: *mut c_void, selector: *mut c_void);
+    }
+
+    unsafe extern "C" fn will_terminate(_: *mut c_void, _: *mut c_void, _: *mut c_void) {
+        if !cleanup_done() {
+            eprintln!("WillTerminate before cleanup");
+            std::process::exit(19);
+        }
+        println!("NSApplicationWillTerminateNotification after cleanup");
+    }
+
+    pub fn observe_termination() {
+        unsafe {
+            let class = objc_allocateClassPair(
+                objc_getClass(c"NSObject".as_ptr()),
+                c"RustoloniaTerminationFixtureObserver".as_ptr(),
+                0,
+            );
+            assert!(!class.is_null());
+            let method = sel_registerName(c"onTermination:".as_ptr());
+            assert!(class_addMethod(
+                class,
+                method,
+                will_terminate,
+                c"v@:@".as_ptr()
+            ));
+            objc_registerClassPair(class);
+            let observer = send(
+                send(class, sel_registerName(c"alloc".as_ptr())),
+                sel_registerName(c"init".as_ptr()),
+            );
+            let center = send(
+                objc_getClass(c"NSNotificationCenter".as_ptr()),
+                sel_registerName(c"defaultCenter".as_ptr()),
+            );
+            let name = string(
+                objc_getClass(c"NSString".as_ptr()),
+                sel_registerName(c"stringWithUTF8String:".as_ptr()),
+                c"NSApplicationWillTerminateNotification".as_ptr(),
+            );
+            add_observer(
+                center,
+                sel_registerName(c"addObserver:selector:name:object:".as_ptr()),
+                observer,
+                method,
+                name,
+                std::ptr::null_mut(),
+            );
+        }
+    }
+
+    pub fn request_termination(native: bool, repeated: bool) {
+        if !native {
+            let trigger = rustolonia::Window::new().unwrap();
+            trigger.show().unwrap();
+            trigger.close().unwrap();
+            return;
+        }
+        unsafe {
+            let app = send(
+                objc_getClass(c"NSApplication".as_ptr()),
+                sel_registerName(c"sharedApplication".as_ptr()),
+            );
+            if native {
+                if repeated {
+                    let delegate = send(app, sel_registerName(c"delegate".as_ptr()));
+                    assert_eq!(
+                        reply_code(
+                            delegate,
+                            sel_registerName(c"applicationShouldTerminate:".as_ptr()),
+                            app
+                        ),
+                        2,
+                        "native delegate must return NSTerminateLater"
+                    );
+                } else {
+                    send_arg(
+                        app,
+                        sel_registerName(c"terminate:".as_ptr()),
+                        std::ptr::null_mut(),
+                    );
+                }
+            }
+        }
+    }
+
+    pub fn send_logout_event() {
+        unsafe {
+            let class = objc_getClass(c"NSAppleEventDescriptor".as_ptr());
+            let target = pid_descriptor(
+                class,
+                sel_registerName(c"descriptorWithProcessIdentifier:".as_ptr()),
+                std::process::id() as i32,
+            );
+            let event = event_descriptor(
+                class,
+                sel_registerName(
+                    c"appleEventWithEventClass:eventID:targetDescriptor:returnID:transactionID:"
+                        .as_ptr(),
+                ),
+                u32::from_be_bytes(*b"aevt"),
+                u32::from_be_bytes(*b"quit"),
+                target,
+                -1,
+                0,
+            );
+            let reason = enum_descriptor(
+                class,
+                sel_registerName(c"descriptorWithEnumCode:".as_ptr()),
+                u32::from_be_bytes(*b"logo"),
+            );
+            set_parameter(
+                event,
+                sel_registerName(c"setParamDescriptor:forKeyword:".as_ptr()),
+                reason,
+                u32::from_be_bytes(*b"why?"),
+            );
+            let mut error = std::ptr::null_mut();
+            send_event(
+                event,
+                sel_registerName(c"sendEventWithOptions:timeout:error:".as_ptr()),
+                1,
+                1.0,
+                &mut error,
+            );
+            assert!(
+                error.is_null(),
+                "send self-directed logout-reason AppleEvent"
+            );
+        }
     }
 
     pub fn frame(handle: isize) -> Frame {
