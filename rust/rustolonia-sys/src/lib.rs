@@ -94,11 +94,10 @@ pub use value_converter::{
 };
 
 use libloading::Library;
+mod file_drag;
 mod popup_gate;
 mod termination;
-mod file_drag;
 pub use file_drag::{file_drag_handler, FileDragEvent, IAvnApplication12, IAvnFileDragHandler};
-pub use termination::{termination_handler, IAvnApplication11, IAvnTerminationHandler, TerminationRequest};
 pub use popup_gate::{
     native_popup_handler, IAvnApplication10, IAvnNativePopupHandler, NativePopupEvent,
 };
@@ -107,6 +106,9 @@ use std::mem::ManuallyDrop;
 use std::path::Path;
 use std::ptr;
 use std::sync::{Mutex, OnceLock};
+pub use termination::{
+    termination_handler, IAvnApplication11, IAvnTerminationHandler, TerminationRequest,
+};
 
 type GetActivationFactoryFn = unsafe extern "C" fn(*mut *mut c_void) -> i32;
 type FreeFn = unsafe extern "C" fn(*mut c_void);
