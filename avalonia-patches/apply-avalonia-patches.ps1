@@ -42,6 +42,9 @@ if (-not (Test-Path (Join-Path $avaloniaRoot '.git'))) {
 
 $patches = @(
     'avalonia-controls.patch'
+    'avalonia-overlay-popups.patch'
+    'avalonia-termination.patch'
+    'avalonia-file-drag.patch'
 )
 
 foreach ($patch in $patches) {

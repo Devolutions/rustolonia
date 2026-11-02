@@ -9,6 +9,7 @@ the upstream `12.1.3` tag (`8eeda4f6f546165b3f72e63c9f42247abb306905`) by
 | Patch | Contents |
 |---|---|
 | `avalonia-controls.patch` | `IViewportRangeSource` (new viewport-range interface), `TableViewColumn.MinWidth/MaxWidth` + `ClampWidth`, `TableViewRowAutomationPeer` (new), TableView layout/row/column-header hooks, and their unit tests. `TableViewColumn.IsVisible` is upstream since 12.1.3 (AvaloniaUI/Avalonia#22162) and is no longer patched. |
+| `avalonia-overlay-popups.patch` | Per-top-level `UseOverlayPopups` policy and optional `NativePopupShowRequested` continuation gate. Supports embedded popups or deferred native show without affecting other windows. |
 
 ## Usage
 

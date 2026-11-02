@@ -1,5 +1,5 @@
-//! Desktop shell integration: the separately versioned stage 33
-//! `IAvnApplication6` capability.
+//! Desktop shell integration: separately versioned stage 33
+//! `IAvnApplication6` and stage 35 `IAvnApplication8` capabilities.
 //!
 //! A tray or capture tool needs a few things the rest of the projection does
 //! not cover: an application that keeps running with no window open
@@ -9,10 +9,66 @@
 //! ([`AppScope::mount_dynamic_tray`], usually through a generated
 //! `mount_<tray>`, or [`AppContext::create_tray`] with no schema at all), and
 //! window-level settings: the native handle, topmost,
-//! per-pixel transparency and exclusion from screen capture.
+//! per-pixel transparency, platform-typed native handles, AppKit window
+//! numbers and mouse passthrough, and explicit show/activate behavior.
 
 use crate::{AppContext, AppScope, Result, Window};
 use rustolonia_sys as sys;
+use std::marker::PhantomData;
+pub use sys::NativePopupEvent;
+
+/// The descriptor of a borrowed native window handle.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum NativeWindowHandleKind {
+    Unknown(i32),
+    Win32Hwnd,
+    X11Window,
+    MacOsNsView,
+    MacOsNsWindow,
+}
+
+impl NativeWindowHandleKind {
+    fn from_abi(value: i32) -> Self {
+        match value {
+            1 => Self::Win32Hwnd,
+            2 => Self::X11Window,
+            3 => Self::MacOsNsView,
+            4 => Self::MacOsNsWindow,
+            other => Self::Unknown(other),
+        }
+    }
+}
+
+/// A borrowed native window handle.
+///
+/// The raw value is platform-specific and valid only while its native
+/// top-level exists. It must not be retained past that native lifetime, used
+/// after the associated [`Window`] is dropped, or accessed outside the UI
+/// thread. Closing a window may invalidate the handle even while its Rust
+/// [`Window`] value still exists; query it again after recreating the native
+/// top-level.
+#[derive(Debug)]
+pub struct NativeWindowHandle<'window> {
+    kind: NativeWindowHandleKind,
+    raw: isize,
+    _window: PhantomData<&'window Window>,
+}
+
+impl NativeWindowHandle<'_> {
+    pub fn kind(&self) -> NativeWindowHandleKind {
+        self.kind
+    }
+
+    /// Returns the platform-specific native handle value.
+    ///
+    /// Do not retain it beyond the native top-level's lifetime or use it
+    /// outside the UI thread. Closing the window may invalidate this value
+    /// before the Rust `Window` is dropped.
+    pub fn raw(&self) -> isize {
+        self.raw
+    }
+}
 
 /// When the application exits.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -38,6 +94,62 @@ impl ShutdownMode {
 }
 
 impl AppContext {
+    /// Gates native popups belonging to this owner (including nested popups).
+    /// macOS only. Install before opening any popup; the callback runs on the
+    /// UI thread before native show and must return promptly. Preparing supplies
+    /// a unique token and window number, never a borrowed pointer. Obtain that
+    /// hidden SCWindow, update all stream filters asynchronously, then post
+    /// `acknowledge_native_popup` to the UI thread ONLY after acknowledgement.
+    /// Closed invalidates the token; stale/duplicate acknowledgement returns
+    /// E_INVALIDARG. No acknowledgement means the popup remains hidden.
+    /// This is incompatible with embedded popup hosting on the same owner.
+    pub fn set_native_popup_gate(
+        &self,
+        window: &Window,
+        mut callback: impl FnMut(sys::NativePopupEvent) -> Result<()> + Send + 'static,
+    ) -> Result<()> {
+        let handler = sys::native_popup_handler(move |event| {
+            callback(event).map_err(|error| match error {
+                crate::Error::Abi(error) => error,
+                _ => sys::Error(sys::E_FAIL),
+            })
+        });
+        Ok(self
+            .application()
+            .popup_gate()?
+            .set(&window.raw, Some(&handler))?)
+    }
+
+    /// UI thread only. Reveal the still-live popup after capture-filter acknowledgement.
+    pub fn acknowledge_native_popup(&self, token: i64) -> Result<()> {
+        Ok(self.application().popup_gate()?.acknowledge(token)?)
+    }
+
+    /// Removes an owner's gate. First close all its popups; pending popups
+    /// are never implicitly acknowledged by policy removal.
+    pub fn clear_native_popup_gate(&self, window: &Window) -> Result<()> {
+        Ok(self.application().popup_gate()?.set(&window.raw, None)?)
+    }
+
+    /// Keeps popups targeting `window` inside its client-area overlay rather
+    /// than allocating native popup windows. Applies to tooltips, flyouts,
+    /// context menus and nested popups; other top-levels are unaffected.
+    ///
+    /// Set before opening any popups, preferably before revealing the window.
+    /// Already-open native popups are not migrated. Overlay popups cannot extend
+    /// outside the client area, so small toolbars may need a larger host area.
+    ///
+    /// This does not perform capture exclusion. On macOS, first acknowledge
+    /// exclusion of the owning window in every active ScreenCaptureKit stream
+    /// before revealing it. This API exposes no additional borrowed handles.
+    /// Older hosts return `E_NOINTERFACE`; do not reveal protected popups then.
+    pub fn set_overlay_popups(&self, window: &Window, enabled: bool) -> Result<()> {
+        Ok(self
+            .application()
+            .popup_hosting()?
+            .set_window_overlay_popups(&window.raw, enabled)?)
+    }
+
     fn shell(&self) -> Result<sys::ComPtr<sys::IAvnApplication6>> {
         Ok(self.application().shell()?)
     }
@@ -52,6 +164,68 @@ impl AppContext {
     /// platform window does not exist yet (before it is first shown).
     pub fn platform_handle(&self, window: &Window) -> Result<isize> {
         Ok(self.shell()?.platform_handle(&window.raw)? as isize)
+    }
+
+    /// Returns the typed native handle once the window has been created.
+    ///
+    /// The handle is borrowed from `window`, is only valid on the UI thread,
+    /// and must not outlive it. Use [`NativeWindowHandle::kind`] before
+    /// interpreting its raw value.
+    pub fn native_window_handle<'window>(
+        &self,
+        window: &'window Window,
+    ) -> Result<Option<NativeWindowHandle<'window>>> {
+        let (raw, kind) = self
+            .application()
+            .native_windows()?
+            .native_window_handle(&window.raw)?;
+        let raw = isize::try_from(raw).map_err(|_| sys::Error(sys::E_FAIL))?;
+        if raw == 0 {
+            return Ok(None);
+        }
+        Ok(Some(NativeWindowHandle {
+            kind: NativeWindowHandleKind::from_abi(kind),
+            raw,
+            _window: PhantomData,
+        }))
+    }
+
+    /// Gets AppKit's `NSWindow.windowNumber` for ScreenCaptureKit window
+    /// matching. macOS only; the window must have a native window.
+    ///
+    /// This does not exclude the window from capture by other applications.
+    pub fn macos_window_number(&self, window: &Window) -> Result<i32> {
+        Ok(self
+            .application()
+            .native_windows()?
+            .macos_window_number(&window.raw)?)
+    }
+
+    /// Enables or disables AppKit mouse-event passthrough for a window.
+    /// macOS only; unsupported platforms return `E_NOTIMPL`.
+    pub fn set_mouse_passthrough(&self, window: &Window, enabled: bool) -> Result<()> {
+        Ok(self
+            .application()
+            .native_windows()?
+            .set_macos_window_ignores_mouse_events(&window.raw, enabled)?)
+    }
+
+    /// Shows a hidden window, optionally activating it. If it is already
+    /// visible, `activate = true` activates it and `false` leaves its current
+    /// activation unchanged.
+    pub fn show_window(&self, window: &Window, activate: bool) -> Result<()> {
+        Ok(self
+            .application()
+            .native_windows()?
+            .show_window(&window.raw, activate)?)
+    }
+
+    /// Activates a visible window.
+    pub fn activate_window(&self, window: &Window) -> Result<()> {
+        Ok(self
+            .application()
+            .native_windows()?
+            .activate_window(&window.raw)?)
     }
 
     /// Keeps `window` above every window that is not topmost.
@@ -283,5 +457,34 @@ impl AppContext {
             .pixel_surfaces()?
             .create_tray_icon(Some(&sys_handler))?;
         Ok(ShellTray { raw })
+    }
+}
+
+#[cfg(test)]
+mod native_window_handle_tests {
+    use super::*;
+
+    #[test]
+    fn native_handle_kinds_decode_platform_descriptors() {
+        assert_eq!(
+            NativeWindowHandleKind::Win32Hwnd,
+            NativeWindowHandleKind::from_abi(1)
+        );
+        assert_eq!(
+            NativeWindowHandleKind::X11Window,
+            NativeWindowHandleKind::from_abi(2)
+        );
+        assert_eq!(
+            NativeWindowHandleKind::MacOsNsView,
+            NativeWindowHandleKind::from_abi(3)
+        );
+        assert_eq!(
+            NativeWindowHandleKind::MacOsNsWindow,
+            NativeWindowHandleKind::from_abi(4)
+        );
+        assert_eq!(
+            NativeWindowHandleKind::Unknown(12),
+            NativeWindowHandleKind::from_abi(12)
+        );
     }
 }

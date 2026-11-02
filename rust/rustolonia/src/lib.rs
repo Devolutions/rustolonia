@@ -27,7 +27,10 @@ pub use runtime::{
     discover_host_path, App, AppContext, AppScope, AsControl, Downcast, EventSubscription,
     NonOwningRef, ResourceValue, ThemeVariant, Upcast, HOST_NATIVE_LIB_ENV_VAR,
 };
-pub use shell::{ShellTray, ShutdownMode, TrayEvent, TrayMenuItem};
+pub use shell::{
+    NativePopupEvent, NativeWindowHandle, NativeWindowHandleKind, ShellTray, ShutdownMode,
+    TrayEvent, TrayMenuItem,
+};
 pub use storage::{
     ActivationEvent, DragDropEffects, FileDropEvent, FileTypeFilter, FolderPickerOptions,
     OpenFilePickerOptions, PickerOutcome, SaveFilePickerOptions, StorageCapabilities, StorageItem,

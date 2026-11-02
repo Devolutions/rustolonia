@@ -78,7 +78,10 @@ pub use rust_vm::{
     RustVmUpdate, RUST_VM_RANGE_FILL, RUST_VM_RANGE_INVALIDATE, RUST_VM_RANGE_RESET,
 };
 pub use selectors::{item_selector, text_selector, ItemSelector, TextSelector};
-pub use shell::{IAvnApplication6, IAVN_APPLICATION6_METHOD_COUNT};
+pub use shell::{
+    IAvnApplication6, IAvnApplication8, IAvnApplication9, IAVN_APPLICATION6_METHOD_COUNT,
+    IAVN_APPLICATION8_METHOD_COUNT,
+};
 pub use storage::{
     activation_handler, file_drop_handler, storage_completion, ActivationArgs, FileDropArgs,
     IAvnActivationHandler, IAvnApplication3, IAvnFileDropHandler, IAvnFilePickerOptions,
@@ -91,11 +94,21 @@ pub use value_converter::{
 };
 
 use libloading::Library;
+mod file_drag;
+mod popup_gate;
+mod termination;
+pub use file_drag::{file_drag_handler, FileDragEvent, IAvnApplication12, IAvnFileDragHandler};
+pub use popup_gate::{
+    native_popup_handler, IAvnApplication10, IAvnNativePopupHandler, NativePopupEvent,
+};
 use std::ffi::c_void;
 use std::mem::ManuallyDrop;
 use std::path::Path;
 use std::ptr;
 use std::sync::{Mutex, OnceLock};
+pub use termination::{
+    termination_handler, IAvnApplication11, IAvnTerminationHandler, TerminationRequest,
+};
 
 type GetActivationFactoryFn = unsafe extern "C" fn(*mut *mut c_void) -> i32;
 type FreeFn = unsafe extern "C" fn(*mut c_void);

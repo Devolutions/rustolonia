@@ -16,6 +16,7 @@ public partial interface IAvnShellTray
     [PreserveSig]
     int SetIcon(string? source);
 
+    /// <summary>Hover text; null or empty clears it.</summary>
     [PreserveSig]
     int SetToolTip(string? text);
 

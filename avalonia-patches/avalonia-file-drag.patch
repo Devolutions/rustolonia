@@ -1,0 +1,50 @@
+diff --git a/native/Avalonia.Native/src/OSX/TopLevelImpl.mm b/native/Avalonia.Native/src/OSX/TopLevelImpl.mm
+index d0b62d9d55..706bf75fdd 100644
+--- a/native/Avalonia.Native/src/OSX/TopLevelImpl.mm
++++ b/native/Avalonia.Native/src/OSX/TopLevelImpl.mm
+@@ -9,6 +9,36 @@
+ #include "common.h"
+ #include "clipboard.h"
+ 
++static NSEvent* s_retainedDragEvent = nil;
++
++extern "C" __attribute__((visibility("default"))) void* avn_retain_file_drag_event(int windowNumber)
++{
++    auto event = [NSApp currentEvent];
++    if (![NSThread isMainThread] || event == nil || event.windowNumber != windowNumber
++        || event.type != NSEventTypeLeftMouseDown)
++        return nullptr;
++    return (__bridge_retained void*)event;
++}
++
++extern "C" __attribute__((visibility("default"))) int avn_set_file_drag_event(void* event)
++{
++    if (![NSThread isMainThread])
++        return 0;
++    s_retainedDragEvent = (__bridge NSEvent*)event;
++    return 1;
++}
++
++extern "C" __attribute__((visibility("default"))) void avn_release_file_drag_event(void* event)
++{
++    if (event != nullptr)
++        CFRelease(event);
++}
++
++extern "C" __attribute__((visibility("default"))) int avn_supports_retained_file_drag_event()
++{
++    return 1;
++}
++
+ TopLevelImpl::~TopLevelImpl() {
+     View = nullptr;
+ }
+@@ -285,7 +315,7 @@ HRESULT TopLevelImpl::BeginDragAndDropOperation(
+     if (View == NULL)
+         return E_FAIL;
+ 
+-    auto nsevent = [NSApp currentEvent];
++    auto nsevent = s_retainedDragEvent != nil ? s_retainedDragEvent : [NSApp currentEvent];
+     auto nseventType = [nsevent type];
+ 
+     // If current event isn't a mouse one (probably due to malfunctioning user app)

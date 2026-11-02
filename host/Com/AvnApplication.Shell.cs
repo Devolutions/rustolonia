@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Host.Generated.ViewModels;
+using Avalonia.Platform;
 using Avalonia.Rust.Interop;
 using Avalonia.Threading;
 
@@ -130,5 +131,140 @@ public partial class AvnApplication : IAvnApplication6
         [LibraryImport("user32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static partial bool SetWindowDisplayAffinity(nint hwnd, uint affinity);
+    }
+}
+
+public partial class AvnApplication : IAvnApplication8, IAvnApplication9
+{
+    public int SetWindowOverlayPopups(IAvnWindow? window, int enabled) =>
+        WithWindow(window, managed =>
+        {
+            if (enabled != 0 && managed.NativePopupShowRequested is not null)
+                throw new InvalidOperationException("Remove the native popup gate before enabling embedded popups.");
+            managed.UseOverlayPopups = enabled != 0;
+        });
+
+    private const int NativeHandleUnknown = 0;
+    private const int NativeHandleHwnd = 1;
+    private const int NativeHandleXid = 2;
+    private const int NativeHandleNsView = 3;
+    private const int NativeHandleNsWindow = 4;
+
+    public int GetNativeWindowHandle(IAvnWindow? window, out long handle, out int kind)
+    {
+        long foundHandle = 0;
+        var foundKind = NativeHandleUnknown;
+        var hr = WithWindow(window, managed =>
+        {
+            var platformHandle = managed.TryGetPlatformHandle();
+            if (platformHandle is null)
+                return;
+            foundHandle = platformHandle.Handle;
+            foundKind = NativeHandleKind(platformHandle.HandleDescriptor);
+        });
+        handle = foundHandle;
+        kind = foundHandle == 0 ? NativeHandleUnknown : foundKind;
+        return hr;
+    }
+
+    internal static int NativeHandleKind(string descriptor) => descriptor switch
+    {
+        "HWND" => NativeHandleHwnd,
+        "XID" => NativeHandleXid,
+        "NSView" => NativeHandleNsView,
+        "NSWindow" => NativeHandleNsWindow,
+        _ => NativeHandleUnknown,
+    };
+
+    public int GetMacOSWindowNumber(IAvnWindow? window, out int number)
+    {
+        number = 0;
+        if (window is null)
+            return HResults.E_POINTER;
+        if (!OperatingSystem.IsMacOS())
+            return HResults.E_NOTIMPL;
+
+        var found = 0;
+        var hr = WithWindow(window, managed =>
+        {
+            var platformHandle = managed.TryGetPlatformHandle();
+            if (platformHandle is null || platformHandle.Handle == 0)
+                throw new InvalidOperationException("The window has no native handle yet; show it first.");
+            if (platformHandle.HandleDescriptor != "NSWindow")
+                throw new InvalidOperationException("The Avalonia platform handle is not an NSWindow.");
+            found = MacOS.ObjC.GetWindowNumber(platformHandle.Handle);
+        });
+        number = found;
+        return hr;
+    }
+
+    public int SetMacOSWindowIgnoresMouseEvents(IAvnWindow? window, int ignores)
+    {
+        if (window is null)
+            return HResults.E_POINTER;
+        if (!OperatingSystem.IsMacOS())
+            return HResults.E_NOTIMPL;
+
+        return WithWindow(window, managed =>
+        {
+            var platformHandle = managed.TryGetPlatformHandle();
+            if (platformHandle is null || platformHandle.Handle == 0)
+                throw new InvalidOperationException("The window has no native handle yet; show it first.");
+            if (platformHandle.HandleDescriptor != "NSWindow")
+                throw new InvalidOperationException("The Avalonia platform handle is not an NSWindow.");
+            MacOS.ObjC.SetIgnoresMouseEvents(platformHandle.Handle, ignores != 0);
+        });
+    }
+
+    public int ShowWindow(IAvnWindow? window, int activate) =>
+        WithWindow(window, managed => ShowWindow(managed, activate != 0));
+
+    internal static void ShowWindow(Window managed, bool activate)
+    {
+        if (managed.IsVisible)
+        {
+            if (activate)
+                managed.Activate();
+            return;
+        }
+
+        var showActivated = managed.ShowActivated;
+        managed.ShowActivated = activate;
+        try
+        {
+            managed.Show();
+            if (activate)
+                managed.Activate();
+        }
+        finally
+        {
+            managed.ShowActivated = showActivated;
+        }
+    }
+
+    public int ActivateWindow(IAvnWindow? window) =>
+        WithWindow(window, managed => managed.Activate());
+
+    private static partial class MacOS
+    {
+        public static partial class ObjC
+        {
+            public static int GetWindowNumber(nint window) =>
+                (int)SendInt(window, Selector("windowNumber"));
+
+            public static void SetIgnoresMouseEvents(nint window, bool ignores) =>
+                SendVoidBool(window, Selector("setIgnoresMouseEvents:"), ignores ? (byte)1 : (byte)0);
+
+            private static nint Selector(string name) => SelRegisterName(name);
+
+            [LibraryImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+            private static partial nint SendInt(nint receiver, nint selector);
+
+            [LibraryImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+            private static partial void SendVoidBool(nint receiver, nint selector, byte value);
+
+            [LibraryImport("/usr/lib/libobjc.A.dylib", EntryPoint = "sel_registerName", StringMarshalling = StringMarshalling.Utf8)]
+            private static partial nint SelRegisterName(string selector);
+        }
     }
 }

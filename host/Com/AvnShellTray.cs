@@ -56,7 +56,8 @@ internal sealed partial class AvnShellTray : IAvnShellTray, IDisposable
     {
         _application = application;
         _handler = handler;
-        _icon = new TrayIcon { Menu = _menu, IsVisible = true };
+        // Avalonia.Native's UTF-8 tooltip marshaller does not accept null.
+        _icon = new TrayIcon { Menu = _menu, ToolTipText = string.Empty, IsVisible = true };
         _icon.Clicked += (_, _) => _handler?.OnActivate();
         var icons = TrayIcon.GetIcons(application);
         if (icons is null)
@@ -69,7 +70,7 @@ internal sealed partial class AvnShellTray : IAvnShellTray, IDisposable
 
     public int SetIcon(string? source) => Run(icon => icon.Icon = string.IsNullOrWhiteSpace(source) ? null : RustTrayAttachment.LoadIcon(source));
 
-    public int SetToolTip(string? text) => Run(icon => icon.ToolTipText = text);
+    public int SetToolTip(string? text) => Run(icon => icon.ToolTipText = text ?? string.Empty);
 
     public int SetVisible(int visible) => Run(icon => icon.IsVisible = visible != 0);
 

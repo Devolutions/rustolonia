@@ -57,7 +57,8 @@ public sealed class RustTrayAttachment : IDisposable
         var icon = new TrayIcon
         {
             Icon = LoadIcon(iconSource),
-            ToolTipText = toolTip,
+            // Avalonia.Native's UTF-8 tooltip marshaller does not accept null.
+            ToolTipText = toolTip ?? string.Empty,
             Menu = menu,
             Command = activate,
             IsVisible = true,

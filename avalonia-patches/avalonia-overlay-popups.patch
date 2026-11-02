@@ -1,0 +1,106 @@
+diff --git a/src/Avalonia.Controls/Primitives/OverlayPopupHost.cs b/src/Avalonia.Controls/Primitives/OverlayPopupHost.cs
+index f519e4cfe1..ec0413a551 100644
+--- a/src/Avalonia.Controls/Primitives/OverlayPopupHost.cs
++++ b/src/Avalonia.Controls/Primitives/OverlayPopupHost.cs
+@@ -168,9 +168,10 @@ void IManagedPopupPositionerPopup.MoveAndResize(Point devicePoint, Size virtualS
+         
+         internal static IPopupHost CreatePopupHost(Visual target, IAvaloniaDependencyResolver? dependencyResolver, bool shouldUseOverlayLayer)
+         {
+-            if (!shouldUseOverlayLayer)
++            var topLevel = TopLevel.GetTopLevel(target);
++            if (!shouldUseOverlayLayer && topLevel?.UseOverlayPopups != true)
+             {
+-                if (TopLevel.GetTopLevel(target) is { } topLevel && topLevel.PlatformImpl?.CreatePopup() is { } popupImpl)
++                if (topLevel?.PlatformImpl?.CreatePopup() is { } popupImpl)
+                 {
+                     return new PopupRoot(topLevel, popupImpl, dependencyResolver);
+                 }
+diff --git a/src/Avalonia.Controls/Primitives/Popup.cs b/src/Avalonia.Controls/Primitives/Popup.cs
+index 46ab0b391a..6e6d106ab5 100644
+--- a/src/Avalonia.Controls/Primitives/Popup.cs
++++ b/src/Avalonia.Controls/Primitives/Popup.cs
+@@ -559,8 +559,10 @@ public void Open()
+                 state.popupHost.Dispose();
+             });
+
+-            if (IsLightDismissEnabled)
++            void RegisterLightDismiss()
+             {
++                if (!IsLightDismissEnabled)
++                    return;
+                 var dismissLayer = LightDismissOverlayLayer.GetLightDismissOverlayLayer(placementTarget);
+
+                 if (dismissLayer != null)
+@@ -584,20 +586,29 @@ public void Open()
+
+             WindowManagerAddShadowHintChanged(popupHost, WindowManagerAddShadowHint);
+
+-            popupHost.Show();
+-            IsUsingOverlayLayer = popupHost is OverlayPopupHost;
+-
+-            if (TakesFocusFromNativeControl)
+-                popupHost.TakeFocus();
+-
+-            using (BeginIgnoringIsOpen())
++            void CompleteOpen()
+             {
+-                SetCurrentValue(IsOpenProperty, true);
++                Avalonia.Threading.Dispatcher.UIThread.VerifyAccess();
++                if (_openState?.PopupHost != popupHost)
++                    return;
++                RegisterLightDismiss();
++                popupHost.Show();
++                IsUsingOverlayLayer = popupHost is OverlayPopupHost;
++                if (TakesFocusFromNativeControl)
++                    popupHost.TakeFocus();
++                using (BeginIgnoringIsOpen())
++                    SetCurrentValue(IsOpenProperty, true);
++                Opened?.Invoke(this, EventArgs.Empty);
++                _popupHostChangedHandler?.Invoke(Host);
+             }
+
+-            Opened?.Invoke(this, EventArgs.Empty);
+-
+-            _popupHostChangedHandler?.Invoke(Host);
++            var gateOwner = topLevel;
++            while (gateOwner is PopupRoot ancestor)
++                gateOwner = ancestor.ParentTopLevel;
++            if (popupHost is PopupRoot nativePopup && gateOwner.NativePopupShowRequested is { } gate)
++                gate(nativePopup, CompleteOpen);
++            else
++                CompleteOpen();
+         }
+
+         /// <summary>
+diff --git a/src/Avalonia.Controls/TopLevel.cs b/src/Avalonia.Controls/TopLevel.cs
+index 721b20ccab..250c1e778a 100644
+--- a/src/Avalonia.Controls/TopLevel.cs
++++ b/src/Avalonia.Controls/TopLevel.cs
+@@ -45,6 +45,27 @@ public abstract class TopLevel : ContentControl,
+         ILogicalRoot,
+         IThemeVariantRoot
+     {
++        /// <summary>
++        /// Forces popups targeting this top-level to render inside its overlay
++        /// layer instead of creating separate platform windows.
++        /// Set before opening popups; overlay content is confined to the client area.
++        /// </summary>
++        public static readonly StyledProperty<bool> UseOverlayPopupsProperty =
++            AvaloniaProperty.Register<TopLevel, bool>(nameof(UseOverlayPopups));
++
++        public bool UseOverlayPopups
++        {
++            get => GetValue(UseOverlayPopupsProperty);
++            set => SetValue(UseOverlayPopupsProperty, value);
++        }
++
++        /// <summary>
++        /// Optional asynchronous native-popup show gate. The callback must either
++        /// invoke the continuation on the UI thread or leave the popup hidden.
++        /// The continuation becomes a no-op after that popup closes.
++        /// </summary>
++        public Action<Primitives.PopupRoot, Action>? NativePopupShowRequested { get; set; }
++
+         /// <summary>
+         /// Defines the <see cref="ClientSize"/> property.
+         /// </summary>
