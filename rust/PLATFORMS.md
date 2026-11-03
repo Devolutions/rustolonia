@@ -245,7 +245,13 @@ To repeat the discovery probe without requesting new privacy permission:
 then run `rust/target/popup-capture-probe`. It exits with code 2 when permission
 is absent and code 1 if hidden-window discovery fails.
 
-## Additive macOS outgoing file drags
+## Additive outgoing file drags (macOS and Linux X11)
+
+Linux X11 hosts implement the same ABI on top of Avalonia's XDND drag source
+(`X11DragSource`): no native companion, retained event or capability probe is
+needed, and `DragDrop.DoDragDropAsync` starts from the recorded pointer press.
+Windows still returns `E_NOTIMPL`. The rest of this section describes the
+macOS-specific parts (retained AppKit event, `libAvaloniaNative.dylib` probe).
 
 The local host optionally implements `IAvnApplication12`, IID
 `6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DA6`. It leaves the published v12.1.2
@@ -399,6 +405,7 @@ platform itself supports:
 | Folder multi-select | reported by `StorageCapabilities`; honoured where the platform picker supports it |||
 | File type filters | glob patterns | glob patterns and MIME types | uniform type identifiers |
 | Incoming file drop | yes | yes | yes |
+| Outgoing file drag (`IAvnApplication12`) | no | yes | yes |
 | Startup "open with" | command line | command line | command line |
 | Later activation (`on_activation`) | not raised | not raised | `Files`, `OpenUri`, `Reopen` |
 | Local path for every item | usually | usually | not guaranteed (security-scoped items) |
