@@ -1,9 +1,11 @@
 # Avalonia for Rust
 
 This experimental workspace provides an idiomatic Rust API over an Avalonia
-.NET 10 NativeAOT shared library. Both the managed nano-COM wrappers and Rust
-bindings are generated from `projection.ir.json`; examples are consumers, not
-binding specifications.
+.NET 10 NativeAOT host. Desktop applications load a shared library; the
+[experimental iOS sample](../samples/ios/README.md) statically links Rust into
+an iOS application. Both the managed nano-COM wrappers and Rust bindings are
+generated from `projection.ir.json`; examples are consumers, not binding
+specifications.
 
 The native ownership contract and the MicroCom-versus-handle-table decision
 are documented in [OWNERSHIP.md](OWNERSHIP.md).

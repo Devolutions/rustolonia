@@ -1,7 +1,7 @@
 # rustolonia
 
-Idiomatic Rust API for building desktop GUI applications with
-[Avalonia](https://avaloniaui.net/), backed by a prebuilt .NET NativeAOT host.
+Idiomatic Rust API for building GUI applications with
+[Avalonia](https://avaloniaui.net/), backed by a .NET NativeAOT host.
 
 ```toml
 [dependencies]
@@ -65,6 +65,11 @@ minimum OS versions are listed in
 The prebuilt release covers code-first applications. Applications with
 compiled AXAML and view-model IR still build their own host from a source
 checkout.
+
+The [iOS sample](../../samples/ios/README.md) demonstrates an experimental,
+source-built NativeAOT host with an iOS-owned single-view lifetime. It does not
+use desktop host discovery or prebuilt host assets, and desktop-only window
+and shell APIs are not supported on iOS.
 
 Two things the projected controls cannot express are covered from Rust
 directly: `pixel_surface::PixelSurface` is a control that draws bitmap layers

@@ -27,6 +27,13 @@ unsafe impl ComInterface for IAvnApplication13 {
     };
 }
 
+impl ComPtr<crate::IAvnApplication> {
+    /// Queries the separately versioned single-view application capability.
+    pub fn single_view(&self) -> Result<ComPtr<IAvnApplication13>> {
+        self.query_interface()
+    }
+}
+
 impl ComPtr<IAvnApplication13> {
     pub fn set_main_view(&self, view: Option<&ComPtr<IAvnControl>>) -> Result<()> {
         unsafe {

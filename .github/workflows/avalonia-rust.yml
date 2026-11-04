@@ -315,6 +315,48 @@ jobs:
           kill "$process"
           wait "$process" || true
 
+  ios-simulator:
+    name: iOS simulator (arm64)
+    runs-on: macos-26
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Apply Avalonia source patches
+        shell: pwsh
+        run: ./avalonia-patches/apply-avalonia-patches.ps1 -AvaloniaRoot ./avalonia-src
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.403
+
+      - name: Install iOS workloads
+        # This set targets the Xcode 26.6 SDK; newer sets require Xcode 27.
+        run: dotnet workload install ios maccatalyst tvos --version 10.0.401
+
+      - name: Set up Rust shims
+        shell: bash
+        env:
+          CARGO_HOME: ${{ runner.temp }}/rustolonia-cargo
+        run: |
+          set -euo pipefail
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+            | bash -s -- -y --default-toolchain none --no-modify-path --profile minimal
+          echo "CARGO_HOME=$CARGO_HOME" >> "$GITHUB_ENV"
+          echo "$CARGO_HOME/bin" >> "$GITHUB_PATH"
+
+      - name: Install Rust iOS targets
+        run: rustup target add aarch64-apple-ios-sim aarch64-apple-ios
+
+      - name: Run simulator smoke test
+        run: ./samples/ios/smoke-test.sh
+
+      - name: Build unsigned device app
+        run: ./samples/ios/build.sh device -p:EnableCodeSigning=false
+
   cross-build:
     name: cross-build (${{ matrix.rid }})
     runs-on: ${{ matrix.os }}

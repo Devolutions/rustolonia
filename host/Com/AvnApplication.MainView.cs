@@ -16,9 +16,28 @@ public partial class AvnApplication : IAvnApplication13
             if (Application.Current?.ApplicationLifetime is not ISingleViewApplicationLifetime lifetime)
                 return HResults.E_NOTIMPL;
             Dispatcher.UIThread.VerifyAccess();
-            lifetime.MainView = view is null
+            var control = view is null
                 ? null
                 : (Control?)ProjectionRuntime.Unwrap(view) ?? throw new ObjectDisposedException(nameof(view));
+            if (control is Window)
+                return HResults.E_INVALIDARG;
+            var previous = lifetime.MainView;
+            try
+            {
+                lifetime.MainView = control;
+            }
+            catch (Exception error)
+            {
+                try
+                {
+                    lifetime.MainView = previous;
+                }
+                catch (Exception restoreError)
+                {
+                    throw new AggregateException("Failed to restore the previous main view.", error, restoreError);
+                }
+                throw;
+            }
             return HResults.S_OK;
         }
         catch (Exception e)

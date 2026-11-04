@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(AvsCurrentIOSTargetFramework)</TargetFramework>
+    <SupportedOSPlatformVersion>13.0</SupportedOSPlatformVersion>
+    <Nullable>enable</Nullable>
+    <PublishAot>true</PublishAot>
+    <IsAotCompatible>true</IsAotCompatible>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <DefineConstants Condition="'$(RustoloniaIosSmoke)' == 'true'">$(DefineConstants);RUSTOLONIA_IOS_SMOKE</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../host/Avalonia.Host.csproj"
+                      AdditionalProperties="AvaloniaRustHostPlatform=iOS" />
+    <NativeReference Include="$(RustoloniaRustLibrary)">
+      <Kind>Static</Kind>
+      <ForceLoad>true</ForceLoad>
+    </NativeReference>
+    <DirectPInvoke Include="__Internal!rustolonia_ios_main" />
+    <DirectPInvoke Include="__Internal!rustolonia_ios_stop" />
+  </ItemGroup>
+  <Target Name="ValidateRustoloniaIosInputs" BeforeTargets="PrepareForBuild">
+    <Error Condition="'$(RustoloniaRustLibrary)' == '' or !Exists('$(RustoloniaRustLibrary)')"
+           Text="RustoloniaRustLibrary must point to the Rust static library. Use samples/ios/build.sh." />
+    <Error Condition="'$(_IsPublishing)' != 'true'"
+           Text="Rustolonia requires NativeAOT on iOS. Use samples/ios/build.sh instead of a normal Mono build." />
+  </Target>
+</Project>

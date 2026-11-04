@@ -75,6 +75,9 @@ public partial class AvnApplication : IAvnApplication, IAvnApplication2
         if (handler is null)
             return HResults.E_POINTER;
 
+#if AVN_HOST_IOS
+        return HResults.E_NOTIMPL;
+#else
         try
         {
             using var platformThread = RustHostPlatform.EnterThread();
@@ -117,6 +120,7 @@ public partial class AvnApplication : IAvnApplication, IAvnApplication2
             DisposeWindowingPlatform(OperatingSystem.IsMacOS(),
                 AvaloniaLocator.Current.GetService<IWindowingPlatform>() as IDisposable);
         }
+#endif
     }
 #endif
 
@@ -128,6 +132,9 @@ public partial class AvnApplication : IAvnApplication, IAvnApplication2
 
     public int Shutdown()
     {
+#if AVN_HOST_IOS
+        return HResults.E_NOTIMPL;
+#else
         try
         {
             _asyncOperations.CancelAll();
@@ -138,6 +145,7 @@ public partial class AvnApplication : IAvnApplication, IAvnApplication2
         {
             return AbiError.Capture(e);
         }
+#endif
     }
 
     public int StartDelay(

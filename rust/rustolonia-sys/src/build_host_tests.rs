@@ -254,6 +254,25 @@ fn skip_download_ignores_target_and_cache() {
 }
 
 #[test]
+fn ios_targets_do_not_resolve_a_desktop_host() {
+    let temp = TempDir::new();
+    let mut config = config(&temp.0);
+    config.host_dir = Some(temp.0.join("desktop-host"));
+    for target in [
+        "aarch64-apple-ios",
+        "aarch64-apple-ios-sim",
+        "x86_64-apple-ios",
+    ] {
+        config.target = target.into();
+        assert_eq!(
+            resolve(&config).unwrap(),
+            Resolution::Skipped("iOS uses an in-process host".into()),
+            "{target}"
+        );
+    }
+}
+
+#[test]
 fn unsupported_targets_fail_when_downloading() {
     let temp = TempDir::new();
     let mut config = config(&temp.0);
