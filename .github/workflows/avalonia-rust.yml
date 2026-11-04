@@ -17,6 +17,17 @@ on:
 permissions:
   contents: read
 
+# A newer push to the same PR supersedes the in-flight run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # Pull requests run a fast tier. Pushes to master and manual runs also cover
+  # per-OS external consumers, the system monitor app, sample bundles, the
+  # source-integrated iOS sample, and the unsigned iOS device build.
+  FULL_CI: ${{ github.event_name != 'pull_request' }}
+
 jobs:
   quick-checks:
     name: helper and scaffold checks
@@ -183,11 +194,9 @@ jobs:
             & dotnet test $project -c Release
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
-          pwsh ./rust/tests/test-build-app.ps1
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Build and launch a fresh external consumer
-        if: runner.os != 'Linux'
+        if: runner.os != 'Linux' && env.FULL_CI == 'true'
         shell: pwsh
         run: ./rust/tests/test-build-app.ps1 -RunNativeSmoke
 
@@ -213,24 +222,22 @@ jobs:
       - name: Build flagship Rust view-model samples
         shell: pwsh
         run: |
-          cargo build --manifest-path rust/Cargo.toml -p rustolonia --example rust_vm_axaml --release
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          cargo build --manifest-path rust/Cargo.toml -p rustolonia --example rust_dynamic_vm_axaml --release
+          cargo build --manifest-path rust/Cargo.toml -p rustolonia --example rust_vm_axaml --example rust_dynamic_vm_axaml --release
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Test in-repository system monitor
-        if: matrix.rid == 'win-x64'
+        if: matrix.rid == 'win-x64' && env.FULL_CI == 'true'
         shell: pwsh
         working-directory: apps/system-monitor
         run: cargo test --locked --manifest-path NeoHtop.App/Cargo.toml
 
       - name: Build in-repository system monitor
-        if: matrix.rid == 'win-x64'
+        if: matrix.rid == 'win-x64' && env.FULL_CI == 'true'
         shell: pwsh
         run: ./apps/system-monitor/build.ps1
 
       - name: Verify system monitor bundle and generated sources
-        if: matrix.rid == 'win-x64'
+        if: matrix.rid == 'win-x64' && env.FULL_CI == 'true'
         shell: pwsh
         run: |
           git diff --exit-code -- apps/system-monitor
@@ -246,38 +253,44 @@ jobs:
           tar -czf apps/system-monitor/artifacts/win-x64.tar.gz -C $bundle .
 
       - uses: actions/upload-artifact@v4
-        if: matrix.rid == 'win-x64'
+        if: matrix.rid == 'win-x64' && env.FULL_CI == 'true'
         with:
           name: rustolonia-system-monitor-win-x64
           path: apps/system-monitor/artifacts/win-x64.tar.gz
           if-no-files-found: error
 
       - name: Package NativeAOT sample artifacts
+        if: env.FULL_CI == 'true'
         shell: pwsh
         run: ./rust/package.ps1 -Rid ${{ matrix.rid }} -Configuration Release -Example rust_vm_axaml -PresentationProject samples/RustViewModelSample.Managed/RustViewModelSample.Managed.csproj -ViewRegistryFile samples/RustViewModelSample.Managed/Generated/RustViewRegistry.g.cs
 
       - name: Archive complete bundle with file modes
+        if: env.FULL_CI == 'true'
         shell: pwsh
         run: tar -czf "rust/artifacts/${{ matrix.rid }}.tar.gz" -C "rust/artifacts/${{ matrix.rid }}" .
 
       - uses: actions/upload-artifact@v4
+        if: env.FULL_CI == 'true'
         with:
           name: avalonia-rust-native-${{ matrix.rid }}
           path: rust/artifacts/${{ matrix.rid }}.tar.gz
           if-no-files-found: error
 
       - uses: actions/download-artifact@v4
+        if: env.FULL_CI == 'true'
         with:
           name: avalonia-rust-native-${{ matrix.rid }}
           path: rust/downloaded
 
       - name: Extract downloaded bundle
+        if: env.FULL_CI == 'true'
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path "rust/downloaded/${{ matrix.rid }}" | Out-Null
           tar -xzf "rust/downloaded/${{ matrix.rid }}.tar.gz" -C "rust/downloaded/${{ matrix.rid }}"
 
       - name: Verify downloaded package checksums
+        if: env.FULL_CI == 'true'
         shell: pwsh
         run: |
           $package = Join-Path 'rust' 'downloaded' '${{ matrix.rid }}'
@@ -289,7 +302,7 @@ jobs:
           }
 
       - name: Launch packaged sample smoke test
-        if: runner.os == 'Windows'
+        if: runner.os == 'Windows' && env.FULL_CI == 'true'
         shell: pwsh
         run: |
           $process = Start-Process "./rust/downloaded/${{ matrix.rid }}/rust_vm_axaml.exe" -PassThru
@@ -298,7 +311,7 @@ jobs:
           Stop-Process -Id $process.Id
 
       - name: Launch packaged sample smoke test
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && env.FULL_CI == 'true'
         shell: bash
         run: |
           xvfb-run -a ./rust/downloaded/${{ matrix.rid }}/rust_vm_axaml &
@@ -309,7 +322,7 @@ jobs:
           wait "$process" || true
 
       - name: Launch packaged sample process smoke test
-        if: runner.os == 'macOS'
+        if: runner.os == 'macOS' && env.FULL_CI == 'true'
         shell: bash
         run: |
           ./rust/downloaded/${{ matrix.rid }}/rust_vm_axaml &
@@ -355,10 +368,14 @@ jobs:
       - name: Install Rust iOS targets
         run: rustup target add aarch64-apple-ios-sim aarch64-apple-ios
 
-      - name: Run simulator smoke test
+      # On pull requests the packaged-host step below source-builds the managed
+      # host, and the Rust-only consumer runs the same control and render checks.
+      - name: Run source-integrated simulator smoke test
+        if: env.FULL_CI == 'true'
         run: ./samples/ios/smoke-test.sh
 
       - name: Build unsigned device app
+        if: env.FULL_CI == 'true'
         run: ./samples/ios/build.sh device -p:EnableCodeSigning=false
 
       - name: Package the production simulator host

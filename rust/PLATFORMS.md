@@ -50,7 +50,7 @@ empty or Rustolonia-owned destination; a failed build leaves the previous
 bundle intact. External consumer manifests must name their
 `generatedRegistryFile` **`RustViewRegistry.g.cs`**, in any chosen directory.
 
-CI uploads `.tar.gz` bundles rather than raw directories, preserving the hidden
+Outside pull requests, CI uploads `.tar.gz` bundles rather than raw directories, preserving the hidden
 ownership marker and Unix execute permissions. It downloads and extracts the
 actual uploaded archives before checking checksums. Native jobs smoke-launch
 the extracted sample; cross-build jobs verify checksums and Unix execute

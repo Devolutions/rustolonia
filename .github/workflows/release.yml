@@ -210,7 +210,6 @@ jobs:
     runs-on: macos-26
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
-      CARGO_HOME: ${{ runner.temp }}/rustolonia-cargo
       VERSION: ${{ needs.version.outputs.version }}
     strategy:
       fail-fast: false
@@ -237,10 +236,14 @@ jobs:
         run: dotnet workload install ios maccatalyst tvos --version 10.0.401
 
       - name: Set up Rust
+        # The runner context is unavailable in job-level env.
+        env:
+          CARGO_HOME: ${{ runner.temp }}/rustolonia-cargo
         run: |
           set -euo pipefail
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
             | bash -s -- -y --default-toolchain none --no-modify-path --profile minimal
+          echo "CARGO_HOME=$CARGO_HOME" >> "$GITHUB_ENV"
           echo "$CARGO_HOME/bin" >> "$GITHUB_PATH"
 
       - name: Install the Rust target
