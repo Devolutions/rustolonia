@@ -456,6 +456,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "rustolonia-apk"
+version = "12.1.3"
+dependencies = [
+ "dirs",
+ "flate2",
+ "ring",
+ "serde_json",
+ "sha2",
+]
+
+[[package]]
 name = "rustolonia-bindgen"
 version = "12.1.3"
 dependencies = [

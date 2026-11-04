@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The prebuilt Android host APK: the Rustolonia Android host with generic
+    Application/Activity classes and no Rust library. Releases publish it so
+    code-first apps need only Cargo: `rustolonia-apk` (rust/rustolonia-apk)
+    adds the app's lib<crate>.so, rewrites the package name, label, version
+    and the net.devolutions.rustolonia.library meta-data, and re-signs it.
+
+    Every manifest string starting with ApplicationId is rewritten to the
+    app's package (permissions and provider authorities include it), so the
+    Java class names deliberately live in another namespace.
+  -->
+  <PropertyGroup>
+    <TargetFramework>$(AvsCurrentTargetFramework)-android36.0</TargetFramework>
+    <SupportedOSPlatformVersion>24.0</SupportedOSPlatformVersion>
+    <OutputType>Exe</OutputType>
+    <Nullable>enable</Nullable>
+    <AssemblyName>Rustolonia.Android.HostApp</AssemblyName>
+    <ApplicationId>net.devolutions.rustolonia.hostapp</ApplicationId>
+    <ApplicationTitle>Rustolonia</ApplicationTitle>
+    <ApplicationVersion>1</ApplicationVersion>
+    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    <AndroidPackageFormat>apk</AndroidPackageFormat>
+    <RuntimeIdentifiers>android-arm64;android-x64</RuntimeIdentifiers>
+    <!-- See rust/PLATFORMS.md#android: the nano-COM ABI needs ComWrappers (CoreCLR). -->
+    <UseMonoRuntime>false</UseMonoRuntime>
+    <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
+    <NoWarn>$(NoWarn);CS8002</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Avalonia.Host.Android.csproj" />
+  </ItemGroup>
+</Project>

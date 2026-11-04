@@ -37,10 +37,28 @@ public abstract class RustoloniaAndroidApplication : AvaloniaAndroidApplication<
     }
 
     /// <summary>
+    /// The application meta-data entry naming the Rust library, used when a
+    /// subclass does not override <see cref="RustLibraryName"/>. The prebuilt
+    /// host APK declares it, and <c>rustolonia-apk</c> rewrites its value.
+    /// </summary>
+    public const string LibraryMetaDataName = "net.devolutions.rustolonia.library";
+
+    /// <summary>
     /// The Rust library to start, without the <c>lib</c> prefix and
     /// <c>.so</c> suffix: a crate named <c>my_app</c> builds <c>libmy_app.so</c>.
+    /// Defaults to the <see cref="LibraryMetaDataName"/> application meta-data.
     /// </summary>
-    protected abstract string RustLibraryName { get; }
+    protected virtual string RustLibraryName
+    {
+        get
+        {
+            var info = PackageManager?.GetApplicationInfo(
+                PackageName!, global::Android.Content.PM.PackageInfoFlags.MetaData);
+            return info?.MetaData?.GetString(LibraryMetaDataName)
+                ?? throw new InvalidOperationException(
+                    $"The application declares no '{LibraryMetaDataName}' meta-data naming its Rust library.");
+        }
+    }
 
     protected override AppBuilder CustomizeAppBuilder(AppBuilder builder) =>
         base.CustomizeAppBuilder(builder).AfterPlatformServicesSetup(_ =>
@@ -68,10 +86,11 @@ public abstract class RustoloniaAndroidApplication : AvaloniaAndroidApplication<
 
     private unsafe void StartRust()
     {
-        var name = RustLibraryName;
+        var name = "<unknown>";
         int result;
         try
         {
+            name = RustLibraryName;
             // System.loadLibrary resolves the APK's native library directory
             // (including uncompressed, unextracted libraries); dlopen by
             // soname then returns that same, already loaded, library.

@@ -32,6 +32,8 @@
     <AvaloniaRustHostPlatform>Android</AvaloniaRustHostPlatform>
     <DefineConstants>$(DefineConstants);AVN_HOST_ANDROID</DefineConstants>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <!-- App/ is the prebuilt host APK project; its sources and generated Java are not this library's. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);App\**</DefaultItemExcludes>
     <_RustoloniaHostRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..'))</_RustoloniaHostRoot>
     <!-- Xamarin.AndroidX assemblies pulled in by Avalonia.Android are not strong-named. -->
     <NoWarn>$(NoWarn);CS8002</NoWarn>

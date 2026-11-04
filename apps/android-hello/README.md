@@ -12,8 +12,21 @@ window mapping and limits are in
 | `src/main.rs` | Desktop entry: `App::load_from_env()?.run(ui::build)` |
 | `android/AndroidHello.csproj` | APK project: references `host/Android`, packages `libandroid_hello.so` per ABI |
 | `android/MainActivity.cs` | `[Application]` and launcher `[Activity]` subclasses |
+| `Cargo.toml` `[package.metadata.rustolonia.android]` | Package name and label for `cargo rustolonia-apk` |
 
-## Android
+## Android, Cargo only
+
+With a prebuilt host APK (`pwsh ./rust/package-android-host.ps1` in a source
+checkout, later a release asset), no .NET tooling is needed:
+
+```pwsh
+cargo install --path ../../rust/rustolonia-apk
+cargo rustolonia-apk --host-apk <rustolonia-android-host-12.1.3.apk> --abi x86_64 --launch
+```
+
+It reads `[package.metadata.rustolonia.android]` from `Cargo.toml`.
+
+## Android, with an APK project
 
 Prerequisites: the .NET `android` workload, an Android SDK with an NDK, and
 `rustup target add aarch64-linux-android x86_64-linux-android`. From the

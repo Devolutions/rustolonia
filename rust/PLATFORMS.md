@@ -419,6 +419,53 @@ pwsh ./rust/build-android.ps1                                # arm64-v8a + x86_6
 additionally logs every first-chance managed exception, since projected calls
 report failures to Rust only as HRESULTs.
 
+**Cargo-only builds (prebuilt host APK).** The managed half of a code-first
+app is the same for every app, so it can ship prebuilt, like the desktop host
+tarballs. `rust/package-android-host.ps1` builds `host/Android/App`, which is the
+Android host with generic `net.devolutions.rustolonia.android.RustoloniaApplication`
+and `RustoloniaActivity` classes, into `rustolonia-android-host-<version>.apk`
+(+ `.sha256`). `cargo rustolonia-apk` (`rust/rustolonia-apk`) then needs only
+Cargo, the NDK and the Rust targets, with no .NET SDK, Android workload or JDK:
+
+```toml
+# Cargo.toml: [lib] crate-type = ["cdylib", "rlib"], plus
+[package.metadata.rustolonia.android]
+package = "com.example.my_app"   # required
+label = "My App"                 # default: crate name
+version-code = 1                 # default: 1
+version-name = "1.0"             # default: crate version
+```
+
+```pwsh
+cargo install --path rust/rustolonia-apk
+cargo rustolonia-apk --host-apk rustolonia-android-host-12.1.3.apk --launch
+```
+
+The tool cross-compiles the `cdylib` per ABI with the NDK clang linker. It then
+copies the host APK, dropping ABIs without a Rust library, adds
+`lib/<abi>/lib<crate>.so`, and rewrites the binary `AndroidManifest.xml`: every
+string equal to or starting with the host package
+`net.devolutions.rustolonia.hostapp.` (the package, its permission and both
+provider authorities, so several apps install side by side), the version, the
+labels and the `net.devolutions.rustolonia.library` meta-data the host reads
+to find the library. Finally it aligns the archive (16 KiB for stored `.so`
+files, 4 bytes for other stored files) and signs it with APK Signature Scheme
+v2 (ECDSA P-256). The default identity is a persistent self-signed debug key in
+`~/.rustolonia/android`; `--key`/`--cert` take a PKCS#8 key and DER
+certificate for release signing. `.NET for Android` also writes the host
+package name into its generated `libxamarin-app.so`; the renamed apps run
+regardless (it is only used by Fast Deployment, which embedded APKs do not use).
+
+Verified on the emulator, with `dotnet` removed from `PATH`: `android-hello`
+packaged from the release artifact passes `apksigner verify` (v2) and
+`zipalign -c -P 16 4`, renders, runs its click handler, and installs and runs
+next to a second copy under another package. Not yet done: publishing the APK
+from `release.yml`, automatic download/checksum by the tool (today
+`--host-apk` or `RUSTOLONIA_ANDROID_HOST_APK`), custom icons and themes (these
+need resources compiled with aapt2), AAB output for Play, and v3 key rotation.
+Compiled AXAML and Rust view-model apps still need a C# APK project, as they
+need their own host on desktop.
+
 **Verified.** The `android-hello` Release APK (arm64-v8a + x86_64, 55 MB)
 launched on an API 36 x86_64 emulator, rendered the Rust-built window, ran
 the Rust click handler on tap, and exited cleanly on Back. Not yet covered:
