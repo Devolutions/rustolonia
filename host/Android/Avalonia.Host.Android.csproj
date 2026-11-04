@@ -1,0 +1,72 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The Android flavour of the Rustolonia host.
+
+    Desktop hosts are NativeAOT shared libraries a Rust executable loads. On
+    Android the Android runtime owns the process, so the host is a .NET Android
+    library instead: an APK project references it, subclasses
+    RustoloniaAndroidApplication / RustoloniaMainActivity, and packages the
+    application's Rust cdylib, which the host starts through
+    rustolonia_android_main (see rust/PLATFORMS.md#android).
+
+    It compiles exactly the shared host sources of ../Avalonia.Host.csproj
+    (same ABI, ownership runtime and generated projection) plus this folder,
+    with AVN_HOST_ANDROID defined. The assembly identity stays Avalonia.Host so
+    projection metadata and the producer's friend-assembly grants still apply.
+  -->
+  <PropertyGroup>
+    <TargetFramework>$(AvsCurrentTargetFramework)-android36.0</TargetFramework>
+    <SupportedOSPlatformVersion>24.0</SupportedOSPlatformVersion>
+    <AssemblyName>Avalonia.Host</AssemblyName>
+    <RootNamespace>Avalonia.Host</RootNamespace>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <EnableRuntimeMarshalling>true</EnableRuntimeMarshalling>
+    <IsAotCompatible>true</IsAotCompatible>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)GeneratedFiles</CompilerGeneratedFilesOutputPath>
+    <UseMicroCom>true</UseMicroCom>
+    <UseMicroComGeneratorRoslyn>true</UseMicroComGeneratorRoslyn>
+    <AvaloniaRustHostPlatform>Android</AvaloniaRustHostPlatform>
+    <DefineConstants>$(DefineConstants);AVN_HOST_ANDROID</DefineConstants>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <!-- App/ is the prebuilt host APK project; its sources and generated Java are not this library's. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);App\**</DefaultItemExcludes>
+    <_RustoloniaHostRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..'))</_RustoloniaHostRoot>
+    <!-- Xamarin.AndroidX assemblies pulled in by Avalonia.Android are not strong-named. -->
+    <NoWarn>$(NoWarn);CS8002</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="$(_RustoloniaHostRoot)\**\*.cs"
+             Exclude="$(_RustoloniaHostRoot)\**\bin\**;$(_RustoloniaHostRoot)\**\obj\**;$(_RustoloniaHostRoot)\Android\**" />
+    <Compile Include="*.cs" />
+    <MicroComIdl Include="$(_RustoloniaHostRoot)\Ownership\microcom-ownership.idl" />
+    <InternalsVisibleTo Include="Avalonia.Host.Tests, PublicKey=$(AvaloniaPublicKey)" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(AvaloniaRustViewRegistryFile)' != ''">
+    <Compile Remove="$(_RustoloniaHostRoot)\ViewRegistry.cs" />
+    <Compile Include="$(AvaloniaRustViewRegistryFile)" Link="Generated\ViewModels\RustViewRegistry.g.cs" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(AvaloniaRustPresentationProjects)' != ''">
+    <AvaloniaRustPresentationProject Include="$(AvaloniaRustPresentationProjects)" />
+    <ProjectReference Include="@(AvaloniaRustPresentationProject)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(AvaloniaProducerRoot)\src\Android\Avalonia.Android\Avalonia.Android.csproj" />
+    <ProjectReference Include="$(AvaloniaProducerRoot)\src\Skia\Avalonia.Skia\Avalonia.Skia.csproj" />
+    <ProjectReference Include="$(AvaloniaProducerRoot)\src\HarfBuzz\Avalonia.HarfBuzz\Avalonia.HarfBuzz.csproj" />
+    <ProjectReference Include="$(AvaloniaProducerRoot)\src\Avalonia.Themes.Fluent\Avalonia.Themes.Fluent.csproj" />
+    <ProjectReference Include="$(_RustoloniaHostRoot)\..\interop\Avalonia.Rust\Avalonia.Rust.csproj" />
+    <ProjectReference Include="$(_RustoloniaHostRoot)\..\interop\Avalonia.Rust.Interop\Avalonia.Rust.Interop.csproj" />
+  </ItemGroup>
+
+  <Import Project="$(_RustoloniaHostRoot)\..\build\NullableEnable.props" />
+  <Import Project="$(_RustoloniaHostRoot)\..\build\TrimmingEnable.props" />
+  <Import Project="$(_RustoloniaHostRoot)\..\build\MicroCOM.props" />
+  <Import Project="$(_RustoloniaHostRoot)\HostBuildInfo.targets" />
+</Project>

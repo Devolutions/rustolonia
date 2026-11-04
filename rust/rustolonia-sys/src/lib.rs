@@ -140,6 +140,8 @@ pub const ABI_FINGERPRINT: &str = env!("RUSTOLONIA_ABI_FINGERPRINT");
 /// machine; used as a last-resort runtime search path.
 pub const BUILD_HOST_DIR: Option<&str> = option_env!("RUSTOLONIA_BUILD_HOST_DIR");
 
+/// Out-parameter of `avn_get_host_info`.
+#[doc(hidden)]
 #[repr(C)]
 pub struct HostInfoNative {
     pub struct_size: u32,
@@ -390,6 +392,8 @@ pub struct Host {
     // Successful hosts deliberately remain loaded for the process lifetime:
     // FREE/ALLOC_UTF16 are process-wide ABI callbacks and may service strings
     // retained by Rust after an individual Host value is dropped.
+    // `None` for in-process hosts (iOS, Android) that hand Rust their entry
+    // points (`from_in_process`).
     #[cfg(not(target_os = "emscripten"))]
     _lib: Option<ManuallyDrop<Library>>,
     #[cfg(not(target_os = "emscripten"))]
@@ -659,6 +663,93 @@ mod host_info_tests {
 
     unsafe extern "C" fn failing_host_info(_: *mut HostInfoNative) -> i32 {
         hresult::E_POINTER
+    }
+
+    unsafe extern "C" fn matching_host_info(info: *mut HostInfoNative) -> i32 {
+        static FINGERPRINT: OnceLock<std::ffi::CString> = OnceLock::new();
+        (*info).version = c"test".as_ptr();
+        (*info).abi_fingerprint = FINGERPRINT
+            .get_or_init(|| std::ffi::CString::new(ABI_FINGERPRINT).unwrap())
+            .as_ptr();
+        0
+    }
+
+    unsafe extern "C" fn no_factory(_: *mut *mut c_void) -> i32 {
+        hresult::E_FAIL
+    }
+    unsafe extern "C" fn no_free(_: *mut c_void) {}
+    unsafe extern "C" fn no_alloc(_: i32) -> *mut u16 {
+        ptr::null_mut()
+    }
+    unsafe extern "C" fn no_last_error(_: *mut *mut u16) -> i32 {
+        hresult::E_FAIL
+    }
+
+    fn exports(get_host_info: GetHostInfoFn) -> HostExports {
+        HostExports {
+            struct_size: std::mem::size_of::<HostExports>() as u32,
+            reserved: 0,
+            get_activation_factory: Some(no_factory),
+            free: Some(no_free),
+            alloc_utf16: Some(no_alloc),
+            get_last_error: Some(no_last_error),
+            get_host_info: Some(get_host_info),
+        }
+    }
+
+    // Only rejection paths are exercised: accepting a table publishes the
+    // process-wide allocator, which other unit tests rely on being absent.
+    #[test]
+    fn in_process_tables_are_validated_before_use() {
+        let error = |table: &HostExports| match unsafe { Host::from_in_process(table) } {
+            Ok(_) => panic!("table accepted"),
+            Err(error) => error,
+        };
+
+        let mut small = exports(matching_host_info);
+        small.struct_size = 8;
+        assert!(matches!(
+            error(&small),
+            HostLoadError::InvalidExportsSize(8)
+        ));
+
+        let mut missing = exports(matching_host_info);
+        missing.get_activation_factory = None;
+        assert!(matches!(
+            error(&missing),
+            HostLoadError::MissingExport("avn_get_activation_factory")
+        ));
+
+        assert!(matches!(
+            error(&exports(fake_host_info)),
+            HostLoadError::IncompatibleHost { found: Some(_), .. }
+        ));
+        assert!(matches!(
+            error(&exports(failing_host_info)),
+            HostLoadError::IncompatibleHost { found: None, .. }
+        ));
+    }
+
+    /// The iOS (`host/IosBootstrap.cs`) and Android
+    /// (`host/Android/HostExportsTable.cs`) hosts build this table in C#.
+    #[test]
+    fn in_process_table_layout_is_stable() {
+        let pointer = std::mem::size_of::<usize>();
+        assert_eq!(std::mem::size_of::<HostExports>(), 8 + 5 * pointer);
+        assert_eq!(std::mem::offset_of!(HostExports, get_activation_factory), 8);
+        assert_eq!(std::mem::offset_of!(HostExports, free), 8 + pointer);
+        assert_eq!(
+            std::mem::offset_of!(HostExports, alloc_utf16),
+            8 + 2 * pointer
+        );
+        assert_eq!(
+            std::mem::offset_of!(HostExports, get_last_error),
+            8 + 3 * pointer
+        );
+        assert_eq!(
+            std::mem::offset_of!(HostExports, get_host_info),
+            8 + 4 * pointer
+        );
     }
 
     #[test]

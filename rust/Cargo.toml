@@ -4,6 +4,7 @@ members = [
     "rustolonia",
     "rustolonia-sys",
     "rustolonia-bindgen",
+    "rustolonia-apk",
     "avalonia-sample",
     "browser-sample",
 ]

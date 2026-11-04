@@ -180,11 +180,24 @@ pub enum Source {
     Download,
 }
 
+/// Android hosts are .NET Android assemblies packaged inside the APK, which
+/// hand Rust their entry points at startup (`Host::from_in_process`); there is
+/// no host library to stage next to a Rust binary.
+pub fn is_embedded_host_target(target: &str) -> bool {
+    target.contains("-linux-android")
+}
+
 pub fn resolve(config: &Config) -> Result<Resolution, String> {
     // iOS links the host into the app. Its separate iOS app builder stages
     // the static-host archive; this resolver handles desktop shared libraries.
     if config.target.contains("-apple-ios") {
         return Ok(Resolution::Skipped("iOS uses an in-process host".into()));
+    }
+
+    if is_embedded_host_target(&config.target) {
+        return Ok(Resolution::Skipped(
+            "the Android host is packaged inside the APK".into(),
+        ));
     }
 
     let rid = rid_for_target(&config.target);

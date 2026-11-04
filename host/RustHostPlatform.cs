@@ -10,6 +10,8 @@ using Avalonia.Native;
 #elif AVN_HOST_BROWSER
 #elif AVN_HOST_IOS
 using Avalonia.iOS;
+#elif AVN_HOST_ANDROID
+using Avalonia.Android;
 #else
 #error A supported Avalonia Rust host platform must be selected.
 #endif
@@ -31,6 +33,10 @@ internal static partial class RustHostPlatform
         // loading Avalonia's JavaScript modules.
 #elif AVN_HOST_IOS
         builder.UseiOS();
+#elif AVN_HOST_ANDROID
+        // Unused at run time: RustoloniaAndroidApplication sets Avalonia up
+        // before the Rust code runs, so Run never builds an AppBuilder.
+        builder.UseAndroid();
 #endif
         return builder
             .UseSkia()

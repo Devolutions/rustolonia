@@ -9,6 +9,7 @@ NativeAOT host selects one Avalonia windowing backend at publish time:
 | Linux | `linux-x64`, `linux-arm64` | X11 | `build.ps1` |
 | macOS | `osx-x64`, `osx-arm64` | Avalonia.Native | `build.ps1` |
 | iOS (experimental) | `ios-arm64`, `iossimulator-arm64`, `iossimulator-x64` | Avalonia.iOS | `samples/ios/build.sh` |
+| Android | `android-arm64`, `android-x64` | Avalonia.Android (CoreCLR) | `build-android.ps1` (see [Android](#android)) |
 
 `AvaloniaRustHostPlatform` controls the compile-time selection. The shared
 host contains the nano-COM ABI, ownership runtime, generated control
@@ -351,6 +352,126 @@ session/cancellation plus receiving-data coverage, **not** a successful
 cross-application drop into Finder or a hardware-pointer gesture. Manual
 Finder/other-app successful-drop coverage, native Intel hardware and execution
 on macOS 13 remain separate integration checks.
+
+## Android
+
+Android inverts the desktop bootstrap. The Android runtime owns the process,
+so the Rust application is a `cdylib` that the host starts, not an executable
+that loads the host:
+
+1. The APK's `[Application]` subclass of `RustoloniaAndroidApplication`
+   (`host/Android`) sets Avalonia up with `UseAndroid` and replaces
+   Avalonia.Android's windowing stub with *logical windows*.
+2. It loads `lib<crate>.so` and calls the `rustolonia_android_main` export
+   that `rustolonia::android_main!(ui::build)` declares, on the UI thread,
+   passing the same in-process `HostExports` function-pointer table the iOS
+   host uses (`avn_get_activation_factory`, `avn_free`, `avn_alloc_utf16`,
+   `avn_get_last_error`, `avn_get_host_info`; `struct_size`-versioned).
+3. `App::from_in_process` (`rustolonia_sys::Host::from_in_process`) applies
+   the same ABI fingerprint and allocator checks as `Host::load`. `App::run` calls the same `ui::build`
+   the desktop `main.rs` uses, then returns: the activity owns the UI loop,
+   and the application stays alive for the process lifetime.
+
+The ABI header and fingerprint are unchanged; `HostExports` is a bootstrap
+table, not a COM interface. `host/Android/Avalonia.Host.Android.csproj`
+compiles the same shared host sources as the desktop host (assembly identity
+`Avalonia.Host`) with `AVN_HOST_ANDROID`; the desktop project is unaffected.
+
+**Runtime.** The APK must use CoreCLR (`<UseMonoRuntime>false</UseMonoRuntime>`,
+.NET 10+): the nano-COM ABI relies on `ComWrappers`, which Mono rejects with
+`PlatformNotSupportedException`. CoreCLR on Android supports arm64 and x64.
+
+**Windows.** `new Window()` creates a real Avalonia `Window` over a surfaceless
+platform impl. Shown windows form a stack presented by the activity:
+
+- the top window's `Content` is moved into the activity (setting it again
+  later moves the new content too), with its `DataContext`; its `Title`
+  becomes the activity title;
+- Back closes the top window while more than one is shown (its `Closing`
+  handlers can cancel); closing the last window finishes the activity;
+- `AppScope::set_main_view` (`IAvnApplication13`, as in the browser) sets a
+  root that is shown whenever no window is; Back and closing a window then
+  return to it instead of finishing the activity;
+- size, position, owner, topmost, decorations and window state are ignored;
+- clipboard, storage pickers, launcher and insets resolve through the
+  activity's top level, so they become available once the activity exists.
+
+**Capabilities.** Tray icons, native window handles, topmost/transparency/
+capture exclusion, outgoing file drags, deferred termination and the native
+popup gate report `E_NOTIMPL` (or "unsupported"), as on desktop hosts without
+them. Startup arguments are always empty; desktop `on_activation` never fires.
+
+**Build.** Install the .NET `android` workload, an Android SDK with
+`platforms;android-36`, `build-tools`, `platform-tools` and an NDK, and
+`rustup target add aarch64-linux-android x86_64-linux-android`. Then:
+
+```pwsh
+pwsh ./rust/build-android.ps1 -Abi x86_64 -Install -Launch   # emulator
+pwsh ./rust/build-android.ps1                                # arm64-v8a + x86_64 APK
+```
+
+`apps/android-hello` is the reference layout: `Cargo.toml` builds
+`crate-type = ["cdylib", "rlib"]`, `src/lib.rs` holds `android_main!`,
+`src/main.rs` keeps the desktop entry, and `android/` holds the APK project
+(`ApplicationId`, theme, `[Application]`/`[Activity]` subclasses and one
+`AndroidNativeLibrary` per ABI). Rust `stdout`/`stderr` and panics go to logcat
+(`adb logcat -s rustolonia`). `adb shell setprop log.tag.rustolonia DEBUG`
+additionally logs every first-chance managed exception, since projected calls
+report failures to Rust only as HRESULTs.
+
+**Cargo-only builds (prebuilt host APK).** The managed half of a code-first
+app is the same for every app, so it can ship prebuilt, like the desktop host
+tarballs. `rust/package-android-host.ps1` builds `host/Android/App`, which is the
+Android host with generic `net.devolutions.rustolonia.android.RustoloniaApplication`
+and `RustoloniaActivity` classes, into `rustolonia-android-host-<version>.apk`
+(+ `.sha256`). `cargo rustolonia-apk` (`rust/rustolonia-apk`) then needs only
+Cargo, the NDK and the Rust targets, with no .NET SDK, Android workload or JDK:
+
+```toml
+# Cargo.toml: [lib] crate-type = ["cdylib", "rlib"], plus
+[package.metadata.rustolonia.android]
+package = "com.example.my_app"   # required
+label = "My App"                 # default: crate name
+version-code = 1                 # default: 1
+version-name = "1.0"             # default: crate version
+```
+
+```pwsh
+cargo install --path rust/rustolonia-apk
+cargo rustolonia-apk --host-apk rustolonia-android-host-12.1.3.apk --launch
+```
+
+The tool cross-compiles the `cdylib` per ABI with the NDK clang linker. It then
+copies the host APK, dropping ABIs without a Rust library, adds
+`lib/<abi>/lib<crate>.so`, and rewrites the binary `AndroidManifest.xml`: every
+string equal to or starting with the host package
+`net.devolutions.rustolonia.hostapp.` (the package, its permission and both
+provider authorities, so several apps install side by side), the version, the
+labels and the `net.devolutions.rustolonia.library` meta-data the host reads
+to find the library. Finally it aligns the archive (16 KiB for stored `.so`
+files, 4 bytes for other stored files) and signs it with APK Signature Scheme
+v2 (ECDSA P-256). The default identity is a persistent self-signed debug key in
+`~/.rustolonia/android`; `--key`/`--cert` take a PKCS#8 key and DER
+certificate for release signing. `.NET for Android` also writes the host
+package name into its generated `libxamarin-app.so`; the renamed apps run
+regardless (it is only used by Fast Deployment, which embedded APKs do not use).
+
+Verified on the emulator, with `dotnet` removed from `PATH`: `android-hello`
+packaged from the release artifact passes `apksigner verify` (v2) and
+`zipalign -c -P 16 4`, renders, runs its click handler, and installs and runs
+next to a second copy under another package. Not yet done: publishing the APK
+from `release.yml`, automatic download/checksum by the tool (today
+`--host-apk` or `RUSTOLONIA_ANDROID_HOST_APK`), custom icons and themes (these
+need resources compiled with aapt2), AAB output for Play, and v3 key rotation.
+Compiled AXAML and Rust view-model apps still need a C# APK project, as they
+need their own host on desktop.
+
+**Verified.** The `android-hello` Release APK (arm64-v8a + x86_64, 55 MB)
+launched on an API 36 x86_64 emulator, rendered the Rust-built window, ran
+the Rust click handler on tap, and exited cleanly on Back. Not yet covered:
+physical arm64 devices, clipboard and pickers at run time, multiple windows,
+compiled AXAML / Rust view-model apps (`build-app.ps1`), NativeAOT for
+Android, and CI.
 
 ## Prebuilt host platform floors
 
