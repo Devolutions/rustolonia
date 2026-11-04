@@ -29,7 +29,9 @@ no-download = []
 # search path, so `cargo run` and `cargo test` work without setup.
 dev-host-path = []
 
-[dependencies]
+# Browser builds (wasm32-unknown-emscripten) link the host statically into
+# the .NET WebAssembly app instead of loading a shared library.
+[target.'cfg(not(target_os = "emscripten"))'.dependencies]
 libloading = "0.8"
 
 [build-dependencies]

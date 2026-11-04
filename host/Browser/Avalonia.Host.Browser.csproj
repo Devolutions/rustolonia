@@ -1,0 +1,84 @@
+<Project Sdk="Microsoft.NET.Sdk.WebAssembly">
+  <!--
+    Browser (WebAssembly) rustolonia host. Unlike the desktop NativeAOT host,
+    which Rust loads as a shared library, the browser host is a .NET
+    WebAssembly app that statically links the Rust application: build the Rust
+    app as a wasm32-unknown-emscripten staticlib exporting `rustolonia_main`
+    and pass it as RustoloniaBrowserApp (see rust/build-browser.ps1 and
+    rust/PLATFORMS.md#browser-webassembly).
+
+    The source-generated COM interop used by the host is not supported by the
+    Mono WebAssembly runtime, so browser builds compile it against the
+    Avalonia.Rust.BrowserCom runtime (build/BrowserCom.targets).
+  -->
+  <PropertyGroup>
+    <TargetFramework>$(AvsCurrentBrowserTargetFramework)</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>Avalonia.Host</AssemblyName>
+    <RootNamespace>Avalonia.Host</RootNamespace>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <EnableRuntimeMarshalling>true</EnableRuntimeMarshalling>
+    <WasmEnableThreads>false</WasmEnableThreads>
+    <WasmBuildNative>true</WasmBuildNative>
+    <UseMicroCom>true</UseMicroCom>
+    <UseMicroComGeneratorRoslyn>true</UseMicroComGeneratorRoslyn>
+    <AvaloniaRustHostPlatform>Browser</AvaloniaRustHostPlatform>
+    <DefineConstants>$(DefineConstants);AVN_HOST_BROWSER</DefineConstants>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <!-- Rust staticlib (.a) linked into dotnet.native.wasm; the file name must be rustolonia_app.a. -->
+    <RustoloniaBrowserApp Condition="'$(RustoloniaBrowserApp)' == ''">$(MSBuildThisFileDirectory)..\..\rust\target\browser\rustolonia_app.a</RustoloniaBrowserApp>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\**\*.cs" Exclude="..\Browser\**;..\bin\**;..\obj\**" />
+    <Compile Include="*.cs" />
+    <MicroComIdl Include="..\Ownership\microcom-ownership.idl" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(AvaloniaRustViewRegistryFile)' != ''">
+    <Compile Remove="..\ViewRegistry.cs" />
+    <Compile Include="$(AvaloniaRustViewRegistryFile)" Link="Generated\ViewModels\RustViewRegistry.g.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(AvaloniaProducerRoot)\src\Skia\Avalonia.Skia\Avalonia.Skia.csproj" />
+    <ProjectReference Include="$(AvaloniaProducerRoot)\src\HarfBuzz\Avalonia.HarfBuzz\Avalonia.HarfBuzz.csproj" />
+    <ProjectReference Include="$(AvaloniaProducerRoot)\src\Avalonia.Themes.Fluent\Avalonia.Themes.Fluent.csproj" />
+    <ProjectReference Include="$(AvaloniaProducerRoot)\src\Browser\Avalonia.Browser\Avalonia.Browser.csproj" />
+    <ProjectReference Include="..\..\interop\Avalonia.Rust\Avalonia.Rust.csproj" />
+    <ProjectReference Include="..\..\interop\Avalonia.Rust.Interop\Avalonia.Rust.Interop.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(AvaloniaRustPresentationProjects)' != ''">
+    <ProjectReference Include="$(AvaloniaRustPresentationProjects)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <NativeFileReference Include="$(RustoloniaBrowserApp)" Condition="Exists('$(RustoloniaBrowserApp)')" />
+  </ItemGroup>
+
+  <Target Name="ValidateRustoloniaBrowserApp" BeforeTargets="PrepareForBuild" Condition="'$(RustoloniaBrowserAppOptional)' != 'true'">
+    <Error Condition="!Exists('$(RustoloniaBrowserApp)')"
+           Text="RustoloniaBrowserApp does not exist: '$(RustoloniaBrowserApp)'. Build the Rust app with rust/build-browser.ps1, or set RustoloniaBrowserAppOptional=true to compile the host alone." />
+    <Error Condition="'%(_RustoloniaBrowserAppItem.Filename)' != 'rustolonia_app'"
+           Text="RustoloniaBrowserApp must be named rustolonia_app.a (the host imports its entry point from module 'rustolonia_app')." />
+  </Target>
+  <Target Name="ValidateAvaloniaBrowserAssets" BeforeTargets="PrepareForBuild">
+    <Error Condition="!Exists('$(AvaloniaProducerRoot)\src\Browser\Avalonia.Browser\staticwebassets\avalonia.js')"
+           Text="Avalonia.Browser's JavaScript modules have not been built. Run: dotnet msbuild $(AvaloniaProducerRoot)\src\Browser\Avalonia.Browser\Avalonia.Browser.csproj -t:BunRunBuild (rust/build-browser.ps1 does this)." />
+  </Target>
+  <ItemGroup>
+    <_RustoloniaBrowserAppItem Include="$(RustoloniaBrowserApp)" />
+  </ItemGroup>
+
+  <Import Project="..\..\build\BrowserCom.targets" />
+  <Import Project="..\..\build\NullableEnable.props" />
+  <Import Project="..\..\build\MicroCOM.props" />
+  <Import Project="..\HostBuildInfo.targets" />
+  <Import Project="$(AvaloniaProducerRoot)\src\Browser\Avalonia.Browser\build\Avalonia.Browser.props" />
+  <Import Project="$(AvaloniaProducerRoot)\src\Browser\Avalonia.Browser\build\Avalonia.Browser.targets" />
+</Project>

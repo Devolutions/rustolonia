@@ -218,6 +218,7 @@ impl TaskScope {
         task.schedule()
     }
 
+    #[cfg_attr(target_os = "emscripten", allow(dead_code))]
     pub(crate) fn clear(&self) {
         let tasks = {
             let mut state = self.state.lock().expect("task scope lock poisoned");

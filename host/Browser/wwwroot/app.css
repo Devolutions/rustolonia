@@ -1,0 +1,21 @@
+#out {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+/* Avalonia.Browser adds "splash-close" to elements with this class once the main view is attached. */
+.avalonia-splash {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: sans-serif;
+    pointer-events: none;
+}
+
+.avalonia-splash.splash-close {
+    display: none;
+}

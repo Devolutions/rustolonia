@@ -209,6 +209,18 @@ impl AppScope {
         Ok(())
     }
 
+    /// Sets the root control of a single-view application lifetime, such as
+    /// the browser host where Avalonia cannot create windows. Desktop hosts
+    /// reject this with `E_NOTIMPL`; use [`AppScope::mount`] there.
+    pub fn set_main_view(&self, view: &impl AsControl) -> Result<()> {
+        let view = view.as_control()?;
+        let single_view = self
+            .context
+            .application
+            .query_interface::<sys::IAvnApplication13>()?;
+        Ok(single_view.set_main_view(Some(&view))?)
+    }
+
     pub(crate) fn record_window(&self, window: Window) {
         self.state
             .windows
@@ -323,6 +335,7 @@ impl AppScope {
         &self.context.application
     }
 
+    #[cfg_attr(target_os = "emscripten", allow(dead_code))]
     fn clear(&self) {
         crate::reactive::clear_reactive_runtime();
         self.state.tasks.clear();
@@ -500,7 +513,13 @@ impl App {
     /// Loads the native Avalonia host discovered by [`discover_host_path`]:
     /// `RUSTOLONIA_HOST_LIB` if set, otherwise the platform host library next
     /// to this executable.
+    ///
+    /// In browser builds (`wasm32-unknown-emscripten`) the host is statically
+    /// linked into the WebAssembly app, so no discovery takes place.
     pub fn load_from_env() -> Result<Self> {
+        #[cfg(target_os = "emscripten")]
+        return Self::load(Path::new(""));
+        #[cfg(not(target_os = "emscripten"))]
         Self::load(discover_host_path()?)
     }
 
@@ -557,6 +576,21 @@ impl App {
             .clone()
             .unwrap_or_else(process_startup_arguments);
         publish_startup_arguments(&self.application, &arguments)?;
+        // In the browser the host's Run starts the single-view lifetime and
+        // returns immediately; the JavaScript event loop then drives the UI.
+        // The control factory, scope and host stay alive for the page lifetime:
+        // the startup callback releases its scope clone once it returns, so
+        // this one keeps the retained subscriptions and objects registered.
+        #[cfg(target_os = "emscripten")]
+        {
+            FACTORY.with(|current| current.replace(Some(controls)));
+            let result = self.application.run(&handler);
+            std::mem::forget(cleanup_scope);
+            std::mem::forget(handler);
+            std::mem::forget(self);
+            Ok(result?)
+        }
+        #[cfg(not(target_os = "emscripten"))]
         FACTORY.with(|current| {
             let previous = current.replace(Some(controls));
             let result = self.application.run(&handler);

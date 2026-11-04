@@ -17,9 +17,59 @@ namespace Avalonia.Host.Com;
 [GeneratedComClass]
 public partial class AvnApplication : IAvnApplication, IAvnApplication2
 {
+#if AVN_HOST_BROWSER
+    // The browser runs a single-view lifetime; the desktop lifetime stays unset.
+#pragma warning disable CS0649
+#endif
     private ClassicDesktopStyleApplicationLifetime? _lifetime;
+#if AVN_HOST_BROWSER
+#pragma warning restore CS0649
+#endif
     private readonly AvnAsyncOperations _asyncOperations = new();
 
+#if AVN_HOST_BROWSER
+    /// <summary>
+    /// Element id of the page's host div that the browser single-view
+    /// lifetime renders into.
+    /// </summary>
+    internal const string BrowserMainDivId = "out";
+
+    // The browser cannot block the main thread: Run starts the single-view
+    // lifetime and returns S_OK; OnStarted runs once Avalonia is set up, and
+    // the JavaScript event loop drives the UI from then on.
+    public int Run(IAvnAppHandler? handler)
+    {
+        if (handler is null)
+            return HResults.E_POINTER;
+
+        try
+        {
+            _ = RunBrowserAsync(handler);
+            return HResults.S_OK;
+        }
+        catch (Exception e)
+        {
+            return AbiError.Capture(e);
+        }
+    }
+
+    private static async Task RunBrowserAsync(IAvnAppHandler handler)
+    {
+        try
+        {
+            await Avalonia.Browser.BrowserAppBuilder.StartBrowserAppAsync(
+                RustHostPlatform.Configure(AppBuilder.Configure<HostApplication>()),
+                BrowserMainDivId);
+            var started = handler.OnStarted();
+            if (started < 0)
+                Marshal.ThrowExceptionForHR(started);
+        }
+        catch (Exception e)
+        {
+            Console.Error.WriteLine($"Rustolonia browser host failed to start: {e}");
+        }
+    }
+#else
     public int Run(IAvnAppHandler? handler)
     {
         if (handler is null)
@@ -68,6 +118,7 @@ public partial class AvnApplication : IAvnApplication, IAvnApplication2
                 AvaloniaLocator.Current.GetService<IWindowingPlatform>() as IDisposable);
         }
     }
+#endif
 
     internal static void DisposeWindowingPlatform(bool isMacOS, IDisposable? platform)
     {

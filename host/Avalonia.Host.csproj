@@ -76,6 +76,12 @@
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <!-- The browser host (Browser/Avalonia.Host.Browser.csproj) compiles these sources itself. -->
+    <Compile Remove="Browser/**" />
+    <None Remove="Browser/**" />
+    <Content Remove="Browser/**" />
+  </ItemGroup>
+  <ItemGroup>
     <InternalsVisibleTo Include="Avalonia.Host.Tests, PublicKey=$(AvaloniaPublicKey)" />
     <MicroComIdl Include="Ownership\microcom-ownership.idl" />
     <ProjectReference Include="$(AvaloniaProducerRoot)\src\Skia\Avalonia.Skia\Avalonia.Skia.csproj" />

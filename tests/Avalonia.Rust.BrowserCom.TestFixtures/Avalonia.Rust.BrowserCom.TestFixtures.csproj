@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>$(AvsCurrentTargetFramework)</TargetFramework>
+    <EnableBrowserCom>true</EnableBrowserCom>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Avalonia.Rust.BrowserCom.TestInterfaces\Avalonia.Rust.BrowserCom.TestInterfaces.csproj" />
+  </ItemGroup>
+  <Import Project="..\..\build\BrowserCom.targets" />
+</Project>

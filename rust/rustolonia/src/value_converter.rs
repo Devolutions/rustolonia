@@ -61,6 +61,7 @@ impl AppScope {
     }
 }
 
+#[cfg_attr(target_os = "emscripten", allow(dead_code))]
 pub(crate) fn clear_value_converter_provider(application: &sys::ComPtr<sys::IAvnApplication>) {
     // Best effort: releasing at shutdown is always valid, including when no
     // provider was ever registered.

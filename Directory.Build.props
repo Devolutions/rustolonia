@@ -13,6 +13,7 @@
     <AvaloniaProducerRoot Condition="'$(AvaloniaProducerRoot)' == ''">$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)avalonia-src'))</AvaloniaProducerRoot>
     <AvsCurrentTargetFramework>net10.0</AvsCurrentTargetFramework>
     <AvsCurrentWindowsTargetFramework>$(AvsCurrentTargetFramework)-windows</AvsCurrentWindowsTargetFramework>
+    <AvsCurrentBrowserTargetFramework>$(AvsCurrentTargetFramework)-browser</AvsCurrentBrowserTargetFramework>
   </PropertyGroup>
 
   <Import Project="build\AvaloniaPublicKey.props" />

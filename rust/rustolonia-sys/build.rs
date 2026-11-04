@@ -13,6 +13,12 @@ fn main() {
     let abi_fingerprint = host::sha256_hex(&bytes);
     println!("cargo:rustc-env=RUSTOLONIA_ABI_FINGERPRINT={abi_fingerprint}");
 
+    // Browser builds link the Rust app into the .NET WebAssembly host (see
+    // host/Browser), so there is no prebuilt host to stage.
+    if env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("emscripten") {
+        return;
+    }
+
     let config = host::Config {
         version: env::var("CARGO_PKG_VERSION").expect("CARGO_PKG_VERSION"),
         target: env::var("TARGET").expect("TARGET"),

@@ -422,3 +422,127 @@ synchronous Rust callback, because calling an external consumer from inside a
 platform drag loop is not safe. File type associations are packaging metadata
 (template snippets), not application code; MSIX and platform installers remain
 out of scope.
+
+## Browser (WebAssembly)
+
+Avalonia runs in the browser on the .NET WebAssembly runtime (Mono), and so
+does Rustolonia. Browser hosting inverts the desktop architecture:
+
+| | Desktop | Browser |
+| --- | --- | --- |
+| Process owner | the Rust executable | the .NET WebAssembly runtime |
+| Host | NativeAOT `Avalonia.Host` shared library, loaded with `libloading` | `host/Browser/Avalonia.Host.Browser.csproj`, a `Microsoft.NET.Sdk.WebAssembly` app |
+| Rust app | executable | `wasm32-unknown-emscripten` **staticlib** linked into `dotnet.native.wasm` |
+| Entry point | Rust `main` | the host's `Main` calls the Rust `extern "C" fn rustolonia_main()` |
+| Host exports | resolved with `dlsym` | resolved statically by `wasm-ld` (`Host::load_static`) |
+| Lifetime | classic desktop, `App::run` blocks | single view in `<div id="out">`, `App::run` returns once started |
+
+### Requirements
+
+- `rustup target add wasm32-unknown-emscripten`
+- the .NET 10 SDK with the `wasm-tools` workload
+  (`dotnet workload install wasm-tools`); it brings the Emscripten SDK and
+  `llvm-objcopy` used below
+- network access on the first build: Avalonia.Browser bundles its JavaScript
+  modules (`avalonia.js`) with Bun, which it runs through `dnx` from NuGet
+
+### Build and run
+
+```powershell
+pwsh rust/build-browser.ps1 -Serve            # the bundled counter sample
+pwsh rust/build-browser.ps1 -Package my-app   # any staticlib crate in the workspace
+```
+
+The script:
+
+1. builds the crate for `wasm32-unknown-emscripten` with `panic = "abort"`,
+   because Rust's default unwinding uses wasm exception handling that the
+   .NET runtime's Emscripten link does not enable;
+2. removes the `target_features` section from the archive with
+   `llvm-objcopy`, because the .NET runtime's `wasm-ld` rejects objects that
+   declare features it was not built with (for example `bulk-memory` from
+   recent Rust toolchains), writing `rust/target/browser/rustolonia_app.a`;
+3. bundles Avalonia.Browser's JavaScript modules (`BunRunBuild`);
+4. publishes the browser host with `NativeFileReference` to the archive into
+   `rust/target/browser/publish/wwwroot`, which any static file server can
+   serve. `-Serve` starts `python3 -m http.server` on `-Port` (default 8080).
+
+`-DotnetArgs` forwards extra arguments (for example `-p:RestoreConfigFile=...`)
+to the `dotnet` invocations. The host project accepts
+`-p:RustoloniaBrowserApp=<path to rustolonia_app.a>` directly; the archive
+file name must be `rustolonia_app.a` because the host imports
+`rustolonia_main` from the `rustolonia_app` module.
+
+### Application shape
+
+A browser app is a `staticlib` crate exporting `rustolonia_main`. It shows its
+UI with `AppScope::set_main_view` instead of a window:
+
+```rust
+#[no_mangle]
+pub extern "C" fn rustolonia_main() -> i32 {
+    match App::load_from_env().and_then(|app| app.run(build_ui)) {
+        Ok(()) => 0,
+        Err(_) => -1,
+    }
+}
+
+fn build_ui(scope: &AppScope) -> Result<()> {
+    let root = StackPanel::new()?;
+    // ... build controls and subscribe to events ...
+    scope.set_main_view(&root)
+}
+```
+
+`set_main_view` uses the separately versioned `IAvnApplication13` capability
+(IID `6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DA8`), which is outside the generated
+ABI header and fingerprint. It returns `E_NOTIMPL` on desktop hosts, whose
+lifetime has no main view. On the browser `App::run` returns as soon as the single-view lifetime has
+started, so the startup callback runs later on the page's event loop. The
+control factory, the application scope (and every subscription it retains)
+and the host stay alive for the lifetime of the page. See
+`rust/browser-sample` for a complete example.
+
+### COM interop on the browser runtime
+
+The host and interop assemblies use source-generated COM
+(`[GeneratedComInterface]`, `[GeneratedComClass]`, `ComWrappers`), which the
+.NET WebAssembly runtime does not support. For the browser target framework,
+`build/BrowserCom.targets` compiles shadow copies of the
+`System.Runtime.InteropServices.Marshalling` types that the generator targets
+(`interop/Avalonia.Rust.BrowserCom/Shadow`) and references
+`Avalonia.Rust.BrowserCom`, a small COM runtime that builds the managed object
+wrappers and native object proxies from the generator's own vtables. A build-time
+generator adapts the .NET SDK's COM source generator and emits the proxy types,
+interface registrations and class registrations ahead of time. The deployed COM
+shim does not emit types, scan assemblies or discover attributes at runtime.
+The generator loads the SDK generator in the compiler process; that build-time
+reflection is not part of the browser app.
+
+The ABI seen by Rust is identical on both platforms. Optional casts between
+versioned interfaces continue to follow `QueryInterface`: the generator emits
+a proxy for each possible combination of supported interfaces in a family.
+This has an exponential build-time and size cost (the 13-interface application
+family needs 8,191 proxy types); families are currently limited to 16
+interfaces and produce a build error beyond that limit. Projects that implement
+or consume Rustolonia COM interfaces must multi-target
+`$(AvsCurrentBrowserTargetFramework)` and import `BrowserCom.targets`, so their
+registrations and all referenced interface families are available at build time.
+Families split across assemblies that are not referenced by the browser host
+cannot be combined dynamically.
+
+Removing runtime reflection from this shim does not make browser NativeAOT a
+supported .NET target. The current browser host still uses Mono WebAssembly
+and requires the .NET SDK and `wasm-tools` to build.
+
+### Limitations
+
+- The page has a single view: windows, the tray icon and other
+  desktop-lifetime features are unavailable, and creating a `Window` fails.
+- WebAssembly threads are disabled (`WasmEnableThreads=false`), so Rust code
+  must not spawn `std::thread`s; use the UI-thread async runtime instead.
+- Generated MVVM presentation projects are not yet built for the browser
+  target framework; the browser host supports code-first applications.
+- The host renders into the element with id `out`
+  (`AvnApplication.BrowserMainDivId`); customize `host/Browser/wwwroot`
+  to restyle the page or its splash screen.
