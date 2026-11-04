@@ -34,10 +34,10 @@ public static class Exports
             return HResults.S_OK;
         }
 
-        catch
+        catch (Exception e)
         {
             *factory = 0;
-            return HResults.E_FAIL;
+            return AbiError.Capture(e);
         }
     }
 

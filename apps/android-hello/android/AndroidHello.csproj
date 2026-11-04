@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The APK for android-hello: the Rustolonia Android host plus this app's
+    Rust cdylib. Build with rust/build-android.ps1, which compiles the Rust
+    library for each ABI first; RustTargetDir points at that Cargo target dir.
+  -->
+  <PropertyGroup>
+    <TargetFramework>$(AvsCurrentTargetFramework)-android36.0</TargetFramework>
+    <SupportedOSPlatformVersion>24.0</SupportedOSPlatformVersion>
+    <OutputType>Exe</OutputType>
+    <Nullable>enable</Nullable>
+    <ApplicationId>net.devolutions.rustolonia.androidhello</ApplicationId>
+    <ApplicationTitle>Rustolonia Hello</ApplicationTitle>
+    <ApplicationVersion>1</ApplicationVersion>
+    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    <AndroidPackageFormat>apk</AndroidPackageFormat>
+    <!--
+      The host's nano-COM ABI is built on ComWrappers ([GeneratedComInterface]),
+      which Mono does not implement (PlatformNotSupportedException). CoreCLR on
+      Android (.NET 10+) does; arm64 and x64 are the ABIs it supports.
+    -->
+    <UseMonoRuntime>false</UseMonoRuntime>
+    <!-- rust/build-android.ps1 installs with adb, so Debug APKs must be self-contained too (no Fast Deployment). -->
+    <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
+    <!-- rust/build-android.ps1 narrows this to the ABIs it built (+-separated, and not as a global property, which would leak into referenced net10.0 projects). -->
+    <RuntimeIdentifiers Condition="'$(RustoloniaAndroidRuntimeIdentifiers)' != ''">$([MSBuild]::Unescape($(RustoloniaAndroidRuntimeIdentifiers.Replace('+', ';'))))</RuntimeIdentifiers>
+    <RuntimeIdentifiers Condition="'$(RuntimeIdentifiers)' == ''">android-arm64;android-x64</RuntimeIdentifiers>
+    <!-- Xamarin.AndroidX assemblies are not strong-named. -->
+    <NoWarn>$(NoWarn);CS8002</NoWarn>
+    <RustCrateLibrary>android_hello</RustCrateLibrary>
+    <RustTargetDir Condition="'$(RustTargetDir)' == ''">$(MSBuildThisFileDirectory)..\target</RustTargetDir>
+    <RustProfile Condition="'$(RustProfile)' == ''">release</RustProfile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\host\Android\Avalonia.Host.Android.csproj" />
+  </ItemGroup>
+
+  <!-- One Rust library per Android ABI; the APK keeps the name lib<crate>.so. -->
+  <ItemGroup>
+    <AndroidNativeLibrary Include="$(RustTargetDir)\aarch64-linux-android\$(RustProfile)\lib$(RustCrateLibrary).so" Abi="arm64-v8a"
+                          Condition="Exists('$(RustTargetDir)\aarch64-linux-android\$(RustProfile)\lib$(RustCrateLibrary).so')" />
+    <AndroidNativeLibrary Include="$(RustTargetDir)\x86_64-linux-android\$(RustProfile)\lib$(RustCrateLibrary).so" Abi="x86_64"
+                          Condition="Exists('$(RustTargetDir)\x86_64-linux-android\$(RustProfile)\lib$(RustCrateLibrary).so')" />
+  </ItemGroup>
+
+  <Target Name="RequireRustAndroidLibrary" BeforeTargets="Build">
+    <Error Condition="'@(AndroidNativeLibrary)' == ''"
+           Text="No Rust library found under '$(RustTargetDir)'. Build with rust/build-android.ps1, or run cargo build --$(RustProfile) --target x86_64-linux-android (or aarch64-linux-android) first." />
+  </Target>
+</Project>

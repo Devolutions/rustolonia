@@ -17,12 +17,12 @@ namespace Avalonia.Host.Com;
 [GeneratedComClass]
 public partial class AvnApplication : IAvnApplication, IAvnApplication2
 {
-#if AVN_HOST_BROWSER
-    // The browser runs a single-view lifetime; the desktop lifetime stays unset.
+#if AVN_HOST_BROWSER || AVN_HOST_ANDROID
+    // Single-view hosts (browser, Android) never set the desktop lifetime.
 #pragma warning disable CS0649
 #endif
     private ClassicDesktopStyleApplicationLifetime? _lifetime;
-#if AVN_HOST_BROWSER
+#if AVN_HOST_BROWSER || AVN_HOST_ANDROID
 #pragma warning restore CS0649
 #endif
     private readonly AvnAsyncOperations _asyncOperations = new();
@@ -67,6 +67,27 @@ public partial class AvnApplication : IAvnApplication, IAvnApplication2
         catch (Exception e)
         {
             Console.Error.WriteLine($"Rustolonia browser host failed to start: {e}");
+        }
+    }
+#elif AVN_HOST_ANDROID
+    // The Android activity owns the UI loop and Avalonia is already set up by
+    // RustoloniaAndroidApplication when the Rust entry point calls Run on the
+    // UI thread, so Run only starts the Rust application and returns.
+    public int Run(IAvnAppHandler? handler)
+    {
+        if (handler is null)
+            return HResults.E_POINTER;
+        try
+        {
+            Dispatcher.UIThread.VerifyAccess();
+            // A failing startup callback returns the HRESULT of the host call
+            // that failed; keep that call's captured error message for the caller.
+            var started = handler.OnStarted();
+            return started < 0 ? started : HResults.S_OK;
+        }
+        catch (Exception e)
+        {
+            return AbiError.Capture(e);
         }
     }
 #else
@@ -130,6 +151,21 @@ public partial class AvnApplication : IAvnApplication, IAvnApplication2
             platform?.Dispose();
     }
 
+#if AVN_HOST_ANDROID
+    public int Shutdown()
+    {
+        try
+        {
+            _asyncOperations.CancelAll();
+            Android.AndroidWindowPresenter.Shutdown();
+            return HResults.S_OK;
+        }
+        catch (Exception e)
+        {
+            return AbiError.Capture(e);
+        }
+    }
+#else
     public int Shutdown()
     {
 #if AVN_HOST_IOS
@@ -147,6 +183,7 @@ public partial class AvnApplication : IAvnApplication, IAvnApplication2
         }
 #endif
     }
+#endif
 
     public int StartDelay(
             int milliseconds,

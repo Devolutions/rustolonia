@@ -161,6 +161,23 @@ fn maps_supported_targets_to_rids() {
 }
 
 #[test]
+fn android_targets_skip_host_resolution() {
+    let cache = TempDir::new();
+    for target in ["aarch64-linux-android", "x86_64-linux-android"] {
+        assert!(is_embedded_host_target(target), "{target}");
+        let mut config = config(&cache.0);
+        config.target = target.into();
+        // Even an explicit host directory is ignored: the APK carries the host.
+        config.host_dir = Some(cache.0.join("missing"));
+        assert!(
+            matches!(resolve(&config), Ok(Resolution::Skipped(_))),
+            "{target}"
+        );
+    }
+    assert!(!is_embedded_host_target(TARGET));
+}
+
+#[test]
 fn builds_asset_urls() {
     assert_eq!(
         asset_url("https://example.test/dl/", "0.1.0", "osx-arm64"),

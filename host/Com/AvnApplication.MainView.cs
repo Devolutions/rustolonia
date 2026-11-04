@@ -13,6 +13,18 @@ public partial class AvnApplication : IAvnApplication13
     {
         try
         {
+#if AVN_HOST_ANDROID
+            // The activity's root is the window presenter; it shows the main
+            // view whenever no window is (see Android/AndroidWindowPresenter).
+            Dispatcher.UIThread.VerifyAccess();
+            var androidView = view is null
+                ? null
+                : (Control?)ProjectionRuntime.Unwrap(view) ?? throw new ObjectDisposedException(nameof(view));
+            if (androidView is Window)
+                return HResults.E_INVALIDARG;
+            Android.AndroidWindowPresenter.SetMainView(androidView);
+            return HResults.S_OK;
+#else
             if (Application.Current?.ApplicationLifetime is not ISingleViewApplicationLifetime lifetime)
                 return HResults.E_NOTIMPL;
             Dispatcher.UIThread.VerifyAccess();
@@ -39,6 +51,7 @@ public partial class AvnApplication : IAvnApplication13
                 throw;
             }
             return HResults.S_OK;
+#endif
         }
         catch (Exception e)
         {

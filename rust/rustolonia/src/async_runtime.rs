@@ -218,7 +218,8 @@ impl TaskScope {
         task.schedule()
     }
 
-    #[cfg_attr(target_os = "emscripten", allow(dead_code))]
+    // Single-view hosts (browser, Android) keep the session for the process lifetime.
+    #[cfg_attr(any(target_os = "emscripten", target_os = "android"), allow(dead_code))]
     pub(crate) fn clear(&self) {
         let tasks = {
             let mut state = self.state.lock().expect("task scope lock poisoned");

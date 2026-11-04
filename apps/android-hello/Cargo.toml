@@ -1,0 +1,21 @@
+[package]
+name = "android-hello"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "A code-first Rustolonia app that runs on Android and the desktop from one UI module"
+
+# The cdylib is what the APK packages (libandroid_hello.so); the rlib lets
+# the desktop binary in src/main.rs reuse the same `ui` module.
+[lib]
+name = "android_hello"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "android-hello"
+path = "src/main.rs"
+
+[dependencies]
+rustolonia = { path = "../../rust/rustolonia" }
+
+[workspace]

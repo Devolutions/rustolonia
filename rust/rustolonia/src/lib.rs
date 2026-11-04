@@ -1,5 +1,6 @@
 #[rustfmt::skip]
 mod generated;
+pub mod android;
 mod async_runtime;
 pub mod clipboard;
 pub mod data_shapes;

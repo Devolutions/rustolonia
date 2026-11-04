@@ -380,7 +380,8 @@ impl AppScope {
         &self.context.application
     }
 
-    #[cfg_attr(target_os = "emscripten", allow(dead_code))]
+    // Single-view hosts (browser, Android) keep the session for the process lifetime.
+    #[cfg_attr(any(target_os = "emscripten", target_os = "android"), allow(dead_code))]
     fn clear(&self) {
         crate::reactive::clear_reactive_runtime();
         self.state.tasks.clear();
@@ -676,8 +677,14 @@ impl App {
         self
     }
 
-    /// Runs a desktop application lifetime. On iOS, use
-    /// [`App::start_single_view`] instead.
+    /// Starts the application and calls `callback` once the UI is ready.
+    ///
+    /// On desktop this blocks until the application shuts down. In the
+    /// browser and on Android the host owns the UI loop instead: `run`
+    /// returns once the application has started (on Android after `callback`
+    /// has run; in the browser the callback runs later on the page's event
+    /// loop), and the application stays alive for the rest of the process
+    /// or page. On iOS, use [`App::start_single_view`] instead.
     pub fn run(
         self,
         callback: impl FnOnce(&AppScope) -> Result<()> + Send + 'static,
@@ -699,12 +706,13 @@ impl App {
             .clone()
             .unwrap_or_else(process_startup_arguments);
         publish_startup_arguments(&self.application, &arguments)?;
-        // In the browser the host's Run starts the single-view lifetime and
-        // returns immediately; the JavaScript event loop then drives the UI.
-        // The control factory, scope and host stay alive for the page lifetime:
-        // the startup callback releases its scope clone once it returns, so
-        // this one keeps the retained subscriptions and objects registered.
-        #[cfg(target_os = "emscripten")]
+        // Single-view hosts own the UI loop: in the browser the JavaScript event
+        // loop, on Android the activity's main thread. Their Run starts the
+        // application and returns immediately. The control factory, scope and
+        // host stay alive for the page or process lifetime: the startup callback
+        // releases its scope clone once it returns, so this one keeps the
+        // retained subscriptions and objects registered.
+        #[cfg(any(target_os = "emscripten", target_os = "android"))]
         {
             FACTORY.with(|current| current.replace(Some(controls)));
             let result = self.application.run(&handler);
@@ -713,7 +721,7 @@ impl App {
             std::mem::forget(self);
             Ok(result?)
         }
-        #[cfg(not(target_os = "emscripten"))]
+        #[cfg(not(any(target_os = "emscripten", target_os = "android")))]
         FACTORY.with(|current| {
             let previous = current.replace(Some(controls));
             let result = self.application.run(&handler);
@@ -732,6 +740,11 @@ impl App {
 /// invalid part of a path is a far better outcome than panicking before the
 /// application has even started, so the bytes are converted lossily instead.
 fn process_startup_arguments() -> Vec<String> {
+    // An Android process is forked from the zygote; its argv is not the
+    // application's. Intents are the activation mechanism there.
+    if cfg!(target_os = "android") {
+        return Vec::new();
+    }
     std::env::args_os()
         .skip(1)
         .map(|argument| argument.to_string_lossy().into_owned())
