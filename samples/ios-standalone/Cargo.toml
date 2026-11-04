@@ -1,0 +1,16 @@
+[package]
+name = "rustolonia-ios-standalone"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["staticlib"]
+
+[features]
+smoke = []
+
+[dependencies]
+rustolonia = { path = "../../rust/rustolonia", default-features = false }
+
+[workspace]

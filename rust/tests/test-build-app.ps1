@@ -622,6 +622,8 @@ Add-Content -LiteralPath (Join-Path $PSScriptRoot 'signatures.log') -Value $Arti
     New-Item -ItemType Directory -Path $inventory | Out-Null
     [IO.File]::WriteAllBytes((Join-Path $inventory 'z.bin'), [byte[]](0x7A))
     [IO.File]::WriteAllBytes((Join-Path $inventory 'a.bin'), [byte[]](0x61))
+    New-Item -ItemType Directory -Path (Join-Path $inventory 'nested') | Out-Null
+    [IO.File]::WriteAllBytes((Join-Path $inventory 'nested' 'asset.bin'), [byte[]](0x62))
     Set-Content -LiteralPath (Join-Path $inventory '.hidden-metadata') -Value 'inventory metadata'
     & (Join-Path $root 'rust' 'generate-sbom.ps1') -Rid win-x64 -Bundle $inventory
     $first = [IO.File]::ReadAllBytes((Join-Path $inventory 'sbom.cdx.json'))
@@ -630,6 +632,7 @@ Add-Content -LiteralPath (Join-Path $PSScriptRoot 'signatures.log') -Value $Arti
     Assert-True ([Linq.Enumerable]::SequenceEqual($first, $second)) 'Delivery inventory must be repeatable.'
     $sbom = Get-Content -LiteralPath (Join-Path $inventory 'sbom.cdx.json') -Raw | ConvertFrom-Json
     Assert-True ($sbom.components.name -contains '.hidden-metadata') 'Delivery inventory must include hidden metadata on every OS.'
+    Assert-True ($sbom.components.name -contains 'nested/asset.bin') 'Delivery inventory must include files inside framework bundles.'
     Write-Checksums -Bundle $inventory
     Assert-True (@(Get-Content -LiteralPath (Join-Path $inventory 'checksums.sha256') | Where-Object { $_.EndsWith('*.hidden-metadata') }).Count -eq 1) 'Checksums must include hidden metadata on every OS.'
 
@@ -665,6 +668,7 @@ version = "0.1.0"
 
     # Prebuilt host release assets consumed by rustolonia-sys/build.rs.
     Assert-True ((Get-HostAssetName -Version '1.2.3' -Rid linux-arm64) -eq 'rustolonia-host-1.2.3-linux-arm64.tar.gz') 'Host asset names must match rustolonia-sys/build.rs.'
+    Assert-True ((Get-HostAssetName -Version '1.2.3' -Rid iossimulator-arm64) -eq 'rustolonia-host-1.2.3-iossimulator-arm64.tar.gz') 'iOS host asset names must follow the release convention.'
     Assert-True ((Get-HostAssetName -Version '1.2.3' -Rid osx-x64 -Flavor devtools -Symbols) -eq 'rustolonia-host-1.2.3-osx-x64-devtools-symbols.tar.gz') 'Host asset names must encode flavor and symbols.'
     Assert-Throws { Get-HostAssetName -Version '1.2.3' -Rid 'freebsd-x64' } 'Unsupported RID'
     $releaseVersion = Get-RustoloniaReleaseVersion -RustoloniaRoot $root
@@ -705,6 +709,24 @@ version = "0.1.0"
     $assetHash = Write-AssetChecksum -Asset $archiveA
     Assert-True ((Get-Content -LiteralPath "$archiveA.sha256" -Raw) -eq "$assetHash  host-a.tar.gz`n") 'Checksum sidecars must use sha256sum format.'
 
+    New-Item -ItemType Directory -Path (Join-Path $hostStage 'nested') | Out-Null
+    Set-Content -LiteralPath (Join-Path $hostStage 'nested' 'framework-bin') -Value 'binary' -NoNewline
+    $modeArchive = Join-Path $scratch 'host-modes.tar.gz'
+    New-DeterministicTarGz -SourceDirectory $hostStage -RelativePaths @('LICENSE', 'nested/framework-bin') `
+        -ExecutablePaths @('nested/framework-bin') -Destination $modeArchive
+    $gzipStream = [IO.Compression.GZipStream]::new([IO.File]::OpenRead($modeArchive), [IO.Compression.CompressionMode]::Decompress)
+    try {
+        $tarReader = [Formats.Tar.TarReader]::new($gzipStream)
+        try {
+            $modes = @{}
+            while ($entry = $tarReader.GetNextEntry()) { $modes[$entry.Name] = $entry.Mode }
+            Assert-True (($modes['nested/framework-bin'] -band [IO.UnixFileMode]::UserExecute) -ne 0) 'Explicit framework binaries must retain executable mode.'
+            Assert-True (($modes['LICENSE'] -band [IO.UnixFileMode]::UserExecute) -eq 0) 'Ordinary archive files must not become executable.'
+        }
+        finally { $tarReader.Dispose() }
+    }
+    finally { $gzipStream.Dispose() }
+
     $releaseRoot = Join-Path $scratch 'release-root'
     foreach ($relative in @('rust/rustolonia/Cargo.toml', 'rust/rustolonia-sys/Cargo.toml', 'rust/rustolonia-bindgen/Cargo.toml', 'rust/release-manifest.json', 'build/SharedVersion.props', 'rust/rustolonia-sys/host-checksums.txt')) {
         $destination = Join-Path $releaseRoot $relative
@@ -720,14 +742,45 @@ version = "0.1.0"
         "$('a' * 64)  $(Get-HostAssetName -Version '9.8.7-rc.1' -Rid $rid)"
         "$('b' * 64)  $(Get-HostAssetName -Version '9.8.7-rc.1' -Rid $rid -Symbols)"
     }
+    $sumsLines += foreach ($rid in $script:IosHostRids) {
+        "$('c' * 64)  $(Get-HostAssetName -Version '9.8.7-rc.1' -Rid $rid)"
+    }
     $sumsFile = Join-Path $scratch 'SHA256SUMS'
     [IO.File]::WriteAllLines($sumsFile, [string[]]$sumsLines)
     & $prepareRelease -Checksums -SumsFile $sumsFile -RustoloniaRoot $releaseRoot | Out-Null
     $checksumLines = @(Get-Content -LiteralPath (Join-Path $releaseRoot 'rust/rustolonia-sys/host-checksums.txt') | Where-Object { $_ -and -not $_.StartsWith('#') })
-    Assert-True ($checksumLines.Count -eq 6) 'host-checksums.txt must list every default host tarball.'
+    Assert-True ($checksumLines.Count -eq 9) 'host-checksums.txt must list every default desktop and iOS host tarball.'
     Assert-True (@($checksumLines | Where-Object { $_ -like '*symbols*' }).Count -eq 0) 'host-checksums.txt must not list symbol tarballs.'
     [IO.File]::WriteAllLines($sumsFile, [string[]]($sumsLines | Select-Object -Skip 2))
     Assert-Throws { & $prepareRelease -Checksums -SumsFile $sumsFile -RustoloniaRoot $releaseRoot } 'no entry for rustolonia-host-9\.8\.7-rc\.1-win-x64'
+    [IO.File]::WriteAllLines($sumsFile, [string[]]($sumsLines | Where-Object { $_ -notlike '*iossimulator-arm64.tar.gz' }))
+    Assert-Throws { & $prepareRelease -Checksums -SumsFile $sumsFile -RustoloniaRoot $releaseRoot } 'no entry for rustolonia-host-9\.8\.7-rc\.1-iossimulator-arm64'
+
+    function Invoke-ChecksumsFromTestRelease([string]$ReleaseSums) {
+        function gh {
+            $destinationIndex = [Array]::IndexOf($args, '--dir') + 1
+            if ($destinationIndex -lt 1 -or $destinationIndex -ge $args.Count) { throw 'Missing gh download directory.' }
+            Copy-Item -LiteralPath $ReleaseSums -Destination (Join-Path $args[$destinationIndex] 'SHA256SUMS')
+        }
+        & $prepareRelease -Checksums -FromRelease -RustoloniaRoot $releaseRoot
+    }
+
+    [IO.File]::WriteAllLines($sumsFile, [string[]]$sumsLines)
+    $releaseWarnings = @(Invoke-ChecksumsFromTestRelease $sumsFile 3>&1 | Where-Object { $_ -is [System.Management.Automation.WarningRecord] })
+    Assert-True ($releaseWarnings.Count -eq 0) 'Recovering a complete release must not warn about missing iOS hosts.'
+    $checksumLines = @(Get-Content -LiteralPath (Join-Path $releaseRoot 'rust/rustolonia-sys/host-checksums.txt') | Where-Object { $_ -and -not $_.StartsWith('#') })
+    Assert-True ($checksumLines.Count -eq 9) 'Complete release recovery must retain the desktop and iOS hosts.'
+
+    $desktopOnlySums = @($sumsLines | Where-Object { $_ -notlike '*-ios*.tar.gz' })
+    [IO.File]::WriteAllLines($sumsFile, [string[]]$desktopOnlySums)
+    $releaseWarnings = @(Invoke-ChecksumsFromTestRelease $sumsFile 3>&1 | Where-Object { $_ -is [System.Management.Automation.WarningRecord] })
+    Assert-True ($releaseWarnings.Count -eq 1 -and $releaseWarnings[0].Message -match 'legacy desktop-only') 'Recovering a legacy release must warn that it has no iOS hosts.'
+    $checksumLines = @(Get-Content -LiteralPath (Join-Path $releaseRoot 'rust/rustolonia-sys/host-checksums.txt') | Where-Object { $_ -and -not $_.StartsWith('#') })
+    Assert-True ($checksumLines.Count -eq 6) 'Legacy release recovery must retain the desktop hosts.'
+    Assert-Throws { & $prepareRelease -Checksums -SumsFile $sumsFile -RustoloniaRoot $releaseRoot } 'no entry for rustolonia-host-9\.8\.7-rc\.1-ios-arm64'
+
+    [IO.File]::WriteAllLines($sumsFile, [string[]]($sumsLines | Where-Object { $_ -notlike '*iossimulator-arm64.tar.gz' }))
+    Assert-Throws { Invoke-ChecksumsFromTestRelease $sumsFile } 'no entry for rustolonia-host-9\.8\.7-rc\.1-iossimulator-arm64'
 
     # phase=all commits the checksums on the build source and tags it.
     [IO.File]::WriteAllLines($sumsFile, [string[]]$sumsLines)
@@ -742,9 +795,10 @@ version = "0.1.0"
     $releaseSource = (& git -C $releaseRoot rev-parse HEAD).Trim()
     Assert-Throws { & $prepareRelease -Checksums -SumsFile $sumsFile -RustoloniaRoot $releaseRoot -SourceRevision $releaseSource } 'only used with -CommitAndTag'
     $propsPath = Join-Path $releaseRoot 'build/SharedVersion.props'
+    $cleanProps = [IO.File]::ReadAllBytes($propsPath)
     Add-Content -LiteralPath $propsPath -Value '<!-- dirty -->'
     Assert-Throws { & $prepareRelease -Checksums -SumsFile $sumsFile -CommitAndTag -SourceRevision $releaseSource -RustoloniaRoot $releaseRoot } 'working tree has changes'
-    & git -C $releaseRoot checkout --quiet -- build/SharedVersion.props
+    [IO.File]::WriteAllBytes($propsPath, $cleanProps)
     & $prepareRelease -Checksums -SumsFile $sumsFile -CommitAndTag -SourceRevision $releaseSource -RustoloniaRoot $releaseRoot | Out-Null
     Assert-True ((& git -C $releaseRoot rev-parse 'HEAD^').Trim() -eq $releaseSource) 'The checksum commit must sit directly on the build source.'
     Assert-True ((& git -C $releaseRoot rev-parse 'v9.8.7-rc.1^{commit}').Trim() -eq (& git -C $releaseRoot rev-parse HEAD).Trim()) 'The release tag must point at the checksum commit.'

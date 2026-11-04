@@ -66,10 +66,12 @@ The prebuilt release covers code-first applications. Applications with
 compiled AXAML and view-model IR still build their own host from a source
 checkout.
 
-The [iOS sample](../../samples/ios/README.md) demonstrates an experimental,
-source-built NativeAOT host with an iOS-owned single-view lifetime. It does not
-use desktop host discovery or prebuilt host assets, and desktop-only window
-and shell APIs are not supported on iOS.
+The experimental [standalone iOS sample](https://github.com/Devolutions/rustolonia/tree/master/samples/ios-standalone)
+uses a Rust static library and a prebuilt NativeAOT host, without building C#
+or installing .NET on the consumer machine. It requires a future release
+containing the iOS host assets; existing releases do not have them. iOS owns
+the single-view lifetime and does not use desktop host discovery. Desktop-only
+window and shell APIs are not supported.
 
 Two things the projected controls cannot express are covered from Rust
 directly: `pixel_surface::PixelSurface` is a control that draws bitmap layers

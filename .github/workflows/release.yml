@@ -204,9 +204,73 @@ jobs:
           path: rust/artifacts/host/*.tar.gz
           if-no-files-found: error
 
+  build-ios:
+    name: iOS host (${{ matrix.rid }})
+    needs: version
+    runs-on: macos-26
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+      CARGO_HOME: ${{ runner.temp }}/rustolonia-cargo
+      VERSION: ${{ needs.version.outputs.version }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { rid: iossimulator-arm64, rust-target: aarch64-apple-ios-sim, mode: simulator-arm64 }
+          - { rid: iossimulator-x64, rust-target: x86_64-apple-ios, mode: simulator-x64 }
+          - { rid: ios-arm64, rust-target: aarch64-apple-ios, mode: device }
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          submodules: recursive
+
+      - name: Apply Avalonia source patches
+        shell: pwsh
+        run: ./avalonia-patches/apply-avalonia-patches.ps1 -AvaloniaRoot ./avalonia-src
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.403
+
+      - name: Install iOS workloads
+        run: dotnet workload install ios maccatalyst tvos --version 10.0.401
+
+      - name: Set up Rust
+        run: |
+          set -euo pipefail
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+            | bash -s -- -y --default-toolchain none --no-modify-path --profile minimal
+          echo "$CARGO_HOME/bin" >> "$GITHUB_PATH"
+
+      - name: Install the Rust target
+        run: rustup target add ${{ matrix.rust-target }}
+
+      - name: Package the production iOS host
+        shell: pwsh
+        run: ./rust/package-ios-host.ps1 -Rid ${{ matrix.rid }} -OutputRoot rust/artifacts/host
+
+      - name: Build a standalone Rust app without .NET
+        shell: bash
+        run: |
+          set -euo pipefail
+          export RUSTOLONIA_IOS_HOST_ARCHIVE="$GITHUB_WORKSPACE/rust/artifacts/host/rustolonia-host-$VERSION-${{ matrix.rid }}.tar.gz"
+          export PATH="$CARGO_HOME/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+          if command -v dotnet; then
+            echo "The Rust-only consumer check must not have dotnet on PATH." >&2
+            exit 1
+          fi
+          ./rust/tests/test-ios-standalone.sh "$RUSTOLONIA_IOS_HOST_ARCHIVE" '${{ matrix.mode }}'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rustolonia-host-${{ matrix.rid }}
+          path: rust/artifacts/host/*.tar.gz
+          if-no-files-found: error
+
   stage-release:
     name: stage release artifacts
-    needs: [version, build]
+    needs: [version, build, build-ios]
     runs-on: ubuntu-22.04
     permissions:
       contents: read

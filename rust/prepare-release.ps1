@@ -12,7 +12,7 @@ Two steps, each followed by a commit:
      the exact `rustolonia-sys` pin in rustolonia, `rustoloniaVersion` in
      rust/release-manifest.json and <Version> in build/SharedVersion.props,
      clears rust/rustolonia-sys/host-checksums.txt and refreshes Cargo.lock
-     (and the crates' entries in the in-repository apps' lock files).
+     (and the crates' entries in the in-repository apps' and samples' lock files).
      Commit to master, then dispatch .github/workflows/release.yml. With
      phase=all (the default) that one run does everything below; with
      phase=build it only stages host tarballs and SHA256SUMS as artifacts.
@@ -20,7 +20,8 @@ Two steps, each followed by a commit:
   2. -Checksums (-SumsFile <SHA256SUMS> | -FromRelease)
      Writes host-checksums.txt from SHA256SUMS (symbol tarballs are left out).
      For initial publication use -SumsFile from the staged build artifact.
-     -FromRelease reads an existing v<x.y.z> release.
+     -FromRelease reads an existing v<x.y.z> release and accepts legacy
+     releases without any iOS hosts, with a warning.
      Commit, then push `v<x.y.z>` on this commit. Dispatch phase=publish
      with build_run_id to create the GitHub release (non-draft by default).
      crates.io publishing and draft releases are opt-in.
@@ -88,10 +89,10 @@ if ($PSCmdlet.ParameterSetName -eq 'Version') {
 
     if (-not $SkipCargoUpdate) {
         & cargo update --workspace --manifest-path (Join-Path $root 'rust' 'Cargo.toml')
-        # The in-repository apps use the crates by path with their own lock
+        # The in-repository apps and samples use the crates by path with their own lock
         # files; only the crates' own entries move (CI builds them --locked).
-        # Lock files without rustolonia (an app's other workspaces) stay.
-        foreach ($lock in @(& git -C $root ls-files 'apps/*Cargo.lock' 'apps/**/Cargo.lock' | Sort-Object -Unique)) {
+        # Lock files without rustolonia (other workspaces) stay.
+        foreach ($lock in @(& git -C $root ls-files 'apps/*Cargo.lock' 'apps/**/Cargo.lock' 'samples/**/Cargo.lock' | Sort-Object -Unique)) {
             $manifest = Join-Path $root (Split-Path -Parent $lock) 'Cargo.toml'
             $usesRustolonia = Select-String -LiteralPath (Join-Path $root $lock) -Pattern '^name = "rustolonia"$' -Quiet
             if ($usesRustolonia -and (Test-Path -LiteralPath $manifest)) {
@@ -141,7 +142,17 @@ foreach ($line in $sumsLines) {
     if ($name -notlike "rustolonia-host-$version-*.tar.gz" -or $name -like '*-symbols.tar.gz') { continue }
     $entries[$name] = $hash
 }
-foreach ($rid in $script:RidTargets.Keys) {
+$requiredRids = @($script:RidTargets.Keys)
+$hasIosAssets = @($script:IosHostRids | Where-Object {
+    $entries.Contains((Get-HostAssetName -Version $version -Rid $_))
+}).Count -gt 0
+if ($FromRelease -and -not $hasIosAssets) {
+    Write-Warning "Release v$version has no iOS host checksums; treating it as a legacy desktop-only release."
+}
+else {
+    $requiredRids += $script:IosHostRids
+}
+foreach ($rid in $requiredRids) {
     $asset = Get-HostAssetName -Version $version -Rid $rid
     if (-not $entries.Contains($asset)) { throw "SHA256SUMS has no entry for $asset." }
 }

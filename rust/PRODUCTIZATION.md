@@ -388,13 +388,25 @@ NativeAOT host (or packages an existing `-PublishDirectory`) into
 | `…tar.gz.sha256` | `sha256sum` sidecar |
 | `rustolonia-host-<v>-<rid>[-devtools]-symbols.tar.gz` | `.pdb` / `.dbg` / `.dSYM` symbols, never downloaded by `build.rs` |
 
-`host-manifest.json` begins with `version`, `rid`, and `abiFingerprint` (the
+The desktop `host-manifest.json` begins with `version`, `rid`, and `abiFingerprint` (the
 SHA-256 of `avalonia-rust-abi.h`), which `rustolonia-sys` checks after
 extraction; it also records the source revision, producer pin, patches, and
 per-file hashes. Archives are deterministic: sorted entries, uid/gid 0, fixed
 modes, and an mtime from `SOURCE_DATE_EPOCH` (or the HEAD commit time). The
 version comes from `release-manifest.json` and must match all three crates.
 Platform floors for release builds are listed in [PLATFORMS.md](PLATFORMS.md#prebuilt-host-platform-floors).
+
+For experimental iOS, `rust/package-ios-host.ps1 -Rid <rid>` produces a
+separate archive for `ios-arm64`, `iossimulator-arm64`, or
+`iossimulator-x64`. It contains the production NativeAOT object, generated
+startup and registrar objects, native runtime and graphics dependencies,
+licenses, an SBOM, a version/RID/ABI manifest with recursive file hashes, and
+the native app linker. The simulator app is ad-hoc signed; the final device app
+must be signed and provisioned by its developer. Unlike the desktop host,
+these objects are linked into an app and are not independently installable.
+The [standalone iOS sample](../samples/ios-standalone/README.md) verifies the
+release-pinned archive and builds a Rust UI without the .NET SDK. The iOS
+host build uses NativeAOT runtime and compiler 10.0.14 or newer.
 
 ### Testing the published experience locally
 
@@ -534,14 +546,16 @@ a `build_run_id` whose run succeeded.
 1. Prepare and merge the version as above, then dispatch `phase = build` with
    `version = X.Y.Z`. No build tag or GitHub release is created.
 2. The build checks that the requested version matches every version, packages the
-   default host for all six RIDs (osx-x64 on Apple silicon, launched under
+   default host for all six desktop RIDs (osx-x64 on Apple silicon, launched under
    Rosetta 2; the rest on native runners), builds and launches a
    standalone app against the packaged crates through the `rustolonia-sys`
-   download path (`rust/tests/test-standalone-app.ps1`), and stages an Actions
-   artifact named `rustolonia-release-X.Y.Z` with the six tarballs, their
-   symbols, and `SHA256SUMS`, retained for 90 days. Build provenance attestations
-   are generated for the tarballs. Record the successful run ID. The build
-   fails if the final `vX.Y.Z` tag already exists.
+   download path (`rust/tests/test-standalone-app.ps1`), and builds the three
+   iOS hosts. It launches the standalone Rust sample against the Apple Silicon
+   simulator host and cross-links the other two. It stages an Actions artifact
+   named `rustolonia-release-X.Y.Z` with all nine host tarballs, desktop
+   symbols, and `SHA256SUMS`, retained for 90 days. Build provenance
+   attestations are generated for the tarballs. Record the successful run ID.
+   The build fails if the final `vX.Y.Z` tag already exists.
 3. Download the staged artifact from that run.
    `pwsh rust/prepare-release.ps1 -Checksums -SumsFile <SHA256SUMS>`
    writes the default tarball hashes into
@@ -595,6 +609,8 @@ source change is needed after staging the host build, run a new build before
 tagging. Once the final tag or release exists, use a new version instead of
 mixing changed source with the existing artifacts. `-FromRelease` remains
 available to read checksums from an existing `vX.Y.Z` release, not for staging.
+It warns but accepts older releases with no iOS assets; a partial iOS set is
+rejected. Staged builds always require all three iOS host checksums.
 
 The repository must allow GitHub Actions and the workflow's
 `contents: write` permission to publish the release (and, for `phase = all`,

@@ -3,7 +3,9 @@
 This sample builds an iOS NativeAOT application that owns the UIKit and
 Avalonia single-view lifetime and links the Rust UI as a static library. The
 desktop NativeAOT shared library and its download/discovery mechanism are not
-used.
+used. For a Rust-only consumer that links a prebuilt host without a .NET SDK,
+see the [standalone sample](../ios-standalone/README.md); its iOS assets will
+be available only after a future release.
 
 **Status:** experimental. The sample has run on an Apple Silicon iOS
 simulator, and unsigned ARM64 device and Intel-simulator builds have compiled.

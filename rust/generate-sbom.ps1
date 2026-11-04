@@ -32,18 +32,19 @@ $bundleId = [System.BitConverter]::ToString([System.Security.Cryptography.SHA256
 $serial = "urn:uuid:$($bundleId.Substring(0, 8))-$($bundleId.Substring(8, 4))-5$($bundleId.Substring(12, 3))-8$($bundleId.Substring(15, 3))-$($bundleId.Substring(18, 12))"
 
 $fileComponents = @(
-    Get-ChildItem -LiteralPath $bundlePath -File -Force |
-        Where-Object { $_.Name -notin @('checksums.sha256', 'sbom.cdx.json') } |
-        Sort-Object Name |
+    Get-ChildItem -LiteralPath $bundlePath -File -Force -Recurse |
         ForEach-Object {
+            $relative = [IO.Path]::GetRelativePath($bundlePath, $_.FullName).Replace('\', '/')
+            if ($relative -in @('checksums.sha256', 'sbom.cdx.json')) { return }
             [ordered]@{
                 type       = 'file'
-                name       = $_.Name
+                name       = $relative
                 version    = $Rid
                 hashes     = @([ordered]@{ alg = 'SHA-256'; content = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant() })
-                properties = @([ordered]@{ name = 'avalonia:delivery-path'; value = $_.Name })
+                properties = @([ordered]@{ name = 'avalonia:delivery-path'; value = $relative })
             }
-        }
+        } |
+        Sort-Object { $_.name }
 )
 
 function Get-DependencySourceDescription {

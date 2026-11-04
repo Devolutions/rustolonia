@@ -3,6 +3,7 @@ mod generated;
 mod async_runtime;
 pub mod clipboard;
 pub mod data_shapes;
+pub mod ios;
 pub mod menu;
 pub mod pixel_surface;
 pub mod reactive;

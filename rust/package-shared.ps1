@@ -30,6 +30,8 @@ $script:RidTargets = @{
     'osx-arm64'   = @{ Triple = 'aarch64-apple-darwin'; Platform = 'OSX'; HostExtension = '.dylib'; HostFileName = 'librustolonia_host.dylib'; ExeExtension = ''; OS = 'macOS'; Arch = 'arm64' }
 }
 
+$script:IosHostRids = @('ios-arm64', 'iossimulator-arm64', 'iossimulator-x64')
+
 function Get-RidTargetInfo {
     param(
         [Parameter(Mandatory)][string]$Rid
@@ -763,7 +765,9 @@ function Get-HostAssetName {
         [switch]$Symbols
     )
 
-    $null = Get-RidTargetInfo -Rid $Rid
+    if ($Rid -cnotin $script:IosHostRids) {
+        $null = Get-RidTargetInfo -Rid $Rid
+    }
     $name = "rustolonia-host-$Version-$Rid"
     if ($Flavor -ne 'default') { $name += "-$Flavor" }
     if ($Symbols) { $name += '-symbols' }
@@ -825,7 +829,8 @@ function New-DeterministicTarGz {
         [Parameter(Mandatory)][string]$SourceDirectory,
         [Parameter(Mandatory)][string[]]$RelativePaths,
         [Parameter(Mandatory)][string]$Destination,
-        [long]$Timestamp = 0
+        [long]$Timestamp = 0,
+        [string[]]$ExecutablePaths = @()
     )
 
     # Fixed order, owner, mode and mtime, and no gzip timestamp, so identical inputs
@@ -834,6 +839,7 @@ function New-DeterministicTarGz {
     $mtime = [DateTimeOffset]::FromUnixTimeSeconds($Timestamp)
     $executable = [IO.UnixFileMode]'UserRead, UserWrite, UserExecute, GroupRead, GroupExecute, OtherRead, OtherExecute'
     $regular = [IO.UnixFileMode]'UserRead, UserWrite, GroupRead, OtherRead'
+    $explicitExecutables = @($ExecutablePaths | ForEach-Object { $_.Replace('\', '/') })
     $file = [IO.File]::Create($Destination)
     try {
         $gzip = [IO.Compression.GZipStream]::new($file, [IO.Compression.CompressionLevel]::SmallestSize)
@@ -850,7 +856,8 @@ function New-DeterministicTarGz {
                     $entry.ModificationTime = $mtime
                     $entry.Uid = 0
                     $entry.Gid = 0
-                    $entry.Mode = if ($entryName -match '\.(dll|so|dylib|exe)$|\.so\.|\.dSYM/Contents/Resources/DWARF/') { $executable } else { $regular }
+                    $entry.Mode = if ($entryName -match '\.(dll|so|dylib|exe)$|\.so\.|\.dSYM/Contents/Resources/DWARF/' -or
+                        $entryName -cin $explicitExecutables) { $executable } else { $regular }
                     $stream = [IO.File]::OpenRead($path)
                     try {
                         $entry.DataStream = $stream

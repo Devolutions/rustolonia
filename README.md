@@ -53,9 +53,11 @@ mirrored and locally built hosts.
 Applications with compiled AXAML and Rust view-models still build their own
 host from a source checkout, as described below.
 
-An experimental, source-built iOS single-view host is also available; see the
-[iOS sample](samples/ios/README.md). It statically links Rust into a NativeAOT
-iOS application rather than using the desktop prebuilt host.
+An experimental iOS single-view host is also available. The
+[source-built sample](samples/ios/README.md) compiles the host locally; the
+[standalone Rust sample](samples/ios-standalone/README.md) can link a prebuilt
+NativeAOT iOS host without building C# once a release includes the iOS assets.
+Neither path uses the desktop host discovery mechanism.
 
 For complete standalone starting points using the release, see the
 [app templates](templates/README.md): minimal window, input form, and

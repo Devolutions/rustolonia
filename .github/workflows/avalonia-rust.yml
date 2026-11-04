@@ -51,6 +51,10 @@ jobs:
         shell: pwsh
         run: ./rust/tests/test-build-app.ps1
 
+      - name: Check iOS host validation
+        if: runner.os == 'macOS'
+        run: ./rust/tests/test-ios-host.sh
+
       - name: Check the publishable crates package and build standalone
         if: runner.os == 'Linux'
         working-directory: rust
@@ -356,6 +360,23 @@ jobs:
 
       - name: Build unsigned device app
         run: ./samples/ios/build.sh device -p:EnableCodeSigning=false
+
+      - name: Package the production simulator host
+        shell: pwsh
+        run: ./rust/package-ios-host.ps1 -Rid iossimulator-arm64 -OutputRoot "$env:RUNNER_TEMP/ios-host"
+
+      - name: Run a standalone Rust app against the packaged host without .NET
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(python3 -c 'import json; print(json.load(open("rust/release-manifest.json"))["rustoloniaVersion"])')"
+          export RUSTOLONIA_IOS_HOST_ARCHIVE="$RUNNER_TEMP/ios-host/rustolonia-host-$version-iossimulator-arm64.tar.gz"
+          export PATH="$CARGO_HOME/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+          if command -v dotnet; then
+            echo "The Rust-only consumer check must not have dotnet on PATH." >&2
+            exit 1
+          fi
+          ./rust/tests/test-ios-standalone.sh "$RUSTOLONIA_IOS_HOST_ARCHIVE" simulator-arm64
 
   cross-build:
     name: cross-build (${{ matrix.rid }})

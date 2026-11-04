@@ -181,8 +181,8 @@ pub enum Source {
 }
 
 pub fn resolve(config: &Config) -> Result<Resolution, String> {
-    // iOS embeds the managed host in the application and links Rust as a
-    // static library; there is no separate host archive to download.
+    // iOS links the host into the app. Its separate iOS app builder stages
+    // the static-host archive; this resolver handles desktop shared libraries.
     if config.target.contains("-apple-ios") {
         return Ok(Resolution::Skipped("iOS uses an in-process host".into()));
     }

@@ -54,8 +54,11 @@ Prebuilt hosts exist for `x86_64`/`aarch64` `windows-msvc`, `apple-darwin` and
 also baked into the binary as a last-resort runtime search path, so `cargo run`
 works without copying files; disable it for distributable builds.
 
-iOS targets skip host staging and downloads entirely. The host must be built
-into the iOS application rather than supplied through `RUSTOLONIA_HOST_DIR`.
+On iOS, `build.rs` skips desktop host staging and downloads. The separate
+[standalone iOS app builder](https://github.com/Devolutions/rustolonia/tree/master/samples/ios-standalone)
+verifies a matching static-host release archive and links it into the app;
+`RUSTOLONIA_HOST_DIR` does not provide the iOS host. Those iOS assets require
+a future release that includes them.
 
 Builds inside this repository default to `RUSTOLONIA_NO_DOWNLOAD=1` through
 the repo-root `.cargo/config.toml`, since the matching release does not exist

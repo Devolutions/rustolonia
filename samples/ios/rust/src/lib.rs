@@ -1,18 +1,11 @@
+#[cfg(feature = "smoke")]
+use rustolonia::{App, HostExports};
 use rustolonia::{
-    App, AppScope, Button, HorizontalAlignment, HostExports, Orientation, Result,
-    SingleViewSession, StackPanel, TextBlock, Thickness, VerticalAlignment,
+    AppScope, Button, HorizontalAlignment, Orientation, Result, StackPanel, TextBlock, Thickness,
+    VerticalAlignment,
 };
-use std::cell::RefCell;
-use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
-
-const E_FAIL: i32 = 0x8000_4005u32 as i32;
-const E_POINTER: i32 = 0x8000_4003u32 as i32;
-
-thread_local! {
-    static SESSION: RefCell<Option<SingleViewSession>> = const { RefCell::new(None) };
-}
 
 fn build_view(scope: &AppScope) -> Result<StackPanel> {
     let count = Arc::new(AtomicU32::new(0));
@@ -106,63 +99,22 @@ fn build_smoke_view(scope: &AppScope, exports: &HostExports) -> Result<StackPane
     build_view(scope)
 }
 
-/// Called once by the iOS host after Avalonia has initialized on the UI thread.
-///
+#[cfg(not(feature = "smoke"))]
+rustolonia::ios_application!(build_view);
+
+#[cfg(feature = "smoke")]
 /// # Safety
 ///
-/// `exports` must point to a complete, valid host export table whose functions
-/// remain callable until the process exits.
-#[no_mangle]
+/// The iOS host must pass a valid export table on its UI thread.
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn rustolonia_ios_main(exports: *const HostExports) -> i32 {
-    if exports.is_null() {
-        return E_POINTER;
-    }
-    let result = catch_unwind(AssertUnwindSafe(|| {
-        SESSION.with(|session| {
-            if session.borrow().is_some() {
-                return Err(rustolonia::Error::UiContextAlreadyActive);
-            }
-            let app = App::from_in_process(&*exports)?;
-            #[cfg(feature = "smoke")]
-            let running = app.start_single_view(|scope| build_smoke_view(scope, &*exports))?;
-            #[cfg(not(feature = "smoke"))]
-            let running = app.start_single_view(build_view)?;
-            *session.borrow_mut() = Some(running);
-            Ok(())
-        })
-    }));
-    match result {
-        Ok(Ok(())) => 0,
-        Ok(Err(error)) => {
-            eprintln!("failed to start the iOS application: {error}");
-            E_FAIL
-        }
-        Err(_) => {
-            eprintln!("the iOS application panicked during startup");
-            E_FAIL
-        }
-    }
+    unsafe { rustolonia::ios::start(exports, |scope| build_smoke_view(scope, &*exports)) }
 }
 
-/// Called by the iOS app delegate on the UI thread during graceful termination.
-#[no_mangle]
+#[cfg(feature = "smoke")]
+#[unsafe(no_mangle)]
 pub extern "C" fn rustolonia_ios_stop() -> i32 {
-    match catch_unwind(AssertUnwindSafe(|| {
-        SESSION.with(|session| match session.borrow_mut().take() {
-            Some(running) => running.close(),
-            None => Ok(()),
-        })
-    })) {
-        Ok(Ok(())) => 0,
-        Ok(Err(error)) => {
-            eprintln!("failed to stop the iOS application: {error}");
-            E_FAIL
-        }
-        Err(_) => {
-            eprintln!("the iOS application panicked during shutdown");
-            E_FAIL
-        }
-    }
+    rustolonia::ios::stop()
 }
 
 #[cfg(test)]
@@ -171,7 +123,10 @@ mod tests {
 
     #[test]
     fn startup_rejects_null_exports_and_shutdown_is_idempotent() {
-        assert_eq!(unsafe { rustolonia_ios_main(std::ptr::null()) }, E_POINTER);
+        assert_eq!(
+            unsafe { rustolonia_ios_main(std::ptr::null()) },
+            0x8000_4003u32 as i32
+        );
         assert_eq!(rustolonia_ios_stop(), 0);
         assert_eq!(rustolonia_ios_stop(), 0);
     }
