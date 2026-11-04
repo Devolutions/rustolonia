@@ -20,10 +20,11 @@ public partial class AvnApplication : IAvnApplication12
     private static int FileDragCallbackDepth;
     private readonly Dictionary<long, FileDragRegistration> _fileDragTokens = new();
     private long _nextFileDragToken;
+    private static bool SupportsFileDrag => OperatingSystem.IsMacOS() || OperatingSystem.IsLinux();
 
     public int SetFileDragHandler(IAvnControl? target, IAvnFileDragHandler? handler)
     {
-        if (!OperatingSystem.IsMacOS())
+        if (!SupportsFileDrag)
             return HResults.E_NOTIMPL;
         if (target is null)
             return HResults.E_POINTER;
@@ -44,7 +45,7 @@ public partial class AvnApplication : IAvnApplication12
                     if (registration != old
                         && (registered == control || registered.IsVisualAncestorOf(control) || control.IsVisualAncestorOf(registered)))
                         throw new InvalidOperationException("Drag targets must not overlap, including across auxiliary applications.");
-                if (DragNative.Supports() != 1)
+                if (OperatingSystem.IsMacOS() && DragNative.Supports() != 1)
                     throw new NotSupportedException("The native companion cannot retain originating drag events.");
                 owner = TopLevel.GetTopLevel(control) as Window
                     ?? throw new InvalidOperationException("Install the drag handler on a mounted window control.");
@@ -63,7 +64,7 @@ public partial class AvnApplication : IAvnApplication12
 
     public int CompleteFileDrag(long token, string? fileUrlsJson)
     {
-        if (!OperatingSystem.IsMacOS())
+        if (!SupportsFileDrag)
             return HResults.E_NOTIMPL;
         try
         {
@@ -93,7 +94,7 @@ public partial class AvnApplication : IAvnApplication12
 
     public int CancelFileDrag(long token)
     {
-        if (!OperatingSystem.IsMacOS())
+        if (!SupportsFileDrag)
             return HResults.E_NOTIMPL;
         try
         {
@@ -144,17 +145,20 @@ public partial class AvnApplication : IAvnApplication12
                 || !args.GetCurrentPoint(_target).Properties.IsLeftButtonPressed)
                 return;
             Cancel();
-            var handle = _owner.TryGetPlatformHandle();
-            if (handle?.HandleDescriptor != "NSWindow")
+            if (OperatingSystem.IsMacOS())
             {
-                _ = AbiError.Capture(new InvalidOperationException("No native NSWindow for the drag owner."));
-                return;
-            }
-            _event = DragNative.Retain(MacOS.ObjC.GetWindowNumber(handle.Handle));
-            if (_event == 0)
-            {
-                _ = AbiError.Capture(new InvalidOperationException("File dragging requires an originating AppKit left mouse-down event."));
-                return;
+                var handle = _owner.TryGetPlatformHandle();
+                if (handle?.HandleDescriptor != "NSWindow")
+                {
+                    _ = AbiError.Capture(new InvalidOperationException("No native NSWindow for the drag owner."));
+                    return;
+                }
+                _event = DragNative.Retain(MacOS.ObjC.GetWindowNumber(handle.Handle));
+                if (_event == 0)
+                {
+                    _ = AbiError.Capture(new InvalidOperationException("File dragging requires an originating AppKit left mouse-down event."));
+                    return;
+                }
             }
             Press = args;
         }
@@ -235,11 +239,16 @@ public partial class AvnApplication : IAvnApplication12
                     return;
                 var press = Press;
                 Started = true;
-                if (DragNative.Set(_event) != 1)
-                    throw new InvalidOperationException("The originating AppKit event could not be selected.");
                 System.Threading.Tasks.Task<DragDropEffects> task;
-                try { task = DragDrop.DoDragDropAsync(press, data, DragDropEffects.Copy); }
-                finally { DragNative.Set(0); }
+                if (OperatingSystem.IsMacOS())
+                {
+                    if (DragNative.Set(_event) != 1)
+                        throw new InvalidOperationException("The originating AppKit event could not be selected.");
+                    try { task = DragDrop.DoDragDropAsync(press, data, DragDropEffects.Copy); }
+                    finally { DragNative.Set(0); }
+                }
+                else
+                    task = DragDrop.DoDragDropAsync(press, data, DragDropEffects.Copy);
                 var result = await task;
                 Finish(result == DragDropEffects.Copy ? 1 : 0, HResults.S_OK);
             }

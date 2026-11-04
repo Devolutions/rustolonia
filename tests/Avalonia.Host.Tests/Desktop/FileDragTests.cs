@@ -16,10 +16,10 @@ public class FileDragTests
         Assert.Equal(3, typeof(IAvnApplication12).GetMethods().Length);
         Assert.Equal(2, typeof(IAvnFileDragHandler).GetMethods().Length);
         var application = new AvnApplication();
-        var expected = OperatingSystem.IsMacOS() ? HResults.E_INVALIDARG : HResults.E_NOTIMPL;
+        var expected = OperatingSystem.IsMacOS() || OperatingSystem.IsLinux() ? HResults.E_INVALIDARG : HResults.E_NOTIMPL;
         Assert.Equal(expected, application.CompleteFileDrag(42, "[]"));
         Assert.Equal(expected, application.CancelFileDrag(42));
-        if (OperatingSystem.IsMacOS())
+        if (OperatingSystem.IsMacOS() || OperatingSystem.IsLinux())
         {
             Assert.Equal(HResults.E_POINTER, application.SetFileDragHandler(null, null));
             Assert.Equal(HResults.S_OK, application.SetFileDragHandler(new AvnButton(new Button()), null));
