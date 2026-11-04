@@ -181,6 +181,12 @@ pub enum Source {
 }
 
 pub fn resolve(config: &Config) -> Result<Resolution, String> {
+    // iOS links the host into the app. Its separate iOS app builder stages
+    // the static-host archive; this resolver handles desktop shared libraries.
+    if config.target.contains("-apple-ios") {
+        return Ok(Resolution::Skipped("iOS uses an in-process host".into()));
+    }
+
     let rid = rid_for_target(&config.target);
 
     if let Some(dir) = &config.host_dir {

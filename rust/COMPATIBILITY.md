@@ -763,11 +763,13 @@ Windows Rust executables use the static MSVC CRT; adding a dependency that
 reintroduces a redistributable runtime DLL is a delivery-scope change and must
 update packaging, SBOM coverage, and compatibility validation together.
 
-Official release artifacts must be signed with the platform-appropriate
+Official desktop release binaries must be signed with the platform-appropriate
 signing identity before the SBOM and checksums are generated. The optional
 `AVALONIA_RUST_SIGN_COMMAND` hook is a wrapper executable/script path that
 receives an artifact path as a separate argument; unsigned local developer
-artifacts are not release artifacts.
+artifacts are not release artifacts. iOS host archives contain link inputs
+rather than an installable app; the app developer signs and provisions the
+final device app and its embedded frameworks.
 
 The Rust host and standalone Rust artifacts are not NuGet packages, so
 `nukebuild/SbomGenerator.cs` remains unchanged. Their per-RID delivery scope
@@ -790,6 +792,15 @@ hashes after signing.
   older than this check). A host found through `RUSTOLONIA_HOST_LIB`,
   `RUSTOLONIA_HOST_DIR` or next to the executable is subject to the same
   check.
+- iOS uses separate `ios-arm64`, `iossimulator-arm64`, and `iossimulator-x64`
+  static-host archives rather than desktop host discovery. The
+  [standalone iOS builder](../samples/ios-standalone/README.md) verifies the
+  archive against the matching crate's release-pinned checksum before
+  extraction, then checks the host RID, version, ABI fingerprint, and file
+  inventory. The in-process host checks the ABI again at startup. An explicitly
+  supplied development checksum overrides the release pin and must itself be
+  trusted. A future release must publish these archives and their checksums
+  together with the matching crates.
 - Until 1.0, a minor version bump (`0.Y`) may break the Rust API and the ABI;
   a patch bump (`0.Y.Z`) is reserved for compatible fixes. Every release still
   ships its own host, whatever the bump.

@@ -177,6 +177,51 @@ pub struct App {
     _host: sys::Host,
 }
 
+/// A running single-view application owned by the platform's UI thread.
+///
+/// Keep this value alive until the platform is finished with the view. Dropping
+/// it detaches the view and releases the application scope on the same thread.
+pub struct SingleViewSession {
+    _app: App,
+    scope: AppScope,
+    single_view: sys::ComPtr<sys::IAvnApplication13>,
+    mounted: bool,
+    active: bool,
+    _thread_affinity: PhantomData<Rc<()>>,
+}
+
+impl SingleViewSession {
+    /// Detaches the main view and releases the Rust application scope.
+    pub fn close(mut self) -> Result<()> {
+        self.cleanup()
+    }
+
+    fn cleanup(&mut self) -> Result<()> {
+        if !self.active {
+            return Ok(());
+        }
+        let result = if self.mounted {
+            self.single_view.set_main_view(None).map_err(Error::from)
+        } else {
+            Ok(())
+        };
+        self.scope.clear();
+        FACTORY.with(|current| {
+            current.replace(None);
+        });
+        self.active = false;
+        result
+    }
+}
+
+impl Drop for SingleViewSession {
+    fn drop(&mut self) {
+        if let Err(error) = self.cleanup() {
+            eprintln!("failed to detach the Avalonia single view: {error}");
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct AppScope {
     context: AppContext,
@@ -497,6 +542,11 @@ fn find_host(dirs: &[PathBuf]) -> std::result::Result<PathBuf, String> {
 ///
 /// See `rust/PRODUCTIZATION.md#host-discovery`.
 pub fn discover_host_path() -> Result<PathBuf> {
+    if cfg!(target_os = "ios") {
+        return Err(Error::Load(
+            "iOS applications must use the in-process host supplied by the iOS app".into(),
+        ));
+    }
     if let Some(value) = std::env::var_os(HOST_NATIVE_LIB_ENV_VAR).filter(|value| !value.is_empty())
     {
         return Ok(PathBuf::from(value));
@@ -524,7 +574,28 @@ impl App {
     }
 
     pub fn load(path: impl AsRef<Path>) -> Result<Self> {
+        if cfg!(target_os = "ios") {
+            return Err(Error::Load(
+                "iOS applications must use the in-process host supplied by the iOS app".into(),
+            ));
+        }
         let host = sys::Host::load(path).map_err(|error| Error::Load(error.to_string()))?;
+        Self::from_host(host)
+    }
+
+    /// Connects to the managed host embedded in the current process.
+    ///
+    /// # Safety
+    ///
+    /// The functions in `exports` must have the declared ABI and remain
+    /// callable until the process exits. The managed host must not be unloaded.
+    pub unsafe fn from_in_process(exports: &sys::HostExports) -> Result<Self> {
+        let host =
+            sys::Host::from_in_process(exports).map_err(|error| Error::Load(error.to_string()))?;
+        Self::from_host(host)
+    }
+
+    fn from_host(host: sys::Host) -> Result<Self> {
         let activation = host.activation_factory()?;
         let application = activation.create_application()?;
         let controls = activation.create_control_factory()?;
@@ -536,6 +607,52 @@ impl App {
             startup_arguments: None,
             _host: host,
         })
+    }
+
+    /// Creates the root control for an already-initialized single-view
+    /// platform such as iOS. The platform owns the event loop; unlike
+    /// [`App::run`], this returns as soon as the root is mounted.
+    ///
+    /// Call this on the platform UI thread and retain the returned session.
+    pub fn start_single_view<T: AsControl>(
+        self,
+        callback: impl FnOnce(&AppScope) -> Result<T>,
+    ) -> Result<SingleViewSession> {
+        if !self.dispatcher.check_access()? {
+            return Err(Error::NoUiContext);
+        }
+        let single_view = self.application.single_view()?;
+        let context = AppContext {
+            application: self.application.clone(),
+            dispatcher: self.dispatcher.clone(),
+        };
+        let scope = AppScope::new(context);
+        let installed = FACTORY.with(|current| {
+            let mut current = current.borrow_mut();
+            if current.is_some() {
+                false
+            } else {
+                *current = Some(self.controls.clone());
+                true
+            }
+        });
+        if !installed {
+            return Err(Error::UiContextAlreadyActive);
+        }
+        let mut session = SingleViewSession {
+            _app: self,
+            scope,
+            single_view,
+            mounted: false,
+            active: true,
+            _thread_affinity: PhantomData,
+        };
+        let view = callback(&session.scope)?;
+        session
+            .single_view
+            .set_main_view(Some(&view.as_control()?))?;
+        session.mounted = true;
+        Ok(session)
     }
 
     /// Overrides the startup/open-with arguments handed to the managed desktop
@@ -559,10 +676,16 @@ impl App {
         self
     }
 
+    /// Runs a desktop application lifetime. On iOS, use
+    /// [`App::start_single_view`] instead.
     pub fn run(
         self,
         callback: impl FnOnce(&AppScope) -> Result<()> + Send + 'static,
     ) -> Result<()> {
+        if cfg!(target_os = "ios") {
+            return Err(sys::Error(sys::E_NOTIMPL).into());
+        }
+
         let controls = self.controls.clone();
         let context = AppContext {
             application: self.application.clone(),
@@ -645,6 +768,7 @@ fn to_abi_error(error: Error) -> sys::Error {
         Error::Abi(error) => error,
         Error::Load(_)
         | Error::NoUiContext
+        | Error::UiContextAlreadyActive
         | Error::InvalidEnumValue(_)
         | Error::InvalidAsyncValue
         | Error::InvalidViewModelMember { .. }

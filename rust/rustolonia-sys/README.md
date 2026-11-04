@@ -23,6 +23,12 @@ loaded for the process lifetime because returned ABI strings can outlive a
 `Host` value. A later load whose `avn_free` or `avn_alloc_utf16` exports differ
 is rejected, preserving the single allocator-host invariant.
 
+`Host::from_in_process` accepts the equivalent function table from an embedded
+host, validates the same ABI fingerprint and allocator invariant, and requires
+the table's functions to remain callable until process exit. iOS uses this
+entry point instead of loading a shared library; see the
+[experimental iOS sample](../../samples/ios/README.md).
+
 ## Prebuilt host
 
 `build.rs` stages the NativeAOT host (`rustolonia_host.dll`,
@@ -47,6 +53,12 @@ Prebuilt hosts exist for `x86_64`/`aarch64` `windows-msvc`, `apple-darwin` and
 `DEP_RUSTOLONIA_HOST_HOST_DIR`. With the default `dev-host-path` feature it is
 also baked into the binary as a last-resort runtime search path, so `cargo run`
 works without copying files; disable it for distributable builds.
+
+On iOS, `build.rs` skips desktop host staging and downloads. The separate
+[standalone iOS app builder](https://github.com/Devolutions/rustolonia/tree/master/samples/ios-standalone)
+verifies a matching static-host release archive and links it into the app;
+`RUSTOLONIA_HOST_DIR` does not provide the iOS host. Those iOS assets require
+a future release that includes them.
 
 Builds inside this repository default to `RUSTOLONIA_NO_DOWNLOAD=1` through
 the repo-root `.cargo/config.toml`, since the matching release does not exist

@@ -8,11 +8,15 @@ NativeAOT host selects one Avalonia windowing backend at publish time:
 | Windows | `win-x64`, `win-arm64` | Win32 | `build.ps1` |
 | Linux | `linux-x64`, `linux-arm64` | X11 | `build.ps1` |
 | macOS | `osx-x64`, `osx-arm64` | Avalonia.Native | `build.ps1` |
+| iOS (experimental) | `ios-arm64`, `iossimulator-arm64`, `iossimulator-x64` | Avalonia.iOS | `samples/ios/build.sh` |
 
 `AvaloniaRustHostPlatform` controls the compile-time selection. The shared
 host contains the nano-COM ABI, ownership runtime, generated control
 projection, and generated view registry. `RustHostPlatform` contains only
-backend setup and the Win32 OLE thread scope.
+backend setup and the Win32 OLE thread scope. The source-built iOS host is not
+a shared library: UIKit owns the event loop and a Rust static library supplies
+one main view. See the [iOS sample](../samples/ios/README.md) for requirements
+and limitations.
 
 Linux publishes the host with a `$ORIGIN` runpath. Consequently
 `libSkiaSharp.so` and `libHarfBuzzSharp.so` are resolved beside
@@ -46,7 +50,7 @@ empty or Rustolonia-owned destination; a failed build leaves the previous
 bundle intact. External consumer manifests must name their
 `generatedRegistryFile` **`RustViewRegistry.g.cs`**, in any chosen directory.
 
-CI uploads `.tar.gz` bundles rather than raw directories, preserving the hidden
+Outside pull requests, CI uploads `.tar.gz` bundles rather than raw directories, preserving the hidden
 ownership marker and Unix execute permissions. It downloads and extracts the
 actual uploaded archives before checking checksums. Native jobs smoke-launch
 the extracted sample; cross-build jobs verify checksums and Unix execute

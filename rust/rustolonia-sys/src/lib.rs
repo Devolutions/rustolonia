@@ -114,11 +114,11 @@ pub use termination::{
     termination_handler, IAvnApplication11, IAvnTerminationHandler, TerminationRequest,
 };
 
-type GetActivationFactoryFn = unsafe extern "C" fn(*mut *mut c_void) -> i32;
-type FreeFn = unsafe extern "C" fn(*mut c_void);
-type AllocUtf16Fn = unsafe extern "C" fn(i32) -> *mut u16;
-type GetLastErrorFn = unsafe extern "C" fn(*mut *mut u16) -> i32;
-type GetHostInfoFn = unsafe extern "C" fn(*mut HostInfoNative) -> i32;
+pub type GetActivationFactoryFn = unsafe extern "C" fn(*mut *mut c_void) -> i32;
+pub type FreeFn = unsafe extern "C" fn(*mut c_void);
+pub type AllocUtf16Fn = unsafe extern "C" fn(i32) -> *mut u16;
+pub type GetLastErrorFn = unsafe extern "C" fn(*mut *mut u16) -> i32;
+pub type GetHostInfoFn = unsafe extern "C" fn(*mut HostInfoNative) -> i32;
 
 // Browser builds link the Rust app into the .NET WebAssembly host, which
 // exports these symbols from `host/Exports.cs`.
@@ -141,11 +141,27 @@ pub const ABI_FINGERPRINT: &str = env!("RUSTOLONIA_ABI_FINGERPRINT");
 pub const BUILD_HOST_DIR: Option<&str> = option_env!("RUSTOLONIA_BUILD_HOST_DIR");
 
 #[repr(C)]
-struct HostInfoNative {
-    struct_size: u32,
-    reserved: u32,
-    version: *const std::ffi::c_char,
-    abi_fingerprint: *const std::ffi::c_char,
+pub struct HostInfoNative {
+    pub struct_size: u32,
+    pub reserved: u32,
+    pub version: *const std::ffi::c_char,
+    pub abi_fingerprint: *const std::ffi::c_char,
+}
+
+/// Functions supplied by a managed host already running in this process.
+///
+/// The function pointers and the host runtime must remain valid for the
+/// lifetime of the process, including after a [`Host`] is dropped.
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct HostExports {
+    pub struct_size: u32,
+    pub reserved: u32,
+    pub get_activation_factory: Option<GetActivationFactoryFn>,
+    pub free: Option<FreeFn>,
+    pub alloc_utf16: Option<AllocUtf16Fn>,
+    pub get_last_error: Option<GetLastErrorFn>,
+    pub get_host_info: Option<GetHostInfoFn>,
 }
 
 /// Version information reported by a loaded host via `avn_get_host_info`.
@@ -167,6 +183,8 @@ pub enum HostLoadError {
     #[cfg(not(target_os = "emscripten"))]
     Library(libloading::Error),
     IncompatibleAllocator,
+    InvalidExportsSize(u32),
+    MissingExport(&'static str),
     /// The host was built against a different ABI than this crate. `found`
     /// is `None` for hosts that predate `avn_get_host_info`.
     IncompatibleHost {
@@ -183,6 +201,13 @@ impl std::fmt::Display for HostLoadError {
             Self::IncompatibleAllocator => formatter.write_str(
                 "Avalonia Host exports a different UTF-16 allocator than the already loaded host",
             ),
+            Self::InvalidExportsSize(size) => write!(
+                formatter,
+                "in-process Avalonia host export table is too small ({size} bytes)"
+            ),
+            Self::MissingExport(name) => {
+                write!(formatter, "in-process Avalonia host is missing {name}")
+            }
             Self::IncompatibleHost { expected, found } => match found {
                 Some(found) => write!(
                     formatter,
@@ -366,7 +391,7 @@ pub struct Host {
     // FREE/ALLOC_UTF16 are process-wide ABI callbacks and may service strings
     // retained by Rust after an individual Host value is dropped.
     #[cfg(not(target_os = "emscripten"))]
-    _lib: ManuallyDrop<Library>,
+    _lib: Option<ManuallyDrop<Library>>,
     #[cfg(not(target_os = "emscripten"))]
     _dependencies: ManuallyDrop<Vec<Library>>,
     get_activation_factory: GetActivationFactoryFn,
@@ -375,8 +400,8 @@ pub struct Host {
     info: HostInfo,
 }
 
-/// Host exports shared by the dynamic and static loading paths.
-struct HostExports {
+/// Host exports shared by the dynamic, static and in-process loading paths.
+struct ResolvedHostExports {
     get_activation_factory: GetActivationFactoryFn,
     free: FreeFn,
     alloc_utf16: AllocUtf16Fn,
@@ -386,7 +411,7 @@ struct HostExports {
 /// Validates the host ABI and publishes its process-wide string allocator.
 fn publish_host_exports(
     found: Option<HostInfo>,
-    exports: &HostExports,
+    exports: &ResolvedHostExports,
 ) -> std::result::Result<HostInfo, HostLoadError> {
     let info = check_host_compatibility(ABI_FINGERPRINT, found)?;
     let _exports = HOST_EXPORTS
@@ -424,7 +449,7 @@ impl Host {
     /// Binds the host statically linked into a browser (wasm) app.
     #[cfg(target_os = "emscripten")]
     pub fn load_static() -> std::result::Result<Self, HostLoadError> {
-        let exports = HostExports {
+        let exports = ResolvedHostExports {
             get_activation_factory: avn_get_activation_factory,
             free: avn_free,
             alloc_utf16: avn_alloc_utf16,
@@ -470,7 +495,7 @@ impl Host {
                 Err(_) => None,
             };
             check_host_compatibility(ABI_FINGERPRINT, found.clone())?;
-            let exports = HostExports {
+            let exports = ResolvedHostExports {
                 get_activation_factory: *lib
                     .get::<GetActivationFactoryFn>(b"avn_get_activation_factory\0")?,
                 free: *lib.get::<FreeFn>(b"avn_free\0")?,
@@ -479,7 +504,7 @@ impl Host {
             };
             let info = publish_host_exports(found, &exports)?;
             Ok(Self {
-                _lib: ManuallyDrop::new(lib),
+                _lib: Some(ManuallyDrop::new(lib)),
                 _dependencies: ManuallyDrop::new(dependencies),
                 get_activation_factory: exports.get_activation_factory,
                 free: exports.free,
@@ -487,6 +512,52 @@ impl Host {
                 info,
             })
         }
+    }
+
+    /// Connects to a managed host that owns the current process.
+    ///
+    /// # Safety
+    ///
+    /// Every supplied function pointer must have the declared ABI and remain
+    /// callable for the rest of the process. The host must not be unloaded.
+    pub unsafe fn from_in_process(
+        exports: &HostExports,
+    ) -> std::result::Result<Self, HostLoadError> {
+        if (exports.struct_size as usize) < std::mem::size_of::<HostExports>() {
+            return Err(HostLoadError::InvalidExportsSize(exports.struct_size));
+        }
+        let get_activation_factory = exports
+            .get_activation_factory
+            .ok_or(HostLoadError::MissingExport("avn_get_activation_factory"))?;
+        let free = exports
+            .free
+            .ok_or(HostLoadError::MissingExport("avn_free"))?;
+        let alloc_utf16 = exports
+            .alloc_utf16
+            .ok_or(HostLoadError::MissingExport("avn_alloc_utf16"))?;
+        let get_last_error = exports
+            .get_last_error
+            .ok_or(HostLoadError::MissingExport("avn_get_last_error"))?;
+        let get_host_info = exports
+            .get_host_info
+            .ok_or(HostLoadError::MissingExport("avn_get_host_info"))?;
+        let resolved = ResolvedHostExports {
+            get_activation_factory,
+            free,
+            alloc_utf16,
+            get_last_error,
+        };
+        let info = publish_host_exports(query_host_info(get_host_info), &resolved)?;
+        Ok(Self {
+            #[cfg(not(target_os = "emscripten"))]
+            _lib: None,
+            #[cfg(not(target_os = "emscripten"))]
+            _dependencies: ManuallyDrop::new(Vec::new()),
+            get_activation_factory,
+            free,
+            get_last_error,
+            info,
+        })
     }
 
     /// Version and ABI fingerprint reported by this host.

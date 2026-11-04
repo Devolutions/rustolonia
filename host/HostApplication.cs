@@ -18,4 +18,12 @@ public sealed class HostApplication : Application
             options.DiagnosticLogger = DiagnosticLogger.CreateConsole());
 #endif
     }
+
+#if AVN_HOST_IOS
+    public override void OnFrameworkInitializationCompleted()
+    {
+        base.OnFrameworkInitializationCompleted();
+        IosBootstrap.Start();
+    }
+#endif
 }

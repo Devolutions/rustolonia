@@ -5,8 +5,8 @@ namespace Avalonia.Host.Com;
 
 /// <summary>
 /// Single-view application capability. Hosts whose lifetime exposes one main
-/// view instead of windows (the browser host) accept the root control here;
-/// desktop hosts return E_NOTIMPL.
+/// view instead of windows (browser and iOS hosts) accept the root control
+/// here; desktop hosts return E_NOTIMPL.
 /// </summary>
 [GeneratedComInterface]
 [Guid(AvnGuids.IAvnApplication13)]

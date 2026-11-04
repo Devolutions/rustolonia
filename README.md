@@ -53,6 +53,12 @@ mirrored and locally built hosts.
 Applications with compiled AXAML and Rust view-models still build their own
 host from a source checkout, as described below.
 
+An experimental iOS single-view host is also available. The
+[source-built sample](samples/ios/README.md) compiles the host locally; the
+[standalone Rust sample](samples/ios-standalone/README.md) can link a prebuilt
+NativeAOT iOS host without building C# once a release includes the iOS assets.
+Neither path uses the desktop host discovery mechanism.
+
 For complete standalone starting points using the release, see the
 [app templates](templates/README.md): minimal window, input form, and
 multi-window workspace.
@@ -115,6 +121,12 @@ gates running automatically on pull requests and pushes to `master`. Native
 execution covers Windows/Linux x64 and macOS x64/arm64; Windows/Linux arm64
 have cross-build packaging coverage, not native execution coverage. The
 original flagship samples remain part of the release gate.
+Pull requests run a fast tier; a newer push cancels the in-flight PR run.
+Pushes to `master` and manual runs add the Windows/macOS external-consumer
+builds, the system monitor, the packaged sample bundles, the source-integrated
+iOS simulator sample, and the unsigned iOS device build. On pull requests the
+iOS job builds the packaged simulator host and runs the Rust-only consumer
+against it.
 Artifacts are named `avalonia-rust-native-<rid>` for native jobs and
 `avalonia-rust-cross-<rid>` for cross-build jobs, so their provenance remains
 unambiguous when both jobs target the same RID.
@@ -125,7 +137,8 @@ The quick helper/scaffold suite does not build or launch an application:
 pwsh ./rust/tests/test-build-app.ps1
 ```
 
-Native jobs additionally build and launch a fresh external consumer:
+Native jobs additionally build and launch a fresh external consumer (Linux
+on every run; Windows and macOS outside pull requests):
 
 ```pwsh
 pwsh ./rust/tests/test-build-app.ps1 -RunNativeSmoke

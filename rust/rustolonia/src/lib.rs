@@ -3,6 +3,7 @@ mod generated;
 mod async_runtime;
 pub mod clipboard;
 pub mod data_shapes;
+pub mod ios;
 pub mod menu;
 pub mod pixel_surface;
 pub mod reactive;
@@ -25,8 +26,9 @@ pub use reactive::{
 };
 pub use runtime::{
     discover_host_path, App, AppContext, AppScope, AsControl, Downcast, EventSubscription,
-    NonOwningRef, ResourceValue, ThemeVariant, Upcast, HOST_NATIVE_LIB_ENV_VAR,
+    NonOwningRef, ResourceValue, SingleViewSession, ThemeVariant, Upcast, HOST_NATIVE_LIB_ENV_VAR,
 };
+pub use rustolonia_sys::HostExports;
 pub use shell::{
     NativePopupEvent, NativeWindowHandle, NativeWindowHandleKind, ShellTray, ShutdownMode,
     TrayEvent, TrayMenuItem,
@@ -68,6 +70,7 @@ pub enum Error {
     Abi(rustolonia_sys::Error),
     Load(String),
     NoUiContext,
+    UiContextAlreadyActive,
     InvalidEnumValue(i32),
     InvalidAsyncValue,
     InvalidViewModelMember { kind: &'static str, id: i32 },
@@ -86,7 +89,10 @@ impl std::fmt::Display for Error {
             Self::Abi(error) => error.fmt(formatter),
             Self::Load(error) => write!(formatter, "failed to load Avalonia host: {error}"),
             Self::NoUiContext => {
-                formatter.write_str("Avalonia controls must be created inside App::run")
+                formatter.write_str("Avalonia controls must be created on an active UI thread")
+            }
+            Self::UiContextAlreadyActive => {
+                formatter.write_str("an Avalonia UI context is already active on this thread")
             }
             Self::InvalidEnumValue(value) => {
                 write!(formatter, "invalid projected enum value {value}")
