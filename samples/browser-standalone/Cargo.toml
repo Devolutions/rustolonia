@@ -1,0 +1,15 @@
+[package]
+name = "rustolonia-browser-standalone"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "A code-first Rustolonia browser app built with Cargo and Emscripten, without .NET"
+
+[lib]
+# Linked into the prebuilt browser host's dotnet.native.wasm by build.py.
+crate-type = ["staticlib"]
+
+[dependencies]
+rustolonia = { path = "../../rust/rustolonia", default-features = false }
+
+[workspace]

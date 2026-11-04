@@ -19,3 +19,5 @@ flate2 = "1"
 ring = "0.17"
 serde_json = "1"
 sha2 = "0.10"
+# Same client and features as rustolonia-sys's host download.
+ureq = { version = "2.12", default-features = false, features = ["tls"] }

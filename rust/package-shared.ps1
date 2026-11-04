@@ -31,6 +31,8 @@ $script:RidTargets = @{
 }
 
 $script:IosHostRids = @('ios-arm64', 'iossimulator-arm64', 'iossimulator-x64')
+# The browser relink kit (rust/package-browser-host.ps1): one for every browser.
+$script:BrowserHostRid = 'browser-wasm'
 
 function Get-RidTargetInfo {
     param(
@@ -765,13 +767,20 @@ function Get-HostAssetName {
         [switch]$Symbols
     )
 
-    if ($Rid -cnotin $script:IosHostRids) {
+    if ($Rid -cnotin $script:IosHostRids -and $Rid -cne $script:BrowserHostRid) {
         $null = Get-RidTargetInfo -Rid $Rid
     }
     $name = "rustolonia-host-$Version-$Rid"
     if ($Flavor -ne 'default') { $name += "-$Flavor" }
     if ($Symbols) { $name += '-symbols' }
     return "$name.tar.gz"
+}
+
+# The prebuilt Android host is one APK for every ABI; rustolonia-apk
+# (rust/rustolonia-apk/src/host.rs) downloads it by this name.
+function Get-AndroidHostAssetName {
+    param([Parameter(Mandatory)][string]$Version)
+    return "rustolonia-host-$Version-android.apk"
 }
 
 function Write-HostManifest {

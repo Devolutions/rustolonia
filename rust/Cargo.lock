@@ -464,6 +464,7 @@ dependencies = [
  "ring",
  "serde_json",
  "sha2",
+ "ureq",
 ]
 
 [[package]]

@@ -24,6 +24,16 @@
     <EnableRuntimeMarshalling>true</EnableRuntimeMarshalling>
     <WasmEnableThreads>false</WasmEnableThreads>
     <WasmBuildNative>true</WasmBuildNative>
+    <!--
+      Rust's prebuilt std for wasm32-unknown-emscripten uses bulk-memory
+      instructions (memory.copy/fill). Emscripten enables wasm-opt features
+      from the linked module's target_features, and the Rust archive's section
+      is stripped (see rust/build-browser.ps1), so the generated runtime glue
+      (pinvoke.o, driver.o, ...) is compiled with bulk memory to declare it.
+      Every browser with the wasm SIMD support the .NET runtime already
+      requires also supports bulk memory.
+    -->
+    <EmccFlags>$(EmccFlags) -mbulk-memory</EmccFlags>
     <UseMicroCom>true</UseMicroCom>
     <UseMicroComGeneratorRoslyn>true</UseMicroComGeneratorRoslyn>
     <AvaloniaRustHostPlatform>Browser</AvaloniaRustHostPlatform>
@@ -34,7 +44,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\**\*.cs" Exclude="..\Browser\**;..\bin\**;..\obj\**" />
+    <Compile Include="..\**\*.cs" Exclude="..\Browser\**;..\Android\**;..\bin\**;..\obj\**" />
     <Compile Include="*.cs" />
     <MicroComIdl Include="..\Ownership\microcom-ownership.idl" />
   </ItemGroup>
@@ -74,6 +84,32 @@
   <ItemGroup>
     <_RustoloniaBrowserAppItem Include="$(RustoloniaBrowserApp)" />
   </ItemGroup>
+
+  <!--
+    rust/package-browser-host.ps1 sets RustoloniaBrowserKitCapture to record
+    the exact Emscripten link (and post-link wasm-opt) of this publish, so
+    the prebuilt browser host can relink dotnet.native.wasm with another Rust
+    app using only the Emscripten SDK. Runs even when the link is up to date.
+  -->
+  <Target Name="_RustoloniaCaptureBrowserLink" AfterTargets="_BrowserWasmLinkDotNet"
+          Condition="'$(RustoloniaBrowserKitCapture)' != ''">
+    <PropertyGroup>
+      <_RustoloniaWasmOptFlags>@(WasmOptConfigurationFlags, ' ')</_RustoloniaWasmOptFlags>
+    </PropertyGroup>
+    <ItemGroup>
+      <_RustoloniaBrowserLinkFact Include="DefaultFlagsRsp=$(_WasmDefaultFlagsRsp)" />
+      <_RustoloniaBrowserLinkFact Include="DefaultFlags=$(_WasmDefaultFlags)" />
+      <_RustoloniaBrowserLinkFact Include="DefaultLinkFlagsRsp=$(_WasmDefaultLinkFlagsRsp)" />
+      <_RustoloniaBrowserLinkFact Include="LinkRsp=$(_WasmLinkRsp)" />
+      <_RustoloniaBrowserLinkFact Include="RunWasmOpt=$(WasmRunWasmOpt)" />
+      <_RustoloniaBrowserLinkFact Include="WasmOptFlags=$(_RustoloniaWasmOptFlags)" />
+      <_RustoloniaBrowserLinkFact Include="RustApp=%(_RustoloniaBrowserAppItem.FullPath)" />
+      <_RustoloniaBrowserLinkFact Include="RuntimePackNativeDir=$(MicrosoftNetCoreAppRuntimePackRidNativeDir)" />
+      <!-- The runtime's JavaScript library reads these while emcc preprocesses it. -->
+      <_RustoloniaBrowserLinkFact Include="@(EmscriptenEnvVars->'Env:%(Identity)')" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(RustoloniaBrowserKitCapture)" Lines="@(_RustoloniaBrowserLinkFact)" Overwrite="true" WriteOnlyWhenDifferent="false" />
+  </Target>
 
   <Import Project="..\..\build\BrowserCom.targets" />
   <Import Project="..\..\build\NullableEnable.props" />

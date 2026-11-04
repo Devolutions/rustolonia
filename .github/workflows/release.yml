@@ -271,9 +271,159 @@ jobs:
           path: rust/artifacts/host/*.tar.gz
           if-no-files-found: error
 
+  build-android:
+    name: Android host
+    needs: version
+    runs-on: ubuntu-22.04
+    env:
+      RestoreConfigFile: ${{ github.workspace }}/avalonia-src/NuGet.Config
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          submodules: recursive
+
+      - name: Apply Avalonia source patches
+        shell: pwsh
+        run: ./avalonia-patches/apply-avalonia-patches.ps1 -AvaloniaRoot ./avalonia-src
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.403
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: microsoft
+          java-version: '17'
+
+      - name: Install the Android workload and SDK platform
+        run: |
+          set -euo pipefail
+          dotnet workload install android --version 10.0.401
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'platforms;android-36' 'build-tools;36.0.0'
+
+      - name: Set up Rust
+        shell: pwsh
+        run: |
+          rustup show
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          rustup target add aarch64-linux-android x86_64-linux-android
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Package the Android host APK
+        shell: pwsh
+        run: ./rust/package-android-host.ps1 -OutputRoot rust/artifacts/host
+
+      # Exercises the consumer path end to end: cargo-rustolonia-apk resolves
+      # the app's rustolonia-sys, "downloads" the host from a file:// mirror
+      # laid out like the release, verifies it against a checksum list and
+      # packages android-hello. A dotnet shim that always fails proves that
+      # nothing on the consumer side runs .NET.
+      - name: Build a Cargo-only Android app without .NET
+        run: |
+          set -euo pipefail
+          asset="rustolonia-host-$VERSION-android.apk"
+          cargo build --locked --release --manifest-path rust/Cargo.toml -p rustolonia-apk
+          mirror="$RUNNER_TEMP/android-mirror"
+          mkdir -p "$mirror/v$VERSION" "$RUNNER_TEMP/no-dotnet"
+          cp "rust/artifacts/host/$asset" "$mirror/v$VERSION/"
+          printf '#!/bin/sh\necho "dotnet must not run in a Cargo-only Android build" >&2\nexit 1\n' \
+            > "$RUNNER_TEMP/no-dotnet/dotnet"
+          chmod +x "$RUNNER_TEMP/no-dotnet/dotnet"
+          export PATH="$RUNNER_TEMP/no-dotnet:$PATH"
+          unset DOTNET_ROOT
+          export RUSTOLONIA_HOST_BASE_URL="file://$mirror"
+          export RUSTOLONIA_HOST_CHECKSUMS="rust/artifacts/host/$asset.sha256"
+          export RUSTOLONIA_CACHE_DIR="$RUNNER_TEMP/rustolonia-cache"
+          out="$RUNNER_TEMP/android-hello.apk"
+          ./rust/target/release/cargo-rustolonia-apk --manifest-path apps/android-hello/Cargo.toml --out "$out"
+          test -f "$RUSTOLONIA_CACHE_DIR/$VERSION/android/$asset"
+          tools="$ANDROID_HOME/build-tools/36.0.0"
+          "$tools/zipalign" -c -P 16 4 "$out"
+          "$tools/apksigner" verify --min-sdk-version 24 --verbose "$out"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rustolonia-host-android
+          path: rust/artifacts/host/*.apk
+          if-no-files-found: error
+
+  build-browser:
+    name: browser host
+    needs: version
+    runs-on: ubuntu-22.04
+    env:
+      RestoreConfigFile: ${{ github.workspace }}/avalonia-src/NuGet.Config
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          submodules: recursive
+
+      - name: Apply Avalonia source patches
+        shell: pwsh
+        run: ./avalonia-patches/apply-avalonia-patches.ps1 -AvaloniaRoot ./avalonia-src
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.403
+
+      - name: Install the wasm-tools workload
+        run: dotnet workload install wasm-tools --version 10.0.401
+
+      - name: Set up Rust
+        shell: pwsh
+        run: |
+          rustup show
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          rustup target add wasm32-unknown-emscripten
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Package the browser host
+        shell: pwsh
+        run: ./rust/package-browser-host.ps1 -OutputRoot rust/artifacts/host
+
+      # The consumer path: the upstream Emscripten SDK at the version the
+      # host records, Cargo, and the packaged host. A dotnet shim that always
+      # fails proves that nothing on the consumer side runs .NET.
+      - name: Install the Emscripten SDK the host records
+        run: |
+          set -euo pipefail
+          archive="rust/artifacts/host/rustolonia-host-$VERSION-browser-wasm.tar.gz"
+          emscripten=$(tar -xzOf "$archive" host-manifest.json | python3 -c 'import json,sys; print(json.load(sys.stdin)["emscriptenVersion"])')
+          git clone --depth 1 https://github.com/emscripten-core/emsdk.git "$RUNNER_TEMP/emsdk"
+          "$RUNNER_TEMP/emsdk/emsdk" install "$emscripten"
+          "$RUNNER_TEMP/emsdk/emsdk" activate "$emscripten"
+
+      - name: Build and load a Cargo-only browser app without .NET
+        run: |
+          set -euo pipefail
+          archive="$GITHUB_WORKSPACE/rust/artifacts/host/rustolonia-host-$VERSION-browser-wasm.tar.gz"
+          mkdir -p "$RUNNER_TEMP/no-dotnet"
+          printf '#!/bin/sh\necho "dotnet must not run in a Cargo-only browser build" >&2\nexit 1\n' \
+            > "$RUNNER_TEMP/no-dotnet/dotnet"
+          chmod +x "$RUNNER_TEMP/no-dotnet/dotnet"
+          source "$RUNNER_TEMP/emsdk/emsdk_env.sh"
+          export PATH="$RUNNER_TEMP/no-dotnet:$PATH"
+          unset DOTNET_ROOT
+          export RUSTOLONIA_BROWSER_HOST_ARCHIVE="$archive"
+          export RUSTOLONIA_BROWSER_HOST_SHA256="$(cut -d ' ' -f 1 "$archive.sha256")"
+          site="$RUNNER_TEMP/browser-site"
+          python3 samples/browser-standalone/build.py --out "$site"
+          python3 samples/browser-standalone/smoke-test.py "$site"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rustolonia-host-browser-wasm
+          path: rust/artifacts/host/*.tar.gz
+          if-no-files-found: error
+
   stage-release:
     name: stage release artifacts
-    needs: [version, build, build-ios]
+    needs: [version, build, build-ios, build-android, build-browser]
     runs-on: ubuntu-22.04
     permissions:
       contents: read
@@ -292,11 +442,13 @@ jobs:
 
       - name: Write SHA256SUMS
         working-directory: dist
-        run: sha256sum *.tar.gz > SHA256SUMS && cat SHA256SUMS
+        run: sha256sum *.tar.gz *.apk > SHA256SUMS && cat SHA256SUMS
 
       - uses: actions/attest-build-provenance@v2
         with:
-          subject-path: dist/*.tar.gz
+          subject-path: |
+            dist/*.tar.gz
+            dist/*.apk
 
       - uses: actions/upload-artifact@v4
         with:
@@ -484,7 +636,7 @@ jobs:
           flags=(--verify-tag --title "rustolonia $VERSION" --notes "Prebuilt rustolonia hosts for rustolonia-sys $VERSION.")
           if [ "$DRAFT" = 'true' ]; then flags+=(--draft); fi
           if [[ "$VERSION" == *-* ]]; then flags+=(--prerelease); fi
-          gh release create "v$VERSION" "${flags[@]}" ./*.tar.gz SHA256SUMS
+          gh release create "v$VERSION" "${flags[@]}" ./*.tar.gz ./*.apk SHA256SUMS
 
   publish-crates:
     name: publish crates ${{ inputs.version }}
