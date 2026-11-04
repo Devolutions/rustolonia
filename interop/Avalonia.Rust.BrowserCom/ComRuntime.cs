@@ -1,9 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Reflection;
-using System.Reflection.Emit;
 using System.Runtime.InteropServices;
 
 namespace Avalonia.Rust.BrowserCom;
@@ -21,20 +17,36 @@ public unsafe interface IComInterfaceDetails
 {
     Guid Iid { get; }
 
-    /// <summary>The generator's interface implementing the managed-to-native stubs as default methods.</summary>
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
-    Type Implementation { get; }
-
     void** ManagedVirtualMethodTable { get; }
-
-    /// <summary>The declaring assembly's shadow <c>IUnmanagedVirtualMethodTableProvider</c>.</summary>
-    Type VirtualMethodTableProvider { get; }
 }
 
-/// <summary>Implemented by the shadow <c>ComExposedClassAttribute&lt;T&gt;</c>.</summary>
-public unsafe interface IComExposedDetails
+/// <summary>Marks an assembly whose browser COM registrations are available to the build-time generator.</summary>
+[AttributeUsage(AttributeTargets.Assembly)]
+public sealed class BrowserComAssemblyAttribute(string registrationType) : Attribute
 {
-    ComInterfaceEntry* GetComInterfaceEntries(out int count);
+    public string RegistrationType { get; } = registrationType;
+}
+
+public unsafe delegate ComInterfaceEntry* ComInterfaceEntriesFactory(out int count);
+
+/// <summary>Supplies a native instance pointer and vtable to a generated COM proxy.</summary>
+public readonly unsafe struct ComVirtualMethodTableInfo(void* thisPointer, void** vtable)
+{
+    public void Deconstruct(out void* pointer, out void** table)
+    {
+        pointer = thisPointer;
+        table = vtable;
+    }
+}
+
+/// <summary>Implemented by generated proxy types.</summary>
+public unsafe interface IComVirtualMethodTableProvider
+{
+    ComVirtualMethodTableInfo GetVirtualMethodTableInfoForKey(Type type)
+    {
+        var (pointer, vtable) = ((ComObjectBase)this).GetInterface(type);
+        return new ComVirtualMethodTableInfo((void*)pointer, (void**)vtable);
+    }
 }
 
 /// <summary>
@@ -42,15 +54,11 @@ public unsafe interface IComExposedDetails
 /// implementation for runtimes without <c>ComWrappers</c> (Mono browser-wasm).
 /// </summary>
 /// <remarks>
-/// Browser-wasm is single threaded, but the implementation stays lock-guarded
-/// so it is safe if threads are enabled later. RCWs are runtime-emitted
-/// proxies deriving from <see cref="ComObjectBase"/> and implementing the
-/// generator's implementation interfaces, whose default methods perform the
-/// native calls. Because Mono has no <c>IDynamicInterfaceCastable</c>, a proxy
-/// can only be cast to interfaces chosen when it was created: the requested
-/// interface plus every interface of the same versioned family (for example
-/// <c>IAvnRustViewModel</c>, <c>IAvnRustViewModel2</c>, ...) that the native
-/// object answers through <c>QueryInterface</c>.
+/// Browser-wasm is currently single threaded; registration and wrapper
+/// caches are lock-guarded, but CCW reference counts assume one thread.
+/// RCW proxy types and COM registrations are generated at build time. Because
+/// Mono has no <c>IDynamicInterfaceCastable</c>, a proxy implements the
+/// requested interface and the supported interfaces from its versioned family.
 /// </remarks>
 public static unsafe class ComRuntime
 {
@@ -58,8 +66,6 @@ public static unsafe class ComRuntime
     private const int E_NOINTERFACE = unchecked((int)0x80004002);
     private const int E_POINTER = unchecked((int)0x80004003);
     private static readonly Guid IID_IUnknown = new("00000000-0000-0000-C000-000000000046");
-    private const string ShadowProviderName = "System.Runtime.InteropServices.Marshalling.IUnmanagedVirtualMethodTableProvider";
-
     // CCW block: [Header][Dispatch 0 = IUnknown][Dispatch 1..Count]. Native
     // callers receive Dispatch pointers; each points back to its header.
     [StructLayout(LayoutKind.Sequential)]
@@ -80,14 +86,55 @@ public static unsafe class ComRuntime
 
     private static readonly object s_gate = new();
     private static readonly Dictionary<object, nint> s_ccws = new(ReferenceEqualityComparer.Instance);
-    private static readonly Dictionary<Type, IComInterfaceDetails?> s_details = new();
-    private static readonly Dictionary<string, Type[]> s_families = new(StringComparer.Ordinal);
-    private static readonly Dictionary<string, Func<nint, ComObjectBase>> s_proxyFactories = new(StringComparer.Ordinal);
+    private static readonly Dictionary<Type, InterfaceRegistration> s_interfaces = new();
+    private static readonly Dictionary<string, List<InterfaceRegistration>> s_families = new(StringComparer.Ordinal);
+    private static readonly Dictionary<string, List<FamilyRegistration>> s_proxyFactories = new(StringComparer.Ordinal);
+    private static readonly List<ClassRegistration> s_classes = new();
     private static readonly Dictionary<(nint Identity, Type Type), WeakReference<ComObjectBase>> s_rcws = new();
-    private static List<Type>? s_comInterfaces;
-    private static int s_comInterfaceAssemblyCount;
     private static void** s_unknownVtable;
-    private static ModuleBuilder? s_proxyModule;
+
+    private sealed record InterfaceRegistration(Type Type, IComInterfaceDetails Details, string Family, string Identity);
+    private sealed record FamilyRegistration(Type[] Interfaces, Func<ulong, ComObjectBase> Create);
+    private sealed record ClassRegistration(Func<object, bool> Matches, int Depth, ComInterfaceEntriesFactory Entries);
+
+    /// <summary>Registers a source-generated COM interface and its versioned family.</summary>
+    public static void RegisterInterface(Type type, IComInterfaceDetails details, string family, string identity)
+    {
+        ArgumentNullException.ThrowIfNull(type);
+        ArgumentNullException.ThrowIfNull(details);
+        lock (s_gate)
+        {
+            if (s_interfaces.ContainsKey(type))
+                throw new InvalidOperationException($"Browser COM interface '{type}' was registered more than once.");
+            var registration = new InterfaceRegistration(type, details, family, identity);
+            s_interfaces.Add(type, registration);
+            if (!s_families.TryGetValue(family, out var members))
+                s_families.Add(family, members = new List<InterfaceRegistration>());
+            members.Add(registration);
+            members.Sort(static (left, right) => StringComparer.Ordinal.Compare(left.Identity, right.Identity));
+        }
+    }
+
+    /// <summary>Registers the proxy factory for one complete interface family.</summary>
+    public static void RegisterFamily(string family, Type[] interfaces, Func<ulong, ComObjectBase> factory)
+    {
+        lock (s_gate)
+        {
+            if (!s_proxyFactories.TryGetValue(family, out var factories))
+                s_proxyFactories.Add(family, factories = new List<FamilyRegistration>());
+            factories.Add(new FamilyRegistration(interfaces, factory));
+        }
+    }
+
+    /// <summary>Registers the generated native vtables for a managed COM class.</summary>
+    public static void RegisterClass<T>(ComInterfaceEntriesFactory entries, int depth) where T : class
+    {
+        lock (s_gate)
+        {
+            s_classes.Add(new ClassRegistration(static instance => instance is T, depth, entries));
+            s_classes.Sort(static (left, right) => right.Depth.CompareTo(left.Depth));
+        }
+    }
 
     public static void GetIUnknownImpl(out nint fpQueryInterface, out nint fpAddRef, out nint fpRelease)
     {
@@ -121,11 +168,11 @@ public static unsafe class ComRuntime
 
             ComInterfaceEntry* entries = null;
             var count = 0;
-            foreach (var attribute in instance.GetType().GetCustomAttributes(inherit: true))
+            foreach (var registration in s_classes)
             {
-                if (attribute is IComExposedDetails exposed)
+                if (registration.Matches(instance))
                 {
-                    entries = exposed.GetComInterfaceEntries(out count);
+                    entries = registration.Entries(out count);
                     break;
                 }
             }
@@ -195,19 +242,7 @@ public static unsafe class ComRuntime
     {
         lock (s_gate)
         {
-            if (!s_details.TryGetValue(type, out var details))
-            {
-                foreach (var attribute in type.GetCustomAttributes(inherit: false))
-                {
-                    if (attribute is IComInterfaceDetails found)
-                    {
-                        details = found;
-                        break;
-                    }
-                }
-                s_details[type] = details;
-            }
-            return details;
+            return s_interfaces.TryGetValue(type, out var registration) ? registration.Details : null;
         }
     }
 
@@ -309,115 +344,54 @@ public static unsafe class ComRuntime
 
     private static ComObjectBase CreateProxy(nint identity, Type interfaceType)
     {
-        if (GetInterfaceDetails(interfaceType) is null)
+        if (!s_interfaces.TryGetValue(interfaceType, out var requested))
             throw new InvalidCastException($"{interfaceType} is not a source-generated COM interface.");
 
-        var supported = new List<Type>();
-        foreach (var candidate in GetFamily(interfaceType))
+        var members = s_families[requested.Family];
+        FamilyRegistration? family = null;
+        if (s_proxyFactories.TryGetValue(requested.Family, out var factories))
         {
-            if (candidate == interfaceType)
+            foreach (var candidate in factories)
             {
-                supported.Add(candidate);
-                continue;
+                if (candidate.Interfaces.Length != members.Count)
+                    continue;
+                var match = true;
+                for (var i = 0; i < members.Count; i++)
+                {
+                    if (candidate.Interfaces[i] != members[i].Type)
+                    {
+                        match = false;
+                        break;
+                    }
+                }
+                if (match)
+                {
+                    family = candidate;
+                    break;
+                }
             }
-            if (QueryInterface(identity, GetInterfaceDetails(candidate)!.Iid, out var pointer) >= 0 && pointer != 0)
+        }
+        if (family is null)
+            throw new InvalidOperationException($"No generated browser COM proxy covers interface family '{requested.Family}'. Rebuild the browser host with all assemblies in that family referenced.");
+
+        ulong supported = 0;
+        for (var i = 0; i < members.Count; i++)
+        {
+            var candidate = members[i];
+            if (candidate.Type == interfaceType)
+            {
+                supported |= 1UL << i;
+            }
+            else if (QueryInterface(identity, candidate.Details.Iid, out var pointer) >= 0 && pointer != 0)
             {
                 Release(pointer);
-                supported.Add(candidate);
+                supported |= 1UL << i;
             }
         }
 
-        var key = string.Join(";", supported.Select(t => t.AssemblyQualifiedName));
-        if (!s_proxyFactories.TryGetValue(key, out var factory))
-        {
-            factory = EmitProxy(supported);
-            s_proxyFactories[key] = factory;
-        }
-        var proxy = factory(identity);
+        var proxy = family.Create(supported);
         proxy.Initialize(identity, interfaceType);
         return proxy;
-    }
-
-    /// <summary>
-    /// The versioned capability family of <paramref name="interfaceType"/>:
-    /// all source-generated COM interfaces whose names equal its name with
-    /// any trailing version digits removed, optionally followed by digits.
-    /// </summary>
-    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Only interfaces kept by the trimmer can be requested.")]
-    private static Type[] GetFamily(Type interfaceType)
-    {
-        var name = interfaceType.Name.TrimEnd('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
-        var familyKey = interfaceType.Namespace + "." + name;
-        if (s_families.TryGetValue(familyKey, out var family) && s_comInterfaceAssemblyCount == AppDomain.CurrentDomain.GetAssemblies().Length)
-            return family;
-
-        var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-        if (s_comInterfaces is null || s_comInterfaceAssemblyCount != assemblies.Length)
-        {
-            var interfaces = new List<Type>();
-            foreach (var assembly in assemblies)
-            {
-                if (assembly.IsDynamic || assembly.GetType(ShadowProviderName) is null)
-                    continue;
-                Type?[] types;
-                try
-                {
-                    types = assembly.GetTypes();
-                }
-                catch (ReflectionTypeLoadException e)
-                {
-                    types = e.Types;
-                }
-                foreach (var type in types)
-                {
-                    if (type is { IsInterface: true } && GetInterfaceDetails(type) is not null)
-                        interfaces.Add(type);
-                }
-            }
-            s_comInterfaces = interfaces;
-            s_comInterfaceAssemblyCount = assemblies.Length;
-            s_families.Clear();
-        }
-
-        family = s_comInterfaces
-            .Where(t => t.Namespace == interfaceType.Namespace
-                && t.Name.StartsWith(name, StringComparison.Ordinal)
-                && t.Name.AsSpan(name.Length).IndexOfAnyExceptInRange('0', '9') < 0)
-            .OrderBy(t => t.Name.Length)
-            .ThenBy(t => t.Name, StringComparer.Ordinal)
-            .ToArray();
-        if (!family.Contains(interfaceType))
-            family = [interfaceType, .. family];
-        s_families[familyKey] = family;
-        return family;
-    }
-
-    [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "Implementation types are annotated with DynamicallyAccessedMembers.All.")]
-    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Browser-wasm runs on Mono with Reflection.Emit support.")]
-    private static Func<nint, ComObjectBase> EmitProxy(List<Type> interfaces)
-    {
-        if (s_proxyModule is null)
-        {
-            var assembly = AssemblyBuilder.DefineDynamicAssembly(
-                new AssemblyName("Avalonia.Rust.BrowserCom.Proxies"), AssemblyBuilderAccess.Run);
-            s_proxyModule = assembly.DefineDynamicModule("Avalonia.Rust.BrowserCom.Proxies");
-        }
-
-        var builder = s_proxyModule.DefineType(
-            $"ComProxy{s_proxyFactories.Count}_{interfaces[0].Name}",
-            TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.Class,
-            typeof(ComObjectBase));
-        var providers = new HashSet<Type>();
-        foreach (var type in interfaces)
-        {
-            var details = GetInterfaceDetails(type)!;
-            builder.AddInterfaceImplementation(details.Implementation);
-            if (providers.Add(details.VirtualMethodTableProvider))
-                builder.AddInterfaceImplementation(details.VirtualMethodTableProvider);
-        }
-        builder.DefineDefaultConstructor(MethodAttributes.Public);
-        var proxyType = builder.CreateType();
-        return _ => (ComObjectBase)Activator.CreateInstance(proxyType)!;
     }
 
     private static void ThrowIfFailed(int hresult)
@@ -427,7 +401,7 @@ public static unsafe class ComRuntime
     }
 }
 
-/// <summary>Base class of runtime-emitted RCW proxies.</summary>
+/// <summary>Base class of source-generated RCW proxies.</summary>
 public abstract class ComObjectBase
 {
     private readonly Dictionary<Type, (nint This, nint Vtable)> _interfaces = new();

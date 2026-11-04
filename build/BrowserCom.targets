@@ -3,18 +3,45 @@
     Import from any project that uses [GeneratedComInterface] /
     [GeneratedComClass] and multi-targets $(AvsCurrentBrowserTargetFramework).
     For the browser target framework it compiles the shadow COM interop types
-    and references the browser COM runtime (see
-    interop/Avalonia.Rust.BrowserCom). Other target frameworks are unaffected.
+    and references the browser COM runtime and generator. Other target
+    frameworks are unaffected unless EnableBrowserCom is explicitly set, as
+    in the desktop-hosted shim tests.
   -->
   <PropertyGroup Condition="'$([MSBuild]::GetTargetPlatformIdentifier($(TargetFramework)))' == 'browser'">
+    <EnableBrowserCom>true</EnableBrowserCom>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(EnableBrowserCom)' == 'true'">
     <!-- CS0436: the shadow types intentionally win over the BCL COM types. -->
     <NoWarn>$(NoWarn);CS0436</NoWarn>
     <DefineConstants>$(DefineConstants);AVN_BROWSER_COM</DefineConstants>
-    <IsAotCompatible>false</IsAotCompatible>
   </PropertyGroup>
-  <ItemGroup Condition="'$([MSBuild]::GetTargetPlatformIdentifier($(TargetFramework)))' == 'browser'">
+  <ItemGroup Condition="'$(EnableBrowserCom)' == 'true'">
     <Compile Include="$(MSBuildThisFileDirectory)..\interop\Avalonia.Rust.BrowserCom\Shadow\ComInteropShadow.cs"
              Link="BrowserCom\ComInteropShadow.cs" />
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\interop\Avalonia.Rust.BrowserCom\Avalonia.Rust.BrowserCom.csproj" />
+    <!-- The analyzer runs in the compiler and is not part of the published app. -->
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\interop\Avalonia.Rust.BrowserCom.Generator\Avalonia.Rust.BrowserCom.Generator.csproj"
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all"
+                      GlobalPropertiesToRemove="PublishAot;PublishTrimmed;SelfContained;RuntimeIdentifier;RuntimeFrameworkVersion" />
+    <CompilerVisibleProperty Include="BrowserComSdkGeneratorPath" />
   </ItemGroup>
+  <Target Name="SetBrowserComSdkGeneratorPath"
+          BeforeTargets="GenerateMSBuildEditorConfigFileCore"
+          DependsOnTargets="ResolveReferences"
+          Condition="'$(EnableBrowserCom)' == 'true'">
+    <ItemGroup>
+      <_BrowserComSdkGenerator Include="@(Analyzer)" Condition="'%(Filename)' == 'Microsoft.Interop.ComInterfaceGenerator'" />
+    </ItemGroup>
+    <Error Condition="'@(_BrowserComSdkGenerator)' == ''"
+           Text="Browser COM requires the .NET SDK COM source generator." />
+    <PropertyGroup>
+      <BrowserComSdkGeneratorPath>@(_BrowserComSdkGenerator->'%(FullPath)')</BrowserComSdkGeneratorPath>
+    </PropertyGroup>
+  </Target>
+  <Target Name="ReplaceBrowserComSdkGenerator" BeforeTargets="CoreCompile" Condition="'$(EnableBrowserCom)' == 'true'">
+    <ItemGroup>
+      <_BrowserComSdkGeneratorToRemove Include="@(Analyzer)" Condition="'%(Filename)' == 'Microsoft.Interop.ComInterfaceGenerator'" />
+      <Analyzer Remove="@(_BrowserComSdkGeneratorToRemove)" />
+    </ItemGroup>
+  </Target>
 </Project>

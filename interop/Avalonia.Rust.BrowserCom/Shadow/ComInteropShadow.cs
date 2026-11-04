@@ -15,9 +15,6 @@
 #pragma warning disable CS0436
 #pragma warning disable CS0649
 
-using System.Diagnostics.CodeAnalysis;
-using BrowserCom = Avalonia.Rust.BrowserCom;
-
 namespace System.Runtime.InteropServices
 {
     internal abstract unsafe class ComWrappers
@@ -33,11 +30,11 @@ namespace System.Runtime.InteropServices
             public void* Vtable;
 
             public static T GetInstance<T>(ComInterfaceDispatch* dispatchPtr) where T : class =>
-                (T)BrowserCom.ComRuntime.GetCcwTarget(dispatchPtr);
+                (T)global::Avalonia.Rust.BrowserCom.ComRuntime.GetCcwTarget(dispatchPtr);
         }
 
         public static void GetIUnknownImpl(out nint fpQueryInterface, out nint fpAddRef, out nint fpRelease) =>
-            BrowserCom.ComRuntime.GetIUnknownImpl(out fpQueryInterface, out fpAddRef, out fpRelease);
+            global::Avalonia.Rust.BrowserCom.ComRuntime.GetIUnknownImpl(out fpQueryInterface, out fpAddRef, out fpRelease);
     }
 }
 
@@ -52,24 +49,16 @@ namespace System.Runtime.InteropServices.Marshalling
     internal unsafe interface IIUnknownDerivedDetails
     {
         Guid Iid { get; }
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
-        Type Implementation { get; }
         void** ManagedVirtualMethodTable { get; }
     }
 
     [AttributeUsage(AttributeTargets.Interface)]
-    internal sealed unsafe class IUnknownDerivedAttribute<T, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TImpl>
-        : Attribute, IIUnknownDerivedDetails, BrowserCom.IComInterfaceDetails
+    internal sealed unsafe class IUnknownDerivedAttribute<T, TImpl>
+        : Attribute, IIUnknownDerivedDetails, global::Avalonia.Rust.BrowserCom.IComInterfaceDetails
         where T : IIUnknownInterfaceType
     {
         public Guid Iid => T.Iid;
-
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
-        public Type Implementation => typeof(TImpl);
-
         public void** ManagedVirtualMethodTable => T.ManagedVirtualMethodTable;
-
-        public Type VirtualMethodTableProvider => typeof(IUnmanagedVirtualMethodTableProvider);
     }
 
     internal unsafe interface IComExposedClass
@@ -78,11 +67,9 @@ namespace System.Runtime.InteropServices.Marshalling
     }
 
     [AttributeUsage(AttributeTargets.Class)]
-    internal sealed unsafe class ComExposedClassAttribute<T> : Attribute, BrowserCom.IComExposedDetails
+    internal sealed class ComExposedClassAttribute<T> : Attribute
         where T : IComExposedClass
     {
-        public BrowserCom.ComInterfaceEntry* GetComInterfaceEntries(out int count) =>
-            (BrowserCom.ComInterfaceEntry*)T.GetComInterfaceEntries(out count);
     }
 
     internal readonly unsafe struct VirtualMethodTableInfo
@@ -105,11 +92,11 @@ namespace System.Runtime.InteropServices.Marshalling
 
     internal unsafe interface IUnmanagedVirtualMethodTableProvider
     {
-        // Runtime-emitted RCW proxies derive from ComObjectBase and implement
-        // this interface without bodies; the default method does the lookup.
+        // Generated vtable-index proxies derive from ComObjectBase; the
+        // default method supplies their native instance pointer and vtable.
         VirtualMethodTableInfo GetVirtualMethodTableInfoForKey(Type type)
         {
-            var (thisPointer, vtable) = ((BrowserCom.ComObjectBase)this).GetInterface(type);
+            var (thisPointer, vtable) = ((global::Avalonia.Rust.BrowserCom.ComObjectBase)this).GetInterface(type);
             return new VirtualMethodTableInfo((void*)thisPointer, (void**)vtable);
         }
     }
@@ -125,12 +112,21 @@ namespace System.Runtime.InteropServices.Marshalling
             new DetailsStrategy();
 
         public nint GetOrCreateComInterfaceForObject(object instance, CreateComInterfaceFlags flags) =>
-            BrowserCom.ComRuntime.GetOrCreateComInterfaceForObject(instance);
+            global::Avalonia.Rust.BrowserCom.ComRuntime.GetOrCreateComInterfaceForObject(instance);
 
         private sealed class DetailsStrategy : IIUnknownInterfaceDetailsStrategy
         {
-            public IIUnknownDerivedDetails? GetIUnknownDerivedDetails(RuntimeTypeHandle type) =>
-                BrowserCom.ComRuntime.GetInterfaceDetails(Type.GetTypeFromHandle(type)!) as IIUnknownDerivedDetails;
+            public IIUnknownDerivedDetails? GetIUnknownDerivedDetails(RuntimeTypeHandle type)
+            {
+                var details = global::Avalonia.Rust.BrowserCom.ComRuntime.GetInterfaceDetails(Type.GetTypeFromHandle(type)!);
+                return details is null ? null : new InterfaceDetails(details);
+            }
+        }
+
+        private sealed unsafe class InterfaceDetails(global::Avalonia.Rust.BrowserCom.IComInterfaceDetails details) : IIUnknownDerivedDetails
+        {
+            public Guid Iid => details.Iid;
+            public void** ManagedVirtualMethodTable => details.ManagedVirtualMethodTable;
         }
     }
 
@@ -138,15 +134,15 @@ namespace System.Runtime.InteropServices.Marshalling
     internal static unsafe class ComInterfaceMarshaller<T> where T : class
     {
         public static void* ConvertToUnmanaged(T? managed) =>
-            managed is null ? null : BrowserCom.ComRuntime.ConvertToUnmanaged(managed, typeof(T));
+            managed is null ? null : global::Avalonia.Rust.BrowserCom.ComRuntime.ConvertToUnmanaged(managed, typeof(T));
 
         public static T? ConvertToManaged(void* unmanaged) =>
-            unmanaged is null ? null : (T)BrowserCom.ComRuntime.GetOrCreateObjectForComInstance((nint)unmanaged, typeof(T));
+            unmanaged is null ? null : (T)global::Avalonia.Rust.BrowserCom.ComRuntime.GetOrCreateObjectForComInstance((nint)unmanaged, typeof(T));
 
         public static void Free(void* unmanaged)
         {
             if (unmanaged is not null)
-                BrowserCom.ComRuntime.Release((nint)unmanaged);
+                global::Avalonia.Rust.BrowserCom.ComRuntime.Release((nint)unmanaged);
         }
     }
 

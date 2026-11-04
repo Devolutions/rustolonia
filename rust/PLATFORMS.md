@@ -512,10 +512,28 @@ The host and interop assemblies use source-generated COM
 `System.Runtime.InteropServices.Marshalling` types that the generator targets
 (`interop/Avalonia.Rust.BrowserCom/Shadow`) and references
 `Avalonia.Rust.BrowserCom`, a small COM runtime that builds the managed object
-wrappers and the native object proxies from the generator's own vtables. The
-ABI seen by Rust is identical on both platforms. Projects that implement or
-consume Rustolonia COM interfaces must multi-target
-`$(AvsCurrentBrowserTargetFramework)` and import `BrowserCom.targets`.
+wrappers and native object proxies from the generator's own vtables. A build-time
+generator adapts the .NET SDK's COM source generator and emits the proxy types,
+interface registrations and class registrations ahead of time. The deployed COM
+shim does not emit types, scan assemblies or discover attributes at runtime.
+The generator loads the SDK generator in the compiler process; that build-time
+reflection is not part of the browser app.
+
+The ABI seen by Rust is identical on both platforms. Optional casts between
+versioned interfaces continue to follow `QueryInterface`: the generator emits
+a proxy for each possible combination of supported interfaces in a family.
+This has an exponential build-time and size cost (the 13-interface application
+family needs 8,191 proxy types); families are currently limited to 16
+interfaces and produce a build error beyond that limit. Projects that implement
+or consume Rustolonia COM interfaces must multi-target
+`$(AvsCurrentBrowserTargetFramework)` and import `BrowserCom.targets`, so their
+registrations and all referenced interface families are available at build time.
+Families split across assemblies that are not referenced by the browser host
+cannot be combined dynamically.
+
+Removing runtime reflection from this shim does not make browser NativeAOT a
+supported .NET target. The current browser host still uses Mono WebAssembly
+and requires the .NET SDK and `wasm-tools` to build.
 
 ### Limitations
 

@@ -10,6 +10,7 @@
     <Project Path="interop/Avalonia.Rust.Interop/Avalonia.Rust.Interop.csproj" />
     <Project Path="interop/Avalonia.Rust/Avalonia.Rust.csproj" />
     <Project Path="interop/Avalonia.Rust.BrowserCom/Avalonia.Rust.BrowserCom.csproj" />
+    <Project Path="interop/Avalonia.Rust.BrowserCom.Generator/Avalonia.Rust.BrowserCom.Generator.csproj" />
   </Folder>
   <Folder Name="/projection/">
     <Project Path="projection/Avalonia.Projection.Generator/Avalonia.Projection.Generator.csproj" />
@@ -22,6 +23,10 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Avalonia.Host.Tests/Avalonia.Host.Tests.csproj" />
+    <Project Path="tests/Avalonia.Rust.BrowserCom.TestInterfaces/Avalonia.Rust.BrowserCom.TestInterfaces.csproj" />
+    <Project Path="tests/Avalonia.Rust.BrowserCom.TestFixtures/Avalonia.Rust.BrowserCom.TestFixtures.csproj" />
+    <Project Path="tests/Avalonia.Rust.BrowserCom.Tests/Avalonia.Rust.BrowserCom.Tests.csproj" />
+    <Project Path="tests/Avalonia.Rust.BrowserCom.NativeAotSmoke/Avalonia.Rust.BrowserCom.NativeAotSmoke.csproj" />
     <Project Path="tests/Avalonia.Projection.Generator.Tests/Avalonia.Projection.Generator.Tests.csproj" />
     <Project Path="tests/Avalonia.Projection.Ir.Tests/Avalonia.Projection.Ir.Tests.csproj" />
   </Folder>

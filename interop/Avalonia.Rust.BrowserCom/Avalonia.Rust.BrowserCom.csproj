@@ -8,13 +8,12 @@
     runtime instead of the unsupported BCL implementation.
   -->
   <PropertyGroup>
-    <TargetFramework>$(AvsCurrentBrowserTargetFramework)</TargetFramework>
+    <TargetFrameworks>$(AvsCurrentTargetFramework);$(AvsCurrentBrowserTargetFramework)</TargetFrameworks>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <IsPackable>false</IsPackable>
     <IsTrimmable>true</IsTrimmable>
-    <!-- RCW proxies are emitted at runtime; browser-wasm runs on Mono, not NativeAOT. -->
-    <IsAotCompatible>false</IsAotCompatible>
+    <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="Shadow/**" />

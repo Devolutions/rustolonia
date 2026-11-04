@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(AvsCurrentTargetFramework)</TargetFramework>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsAotCompatible>true</IsAotCompatible>
+    <IsPackable>false</IsPackable>
+    <EnableBrowserCom>true</EnableBrowserCom>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Avalonia.Rust.BrowserCom.TestFixtures\Avalonia.Rust.BrowserCom.TestFixtures.csproj" />
+  </ItemGroup>
+  <Import Project="..\..\build\BrowserCom.targets" />
+</Project>
