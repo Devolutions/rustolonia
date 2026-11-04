@@ -1,0 +1,20 @@
+<Project>
+  <!--
+    Import from any project that uses [GeneratedComInterface] /
+    [GeneratedComClass] and multi-targets $(AvsCurrentBrowserTargetFramework).
+    For the browser target framework it compiles the shadow COM interop types
+    and references the browser COM runtime (see
+    interop/Avalonia.Rust.BrowserCom). Other target frameworks are unaffected.
+  -->
+  <PropertyGroup Condition="'$([MSBuild]::GetTargetPlatformIdentifier($(TargetFramework)))' == 'browser'">
+    <!-- CS0436: the shadow types intentionally win over the BCL COM types. -->
+    <NoWarn>$(NoWarn);CS0436</NoWarn>
+    <DefineConstants>$(DefineConstants);AVN_BROWSER_COM</DefineConstants>
+    <IsAotCompatible>false</IsAotCompatible>
+  </PropertyGroup>
+  <ItemGroup Condition="'$([MSBuild]::GetTargetPlatformIdentifier($(TargetFramework)))' == 'browser'">
+    <Compile Include="$(MSBuildThisFileDirectory)..\interop\Avalonia.Rust.BrowserCom\Shadow\ComInteropShadow.cs"
+             Link="BrowserCom\ComInteropShadow.cs" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\interop\Avalonia.Rust.BrowserCom\Avalonia.Rust.BrowserCom.csproj" />
+  </ItemGroup>
+</Project>

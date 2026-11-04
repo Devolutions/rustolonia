@@ -1,0 +1,15 @@
+[package]
+name = "browser-sample"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+description = "Rustolonia running in the browser (WebAssembly); see rust/PLATFORMS.md"
+
+[lib]
+# Linked into the .NET WebAssembly browser host (host/Browser) by
+# rust/build-browser.ps1.
+crate-type = ["staticlib"]
+
+[dependencies]
+rustolonia = { path = "../rustolonia", default-features = false, features = ["no-download"] }

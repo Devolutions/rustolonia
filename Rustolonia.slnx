@@ -9,6 +9,7 @@
   <Folder Name="/interop/">
     <Project Path="interop/Avalonia.Rust.Interop/Avalonia.Rust.Interop.csproj" />
     <Project Path="interop/Avalonia.Rust/Avalonia.Rust.csproj" />
+    <Project Path="interop/Avalonia.Rust.BrowserCom/Avalonia.Rust.BrowserCom.csproj" />
   </Folder>
   <Folder Name="/projection/">
     <Project Path="projection/Avalonia.Projection.Generator/Avalonia.Projection.Generator.csproj" />

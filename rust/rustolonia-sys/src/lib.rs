@@ -93,15 +93,19 @@ pub use value_converter::{
     IAvnRustValueConverterProvider, ScalarKind, ScalarValue,
 };
 
+#[cfg(not(target_os = "emscripten"))]
 use libloading::Library;
 mod file_drag;
+mod main_view;
 mod popup_gate;
 mod termination;
 pub use file_drag::{file_drag_handler, FileDragEvent, IAvnApplication12, IAvnFileDragHandler};
+pub use main_view::IAvnApplication13;
 pub use popup_gate::{
     native_popup_handler, IAvnApplication10, IAvnNativePopupHandler, NativePopupEvent,
 };
 use std::ffi::c_void;
+#[cfg(not(target_os = "emscripten"))]
 use std::mem::ManuallyDrop;
 use std::path::Path;
 use std::ptr;
@@ -115,6 +119,17 @@ type FreeFn = unsafe extern "C" fn(*mut c_void);
 type AllocUtf16Fn = unsafe extern "C" fn(i32) -> *mut u16;
 type GetLastErrorFn = unsafe extern "C" fn(*mut *mut u16) -> i32;
 type GetHostInfoFn = unsafe extern "C" fn(*mut HostInfoNative) -> i32;
+
+// Browser builds link the Rust app into the .NET WebAssembly host, which
+// exports these symbols from `host/Exports.cs`.
+#[cfg(target_os = "emscripten")]
+extern "C" {
+    fn avn_get_activation_factory(factory: *mut *mut c_void) -> i32;
+    fn avn_free(ptr: *mut c_void);
+    fn avn_alloc_utf16(length: i32) -> *mut u16;
+    fn avn_get_last_error(message: *mut *mut u16) -> i32;
+    fn avn_get_host_info(info: *mut HostInfoNative) -> i32;
+}
 
 /// SHA-256 of `include/avalonia-rust-abi.h`, computed by `build.rs`. A host
 /// is only accepted if it reports this exact fingerprint.
@@ -149,6 +164,7 @@ static HOST_EXPORTS: Mutex<()> = Mutex::new(());
 /// Failure while loading a native Avalonia host.
 #[derive(Debug)]
 pub enum HostLoadError {
+    #[cfg(not(target_os = "emscripten"))]
     Library(libloading::Error),
     IncompatibleAllocator,
     /// The host was built against a different ABI than this crate. `found`
@@ -162,6 +178,7 @@ pub enum HostLoadError {
 impl std::fmt::Display for HostLoadError {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            #[cfg(not(target_os = "emscripten"))]
             Self::Library(error) => error.fmt(formatter),
             Self::IncompatibleAllocator => formatter.write_str(
                 "Avalonia Host exports a different UTF-16 allocator than the already loaded host",
@@ -225,6 +242,7 @@ unsafe fn query_host_info(get_host_info: GetHostInfoFn) -> Option<HostInfo> {
 
 impl std::error::Error for HostLoadError {}
 
+#[cfg(not(target_os = "emscripten"))]
 impl From<libloading::Error> for HostLoadError {
     fn from(error: libloading::Error) -> Self {
         Self::Library(error)
@@ -347,7 +365,9 @@ pub struct Host {
     // Successful hosts deliberately remain loaded for the process lifetime:
     // FREE/ALLOC_UTF16 are process-wide ABI callbacks and may service strings
     // retained by Rust after an individual Host value is dropped.
+    #[cfg(not(target_os = "emscripten"))]
     _lib: ManuallyDrop<Library>,
+    #[cfg(not(target_os = "emscripten"))]
     _dependencies: ManuallyDrop<Vec<Library>>,
     get_activation_factory: GetActivationFactoryFn,
     free: FreeFn,
@@ -355,7 +375,72 @@ pub struct Host {
     info: HostInfo,
 }
 
+/// Host exports shared by the dynamic and static loading paths.
+struct HostExports {
+    get_activation_factory: GetActivationFactoryFn,
+    free: FreeFn,
+    alloc_utf16: AllocUtf16Fn,
+    get_last_error: GetLastErrorFn,
+}
+
+/// Validates the host ABI and publishes its process-wide string allocator.
+fn publish_host_exports(
+    found: Option<HostInfo>,
+    exports: &HostExports,
+) -> std::result::Result<HostInfo, HostLoadError> {
+    let info = check_host_compatibility(ABI_FINGERPRINT, found)?;
+    let _exports = HOST_EXPORTS
+        .lock()
+        .unwrap_or_else(|poison| poison.into_inner());
+    if FREE
+        .get()
+        .is_some_and(|published| *published as usize != exports.free as usize)
+        || ALLOC_UTF16
+            .get()
+            .is_some_and(|published| *published as usize != exports.alloc_utf16 as usize)
+    {
+        return Err(HostLoadError::IncompatibleAllocator);
+    }
+    if FREE.get().is_none() {
+        FREE.set(exports.free)
+            .expect("host allocator publication must be serialized");
+    }
+    if ALLOC_UTF16.get().is_none() {
+        ALLOC_UTF16
+            .set(exports.alloc_utf16)
+            .expect("host allocator publication must be serialized");
+    }
+    Ok(info)
+}
+
 impl Host {
+    /// Binds the host statically linked into a browser (wasm) app. `path`
+    /// is ignored; it exists so callers can share code with desktop targets.
+    #[cfg(target_os = "emscripten")]
+    pub fn load(_path: impl AsRef<Path>) -> std::result::Result<Self, HostLoadError> {
+        Self::load_static()
+    }
+
+    /// Binds the host statically linked into a browser (wasm) app.
+    #[cfg(target_os = "emscripten")]
+    pub fn load_static() -> std::result::Result<Self, HostLoadError> {
+        let exports = HostExports {
+            get_activation_factory: avn_get_activation_factory,
+            free: avn_free,
+            alloc_utf16: avn_alloc_utf16,
+            get_last_error: avn_get_last_error,
+        };
+        let found = unsafe { query_host_info(avn_get_host_info) };
+        let info = publish_host_exports(found, &exports)?;
+        Ok(Self {
+            get_activation_factory: exports.get_activation_factory,
+            free: exports.free,
+            get_last_error: exports.get_last_error,
+            info,
+        })
+    }
+
+    #[cfg(not(target_os = "emscripten"))]
     pub fn load(path: impl AsRef<Path>) -> std::result::Result<Self, HostLoadError> {
         unsafe {
             let path = path.as_ref();
@@ -384,39 +469,21 @@ impl Host {
                 Ok(get_host_info) => query_host_info(*get_host_info),
                 Err(_) => None,
             };
-            let info = check_host_compatibility(ABI_FINGERPRINT, found)?;
-            let get_activation_factory =
-                *lib.get::<GetActivationFactoryFn>(b"avn_get_activation_factory\0")?;
-            let free = *lib.get::<FreeFn>(b"avn_free\0")?;
-            let alloc_utf16 = *lib.get::<AllocUtf16Fn>(b"avn_alloc_utf16\0")?;
-            let get_last_error = *lib.get::<GetLastErrorFn>(b"avn_get_last_error\0")?;
-            let _exports = HOST_EXPORTS
-                .lock()
-                .unwrap_or_else(|poison| poison.into_inner());
-            if FREE
-                .get()
-                .is_some_and(|published| *published as usize != free as usize)
-                || ALLOC_UTF16
-                    .get()
-                    .is_some_and(|published| *published as usize != alloc_utf16 as usize)
-            {
-                return Err(HostLoadError::IncompatibleAllocator);
-            }
-            if FREE.get().is_none() {
-                FREE.set(free)
-                    .expect("host allocator publication must be serialized");
-            }
-            if ALLOC_UTF16.get().is_none() {
-                ALLOC_UTF16
-                    .set(alloc_utf16)
-                    .expect("host allocator publication must be serialized");
-            }
+            check_host_compatibility(ABI_FINGERPRINT, found.clone())?;
+            let exports = HostExports {
+                get_activation_factory: *lib
+                    .get::<GetActivationFactoryFn>(b"avn_get_activation_factory\0")?,
+                free: *lib.get::<FreeFn>(b"avn_free\0")?,
+                alloc_utf16: *lib.get::<AllocUtf16Fn>(b"avn_alloc_utf16\0")?,
+                get_last_error: *lib.get::<GetLastErrorFn>(b"avn_get_last_error\0")?,
+            };
+            let info = publish_host_exports(found, &exports)?;
             Ok(Self {
                 _lib: ManuallyDrop::new(lib),
                 _dependencies: ManuallyDrop::new(dependencies),
-                get_activation_factory,
-                free,
-                get_last_error,
+                get_activation_factory: exports.get_activation_factory,
+                free: exports.free,
+                get_last_error: exports.get_last_error,
                 info,
             })
         }

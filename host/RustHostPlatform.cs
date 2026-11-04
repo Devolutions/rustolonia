@@ -7,6 +7,7 @@ using Avalonia.Win32;
 using Avalonia.X11;
 #elif AVN_HOST_OSX
 using Avalonia.Native;
+#elif AVN_HOST_BROWSER
 #else
 #error A supported Avalonia Rust host platform must be selected.
 #endif
@@ -23,6 +24,9 @@ internal static partial class RustHostPlatform
         builder.UseX11();
 #elif AVN_HOST_OSX
         builder.UseAvaloniaNative();
+#elif AVN_HOST_BROWSER
+        // StartBrowserAppAsync installs the browser windowing subsystem after
+        // loading Avalonia's JavaScript modules.
 #endif
         return builder
             .UseSkia()

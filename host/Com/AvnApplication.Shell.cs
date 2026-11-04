@@ -167,7 +167,7 @@ public partial class AvnApplication : IAvnApplication8, IAvnApplication9
         return hr;
     }
 
-    internal static int NativeHandleKind(string descriptor) => descriptor switch
+    internal static int NativeHandleKind(string? descriptor) => descriptor switch
     {
         "HWND" => NativeHandleHwnd,
         "XID" => NativeHandleXid,

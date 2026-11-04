@@ -62,6 +62,16 @@ Native execution needs a matching OS/architecture and a desktop display. On a
 headless Linux runner, use Xvfb for the consumer smoke flow. Cross-compilation
 alone does not establish native runtime coverage.
 
+Browser (WebAssembly) changes need the `wasm32-unknown-emscripten` Rust
+target and the `wasm-tools` .NET workload. `build-browser.ps1` builds the
+sample, links it into the browser host and publishes a static site; open it in
+a browser to verify (see `rust/PLATFORMS.md#browser-webassembly`):
+
+```powershell
+cargo check --manifest-path .\rust\Cargo.toml --target wasm32-unknown-emscripten -p browser-sample
+pwsh .\rust\build-browser.ps1 -Serve
+```
+
 ## Change the source of truth
 
 Edit projection policy, schemas and generators rather than generated C#, Rust

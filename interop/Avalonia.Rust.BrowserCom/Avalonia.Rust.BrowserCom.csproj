@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    COM runtime for browser-wasm. Mono on browser-wasm implements neither
+    ComWrappers nor IDynamicInterfaceCastable, which the .NET COM source
+    generator relies on. build/BrowserCom.targets compiles internal shadow types
+    (Shadow/ComInteropShadow.cs) into every COM-generating assembly for the
+    browser target framework; those shadows bind the generator output to this
+    runtime instead of the unsupported BCL implementation.
+  -->
+  <PropertyGroup>
+    <TargetFramework>$(AvsCurrentBrowserTargetFramework)</TargetFramework>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsPackable>false</IsPackable>
+    <IsTrimmable>true</IsTrimmable>
+    <!-- RCW proxies are emitted at runtime; browser-wasm runs on Mono, not NativeAOT. -->
+    <IsAotCompatible>false</IsAotCompatible>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="Shadow/**" />
+    <None Include="Shadow/**" />
+  </ItemGroup>
+  <Import Project="..\..\build\NullableEnable.props" />
+</Project>
