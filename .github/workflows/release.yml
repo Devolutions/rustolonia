@@ -88,7 +88,7 @@ jobs:
           BUILD_RUN_ID: ${{ inputs.build_run_id }}
 
   build:
-    name: host (${{ matrix.rid }})
+    name: host (${{ matrix.rid }}${{ matrix.backend == 'Drm' && ', DRM' || '' }})
     needs: version
     runs-on: ${{ matrix.os }}
     env:
@@ -105,6 +105,8 @@ jobs:
           # The oldest runner image sets the glibc floor (2.35).
           - { os: ubuntu-22.04, rid: linux-x64 }
           - { os: ubuntu-22.04-arm, rid: linux-arm64 }
+          - { os: ubuntu-22.04, rid: linux-x64, backend: Drm }
+          - { os: ubuntu-22.04-arm, rid: linux-arm64, backend: Drm }
           # Intel macOS runners are slow; Apple silicon cross-builds osx-x64
           # and smoke-launches it through Rosetta 2.
           - { os: macos-14, rid: osx-x64, rust-target: x86_64-apple-darwin }
@@ -156,7 +158,7 @@ jobs:
           /usr/bin/arch -x86_64 /usr/bin/true
 
       - name: Install Linux smoke-test display
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && matrix.backend != 'Drm'
         run: sudo apt-get update && sudo apt-get install --yes xvfb
 
       - name: Restore producer packages (retries on NuGet flakes)
@@ -183,11 +185,16 @@ jobs:
         shell: pwsh
         env:
           AVALONIA_RUST_SIGN_COMMAND: ${{ vars.AVALONIA_RUST_SIGN_COMMAND }}
-        run: ./rust/package-host.ps1 -Rid ${{ matrix.rid }} -OutputRoot rust/artifacts/host
+        run: ./rust/package-host.ps1 -Rid ${{ matrix.rid }} -LinuxBackend ${{ matrix.backend || 'X11' }} -OutputRoot rust/artifacts/host
 
       - name: Build and launch a standalone app against the packaged crates and this tarball
         shell: pwsh
-        run: ./rust/tests/test-standalone-app.ps1 -Rid ${{ matrix.rid }} -TarballDirectory rust/artifacts/host -WorkDirectory "$env:RUNNER_TEMP/standalone-app"
+        # Hosted runners have no DRM scanout device. Verify download/build/deployment
+        # there; display/input/lifetime coverage runs through the QEMU fixture.
+        run: |
+          ./rust/tests/test-standalone-app.ps1 -Rid ${{ matrix.rid }} -LinuxBackend ${{ matrix.backend || 'X11' }} `
+            -TarballDirectory rust/artifacts/host -WorkDirectory "$env:RUNNER_TEMP/standalone-app" `
+            -Distributable -BuildOnly:('${{ matrix.backend }}' -eq 'Drm')
 
       - name: Build and launch a standalone app against the build source
         shell: pwsh
@@ -196,11 +203,12 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ./rust/tests/test-standalone-app.ps1 -Rid ${{ matrix.rid }} -TarballDirectory rust/artifacts/host `
             -GitRepository ([Uri]::new("$($PWD.Path)/").AbsoluteUri) -GitTag release-test-source `
+            -LinuxBackend ${{ matrix.backend || 'X11' }} -BuildOnly:('${{ matrix.backend }}' -eq 'Drm') `
             -WorkDirectory (Join-Path $env:RUNNER_TEMP 'git-app')
 
       - uses: actions/upload-artifact@v4
         with:
-          name: rustolonia-host-${{ matrix.rid }}
+          name: rustolonia-host-${{ matrix.rid }}${{ matrix.backend == 'Drm' && '-drm' || '' }}
           path: rust/artifacts/host/*.tar.gz
           if-no-files-found: error
 
@@ -623,6 +631,15 @@ jobs:
             -GitRepository ([Uri]::new("$($PWD.Path)/").AbsoluteUri) -GitTag "v$env:VERSION" `
             -UseCommittedChecksums -Distributable `
             -WorkDirectory (Join-Path $env:RUNNER_TEMP 'git-consumer')
+
+      - name: Build a standalone embedded app against the final git tag
+        shell: pwsh
+        run: |
+          ./rust/tests/test-standalone-app.ps1 -Rid linux-x64 -LinuxBackend Drm -BuildOnly `
+            -TarballDirectory (Join-Path $env:RUNNER_TEMP 'release' "v$env:VERSION") `
+            -GitRepository ([Uri]::new("$($PWD.Path)/").AbsoluteUri) -GitTag "v$env:VERSION" `
+            -UseCommittedChecksums -Distributable `
+            -WorkDirectory (Join-Path $env:RUNNER_TEMP 'git-consumer-drm')
 
       - name: Publish the GitHub release
         working-directory: ${{ runner.temp }}/release/v${{ inputs.version }}

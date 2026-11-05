@@ -255,7 +255,7 @@ impl AppScope {
     }
 
     /// Sets the root control of a single-view application lifetime, such as
-    /// the browser host where Avalonia cannot create windows. Desktop hosts
+    /// the browser or direct-display Linux host where Avalonia cannot create windows. Desktop hosts
     /// reject this with `E_NOTIMPL`; use [`AppScope::mount`] there.
     pub fn set_main_view(&self, view: &impl AsControl) -> Result<()> {
         let view = view.as_control()?;
@@ -679,7 +679,7 @@ impl App {
 
     /// Starts the application and calls `callback` once the UI is ready.
     ///
-    /// On desktop this blocks until the application shuts down. In the
+    /// On desktop and direct-display Linux this blocks until the application shuts down. In the
     /// browser and on Android the host owns the UI loop instead: `run`
     /// returns once the application has started (on Android after `callback`
     /// has run; in the browser the callback runs later on the page's event

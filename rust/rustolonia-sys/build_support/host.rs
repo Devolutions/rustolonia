@@ -60,6 +60,15 @@ pub fn asset_name(version: &str, rid: &str) -> String {
     format!("rustolonia-host-{version}-{rid}.tar.gz")
 }
 
+pub fn validate_backend(target: &str, linux_drm: bool) -> Result<(), String> {
+    if linux_drm && !matches!(rid_for_target(target), Some("linux-x64" | "linux-arm64")) {
+        return Err(format!(
+            "the `linux-drm` feature requires an x86_64/aarch64 linux-gnu target, not {target}"
+        ));
+    }
+    Ok(())
+}
+
 pub fn asset_url(base_url: &str, version: &str, rid: &str) -> String {
     format!(
         "{}/v{version}/{}",
@@ -106,6 +115,7 @@ pub struct Expected<'a> {
     pub version: &'a str,
     pub rid: &'a str,
     pub abi_fingerprint: &'a str,
+    pub linux_drm: bool,
 }
 
 /// Checks a staged host directory. `host-manifest.json` is required when
@@ -147,6 +157,22 @@ pub fn validate_host_dir(
             }
         }
     }
+    if expected.rid.starts_with("linux-") {
+        let want = if expected.linux_drm {
+            "LinuxDrm"
+        } else {
+            "X11"
+        };
+        let found = manifest_field(&manifest, "platform");
+        // Legacy desktop archives did not record their platform.
+        if found != Some(want) && !(found.is_none() && !expected.linux_drm) {
+            return Err(format!(
+                "{} has platform {}, expected {want}",
+                manifest_path.display(),
+                found.unwrap_or("<missing>")
+            ));
+        }
+    }
     Ok(())
 }
 
@@ -154,11 +180,12 @@ pub fn validate_host_dir(
 pub struct Config {
     pub version: String,
     pub target: String,
+    pub linux_drm: bool,
     pub abi_fingerprint: String,
     pub host_dir: Option<PathBuf>,
     pub skip_download: bool,
     pub offline: bool,
-    /// Directory holding `<version>/<rid>` cache entries.
+    /// Directory holding `<version>/<rid>[-drm]` cache entries.
     pub cache_root: PathBuf,
     pub base_url: String,
     /// Contents of the checksum file to verify downloads against.
@@ -188,6 +215,7 @@ pub fn is_embedded_host_target(target: &str) -> bool {
 }
 
 pub fn resolve(config: &Config) -> Result<Resolution, String> {
+    validate_backend(&config.target, config.linux_drm)?;
     // iOS links the host into the app. Its separate iOS app builder stages
     // the static-host archive; this resolver handles desktop shared libraries.
     if config.target.contains("-apple-ios") {
@@ -218,7 +246,12 @@ pub fn resolve(config: &Config) -> Result<Resolution, String> {
 
     let rid = rid.ok_or_else(|| unsupported_target(&config.target))?;
     let expected = expected(config, rid);
-    let cache_dir = config.cache_root.join(&config.version).join(rid);
+    let variant = if config.linux_drm {
+        format!("{rid}-drm")
+    } else {
+        rid.to_owned()
+    };
+    let cache_dir = config.cache_root.join(&config.version).join(&variant);
     if validate_host_dir(&cache_dir, &expected, true).is_ok() {
         return Ok(Resolution::Found {
             dir: cache_dir,
@@ -226,8 +259,8 @@ pub fn resolve(config: &Config) -> Result<Resolution, String> {
         });
     }
 
-    let asset = asset_name(&config.version, rid);
-    let url = asset_url(&config.base_url, &config.version, rid);
+    let asset = asset_name(&config.version, &variant);
+    let url = asset_url(&config.base_url, &config.version, &variant);
     if config.offline {
         return Err(format!(
             "the rustolonia host {asset} is not cached in {} and cargo is offline; \
@@ -265,6 +298,7 @@ fn expected<'a>(config: &'a Config, rid: &'a str) -> Expected<'a> {
         version: &config.version,
         rid,
         abi_fingerprint: &config.abi_fingerprint,
+        linux_drm: config.linux_drm,
     }
 }
 

@@ -9,6 +9,8 @@ param(
     [Parameter(Mandatory)][string]$Manifest,
     # The rustolonia repository root (defaults to the checkout this script lives in).
     [string]$RustoloniaRoot = (Split-Path -Parent $PSScriptRoot),
+    [ValidateSet('X11', 'Drm')]
+    [string]$LinuxBackend = 'X11',
     [switch]$SkipGenerate,
     [switch]$UpdateLockFile,
     [switch]$DeveloperTools
@@ -145,7 +147,7 @@ function Invoke-ConsumerPackage {
     $paths = $Document._paths
     Assert-ArtifactBundleDestination -BundlePath $paths.outputDirectory
     $rid = [string]$Document.rid
-    $target = Get-RidTargetInfo -Rid $rid
+    $target = Get-RidTargetInfo -Rid $rid -LinuxBackend $LinuxBackend
     $rustoloniaRootPath = (Resolve-Path -LiteralPath $RustoloniaRoot).Path
     Assert-ConsumerTools -Rid $rid -RustoloniaRoot $rustoloniaRootPath -ConsumerRoot $Document._manifestDirectory
     Assert-ConsumerSource -ProducerRoot $ProducerRootPath -RustoloniaRoot $rustoloniaRootPath
@@ -265,5 +267,8 @@ $manifestPath = (Resolve-Path -LiteralPath $Manifest).Path
 $document = Read-ConsumerManifest $manifestPath
 if ($DeveloperTools) {
     $document._paths.outputDirectory += '-devtools'
+}
+if ($LinuxBackend -eq 'Drm') {
+    $document._paths.outputDirectory += '-drm'
 }
 Invoke-ConsumerPackage $producer $document

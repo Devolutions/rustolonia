@@ -8,6 +8,8 @@ param(
     [Parameter(Mandatory)]
     [ValidateSet('win-x64', 'win-arm64', 'linux-x64', 'linux-arm64', 'osx-x64', 'osx-arm64')]
     [string]$Rid,
+    [ValidateSet('X11', 'Drm')]
+    [string]$LinuxBackend = 'X11',
     [ValidateSet('Debug', 'Release')]
     [string]$Configuration = 'Release',
     [string]$Example = 'hello_world',
@@ -34,9 +36,13 @@ else {
 if (-not (Test-Path -LiteralPath $resolvedProducerRoot -PathType Container)) {
     throw "Producer root does not exist: $resolvedProducerRoot"
 }
-$target = Get-RidTargetInfo -Rid $Rid
+$target = Get-RidTargetInfo -Rid $Rid -LinuxBackend $LinuxBackend
+$backendSuffix = if ($LinuxBackend -eq 'Drm') { '-drm' } else { '' }
+if ($LinuxBackend -eq 'Drm' -and -not $PSBoundParameters.ContainsKey('Example')) {
+    $Example = 'embedded_linux'
+}
 $hostProject = Join-Path $resolvedRustoloniaRoot 'host' 'Avalonia.Host.csproj'
-$artifactsRoot = if ($env:AVN_DOTNET_ARTIFACTS) { $env:AVN_DOTNET_ARTIFACTS } else { Join-Path $PSScriptRoot 'target' "dotnet-$Rid" }
+$artifactsRoot = if ($env:AVN_DOTNET_ARTIFACTS) { $env:AVN_DOTNET_ARTIFACTS } else { Join-Path $PSScriptRoot 'target' "dotnet-$Rid$backendSuffix" }
 
 Ensure-RidPrerequisites -Rid $Rid -ProducerRoot $resolvedProducerRoot -Configuration $Configuration
 
@@ -44,7 +50,7 @@ if (-not $OutputRoot) {
     $OutputRoot = if ($env:AVN_PACKAGE_OUTPUT) { $env:AVN_PACKAGE_OUTPUT } else { Join-Path $PSScriptRoot 'artifacts' }
 }
 $OutputRoot = Resolve-CallerRelativePath -PathValue $OutputRoot
-$destination = Join-Path $OutputRoot $Rid
+$destination = Join-Path $OutputRoot "$Rid$backendSuffix"
 Assert-ArtifactBundleDestination -BundlePath $destination
 
 $publishProperties = New-HostPublishProperties -ProducerRoot $resolvedProducerRoot -RustoloniaRoot $resolvedRustoloniaRoot -Rid $Rid -HostPlatform $($target.Platform)
@@ -83,7 +89,9 @@ if (-not $SkipCargoBuild -and -not $env:AVN_PACKAGE_SKIP_CARGO_BUILD) {
     Write-Host "==> Building Rust example '$Example' ($Configuration) next to the host"
     $cargoTarget = if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { Join-Path $PSScriptRoot 'target' "cargo-$Rid" }
     $previousCargo = [Environment]::GetEnvironmentVariable('CARGO_TARGET_DIR', 'Process')
+    $previousHost = [Environment]::GetEnvironmentVariable('RUSTOLONIA_HOST_DIR', 'Process')
     [Environment]::SetEnvironmentVariable('CARGO_TARGET_DIR', $cargoTarget, 'Process')
+    [Environment]::SetEnvironmentVariable('RUSTOLONIA_HOST_DIR', $publishDir, 'Process')
     try {
         Set-WindowsStaticCrt -Triple $target.Triple
         $cargoCommand = New-CargoBuildCommand -ManifestPath (Join-Path $resolvedRustoloniaRoot 'rust' 'Cargo.toml') -PackageName 'rustolonia' -TargetTriple $target.Triple -Configuration $Configuration -Example $Example
@@ -92,6 +100,8 @@ if (-not $SkipCargoBuild -and -not $env:AVN_PACKAGE_SKIP_CARGO_BUILD) {
     finally {
         if ($null -eq $previousCargo) { Remove-Item Env:CARGO_TARGET_DIR -ErrorAction SilentlyContinue }
         else { [Environment]::SetEnvironmentVariable('CARGO_TARGET_DIR', $previousCargo, 'Process') }
+        if ($null -eq $previousHost) { Remove-Item Env:RUSTOLONIA_HOST_DIR -ErrorAction SilentlyContinue }
+        else { [Environment]::SetEnvironmentVariable('RUSTOLONIA_HOST_DIR', $previousHost, 'Process') }
     }
     $profile = if ($Configuration -eq 'Release') { 'release' } else { 'debug' }
     $exePath = Join-Path $cargoTarget $target.Triple $profile 'examples' "$Example$($target.ExeExtension)"

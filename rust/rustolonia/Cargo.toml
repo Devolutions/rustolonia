@@ -25,6 +25,8 @@ default = ["dev-host-path"]
 no-download = ["rustolonia-sys/no-download"]
 # See rustolonia-sys: remember the staged host directory as a runtime fallback.
 dev-host-path = ["rustolonia-sys/dev-host-path"]
+# Direct DRM/KMS display instead of X11 (Linux GNU targets only).
+linux-drm = ["rustolonia-sys/linux-drm"]
 
 [dependencies]
 rustolonia-sys = { version = "=12.1.4", path = "../rustolonia-sys", default-features = false }

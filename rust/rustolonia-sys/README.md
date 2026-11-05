@@ -41,8 +41,8 @@ order:
    with `RUSTOLONIA_NO_DOWNLOAD` set to a truthy value. The application must
    then ship the host itself.
 3. The cache: `RUSTOLONIA_CACHE_DIR`, or `<user cache dir>/rustolonia/host`,
-   keyed by `<version>/<rid>`.
-4. Download `rustolonia-host-<version>-<rid>.tar.gz` from the GitHub release
+   keyed by `<version>/<rid>[-drm]`.
+4. Download `rustolonia-host-<version>-<rid>[-drm].tar.gz` from the GitHub release
    (`RUSTOLONIA_HOST_BASE_URL` overrides the base URL; `file://` works), verify
    it against `host-checksums.txt` (or the file named by
    `RUSTOLONIA_HOST_CHECKSUMS`), then cache it. `CARGO_NET_OFFLINE` forbids the
@@ -53,6 +53,15 @@ Prebuilt hosts exist for `x86_64`/`aarch64` `windows-msvc`, `apple-darwin` and
 `DEP_RUSTOLONIA_HOST_HOST_DIR`. With the default `dev-host-path` feature it is
 also baked into the binary as a last-resort runtime search path, so `cargo run`
 works without copying files; disable it for distributable builds.
+
+The `linux-drm` feature selects the experimental direct DRM/KMS host on Linux
+GNU targets (x64/arm64), instead of the default X11 host. `rustolonia` forwards
+this feature. DRM archives and cache directories use the `-drm` suffix; their
+manifests must identify `platform` as `LinuxDrm`. Linux manifests identifying a
+different backend are rejected. Legacy X11 manifests without this field remain
+supported; an explicit local directory without any manifest remains a developer
+override, with the usual runtime ABI check. A release containing the new DRM
+archives is required; this feature cannot use older X11-only assets.
 
 On iOS, `build.rs` skips desktop host staging and downloads. The separate
 [standalone iOS app builder](https://github.com/Devolutions/rustolonia/tree/master/samples/ios-standalone)

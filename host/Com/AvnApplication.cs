@@ -17,12 +17,12 @@ namespace Avalonia.Host.Com;
 [GeneratedComClass]
 public partial class AvnApplication : IAvnApplication, IAvnApplication2
 {
-#if AVN_HOST_BROWSER || AVN_HOST_ANDROID
-    // Single-view hosts (browser, Android) never set the desktop lifetime.
+#if AVN_HOST_BROWSER || AVN_HOST_ANDROID || AVN_HOST_LINUX_DRM
+    // Single-view hosts never set the desktop lifetime.
 #pragma warning disable CS0649
 #endif
     private ClassicDesktopStyleApplicationLifetime? _lifetime;
-#if AVN_HOST_BROWSER || AVN_HOST_ANDROID
+#if AVN_HOST_BROWSER || AVN_HOST_ANDROID || AVN_HOST_LINUX_DRM
 #pragma warning restore CS0649
 #endif
     private readonly AvnAsyncOperations _asyncOperations = new();
@@ -67,6 +67,27 @@ public partial class AvnApplication : IAvnApplication, IAvnApplication2
         catch (Exception e)
         {
             Console.Error.WriteLine($"Rustolonia browser host failed to start: {e}");
+        }
+    }
+#elif AVN_HOST_LINUX_DRM
+    public int Run(IAvnAppHandler? handler)
+    {
+        if (handler is null)
+            return HResults.E_POINTER;
+        try
+        {
+            RunLinuxDrm(handler);
+            return HResults.S_OK;
+        }
+        catch (Exception e)
+        {
+            return AbiError.Capture(e);
+        }
+        finally
+        {
+            _asyncOperations.CancelAll();
+            ReleaseTrays();
+            ReleaseDesktopFileIntegration();
         }
     }
 #elif AVN_HOST_ANDROID
@@ -174,7 +195,7 @@ public partial class AvnApplication : IAvnApplication, IAvnApplication2
         try
         {
             _asyncOperations.CancelAll();
-            _lifetime?.Shutdown();
+            ShutdownLifetime(_lifetime ?? Application.Current?.ApplicationLifetime);
             return HResults.S_OK;
         }
         catch (Exception e)
@@ -184,6 +205,12 @@ public partial class AvnApplication : IAvnApplication, IAvnApplication2
 #endif
     }
 #endif
+
+    internal static void ShutdownLifetime(IApplicationLifetime? lifetime)
+    {
+        if (lifetime is IControlledApplicationLifetime controlled)
+            controlled.Shutdown();
+    }
 
     public int StartDelay(
             int milliseconds,

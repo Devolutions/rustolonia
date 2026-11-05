@@ -15,6 +15,9 @@ With -AppManifest, builds that standalone Cargo package (binary -AppName)
 instead of a repository example. -ShipHost copies the cached host next to the
 executable before launching, as a distributable build without the
 `dev-host-path` feature requires.
+With -LinuxBackend Drm, select the separate DRM archive/cache and enable
+linux-drm for repository examples. Standalone app manifests declare the feature
+themselves. -BuildOnly stages the app without requiring a display device.
 
 An osx-x64 -Rid on Apple silicon builds for x86_64-apple-darwin and
 launches through Rosetta 2, which must be installed.
@@ -23,6 +26,7 @@ param(
     [Parameter(Mandatory)]
     [ValidateSet('win-x64', 'win-arm64', 'linux-x64', 'linux-arm64', 'osx-x64', 'osx-arm64')]
     [string]$Rid,
+    [ValidateSet('X11', 'Drm')][string]$LinuxBackend = 'X11',
     [Parameter(Mandatory)][string]$TarballDirectory,
     [string]$Example = 'hello_world',
     [string]$RustoloniaRoot = (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)),
@@ -31,6 +35,8 @@ param(
     [string]$AppManifest,
     [string]$AppName,
     [switch]$ShipHost,
+    # Hosted CI has no DRM display. Build/stage there; run the QEMU fixture separately.
+    [switch]$BuildOnly,
     # Release validation must use the checksums shipped in the tagged source.
     [switch]$UseCommittedChecksums
 )
@@ -41,7 +47,7 @@ $PSNativeCommandUseErrorActionPreference = $true
 . (Join-Path $RustoloniaRoot 'rust' 'package-shared.ps1')
 
 $version = Get-RustoloniaReleaseVersion -RustoloniaRoot $RustoloniaRoot
-$asset = Get-HostAssetName -Version $version -Rid $Rid
+$asset = Get-HostAssetName -Version $version -Rid $Rid -LinuxBackend $LinuxBackend
 $tarball = Join-Path $TarballDirectory $asset
 if (-not (Test-Path -LiteralPath $tarball -PathType Leaf)) { throw "Host tarball not found: $tarball" }
 
@@ -80,7 +86,8 @@ foreach ($name in $overrides.Keys) {
 try {
     $targetDir = Join-Path $WorkDirectory 'target'
     $exeSuffix = if ($IsWindows) { '.exe' } else { '' }
-    $ridTarget = Get-RidTargetInfo -Rid $Rid
+    $ridTarget = Get-RidTargetInfo -Rid $Rid -LinuxBackend $LinuxBackend
+    $backendFeatures = if ($LinuxBackend -eq 'Drm') { @('--features', 'linux-drm') } else { @() }
     $cargoTarget = @()
     $outputDir = Join-Path $targetDir 'release'
     if ($ridTarget.Arch -ne (Get-CurrentRuntimeArchitecture)) {
@@ -96,11 +103,12 @@ try {
         $Example = $AppName
     } else {
         cargo build --locked --manifest-path (Join-Path $RustoloniaRoot 'rust' 'Cargo.toml') `
-            -p rustolonia --example $Example --release --target-dir $targetDir @cargoTarget
+            -p rustolonia --example $Example --release --target-dir $targetDir @cargoTarget @backendFeatures
         $exe = Join-Path $outputDir 'examples' ($Example + $exeSuffix)
     }
 
-    $hostFile = Join-Path $cache $version $Rid (Get-RidTargetInfo -Rid $Rid).HostFileName
+    $variant = if ($LinuxBackend -eq 'Drm') { "$Rid-drm" } else { $Rid }
+    $hostFile = Join-Path $cache $version $variant $ridTarget.HostFileName
     if (-not (Test-Path -LiteralPath $hostFile -PathType Leaf)) {
         throw "The downloaded host was not cached at $hostFile."
     }
@@ -109,10 +117,14 @@ try {
         # Prove the copy beside the executable is what loads.
         Remove-Item -LiteralPath $cache -Recurse -Force
     }
+    if ($BuildOnly) {
+        Write-Host "$Example built and staged with the downloaded $variant host (not launched)."
+        return
+    }
     $stdout = Join-Path $WorkDirectory "$Example.stdout.log"
     $stderr = Join-Path $WorkDirectory "$Example.stderr.log"
     $redirect = @{ PassThru = $true; RedirectStandardOutput = $stdout; RedirectStandardError = $stderr }
-    $process = if ($IsLinux) {
+    $process = if ($IsLinux -and $LinuxBackend -ne 'Drm') {
         Start-Process xvfb-run -ArgumentList '-a', $exe @redirect
     } else {
         Start-Process $exe @redirect

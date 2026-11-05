@@ -10,8 +10,8 @@ its native dependencies and notices, signs the binaries with
 AVALONIA_RUST_SIGN_COMMAND when set, writes a CycloneDX SBOM and
 host-manifest.json, and archives everything as
 
-    rustolonia-host-<version>-<rid>[-devtools].tar.gz
-    rustolonia-host-<version>-<rid>[-devtools]-symbols.tar.gz
+    rustolonia-host-<version>-<rid>[-drm][-devtools].tar.gz
+    rustolonia-host-<version>-<rid>[-drm][-devtools]-symbols.tar.gz
 
 with a `.sha256` file next to each. rustolonia-sys downloads the default
 flavor from the GitHub release `v<version>`. The archives are deterministic
@@ -25,6 +25,8 @@ param(
     [Parameter(Mandatory)]
     [ValidateSet('win-x64', 'win-arm64', 'linux-x64', 'linux-arm64', 'osx-x64', 'osx-arm64')]
     [string]$Rid,
+    [ValidateSet('X11', 'Drm')]
+    [string]$LinuxBackend = 'X11',
     [ValidateSet('default', 'devtools')]
     [string]$Flavor = 'default',
     [string]$OutputRoot,
@@ -55,7 +57,8 @@ if (-not (Test-Path -LiteralPath $resolvedProducerRoot -PathType Container)) {
     throw "Producer root does not exist: $resolvedProducerRoot"
 }
 
-$target = Get-RidTargetInfo -Rid $Rid
+$target = Get-RidTargetInfo -Rid $Rid -LinuxBackend $LinuxBackend
+$backendSuffix = if ($LinuxBackend -eq 'Drm') { '-drm' } else { '' }
 $version = Get-RustoloniaReleaseVersion -RustoloniaRoot $resolvedRustoloniaRoot
 $abiFingerprint = Get-AbiFingerprint -RustoloniaRoot $resolvedRustoloniaRoot
 $sourceRevision = Get-GitRevision $resolvedRustoloniaRoot
@@ -73,7 +76,7 @@ $hostAssets = $null
 if ([string]::IsNullOrWhiteSpace($PublishDirectory)) {
     Ensure-RidPrerequisites -Rid $Rid -ProducerRoot $resolvedProducerRoot -Configuration Release
     $hostProject = Join-Path $resolvedRustoloniaRoot 'host' 'Avalonia.Host.csproj'
-    $artifactsRoot = if ($env:AVN_DOTNET_ARTIFACTS) { $env:AVN_DOTNET_ARTIFACTS } else { Join-Path $PSScriptRoot 'target' "dotnet-host-$Rid-$Flavor" }
+    $artifactsRoot = if ($env:AVN_DOTNET_ARTIFACTS) { $env:AVN_DOTNET_ARTIFACTS } else { Join-Path $PSScriptRoot 'target' "dotnet-host-$Rid$backendSuffix-$Flavor" }
     $publishProperties = New-HostPublishProperties -ProducerRoot $resolvedProducerRoot -RustoloniaRoot $resolvedRustoloniaRoot `
         -Rid $Rid -HostPlatform $target.Platform -DeveloperTools:($Flavor -eq 'devtools')
 
@@ -88,8 +91,8 @@ if (-not (Test-Path -LiteralPath $hostFile -PathType Leaf)) {
     throw "NativeAOT host was not produced at $hostFile"
 }
 
-$assetName = Get-HostAssetName -Version $version -Rid $Rid -Flavor $Flavor
-$symbolsName = Get-HostAssetName -Version $version -Rid $Rid -Flavor $Flavor -Symbols
+$assetName = Get-HostAssetName -Version $version -Rid $Rid -Flavor $Flavor -LinuxBackend $LinuxBackend
+$symbolsName = Get-HostAssetName -Version $version -Rid $Rid -Flavor $Flavor -LinuxBackend $LinuxBackend -Symbols
 $staging = New-IsolatedPackageStagingRoot -OutputRoot $OutputRoot -Rid $Rid
 try {
     $bundle = Prepare-ArtifactBundle -BundlePath (Join-Path $staging 'host')
@@ -107,7 +110,7 @@ try {
     if ($hostAssets) { $sbomArguments.ProjectAssetsJsonPath = $hostAssets }
     & (Join-Path $PSScriptRoot 'generate-sbom.ps1') @sbomArguments
     Write-HostManifest -Directory $bundle -Version $version -Rid $Rid -AbiFingerprint $abiFingerprint `
-        -RustoloniaRoot $resolvedRustoloniaRoot -Flavor $Flavor -SourceRevision $sourceRevision
+        -RustoloniaRoot $resolvedRustoloniaRoot -Flavor $Flavor -LinuxBackend $LinuxBackend -SourceRevision $sourceRevision
 
     $assetPath = Join-Path $OutputRoot $assetName
     $files = @(Get-ChildItem -LiteralPath $bundle -File -Force | ForEach-Object Name)
