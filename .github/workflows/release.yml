@@ -24,7 +24,7 @@ on:
           - publish
       version:
         description: Release version (without v); must match the checked-in versions
-        default: '12.1.0'
+        default: '12.1.4'
         required: true
         type: string
       publish_crates:
