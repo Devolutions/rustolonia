@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using Avalonia.Win32;
 #elif AVN_HOST_X11
 using Avalonia.X11;
+#elif AVN_HOST_LINUX_DRM
 #elif AVN_HOST_OSX
 using Avalonia.Native;
 #elif AVN_HOST_BROWSER
@@ -26,6 +27,8 @@ internal static partial class RustHostPlatform
         builder.UseWin32();
 #elif AVN_HOST_X11
         builder.UseX11();
+#elif AVN_HOST_LINUX_DRM
+        // StartLinuxDrm installs the direct-display windowing subsystem.
 #elif AVN_HOST_OSX
         builder.UseAvaloniaNative();
 #elif AVN_HOST_BROWSER

@@ -23,6 +23,8 @@ Build the host first with `rust/build.ps1`.
 
 With -GitRepository and -GitTag, skip packaging and use a git dependency
 without registry patches. -UseCommittedChecksums verifies the tagged hashes.
+Use -LinuxBackend Drm for a fullscreen single-view consumer. -BuildOnly
+verifies download and packaging without launching on a host lacking DRM.
 
 .EXAMPLE
 ./rust/build.ps1
@@ -34,6 +36,7 @@ without registry patches. -UseCommittedChecksums verifies the tagged hashes.
 param(
     [ValidateSet('win-x64', 'win-arm64', 'linux-x64', 'linux-arm64', 'osx-x64', 'osx-arm64')]
     [string]$Rid,
+    [ValidateSet('X11', 'Drm')][string]$LinuxBackend = 'X11',
     # Published host to pack. Defaults to rust/build.ps1's output for -Rid.
     [string]$PublishDirectory,
     # Existing directory with the release tarball and .sha256 (skips packing).
@@ -42,6 +45,7 @@ param(
     [string]$WorkDirectory = (Join-Path ([IO.Path]::GetTempPath()) 'rustolonia-standalone-app'),
     # Build with default-features = false and ship the host beside the executable.
     [switch]$Distributable,
+    [switch]$BuildOnly,
     # Exercise Cargo's git source and its transitive path dependency, without registry patches.
     [string]$GitRepository,
     [string]$GitTag,
@@ -56,6 +60,7 @@ $PSNativeCommandUseErrorActionPreference = $true
 . (Join-Path $RustoloniaRoot 'rust' 'package-shared.ps1')
 
 if (-not $Rid) { $Rid = Get-DefaultConsumerRid }
+$null = Get-RidTargetInfo -Rid $Rid -LinuxBackend $LinuxBackend
 $version = Get-RustoloniaReleaseVersion -RustoloniaRoot $RustoloniaRoot
 if ([bool]$GitRepository -ne [bool]$GitTag) { throw 'Pass both -GitRepository and -GitTag.' }
 if ($UseCommittedChecksums -and -not $GitRepository) { throw '-UseCommittedChecksums requires a git consumer.' }
@@ -70,13 +75,14 @@ New-Item -ItemType Directory -Force -Path $WorkDirectory | Out-Null
 
 if (-not $TarballDirectory) {
     if (-not $PublishDirectory) {
-        $PublishDirectory = Join-Path $rustDir 'target' "dotnet-$Rid" 'publish' 'Avalonia.Host' "release_$Rid"
+        $suffix = if ($LinuxBackend -eq 'Drm') { '-drm' } else { '' }
+        $PublishDirectory = Join-Path $rustDir 'target' "dotnet-$Rid$suffix" 'publish' 'Avalonia.Host' "release_$Rid"
     }
     if (-not (Test-Path -LiteralPath $PublishDirectory -PathType Container)) {
         throw "Published host not found at $PublishDirectory. Run rust/build.ps1 first, or pass -PublishDirectory or -TarballDirectory."
     }
     $TarballDirectory = Join-Path $WorkDirectory 'host'
-    & (Join-Path $rustDir 'package-host.ps1') -Rid $Rid -PublishDirectory $PublishDirectory `
+    & (Join-Path $rustDir 'package-host.ps1') -Rid $Rid -LinuxBackend $LinuxBackend -PublishDirectory $PublishDirectory `
         -OutputRoot $TarballDirectory -RustoloniaRoot $RustoloniaRoot
 }
 
@@ -105,6 +111,7 @@ $appDir = Join-Path $WorkDirectory 'app'
 $appName = 'standalone_app'
 New-Item -ItemType Directory -Force -Path (Join-Path $appDir 'src') | Out-Null
 $features = if ($Distributable) { ', default-features = false' } else { '' }
+if ($LinuxBackend -eq 'Drm') { $features += ', features = ["linux-drm"]' }
 $dependency = if ($GitRepository) {
     # JSON strings are also valid TOML basic strings, including escaped Windows paths.
     "git = $($GitRepository | ConvertTo-Json -Compress), tag = $($GitTag | ConvertTo-Json -Compress)"
@@ -142,15 +149,20 @@ fn main() -> rustolonia::Result<()> {
     })
 }
 '@ | Set-Content -LiteralPath (Join-Path $appDir 'src' 'main.rs')
+if ($LinuxBackend -eq 'Drm') {
+    Copy-Item -LiteralPath (Join-Path $rustDir 'rustolonia/examples/embedded_linux.rs') `
+        -Destination (Join-Path $appDir 'src/main.rs') -Force
+}
 
 try {
-    & (Join-Path $PSScriptRoot 'test-host-download.ps1') -Rid $Rid -TarballDirectory $TarballDirectory `
+    & (Join-Path $PSScriptRoot 'test-host-download.ps1') -Rid $Rid -LinuxBackend $LinuxBackend -TarballDirectory $TarballDirectory `
         -RustoloniaRoot $RustoloniaRoot -WorkDirectory (Join-Path $WorkDirectory 'download') `
         -AppManifest (Join-Path $appDir 'Cargo.toml') -AppName $appName -ShipHost:$Distributable `
         -UseCommittedChecksums:$UseCommittedChecksums `
+        -BuildOnly:$BuildOnly `
         -LaunchSeconds $LaunchSeconds
     $source = if ($GitRepository) { "git tag $GitTag" } else { "packaged crates" }
-    Write-Host "Standalone app built from rustolonia $version $source and the $Rid host tarball."
+    Write-Host "Standalone app built from rustolonia $version $source and the $Rid ($LinuxBackend) host tarball."
 }
 finally {
     if (-not $KeepWorkDirectory) {

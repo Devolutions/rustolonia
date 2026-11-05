@@ -29,6 +29,7 @@
     <UseMicroComGeneratorRoslyn>true</UseMicroComGeneratorRoslyn>
     <DefineConstants Condition="'$(AvaloniaRustHostPlatform)' == 'Win32'">$(DefineConstants);AVN_HOST_WIN32</DefineConstants>
     <DefineConstants Condition="'$(AvaloniaRustHostPlatform)' == 'X11'">$(DefineConstants);AVN_HOST_X11</DefineConstants>
+    <DefineConstants Condition="'$(AvaloniaRustHostPlatform)' == 'LinuxDrm'">$(DefineConstants);AVN_HOST_LINUX_DRM</DefineConstants>
     <DefineConstants Condition="'$(AvaloniaRustHostPlatform)' == 'OSX'">$(DefineConstants);AVN_HOST_OSX</DefineConstants>
     <DefineConstants Condition="'$(AvaloniaRustHostPlatform)' == 'iOS'">$(DefineConstants);AVN_HOST_IOS</DefineConstants>
   </PropertyGroup>
@@ -53,8 +54,10 @@
     <Delete Files="$(_RustoloniaHostSource)" />
   </Target>
   <Target Name="ValidateAvaloniaRustHostPlatform" BeforeTargets="PrepareForBuild">
-    <Error Condition="'$(AvaloniaRustHostPlatform)' != 'Win32' and '$(AvaloniaRustHostPlatform)' != 'X11' and '$(AvaloniaRustHostPlatform)' != 'OSX' and '$(AvaloniaRustHostPlatform)' != 'iOS'"
-           Text="AvaloniaRustHostPlatform must be Win32, X11, OSX, or iOS for runtime identifier '$(RuntimeIdentifier)'." />
+    <Error Condition="'$(AvaloniaRustHostPlatform)' != 'Win32' and '$(AvaloniaRustHostPlatform)' != 'X11' and '$(AvaloniaRustHostPlatform)' != 'LinuxDrm' and '$(AvaloniaRustHostPlatform)' != 'OSX' and '$(AvaloniaRustHostPlatform)' != 'iOS'"
+           Text="AvaloniaRustHostPlatform must be Win32, X11, LinuxDrm, OSX, or iOS for runtime identifier '$(RuntimeIdentifier)'." />
+    <Error Condition="'$(AvaloniaRustHostPlatform)' == 'LinuxDrm' and '$(RuntimeIdentifier)' != '' and '$(RuntimeIdentifier)' != 'linux-x64' and '$(RuntimeIdentifier)' != 'linux-arm64'"
+           Text="LinuxDrm requires linux-x64 or linux-arm64." />
   </Target>
   <Target Name="ValidateAvaloniaRustConsumerInputs" BeforeTargets="PrepareForBuild">
     <Error Condition="'@(AvaloniaRustPresentationProject)' != '' and !Exists('%(AvaloniaRustPresentationProject.Identity)')"
@@ -115,6 +118,10 @@
   </ItemGroup>
   <ItemGroup Condition="'$(AvaloniaRustHostPlatform)' == 'X11'">
     <ProjectReference Include="$(AvaloniaProducerRoot)\src\Avalonia.X11\Avalonia.X11.csproj" />
+    <LinkerArg Include="-Wl,-rpath,'$ORIGIN'" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(AvaloniaRustHostPlatform)' == 'LinuxDrm'">
+    <ProjectReference Include="$(AvaloniaProducerRoot)\src\Linux\Avalonia.LinuxFramebuffer\Avalonia.LinuxFramebuffer.csproj" />
     <LinkerArg Include="-Wl,-rpath,'$ORIGIN'" />
   </ItemGroup>
   <ItemGroup Condition="'$(AvaloniaRustHostPlatform)' == 'OSX'">

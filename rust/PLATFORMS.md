@@ -7,6 +7,7 @@ NativeAOT host selects one Avalonia windowing backend at publish time:
 | --- | --- | --- | --- |
 | Windows | `win-x64`, `win-arm64` | Win32 | `build.ps1` |
 | Linux | `linux-x64`, `linux-arm64` | X11 | `build.ps1` |
+| Embedded Linux (experimental) | `linux-x64`, `linux-arm64` | DRM/KMS, single view | `build.ps1 -LinuxBackend Drm` |
 | macOS | `osx-x64`, `osx-arm64` | Avalonia.Native | `build.ps1` |
 | iOS (experimental) | `ios-arm64`, `iossimulator-arm64`, `iossimulator-x64` | Avalonia.iOS | `samples/ios/build.sh` |
 | Android | `android-arm64`, `android-x64` | Avalonia.Android (CoreCLR) | `build-android.ps1` (see [Android](#android)) |
@@ -86,6 +87,154 @@ pwsh ./rust/build.ps1
 
 The X11 host requires the standard Avalonia Linux runtime libraries, including
 X11, fontconfig, and OpenGL/EGL or software-rendering dependencies.
+
+### Embedded Linux: direct DRM/KMS display
+
+The experimental `LinuxDrm` host runs a single fullscreen control tree without
+X11 or a Wayland compositor. It targets Linux application processors, not
+Cortex-M microcontrollers, bare metal, or RTOS firmware. X11 remains the default.
+
+#### Standalone Rust apps with prebuilt hosts
+
+Enable the `linux-drm` Cargo feature to download the matching DRM host rather
+than X11. This requires a **new release containing this feature and its DRM
+assets**; existing releases cannot supply them. Replace `vX.Y.Z` below with
+that published release tag:
+
+```toml
+[dependencies]
+rustolonia = { git = "https://github.com/Devolutions/rustolonia", tag = "vX.Y.Z", features = ["linux-drm"] }
+```
+
+After crates.io publication, the equivalent is
+`rustolonia = { version = "=X.Y.Z", features = ["linux-drm"] }`.
+The app can live anywhere, with no Rustolonia checkout, Avalonia submodule,
+.NET SDK, or PowerShell. Only the Rust toolchain/linker and device's native
+runtime libraries are needed. Build on the device or cross-compile with a
+configured Linux GNU target toolchain.
+
+Mount a root control, not a desktop window:
+
+```rust
+use rustolonia::{App, Button, TextBlock};
+
+fn main() -> rustolonia::Result<()> {
+    App::load_from_env()?.run(|scope| {
+        let shutdown = scope.clone();
+        let root = Button::new()?
+            .content(Some(&TextBlock::new()?.text("Shut down")?))?
+            .on_click(scope, move |_| {
+                shutdown.shutdown().expect("failed to shut down");
+            })?;
+        scope.set_main_view(&root)
+    })
+}
+```
+
+`cargo run` stages and loads the prebuilt host with the default
+`dev-host-path` feature. Downloads use
+`rustolonia-host-X.Y.Z-linux-arm64-drm.tar.gz` (or `linux-x64-drm`), verified
+against the release hashes embedded in `rustolonia-sys`. Cache entries are
+`<cache>/X.Y.Z/linux-arm64-drm`, separate from desktop Linux. The tarball
+manifest also checks `platform = LinuxDrm`; selecting DRM never falls back
+to an X11 release. The feature is rejected on non-Linux-GNU targets.
+
+For deployment, set `default-features = false` **on the dependency** while
+keeping `features = ["linux-drm"]`, to avoid embedding a development cache
+path. For a native ARM64 build of an app named `my_device`:
+
+```bash
+RUSTOLONIA_CACHE_DIR="$PWD/.host-cache" cargo build --release
+mkdir -p dist
+cp target/release/my_device dist/
+cp .host-cache/X.Y.Z/linux-arm64-drm/* dist/
+./dist/my_device
+```
+
+Replace `X.Y.Z` with the dependency's exact release version. Ship the whole
+`dist` directory, including native dependencies and notices. No .NET runtime
+installation is needed. Native Linux graphics/input dependencies and device
+permissions below are still required; prebuilt hosts do not replace the BSP.
+Custom compiled AXAML/view-model registries still require a source-built host.
+
+#### Building the host from source
+
+On a native ARM64 Linux build machine or VM:
+
+```bash
+sudo apt-get install clang zlib1g-dev libfontconfig1 fonts-dejavu-core \
+    libdrm2 libgbm1 libegl1 libgl1-mesa-dri libinput10
+pwsh ./avalonia-patches/apply-avalonia-patches.ps1 -AvaloniaRoot ./avalonia-src
+dotnet build ./avalonia-src/src/Avalonia.Build.Tasks/Avalonia.Build.Tasks.csproj -c Release
+pwsh ./rust/package.ps1 -Rid linux-arm64 -LinuxBackend Drm
+./rust/artifacts/linux-arm64-drm/embedded_linux
+```
+
+Install the SDK from `global.json`, PowerShell 7, and Rust first. For x64 Linux,
+use `-Rid linux-x64`. `build.ps1 -Architecture arm64 -LinuxBackend Drm` publishes
+the host and runs workspace tests; add `-RunExamples` to launch the same sample.
+`build-app.ps1 -LinuxBackend Drm` builds a compiled-AXAML consumer, but its app
+must mount a root control rather than create a desktop window.
+
+The bundled `embedded_linux` example uses `AppScope::set_main_view`, updates a
+counter on button clicks, and exits through `AppScope::shutdown`. `App::run`
+blocks until shutdown, retaining the control factory and event subscriptions.
+SIGINT and SIGTERM request shutdown on the UI dispatcher. Desktop `Window`,
+tray, file-picker, clipboard and native-dialog APIs are not promised on this
+single-view backend; use in-view UI for appliance navigation and dialogs.
+
+The DRM host accepts these optional environment variables at startup. Invalid
+values fail startup rather than silently reverting to defaults:
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `RUSTOLONIA_DRM_CARD` | Auto-detect | DRM card path, for example `/dev/dri/card0` |
+| `RUSTOLONIA_DRM_SCALING` | `1` | Finite positive display scale, using a decimal point |
+| `RUSTOLONIA_DRM_ROTATION` | `0` | `0`, `90`, `180`, or `270` degrees |
+
+The process needs access to its DRM card and input devices, and exclusive
+control of the display. Configure device permissions/seat access for a dedicated
+user (often `video`, `render`, and `input` groups); do not run a desktop compositor
+on the same display. Disable the text console cursor on the appliance's display
+if it overlays the UI. A deployment service should launch the bundled executable,
+restart on failure, and allow time for SIGTERM shutdown.
+
+DRM packages go to `rust/artifacts/<rid>-drm` and default host build artifacts
+use a `-drm` suffix, so they do not overwrite X11 bundles. Consumer bundle paths
+also receive `-drm`. Explicit `AVN_DOTNET_ARTIFACTS` overrides remain caller-owned.
+Release publishing produces separate X11 and DRM host archives for both Linux
+architectures. `package-host.ps1 -Rid linux-arm64 -LinuxBackend Drm` builds
+the DRM release archive; normal `package.ps1` also includes the sample app.
+For Cargo development, set `RUSTOLONIA_HOST_DIR` to the DRM publish directory
+at build time and `RUSTOLONIA_HOST_LIB` to its `librustolonia_host.so` at run time,
+or ship the DRM host and its native dependencies beside the executable.
+
+Before running Rustolonia on a new image, install `kmscube` and `libdrm-tests`.
+Check connectors with `modetest -M <driver> -c`, then run
+`kmscube -D /dev/dri/card0`. A DRM device node alone does not establish a working
+GBM/EGL rendering path. Software rendering through Mesa llvmpipe can be used
+for functional VM coverage; it does not qualify hardware graphics performance.
+An ARM64 QEMU `virt` guest with `virtio-gpu-pci` is suitable for this check.
+Validate the shipping board/BSP, touch controller, display, and power behavior
+on real hardware before claiming device support.
+
+For an already-booted QEMU guest with a 1280x800 VirtIO display, a virtual
+absolute pointer, SSH access, and a loopback QMP TCP listener, run the packaged
+sample's end-to-end fixture from the QEMU host:
+
+```bash
+python3 rust/tests/test-embedded-linux.py \
+    --identity /path/to/guest-key --known-hosts /path/to/known_hosts \
+    --qmp-port 22274 --bundle /home/tester/rustolonia/rust/artifacts/linux-arm64-drm \
+    --output /path/to/test-artifacts
+```
+
+The default SSH endpoint is `tester@127.0.0.1:22273`; override `--ssh-host`,
+`--ssh-port`, or `--ssh-user` as needed. Provision a known host key first.
+The fixture does not install software or boot a VM. It runs without sudo,
+captures actual QEMU display frames, clicks the counter and shutdown buttons,
+then verifies a fresh process shuts down cleanly on SIGTERM. Keep QMP private:
+it provides unauthenticated control over the VM.
 
 ## macOS native lifecycle tests
 
@@ -503,9 +652,11 @@ Release tarballs (`rust/package-host.ps1`) define the minimum OS a published
 | `linux-x64`, `linux-arm64` | `ubuntu-22.04` / `ubuntu-22.04-arm` runners | glibc 2.35 |
 | `osx-x64`, `osx-arm64` | `macos-14` (Apple silicon) runners for both; osx-x64 is cross-built and smoke-tested under Rosetta 2; `MACOSX_DEPLOYMENT_TARGET=12.0` | macOS 12 |
 
-Linux hosts are glibc-only; musl RIDs are not published. They need an X11
+Linux hosts are glibc-only; musl RIDs are not published. Desktop hosts need an X11
 display (XWayland works), the X11 client libraries (`libX11`, `libICE`,
-`libSM`) and fontconfig at runtime.
+`libSM`) and fontconfig at runtime. DRM variants retain the same glibc floor,
+but use the graphics/input dependencies and permissions described in the
+[embedded Linux section](#embedded-linux-direct-drmkms-display), not X11.
 
 ## Cross-platform gate result
 

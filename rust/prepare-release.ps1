@@ -19,7 +19,7 @@ Two steps, each followed by a commit:
 
   2. -Checksums (-SumsFile <SHA256SUMS> | -FromRelease)
      Writes host-checksums.txt from SHA256SUMS (symbol tarballs are left out):
-     the desktop, iOS and browser host tarballs and the Android host APK.
+     the desktop, DRM, iOS and browser host tarballs and the Android host APK.
      For initial publication use -SumsFile from the staged build artifact.
      -FromRelease reads an existing v<x.y.z> release and accepts legacy
      releases without any iOS hosts, browser host or Android host, with a
@@ -165,6 +165,15 @@ else {
     $requiredRids += $script:BrowserHostRid
 }
 $requiredAssets = @($requiredRids | ForEach-Object { Get-HostAssetName -Version $version -Rid $_ })
+$drmAssets = @('linux-x64', 'linux-arm64' | ForEach-Object {
+    Get-HostAssetName -Version $version -Rid $_ -LinuxBackend Drm
+})
+if ($FromRelease -and @($drmAssets | Where-Object { $entries.Contains($_) }).Count -eq 0) {
+    Write-Warning "Release v$version has no DRM host checksums; treating it as a release without embedded Linux hosts."
+}
+else {
+    $requiredAssets += $drmAssets
+}
 if ($FromRelease -and -not $entries.Contains($androidAsset)) {
     Write-Warning "Release v$version has no Android host checksum; treating it as a release without an Android host."
 }

@@ -13,6 +13,10 @@ fn main() {
     let abi_fingerprint = host::sha256_hex(&bytes);
     println!("cargo:rustc-env=RUSTOLONIA_ABI_FINGERPRINT={abi_fingerprint}");
 
+    let target = env::var("TARGET").expect("TARGET");
+    let linux_drm = env::var_os("CARGO_FEATURE_LINUX_DRM").is_some();
+    host::validate_backend(&target, linux_drm).unwrap_or_else(|error| panic!("{error}"));
+
     // Browser builds link the Rust app into the .NET WebAssembly host (see
     // host/Browser), so there is no prebuilt host to stage.
     if env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("emscripten") {
@@ -21,7 +25,8 @@ fn main() {
 
     let config = host::Config {
         version: env::var("CARGO_PKG_VERSION").expect("CARGO_PKG_VERSION"),
-        target: env::var("TARGET").expect("TARGET"),
+        target,
+        linux_drm,
         abi_fingerprint,
         host_dir: env_var("RUSTOLONIA_HOST_DIR").map(PathBuf::from),
         skip_download: env::var_os("DOCS_RS").is_some()

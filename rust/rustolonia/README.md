@@ -59,12 +59,21 @@ built from the recorded Actions build revision. The `vX.Y.Z` consumer tag differ
 from that revision only by the committed host checksums. When the app starts, the host's ABI fingerprint is
 checked against the one the crate was built with.
 
-Linux needs X11 (Wayland sessions work through XWayland) and fontconfig;
+Desktop Linux needs X11 (Wayland sessions work through XWayland) and fontconfig;
 minimum OS versions are listed in
 [PLATFORMS.md](https://github.com/Devolutions/rustolonia/blob/master/rust/PLATFORMS.md#prebuilt-host-platform-floors).
 The prebuilt release covers code-first applications. Applications with
 compiled AXAML and view-model IR still build their own host from a source
 checkout.
+
+For an embedded Linux appliance, enable `features = ["linux-drm"]` on this
+dependency. Cargo then downloads a separate DRM/KMS host for the same Linux
+GNU target, with no .NET SDK or local source checkout. Mount a fullscreen root
+with `scope.set_main_view(&root)` rather than creating a `Window`. This requires
+a new release containing the DRM assets; existing releases remain X11-only.
+See the [standalone embedded Linux workflow](https://github.com/Devolutions/rustolonia/blob/master/rust/PLATFORMS.md#standalone-rust-apps-with-prebuilt-hosts)
+for a complete dependency/example, deployment packaging, permissions, and
+native runtime requirements.
 
 The experimental [standalone iOS sample](https://github.com/Devolutions/rustolonia/tree/master/samples/ios-standalone)
 uses a Rust static library and a prebuilt NativeAOT host, without building C#

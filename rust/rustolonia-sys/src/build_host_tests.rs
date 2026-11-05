@@ -74,6 +74,7 @@ fn config(cache_root: &Path) -> Config {
     Config {
         version: VERSION.into(),
         target: TARGET.into(),
+        linux_drm: false,
         abi_fingerprint: FINGERPRINT.into(),
         host_dir: None,
         skip_download: false,
@@ -89,6 +90,7 @@ fn expected() -> Expected<'static> {
         version: VERSION,
         rid: RID,
         abi_fingerprint: FINGERPRINT,
+        linux_drm: false,
     }
 }
 
@@ -422,4 +424,101 @@ fn downloads_from_file_urls() {
             ..
         }
     ));
+}
+#[test]
+fn drm_requires_a_supported_linux_target_even_when_downloads_are_disabled() {
+    let temp = TempDir::new();
+    let mut config = config(&temp.0);
+    config.linux_drm = true;
+    config.skip_download = true;
+    for target in [
+        "aarch64-apple-darwin",
+        "x86_64-pc-windows-msvc",
+        "aarch64-linux-android",
+        "aarch64-apple-ios",
+        "wasm32-unknown-emscripten",
+        "aarch64-unknown-linux-musl",
+    ] {
+        config.target = target.into();
+        assert!(
+            resolve(&config).unwrap_err().contains("linux-drm"),
+            "{target}"
+        );
+    }
+    for target in [TARGET, "aarch64-unknown-linux-gnu"] {
+        config.target = target.into();
+        assert!(matches!(resolve(&config).unwrap(), Resolution::Skipped(_)));
+    }
+}
+
+#[test]
+fn linux_manifests_cannot_mix_drm_and_x11_hosts() {
+    let temp = TempDir::new();
+    let dir = temp.0.join("host");
+    let legacy = manifest(VERSION, RID, FINGERPRINT);
+    let drm = legacy.replacen('{', "{\"platform\":\"LinuxDrm\",", 1);
+    let x11 = legacy.replacen('{', "{\"platform\":\"X11\",", 1);
+    let mut drm_expected = expected();
+    drm_expected.linux_drm = true;
+    for text in [&legacy, &x11] {
+        write_host_dir(&dir, Some(text));
+        assert!(validate_host_dir(&dir, &drm_expected, true)
+            .unwrap_err()
+            .contains("platform"));
+        validate_host_dir(&dir, &expected(), true).unwrap();
+    }
+    write_host_dir(&dir, Some(&drm));
+    validate_host_dir(&dir, &drm_expected, true).unwrap();
+    assert!(validate_host_dir(&dir, &expected(), false)
+        .unwrap_err()
+        .contains("platform"));
+}
+
+#[test]
+fn downloads_drm_separately_and_reuses_only_its_own_cache() {
+    let temp = TempDir::new();
+    let desktop = temp.0.join("cache").join(VERSION).join(RID);
+    write_host_dir(&desktop, Some(&manifest(VERSION, RID, FINGERPRINT)));
+    let drm_manifest =
+        manifest(VERSION, RID, FINGERPRINT).replacen('{', "{\"platform\":\"LinuxDrm\",", 1);
+    let archive = tarball(&drm_manifest);
+    let release = temp.0.join("release").join(format!("v{VERSION}"));
+    fs::create_dir_all(&release).unwrap();
+    let asset = asset_name(VERSION, "linux-x64-drm");
+    fs::write(release.join(&asset), &archive).unwrap();
+    let mut config = config(&temp.0.join("cache"));
+    config.linux_drm = true;
+    config.base_url = format!(
+        "file:///{}",
+        temp.0
+            .join("release")
+            .to_string_lossy()
+            .replace('\\', "/")
+            .trim_start_matches('/')
+    );
+    config.checksums = format!("{}  {asset}\n", sha256_hex(&archive));
+    let drm_dir = config.cache_root.join(VERSION).join("linux-x64-drm");
+    assert_eq!(
+        resolve(&config).unwrap(),
+        Resolution::Found {
+            dir: drm_dir.clone(),
+            source: Source::Download
+        }
+    );
+    config.offline = true;
+    assert_eq!(
+        resolve(&config).unwrap(),
+        Resolution::Found {
+            dir: drm_dir,
+            source: Source::Cache
+        }
+    );
+    config.linux_drm = false;
+    assert_eq!(
+        resolve(&config).unwrap(),
+        Resolution::Found {
+            dir: desktop,
+            source: Source::Cache
+        }
+    );
 }

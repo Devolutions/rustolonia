@@ -54,6 +54,13 @@ mirrored and locally built hosts.
 Applications with compiled AXAML and Rust view-models still build their own
 host from a source checkout, as described below.
 
+Experimental embedded Linux support selects direct DRM/KMS with the Cargo
+feature `linux-drm`, using separate prebuilt hosts in releases containing this
+feature. Existing releases do not include DRM assets. Source builds use
+`-LinuxBackend Drm`.
+It renders one fullscreen view directly through DRM/KMS without X11; see
+[embedded Linux setup](rust/PLATFORMS.md#embedded-linux-direct-drmkms-display).
+
 Code-first apps for iOS, Android and the browser can also be built without
 .NET tooling, from prebuilt hosts published with releases from the first one
 that includes them, each verified against `host-checksums.txt`:

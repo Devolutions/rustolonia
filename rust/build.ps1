@@ -7,6 +7,8 @@ Publish the NativeAOT host for this OS and run the Rust workspace tests.
 param(
     [ValidateSet('x64', 'arm64')]
     [string]$Architecture = 'x64',
+    [ValidateSet('X11', 'Drm')]
+    [string]$LinuxBackend = 'X11',
     [switch]$RunExamples
 )
 
@@ -19,6 +21,9 @@ $repositoryRoot = Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot 'package-shared.ps1')
 $avaloniaRoot = Join-Path $repositoryRoot 'avalonia-src'
 Initialize-LocalProducerSubmodule -RustoloniaRoot $repositoryRoot -ProducerRoot $avaloniaRoot
+if ($LinuxBackend -eq 'Drm' -and -not $IsLinux) {
+    throw 'The Drm backend must be built on Linux.'
+}
 $nativeArchitecture = switch ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture) {
     'X64' { 'x64' }
     'Arm64' { 'arm64' }
@@ -34,8 +39,8 @@ if ($IsWindows) {
     $hostFileName = 'rustolonia_host.dll'
 }
 elseif ($IsLinux) {
-    $platform = 'X11'
     $rid = "linux-$Architecture"
+    $platform = (Get-RidTargetInfo -Rid $rid -LinuxBackend $LinuxBackend).Platform
     $hostFileName = 'librustolonia_host.so'
     $dbus = Join-Path $avaloniaRoot 'external' 'Avalonia.DBus' 'src' 'Avalonia.DBus' 'Avalonia.DBus.csproj'
     if (-not (Test-Path -LiteralPath $dbus -PathType Leaf)) {
@@ -66,7 +71,8 @@ if ($IsWindows) {
     }
 }
 
-$artifacts = if ($env:AVN_DOTNET_ARTIFACTS) { $env:AVN_DOTNET_ARTIFACTS } else { Join-Path $PSScriptRoot 'target' "dotnet-$rid" }
+$backendSuffix = if ($LinuxBackend -eq 'Drm') { '-drm' } else { '' }
+$artifacts = if ($env:AVN_DOTNET_ARTIFACTS) { $env:AVN_DOTNET_ARTIFACTS } else { Join-Path $PSScriptRoot 'target' "dotnet-$rid$backendSuffix" }
 dotnet publish (Join-Path $repositoryRoot 'host' 'Avalonia.Host.csproj') `
     -c Release -r $rid "-p:AvaloniaRustHostPlatform=$platform" --artifacts-path $artifacts
 
@@ -87,5 +93,6 @@ cargo test --manifest-path (Join-Path $PSScriptRoot 'Cargo.toml') --workspace
 Write-Host "$rid NativeAOT host: $hostFile"
 
 if ($RunExamples) {
-    cargo run --manifest-path (Join-Path $PSScriptRoot 'Cargo.toml') -p rustolonia --example hello_world
+    $example = if ($LinuxBackend -eq 'Drm') { 'embedded_linux' } else { 'hello_world' }
+    cargo run --manifest-path (Join-Path $PSScriptRoot 'Cargo.toml') -p rustolonia --example $example
 }

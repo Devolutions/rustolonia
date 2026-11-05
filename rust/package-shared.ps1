@@ -36,14 +36,22 @@ $script:BrowserHostRid = 'browser-wasm'
 
 function Get-RidTargetInfo {
     param(
-        [Parameter(Mandatory)][string]$Rid
+        [Parameter(Mandatory)][string]$Rid,
+        [ValidateSet('X11', 'Drm')][string]$LinuxBackend = 'X11'
     )
 
     if (-not $script:RidTargets.ContainsKey($Rid)) {
         throw "Unsupported RID '$Rid'. Supported values: $((($script:RidTargets.Keys | Sort-Object) -join ', '))"
     }
 
-    return $script:RidTargets[$Rid]
+    $target = $script:RidTargets[$Rid].Clone()
+    if ($LinuxBackend -eq 'Drm') {
+        if ($target.OS -ne 'Linux') {
+            throw 'The Drm backend requires a Linux RID.'
+        }
+        $target.Platform = 'LinuxDrm'
+    }
+    return $target
 }
 
 function New-DotnetPublishCommand {
@@ -764,13 +772,18 @@ function Get-HostAssetName {
         [Parameter(Mandatory)][string]$Version,
         [Parameter(Mandatory)][string]$Rid,
         [ValidateSet('default', 'devtools')][string]$Flavor = 'default',
+        [ValidateSet('X11', 'Drm')][string]$LinuxBackend = 'X11',
         [switch]$Symbols
     )
 
     if ($Rid -cnotin $script:IosHostRids -and $Rid -cne $script:BrowserHostRid) {
-        $null = Get-RidTargetInfo -Rid $Rid
+        $null = Get-RidTargetInfo -Rid $Rid -LinuxBackend $LinuxBackend
+    }
+    elseif ($LinuxBackend -eq 'Drm') {
+        throw 'The Drm backend requires a Linux RID.'
     }
     $name = "rustolonia-host-$Version-$Rid"
+    if ($LinuxBackend -eq 'Drm') { $name += '-drm' }
     if ($Flavor -ne 'default') { $name += "-$Flavor" }
     if ($Symbols) { $name += '-symbols' }
     return "$name.tar.gz"
@@ -791,10 +804,11 @@ function Write-HostManifest {
         [Parameter(Mandatory)][string]$AbiFingerprint,
         [Parameter(Mandatory)][string]$RustoloniaRoot,
         [ValidateSet('default', 'devtools')][string]$Flavor = 'default',
+        [ValidateSet('X11', 'Drm')][string]$LinuxBackend = 'X11',
         [string]$SourceRevision
     )
 
-    $target = Get-RidTargetInfo -Rid $Rid
+    $target = Get-RidTargetInfo -Rid $Rid -LinuxBackend $LinuxBackend
     $release = Get-Content -LiteralPath (Join-Path $RustoloniaRoot 'rust' 'release-manifest.json') -Raw | ConvertFrom-Json
     $files = @(Get-ChildItem -LiteralPath $Directory -File -Force |
         Where-Object { $_.Name -ne 'host-manifest.json' } |
@@ -808,6 +822,7 @@ function Write-HostManifest {
         version        = $Version
         rid            = $Rid
         abiFingerprint = $AbiFingerprint
+        platform       = $target.Platform
         hostFile       = $target.HostFileName
         flavor         = $Flavor
         schemaVersion  = 1

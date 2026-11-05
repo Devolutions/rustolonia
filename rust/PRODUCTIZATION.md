@@ -378,23 +378,34 @@ cargo package --locked -p rustolonia-sys -p rustolonia-bindgen -p rustolonia
 
 ### Prebuilt host tarballs
 
-`rust/package-host.ps1 -Rid <rid> [-Flavor default|devtools]` publishes the
+`rust/package-host.ps1 -Rid <rid> [-LinuxBackend X11|Drm] [-Flavor default|devtools]` publishes the
 NativeAOT host (or packages an existing `-PublishDirectory`) into
 `rust/artifacts/host/`:
 
 | Asset | Contents |
 | --- | --- |
-| `rustolonia-host-<v>-<rid>[-devtools].tar.gz` | Flat root: host library, native dependencies, notices, `sbom.cdx.json`, `host-manifest.json` |
+| `rustolonia-host-<v>-<rid>[-drm][-devtools].tar.gz` | Flat root: host library, native dependencies, notices, `sbom.cdx.json`, `host-manifest.json` |
 | `…tar.gz.sha256` | `sha256sum` sidecar |
-| `rustolonia-host-<v>-<rid>[-devtools]-symbols.tar.gz` | `.pdb` / `.dbg` / `.dSYM` symbols, never downloaded by `build.rs` |
+| `rustolonia-host-<v>-<rid>[-drm][-devtools]-symbols.tar.gz` | `.pdb` / `.dbg` / `.dSYM` symbols, never downloaded by `build.rs` |
 
 The desktop `host-manifest.json` begins with `version`, `rid`, and `abiFingerprint` (the
 SHA-256 of `avalonia-rust-abi.h`), which `rustolonia-sys` checks after
-extraction; it also records the source revision, producer pin, patches, and
+extraction; it also records the platform, source revision, producer pin, patches, and
 per-file hashes. Archives are deterministic: sorted entries, uid/gid 0, fixed
 modes, and an mtime from `SOURCE_DATE_EPOCH` (or the HEAD commit time). The
 version comes from `release-manifest.json` and must match all three crates.
 Platform floors for release builds are listed in [PLATFORMS.md](PLATFORMS.md#prebuilt-host-platform-floors).
+
+Both Linux architectures additionally publish a `-drm` archive selected by the
+`linux-drm` Cargo feature. These use separate cache entries and manifest backend
+validation, while retaining the real Linux RID and shared-library filename.
+Release checksum pinning requires both DRM archives; recovery from legacy
+releases without either archive warns, but partial DRM sets fail.
+Standalone DRM consumers are built from both packaged crates and git tags in
+release CI, including an adjacent-host distributable. Hosted runners cannot
+launch DRM without a display device, so these checks explicitly use
+`-BuildOnly`; `rust/tests/test-embedded-linux.py` exercises presentation,
+input and shutdown in a QEMU guest separately.
 
 For experimental iOS, `rust/package-ios-host.ps1 -Rid <rid>` produces a
 separate archive for `ios-arm64`, `iossimulator-arm64`, or
@@ -552,8 +563,10 @@ a `build_run_id` whose run succeeded.
    download path (`rust/tests/test-standalone-app.ps1`), and builds the three
    iOS hosts. It launches the standalone Rust sample against the Apple Silicon
    simulator host and cross-links the other two. It stages an Actions artifact
-   named `rustolonia-release-X.Y.Z` with all nine host tarballs, desktop
-   symbols, and `SHA256SUMS`, retained for 90 days. Build provenance
+   named `rustolonia-release-X.Y.Z` with desktop, DRM, iOS and browser host
+   tarballs, the Android host APK, native symbols, and `SHA256SUMS`, retained
+   for 90 days. Both Linux DRM variants build standalone consumers without
+   launching on the hosted runner. Build provenance
    attestations are generated for the tarballs. Record the successful run ID.
    The build fails if the final `vX.Y.Z` tag already exists.
 3. Download the staged artifact from that run.
@@ -602,7 +615,7 @@ git push origin master v12.1.2
 gh workflow run release.yml --ref master -f phase=publish -f version=12.1.2 -f build_run_id=RUN_ID -f publish_crates=false -f draft=false
 ```
 
-Do not push `vX.Y.Z` before committing the actual six host hashes: Cargo
+Do not push `vX.Y.Z` before committing all required host hashes: Cargo
 downloads the source at the tag, not later commits on `master`. Wait for the
 manual publication gate before telling consumers to use that tag. If any
 source change is needed after staging the host build, run a new build before
