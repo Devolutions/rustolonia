@@ -71,6 +71,31 @@ function Read-Rsp([string]$Path) {
     return @(Get-Content -LiteralPath $Path | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
 }
 
+# True for LLVM bitcode (raw or wrapped), or an archive with a bitcode member.
+function Test-LlvmBitcode([string]$Path) {
+    $bytes = [IO.File]::ReadAllBytes($Path)
+    $isBitcode = {
+        param([long]$At)
+        if ($At + 4 -gt $bytes.Length) { return $false }
+        $magic = [BitConverter]::ToString($bytes, $At, 4)
+        return $magic -eq '42-43-C0-DE' -or $magic -eq 'DE-C0-17-0B'
+    }
+    if ($bytes.Length -lt 8 -or [Text.Encoding]::ASCII.GetString($bytes, 0, 8) -ne "!<arch>`n") {
+        return (& $isBitcode 0)
+    }
+    $offset = 8
+    while ($offset + 60 -le $bytes.Length) {
+        $name = [Text.Encoding]::ASCII.GetString($bytes, $offset, 16).Trim()
+        $size = [long]::Parse([Text.Encoding]::ASCII.GetString($bytes, $offset + 48, 10).Trim())
+        $data = $offset + 60
+        # BSD archives store long member names at the start of the data.
+        if ($name -match '^#1/(\d+)$') { $data += [long]$Matches[1] }
+        if (& $isBitcode $data) { return $true }
+        $offset += 60 + $size + ($size % 2)
+    }
+    return $false
+}
+
 try {
     # 1. Publish the host with the stand-in app, recording the link.
     $publish = Join-Path $staging 'publish'
@@ -150,6 +175,12 @@ try {
     if ($unresolved.Count -gt 0) { throw "The link refers to files that were not packaged:`n$($unresolved -join "`n")" }
     if (-not ($rspLines -contains '"@APP@"')) { throw 'The recorded link does not contain the Rust app archive.' }
     if (-not ($rspLines -contains '-o "@OUT@"')) { throw 'The recorded link has no dotnet.native.js output.' }
+    # Consumers link with the upstream Emscripten SDK, whose LLVM cannot read
+    # bitcode written by the .NET workload's newer LLVM.
+    $bitcode = @($copied.Values | Where-Object { Test-LlvmBitcode (Join-Path $linkDirectory $_) })
+    if ($bitcode.Count -gt 0) {
+        throw "Link inputs are LLVM bitcode, which the upstream Emscripten SDK may not read: $($bitcode -join ', ')"
+    }
     [IO.File]::WriteAllText((Join-Path $linkDirectory 'emcc.rsp'), (($rspLines -join "`n") + "`n"), [Text.UTF8Encoding]::new($false))
 
     # 3. The site without the native runtime, which build-site.py relinks,

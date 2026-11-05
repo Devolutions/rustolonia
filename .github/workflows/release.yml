@@ -109,8 +109,8 @@ jobs:
           - { os: ubuntu-22.04-arm, rid: linux-arm64, backend: Drm }
           # Intel macOS runners are slow; Apple silicon cross-builds osx-x64
           # and smoke-launches it through Rosetta 2.
-          - { os: macos-14, rid: osx-x64, rust-target: x86_64-apple-darwin }
-          - { os: macos-14, rid: osx-arm64 }
+          - { os: macos-15, rid: osx-x64, rust-target: x86_64-apple-darwin }
+          - { os: macos-15, rid: osx-arm64 }
     steps:
       - uses: actions/checkout@v4
         with:
@@ -344,7 +344,7 @@ jobs:
           export PATH="$RUNNER_TEMP/no-dotnet:$PATH"
           unset DOTNET_ROOT
           export RUSTOLONIA_HOST_BASE_URL="file://$mirror"
-          export RUSTOLONIA_HOST_CHECKSUMS="rust/artifacts/host/$asset.sha256"
+          export RUSTOLONIA_HOST_CHECKSUMS="$GITHUB_WORKSPACE/rust/artifacts/host/$asset.sha256"
           export RUSTOLONIA_CACHE_DIR="$RUNNER_TEMP/rustolonia-cache"
           out="$RUNNER_TEMP/android-hello.apk"
           ./rust/target/release/cargo-rustolonia-apk --manifest-path apps/android-hello/Cargo.toml --out "$out"
