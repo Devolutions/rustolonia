@@ -111,6 +111,20 @@
     <WriteLinesToFile File="$(RustoloniaBrowserKitCapture)" Lines="@(_RustoloniaBrowserLinkFact)" Overwrite="true" WriteOnlyWhenDifferent="false" />
   </Target>
 
+  <!--
+    The .NET SDK compiles the runtime glue (pinvoke.o, driver.o, ...) to LLVM
+    bitcode, which only an LLVM at least as new as the wasm-tools workload's
+    can read. Consumers relink the kit with the upstream Emscripten SDK, whose
+    LLVM is older ("wasm-ld: error: Invalid record"), so kit builds compile the
+    glue to native wasm objects instead.
+  -->
+  <Target Name="_RustoloniaBrowserKitNativeGlue" BeforeTargets="_BrowserWasmWriteCompileRsp"
+          Condition="'$(RustoloniaBrowserKitCapture)' != ''">
+    <ItemGroup>
+      <_EmccCFlags Remove="-emit-llvm" />
+    </ItemGroup>
+  </Target>
+
   <Import Project="..\..\build\BrowserCom.targets" />
   <Import Project="..\..\build\NullableEnable.props" />
   <Import Project="..\..\build\MicroCOM.props" />

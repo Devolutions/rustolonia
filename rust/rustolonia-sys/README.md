@@ -45,8 +45,10 @@ order:
 4. Download `rustolonia-host-<version>-<rid>[-drm].tar.gz` from the GitHub release
    (`RUSTOLONIA_HOST_BASE_URL` overrides the base URL; `file://` works), verify
    it against `host-checksums.txt` (or the file named by
-   `RUSTOLONIA_HOST_CHECKSUMS`), then cache it. `CARGO_NET_OFFLINE` forbids the
-   download. Proxies come from the standard proxy environment variables.
+   `RUSTOLONIA_HOST_CHECKSUMS`; build scripts resolve a relative path against
+   this crate's directory, so use an absolute one), then cache it.
+   `CARGO_NET_OFFLINE` forbids the download. Proxies come from the standard
+   proxy environment variables.
 
 Prebuilt hosts exist for `x86_64`/`aarch64` `windows-msvc`, `apple-darwin` and
 `linux-gnu`. The staged directory is exported to dependent build scripts as

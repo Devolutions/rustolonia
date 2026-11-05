@@ -601,7 +601,8 @@ used or cached (in the same cache as the desktop hosts,
 re-checked on every build, so the host always matches the app's bindings,
 whichever version of the tool runs. The `rustolonia-sys` variables apply:
 `RUSTOLONIA_HOST_BASE_URL` (a mirror, including `file://`),
-`RUSTOLONIA_HOST_CHECKSUMS` (the checksum list for that mirror),
+`RUSTOLONIA_HOST_CHECKSUMS` (the checksum list for that mirror; the tool
+resolves a relative path against its working directory),
 `RUSTOLONIA_CACHE_DIR`, and `CARGO_NET_OFFLINE` (cache only). A release without
 an Android host fails with an explicit error. `--host-apk <apk>` or
 `RUSTOLONIA_ANDROID_HOST_APK` instead use a local host as is, for example one

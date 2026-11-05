@@ -413,6 +413,9 @@ fn cargo_build(
         .env(format!("CARGO_TARGET_{env_triple}_LINKER"), &clang)
         .env(format!("CC_{cc_triple}"), &clang)
         .env(format!("AR_{cc_triple}"), &ar);
+    if let Some(checksums) = host::checksums_override()? {
+        command.env("RUSTOLONIA_HOST_CHECKSUMS", checksums);
+    }
     if !debug {
         command.arg("--release");
     }

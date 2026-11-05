@@ -118,6 +118,24 @@ pub fn read_bindings(manifest: &Path) -> Result<Bindings, String> {
     bindings_from_metadata(&metadata)
 }
 
+/// `RUSTOLONIA_HOST_CHECKSUMS` as an absolute path.
+///
+/// `rustolonia-sys`'s build script reads this variable relative to its own
+/// crate directory, so a relative value must be resolved against the
+/// directory this tool runs in before it is passed to the app's build.
+pub fn checksums_override() -> Result<Option<PathBuf>, String> {
+    let Some(value) = std::env::var_os("RUSTOLONIA_HOST_CHECKSUMS").filter(|v| !v.is_empty())
+    else {
+        return Ok(None);
+    };
+    std::path::absolute(&value).map(Some).map_err(|e| {
+        format!(
+            "RUSTOLONIA_HOST_CHECKSUMS ({}): {e}",
+            Path::new(&value).display()
+        )
+    })
+}
+
 /// Where and how to fetch a release host.
 pub struct Release {
     pub version: String,
@@ -132,9 +150,8 @@ impl Release {
     /// The settings for `bindings`, honouring the `rustolonia-sys` variables.
     pub fn from_env(bindings: &Bindings) -> Result<Self, String> {
         let var = |name: &str| std::env::var(name).ok().filter(|v| !v.is_empty());
-        let checksums_path = var("RUSTOLONIA_HOST_CHECKSUMS")
-            .map(PathBuf::from)
-            .unwrap_or_else(|| bindings.root.join("host-checksums.txt"));
+        let checksums_path =
+            checksums_override()?.unwrap_or_else(|| bindings.root.join("host-checksums.txt"));
         let checksums = std::fs::read_to_string(&checksums_path)
             .map_err(|e| format!("{}: {e}", checksums_path.display()))?;
         let cache_root = match var("RUSTOLONIA_CACHE_DIR") {

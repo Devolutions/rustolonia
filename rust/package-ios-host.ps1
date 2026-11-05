@@ -87,6 +87,9 @@ $PSNativeCommandUseErrorActionPreference = $false
 try {
     & /usr/bin/grep -a -q 'IosSmokeTest' $hostObject
     $grepResult = $LASTEXITCODE
+    # grep exits 1 when the marker is absent (the expected case); don't let
+    # that leak out as the script's exit code.
+    $global:LASTEXITCODE = 0
 }
 finally { $PSNativeCommandUseErrorActionPreference = $true }
 if ($grepResult -eq 0) { throw 'Refusing to package a smoke-enabled managed host.' }
