@@ -62,6 +62,10 @@ jobs:
         shell: pwsh
         run: ./rust/tests/test-build-app.ps1
 
+      - name: Check browser smoke-test shutdown
+        if: runner.os != 'Windows'
+        run: python3 rust/tests/test-browser-smoke.py
+
       - name: Check iOS host validation
         if: runner.os == 'macOS'
         run: ./rust/tests/test-ios-host.sh

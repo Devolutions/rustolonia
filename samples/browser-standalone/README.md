@@ -47,7 +47,10 @@ the script: later builds replace it, and it refuses to replace a directory it
 did not create. `--debug` builds the debug profile.
 
 `python3 smoke-test.py target/browser-site` loads the site in headless Chrome
-(or `CHROME`) and waits for the app's "main view ready" console line.
+(or `CHROME`) and waits for the app's "main view ready" console line. It stops
+Chrome's process tree and drains the console output before removing the
+temporary profile, including when startup fails or times out (`--timeout`,
+default 180 seconds).
 
 ## Use it in your own project
 
