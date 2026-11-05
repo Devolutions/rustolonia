@@ -309,7 +309,8 @@ jobs:
         run: |
           set -euo pipefail
           dotnet workload install android --version 10.0.401
-          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          # sdkmanager may close stdin early; ignore yes's expected broken pipe.
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses < <(yes 2>/dev/null) > /dev/null
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'platforms;android-36' 'build-tools;36.0.0'
 
       - name: Set up Rust
