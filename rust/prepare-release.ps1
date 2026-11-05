@@ -18,10 +18,12 @@ Two steps, each followed by a commit:
      phase=build it only stages host tarballs and SHA256SUMS as artifacts.
 
   2. -Checksums (-SumsFile <SHA256SUMS> | -FromRelease)
-     Writes host-checksums.txt from SHA256SUMS (symbol tarballs are left out).
+     Writes host-checksums.txt from SHA256SUMS (symbol tarballs are left out):
+     the desktop, iOS and browser host tarballs and the Android host APK.
      For initial publication use -SumsFile from the staged build artifact.
      -FromRelease reads an existing v<x.y.z> release and accepts legacy
-     releases without any iOS hosts, with a warning.
+     releases without any iOS hosts, browser host or Android host, with a
+     warning.
      Commit, then push `v<x.y.z>` on this commit. Dispatch phase=publish
      with build_run_id to create the GitHub release (non-draft by default).
      crates.io publishing and draft releases are opt-in.
@@ -61,10 +63,11 @@ $PSNativeCommandUseErrorActionPreference = $true
 $root = (Resolve-Path -LiteralPath $RustoloniaRoot).Path
 $checksumFile = Join-Path $root 'rust' 'rustolonia-sys' 'host-checksums.txt'
 $checksumHeader = @'
-# SHA-256 of the prebuilt rustolonia host tarballs for this rustolonia-sys
-# version, in `sha256sum` format. build.rs refuses to use a downloaded host
-# whose hash is not listed here. rust/prepare-release.ps1 fills this in from
-# the release build before the consumer tag or crates are published.
+# SHA-256 of the prebuilt rustolonia hosts (tarballs and the Android APK) for
+# this rustolonia-sys version, in `sha256sum` format. build.rs and
+# cargo-rustolonia-apk refuse to use a downloaded host whose hash is not
+# listed here. rust/prepare-release.ps1 fills this in from the release build
+# before the consumer tag or crates are published.
 '@ -replace "`r`n", "`n"
 
 function Write-Utf8Lf([string]$Path, [string]$Text) {
@@ -79,7 +82,7 @@ function Set-Content-Replace([string]$Path, [string]$Pattern, [string]$Replaceme
 }
 
 if ($PSCmdlet.ParameterSetName -eq 'Version') {
-    foreach ($crate in @('rustolonia-sys', 'rustolonia', 'rustolonia-bindgen')) {
+    foreach ($crate in @('rustolonia-sys', 'rustolonia', 'rustolonia-bindgen', 'rustolonia-apk')) {
         Set-Content-Replace (Join-Path $root 'rust' $crate 'Cargo.toml') '^version\s*=\s*"[^"]+"' "version = `"$Version`""
     }
     Set-Content-Replace (Join-Path $root 'rust' 'rustolonia' 'Cargo.toml') '^(rustolonia-sys\s*=\s*\{\s*version\s*=\s*)"=[^"]+"' "`${1}`"=$Version`""
@@ -134,12 +137,14 @@ else {
     $sumsLines = @(Get-Content -LiteralPath $SumsFile)
 }
 
+$androidAsset = Get-AndroidHostAssetName -Version $version
 $entries = [ordered]@{}
 foreach ($line in $sumsLines) {
     if ([string]::IsNullOrWhiteSpace($line)) { continue }
     $hash, $name = $line.Trim() -split '\s+\*?', 2
     if ($hash -notmatch '^[0-9a-f]{64}$') { throw "Invalid SHA256SUMS line: $line" }
-    if ($name -notlike "rustolonia-host-$version-*.tar.gz" -or $name -like '*-symbols.tar.gz') { continue }
+    $isTarball = $name -like "rustolonia-host-$version-*.tar.gz" -and $name -notlike '*-symbols.tar.gz'
+    if (-not $isTarball -and $name -cne $androidAsset) { continue }
     $entries[$name] = $hash
 }
 $requiredRids = @($script:RidTargets.Keys)
@@ -152,8 +157,21 @@ if ($FromRelease -and -not $hasIosAssets) {
 else {
     $requiredRids += $script:IosHostRids
 }
-foreach ($rid in $requiredRids) {
-    $asset = Get-HostAssetName -Version $version -Rid $rid
+$browserAsset = Get-HostAssetName -Version $version -Rid $script:BrowserHostRid
+if ($FromRelease -and -not $entries.Contains($browserAsset)) {
+    Write-Warning "Release v$version has no browser host checksum; treating it as a release without a browser host."
+}
+else {
+    $requiredRids += $script:BrowserHostRid
+}
+$requiredAssets = @($requiredRids | ForEach-Object { Get-HostAssetName -Version $version -Rid $_ })
+if ($FromRelease -and -not $entries.Contains($androidAsset)) {
+    Write-Warning "Release v$version has no Android host checksum; treating it as a release without an Android host."
+}
+else {
+    $requiredAssets += $androidAsset
+}
+foreach ($asset in $requiredAssets) {
     if (-not $entries.Contains($asset)) { throw "SHA256SUMS has no entry for $asset." }
 }
 $lines = @($entries.Keys | Sort-Object -CaseSensitive | ForEach-Object { "$($entries[$_])  $_" })

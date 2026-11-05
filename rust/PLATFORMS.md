@@ -423,9 +423,11 @@ report failures to Rust only as HRESULTs.
 app is the same for every app, so it can ship prebuilt, like the desktop host
 tarballs. `rust/package-android-host.ps1` builds `host/Android/App`, which is the
 Android host with generic `net.devolutions.rustolonia.android.RustoloniaApplication`
-and `RustoloniaActivity` classes, into `rustolonia-android-host-<version>.apk`
-(+ `.sha256`). `cargo rustolonia-apk` (`rust/rustolonia-apk`) then needs only
-Cargo, the NDK and the Rust targets, with no .NET SDK, Android workload or JDK:
+and `RustoloniaActivity` classes, into `rustolonia-host-<version>-android.apk`
+(+ `.sha256`). Releases publish it beside the desktop and iOS host tarballs and
+pin its SHA-256 in `rustolonia-sys`'s `host-checksums.txt`.
+`cargo rustolonia-apk` (`rust/rustolonia-apk`) then needs only Cargo, the NDK
+and the Rust targets, with no .NET SDK, Android workload or JDK:
 
 ```toml
 # Cargo.toml: [lib] crate-type = ["cdylib", "rlib"], plus
@@ -437,9 +439,24 @@ version-name = "1.0"             # default: crate version
 ```
 
 ```pwsh
-cargo install --path rust/rustolonia-apk
-cargo rustolonia-apk --host-apk rustolonia-android-host-12.1.3.apk --launch
+cargo install --git https://github.com/Devolutions/rustolonia --tag vX.Y.Z rustolonia-apk
+cargo rustolonia-apk --launch
 ```
+
+Without `--host-apk`, the tool runs `cargo metadata` on the app, takes the
+version of the `rustolonia-sys` it resolves, and uses
+`rustolonia-host-<that version>-android.apk` from the matching GitHub release.
+The download is checked against that crate's `host-checksums.txt` before it is
+used or cached (in the same cache as the desktop hosts,
+`<cache dir>/rustolonia/host/<version>/android/`), and a cached copy is
+re-checked on every build, so the host always matches the app's bindings,
+whichever version of the tool runs. The `rustolonia-sys` variables apply:
+`RUSTOLONIA_HOST_BASE_URL` (a mirror, including `file://`),
+`RUSTOLONIA_HOST_CHECKSUMS` (the checksum list for that mirror),
+`RUSTOLONIA_CACHE_DIR`, and `CARGO_NET_OFFLINE` (cache only). A release without
+an Android host fails with an explicit error. `--host-apk <apk>` or
+`RUSTOLONIA_ANDROID_HOST_APK` instead use a local host as is, for example one
+built from a source checkout with `rust/package-android-host.ps1`.
 
 The tool cross-compiles the `cdylib` per ABI with the NDK clang linker. It then
 copies the host APK, dropping ABIs without a Rust library, adds
@@ -459,10 +476,12 @@ regardless (it is only used by Fast Deployment, which embedded APKs do not use).
 Verified on the emulator, with `dotnet` removed from `PATH`: `android-hello`
 packaged from the release artifact passes `apksigner verify` (v2) and
 `zipalign -c -P 16 4`, renders, runs its click handler, and installs and runs
-next to a second copy under another package. Not yet done: publishing the APK
-from `release.yml`, automatic download/checksum by the tool (today
-`--host-apk` or `RUSTOLONIA_ANDROID_HOST_APK`), custom icons and themes (these
-need resources compiled with aapt2), AAB output for Play, and v3 key rotation.
+next to a second copy under another package. The release workflow builds the
+host APK on Linux and packages `android-hello` from it through the download
+and checksum path, with a `dotnet` shim on `PATH` that fails if anything runs
+it, then checks the result with `zipalign -c` and `apksigner verify`. Not yet
+done: custom icons and themes (these need resources compiled with aapt2), AAB
+output for Play, and v3 key rotation.
 Compiled AXAML and Rust view-model apps still need a C# APK project, as they
 need their own host on desktop.
 
@@ -584,9 +603,11 @@ The script:
    because Rust's default unwinding uses wasm exception handling that the
    .NET runtime's Emscripten link does not enable;
 2. removes the `target_features` section from the archive with
-   `llvm-objcopy`, because the .NET runtime's `wasm-ld` rejects objects that
-   declare features it was not built with (for example `bulk-memory` from
-   recent Rust toolchains), writing `rust/target/browser/rustolonia_app.a`;
+   `llvm-objcopy`, because recent Rust toolchains record feature names that
+   the .NET runtime's Emscripten 3.1.56 tools do not know, writing
+   `rust/target/browser/rustolonia_app.a` (the host's glue objects declare
+   the bulk-memory feature Rust's std needs; see
+   [Prebuilt browser host](#prebuilt-browser-host));
 3. bundles Avalonia.Browser's JavaScript modules (`BunRunBuild`);
 4. publishes the browser host with `NativeFileReference` to the archive into
    `rust/target/browser/publish/wwwroot`, which any static file server can
@@ -658,7 +679,56 @@ cannot be combined dynamically.
 
 Removing runtime reflection from this shim does not make browser NativeAOT a
 supported .NET target. The current browser host still uses Mono WebAssembly
-and requires the .NET SDK and `wasm-tools` to build.
+and requires the .NET SDK and `wasm-tools` to build; apps can instead use the
+prebuilt host below.
+
+### Prebuilt browser host
+
+The Rust app is linked into the runtime's `dotnet.native.wasm` by Emscripten,
+so the browser host cannot ship as a finished binary like the desktop hosts.
+Releases ship it as a relink kit instead, like the iOS host:
+`rustolonia-host-<version>-browser-wasm.tar.gz`, pinned in `rustolonia-sys`'s
+`host-checksums.txt`. Code-first apps then build with Cargo and the Emscripten
+SDK alone; see [samples/browser-standalone](../samples/browser-standalone/README.md).
+
+`rust/package-browser-host.ps1` publishes `host/Browser` once with
+`browser-sample` as a stand-in app. The project's `RustoloniaBrowserKitCapture`
+hook records that publish's exact Emscripten link: the response files, the
+feature switches the runtime's JavaScript library reads from emcc's
+environment (`WASM_ENABLE_SIMD`, `WASM_ENABLE_EH`, ...), and the post-link
+`wasm-opt` flags. The kit contains:
+
+| Path | Contents |
+| --- | --- |
+| `site/` | the published site (managed assemblies, `dotnet.js` with its boot configuration, Avalonia's JavaScript) without `dotnet.native.*` |
+| `link/NN-<name>` | every link input: the .NET runtime archives, the generated interop objects (`pinvoke.o`, `driver.o`, ...), SkiaSharp/HarfBuzz and the runtime's JavaScript libraries |
+| `link/emcc.rsp` | the recorded link, with `@KIT@`, `@APP@` and `@OUT@` placeholders |
+| `build-site.py` | the consumer link step |
+| `host-manifest.json` | version, ABI fingerprint, Emscripten and .NET runtime versions, link settings, and the SHA-256 of every file |
+
+`build-site.py <staticlib> <out> <version> <abi>` checks the inventory, the
+version and ABI fingerprint, and that `emcc` is the recorded Emscripten version
+(3.1.56 for .NET 10). It strips the Rust archive's `target_features` section
+with emsdk's `llvm-objcopy`, runs `emcc` with the recorded response file and
+environment, then the recorded `wasm-opt` pass. It copies the site, writes the
+relinked `dotnet.native.<fingerprint>.wasm`/`.js` and updates the boot
+configuration embedded in `_framework/dotnet.js`: the native file names, the
+wasm's integrity hash and the resource-set hash, because the runtime fetches
+`dotnet.native.wasm` with `force-cache`. Fresh `.gz` copies replace the stale
+precompressed files of those three; the rest keep their `.br`/`.gz` copies.
+
+The glue objects are compiled with `-mbulk-memory` (`EmccFlags` in the host
+project). Rust's prebuilt std for `wasm32-unknown-emscripten` uses bulk-memory
+instructions, and Emscripten enables `wasm-opt` features from the linked
+module's `target_features`. The Rust archive's section has to be stripped
+(its newer feature names are unknown to Emscripten 3.1.56's LLVM), so the
+glue objects declare the feature instead. Browsers with the wasm SIMD support
+the runtime already requires all support bulk memory.
+
+The release workflow builds the kit on Linux, installs the recorded Emscripten
+version from the upstream emsdk, builds `samples/browser-standalone` from it
+with a `dotnet` shim on `PATH` that fails if anything runs it, and loads the
+site in headless Chrome until the app logs that its view is up.
 
 ### Limitations
 

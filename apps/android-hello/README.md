@@ -16,15 +16,19 @@ window mapping and limits are in
 
 ## Android, Cargo only
 
-With a prebuilt host APK (`pwsh ./rust/package-android-host.ps1` in a source
-checkout, later a release asset), no .NET tooling is needed:
+No .NET tooling is needed: `cargo rustolonia-apk` downloads the prebuilt host
+APK of the release matching the app's `rustolonia-sys` and verifies it against
+that crate's `host-checksums.txt`:
 
 ```pwsh
 cargo install --path ../../rust/rustolonia-apk
-cargo rustolonia-apk --host-apk <rustolonia-android-host-12.1.3.apk> --abi x86_64 --launch
+cargo rustolonia-apk --abi x86_64 --launch
 ```
 
-It reads `[package.metadata.rustolonia.android]` from `Cargo.toml`.
+Until a release includes the Android host, build one in this checkout with
+`pwsh ./rust/package-android-host.ps1` and pass it with
+`--host-apk ../../rust/target/android-host/rustolonia-host-<version>-android.apk`.
+The tool reads `[package.metadata.rustolonia.android]` from `Cargo.toml`.
 
 ## Android, with an APK project
 

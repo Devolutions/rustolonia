@@ -9,6 +9,7 @@
 //! See `rust/PLATFORMS.md#android`.
 
 mod axml;
+mod host;
 mod package;
 mod sign;
 mod zip;
@@ -27,8 +28,10 @@ Options:
   --manifest-path <PATH>  The app's Cargo.toml (default: ./Cargo.toml)
   --abi <ABI>             arm64-v8a or x86_64; repeat for both (default: both)
   --debug                 Build the debug profile (default: release)
-  --host-apk <PATH>       The prebuilt Rustolonia host APK
-                          (default: $RUSTOLONIA_ANDROID_HOST_APK)
+  --host-apk <PATH>       A local Rustolonia host APK (default:
+                          $RUSTOLONIA_ANDROID_HOST_APK, else the release host
+                          matching the app's rustolonia-sys, downloaded once,
+                          verified against its host-checksums.txt and cached)
   --out <PATH>            Output APK (default: <target>/android/<package>.apk)
   --package <ID>          Override the Android package name from Cargo.toml
   --label <TEXT>          Override the launcher label from Cargo.toml
@@ -151,17 +154,20 @@ fn run(options: Options) -> Result<(), String> {
     let identity = identity(&krate)?;
     let profile = if options.debug { "debug" } else { "release" };
 
-    let host_apk_path = options
+    let host_apk = match options
         .host_apk
         .clone()
         .or_else(|| std::env::var_os("RUSTOLONIA_ANDROID_HOST_APK").map(PathBuf::from))
-        .ok_or(
-            "no host APK: pass --host-apk or set RUSTOLONIA_ANDROID_HOST_APK to the \
-             rustolonia-android-host APK of your rustolonia release (or build one from a \
-             source checkout with rust/package-android-host.ps1)",
-        )?;
-    let host_apk =
-        std::fs::read(&host_apk_path).map_err(|e| format!("{}: {e}", host_apk_path.display()))?;
+    {
+        // A local host (vendored, or built from a source checkout) is trusted as is.
+        Some(path) => std::fs::read(&path).map_err(|e| format!("{}: {e}", path.display()))?,
+        None => {
+            let bindings = host::read_bindings(&manifest)?;
+            let (bytes, path) = host::Release::from_env(&bindings)?.fetch()?;
+            eprintln!("Android host {} ({})", bindings.version, path.display());
+            bytes
+        }
+    };
 
     let sdk = android_sdk();
     let mut libraries = BTreeMap::new();

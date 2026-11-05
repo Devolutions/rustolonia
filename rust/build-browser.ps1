@@ -73,8 +73,10 @@ $staticLib = Join-Path $metadata.target_directory "$target/$profileDir/lib$($lib
 if (-not (Test-Path $staticLib)) { throw "Expected static library was not produced: $staticLib" }
 
 # 2. Recent Rust toolchains record wasm target features that the Emscripten
-#    wasm-opt bundled with .NET does not know; drop the section before linking.
-#    The host imports the entry point from module 'rustolonia_app'.
+#    tools bundled with .NET do not know; drop the section before linking (the
+#    host's glue objects declare the bulk memory Rust's std uses, see
+#    host/Browser/Avalonia.Host.Browser.csproj). The host imports the entry
+#    point from module 'rustolonia_app'.
 $appDir = Join-Path $metadata.target_directory 'browser'
 New-Item -ItemType Directory -Force -Path $appDir | Out-Null
 $appLib = Join-Path $appDir 'rustolonia_app.a'

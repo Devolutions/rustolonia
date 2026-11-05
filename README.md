@@ -54,11 +54,19 @@ mirrored and locally built hosts.
 Applications with compiled AXAML and Rust view-models still build their own
 host from a source checkout, as described below.
 
-An experimental iOS single-view host is also available. The
-[source-built sample](samples/ios/README.md) compiles the host locally; the
-[standalone Rust sample](samples/ios-standalone/README.md) can link a prebuilt
-NativeAOT iOS host without building C# once a release includes the iOS assets.
-Neither path uses the desktop host discovery mechanism.
+Code-first apps for iOS, Android and the browser can also be built without
+.NET tooling, from prebuilt hosts published with releases from the first one
+that includes them, each verified against `host-checksums.txt`:
+
+| Platform | Prebuilt host | Tools needed | Start from |
+| --- | --- | --- | --- |
+| iOS (experimental) | `rustolonia-host-<v>-ios*.tar.gz` (NativeAOT objects) | Rust, Xcode | [samples/ios-standalone](samples/ios-standalone/README.md) |
+| Android | `rustolonia-host-<v>-android.apk` | Rust, Android NDK | `cargo rustolonia-apk` ([rust/PLATFORMS.md](rust/PLATFORMS.md#android)) |
+| Browser | `rustolonia-host-<v>-browser-wasm.tar.gz` (relink kit) | Rust, Emscripten SDK 3.1.56 | [samples/browser-standalone](samples/browser-standalone/README.md) |
+
+None of these use the desktop host discovery mechanism. The
+[source-built iOS sample](samples/ios/README.md), `rust/build-android.ps1`
+and `rust/build-browser.ps1` build the hosts locally instead.
 
 For complete standalone starting points using the release, see the
 [app templates](templates/README.md): minimal window, input form, and
