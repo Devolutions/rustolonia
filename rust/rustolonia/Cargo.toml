@@ -35,6 +35,8 @@ no-download = ["rustolonia-sys/no-download"]
 dev-host-path = ["rustolonia-sys/dev-host-path"]
 # Direct DRM/KMS display instead of X11 (Linux GNU targets only).
 linux-drm = ["rustolonia-sys/linux-drm"]
+# See rustolonia-sys: link the host statically instead of loading it.
+static-host = ["rustolonia-sys/static-host"]
 
 [dependencies]
 rustolonia-sys = { version = "=12.1.5", path = "../rustolonia-sys", default-features = false }

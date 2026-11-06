@@ -561,13 +561,25 @@ impl App {
     /// `RUSTOLONIA_HOST_LIB` if set, otherwise the platform host library next
     /// to this executable.
     ///
-    /// In browser builds (`wasm32-unknown-emscripten`) the host is statically
-    /// linked into the WebAssembly app, so no discovery takes place.
+    /// In browser builds (`wasm32-unknown-emscripten`) and with the
+    /// `static-host` feature the host is statically linked into the app, so
+    /// no discovery takes place.
     pub fn load_from_env() -> Result<Self> {
         #[cfg(target_os = "emscripten")]
         return Self::load(Path::new(""));
         #[cfg(not(target_os = "emscripten"))]
-        Self::load(discover_host_path()?)
+        if sys::STATIC_HOST {
+            Self::load_static()
+        } else {
+            Self::load(discover_host_path()?)
+        }
+    }
+
+    /// Binds the host linked into this binary by the `static-host` feature.
+    #[cfg(not(target_os = "emscripten"))]
+    pub fn load_static() -> Result<Self> {
+        let host = sys::Host::load_static().map_err(|error| Error::Load(error.to_string()))?;
+        Self::from_host(host)
     }
 
     pub fn load(path: impl AsRef<Path>) -> Result<Self> {

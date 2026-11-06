@@ -15,6 +15,8 @@ fn main() {
 
     let target = env::var("TARGET").expect("TARGET");
     let linux_drm = env::var_os("CARGO_FEATURE_LINUX_DRM").is_some();
+    let static_host = env::var_os("CARGO_FEATURE_STATIC_HOST").is_some();
+    println!("cargo:rustc-check-cfg=cfg(rustolonia_static_host)");
     host::validate_backend(&target, linux_drm).unwrap_or_else(|error| panic!("{error}"));
 
     // Browser builds link the Rust app into the .NET WebAssembly host (see
@@ -25,8 +27,9 @@ fn main() {
 
     let config = host::Config {
         version: env::var("CARGO_PKG_VERSION").expect("CARGO_PKG_VERSION"),
-        target,
+        target: target.clone(),
         linux_drm,
+        static_host,
         abi_fingerprint,
         host_dir: env_var("RUSTOLONIA_HOST_DIR").map(PathBuf::from),
         skip_download: env::var_os("DOCS_RS").is_some()
@@ -39,9 +42,18 @@ fn main() {
         checksums: checksums(),
     };
 
+    // docs.rs only documents the crate, so there is nothing to link.
+    if static_host && env::var_os("DOCS_RS").is_some() {
+        return;
+    }
+
     match host::resolve(&config) {
         Ok(host::Resolution::Found { dir, .. }) => {
             println!("cargo:host_dir={}", dir.display());
+            if static_host && !target.contains("-apple-ios") {
+                link_static_host(&dir);
+                println!("cargo:rustc-cfg=rustolonia_static_host");
+            }
             if env::var_os("CARGO_FEATURE_DEV_HOST_PATH").is_some() {
                 println!(
                     "cargo:rustc-env=RUSTOLONIA_BUILD_HOST_DIR={}",
@@ -53,6 +65,40 @@ fn main() {
         Err(error) => {
             eprintln!("error: {error}");
             panic!("rustolonia-sys: {error}");
+        }
+    }
+}
+
+/// Links the static host archive and the NativeAOT runtime listed in its
+/// link file. Directives from a dependency's build script reach the final
+/// link only as `rustc-link-lib`/`rustc-link-search`, which is why the
+/// bootstrapper object ships wrapped in an archive.
+fn link_static_host(dir: &Path) {
+    let link_path = dir.join(host::LINK_FILE);
+    println!("cargo:rerun-if-changed={}", link_path.display());
+    let text = std::fs::read_to_string(&link_path)
+        .unwrap_or_else(|error| panic!("failed to read {}: {error}", link_path.display()));
+    let directives = host::parse_link_file(&text).unwrap_or_else(|error| {
+        panic!("rustolonia-sys: {}: {error}", link_path.display());
+    });
+    println!("cargo:rustc-link-search=native={}", dir.display());
+    for directive in directives {
+        match directive {
+            host::LinkDirective::Static(file) => {
+                let name = host::static_link_name(&file);
+                println!("cargo:rustc-link-lib=static:-bundle={name}");
+            }
+            host::LinkDirective::WholeStatic(file) => {
+                let name = host::static_link_name(&file);
+                println!("cargo:rustc-link-lib=static:+whole-archive,-bundle={name}");
+            }
+            host::LinkDirective::System(name) => println!("cargo:rustc-link-lib=dylib={name}"),
+            host::LinkDirective::Framework(name) => {
+                println!("cargo:rustc-link-lib=framework={name}")
+            }
+            host::LinkDirective::Search(path) => {
+                println!("cargo:rustc-link-search=native={path}")
+            }
         }
     }
 }

@@ -683,6 +683,14 @@ version = "0.1.0"
     Assert-True ((Get-HostAssetName -Version '1.2.3' -Rid iossimulator-arm64) -eq 'rustolonia-host-1.2.3-iossimulator-arm64.tar.gz') 'iOS host asset names must follow the release convention.'
     Assert-True ((Get-HostAssetName -Version '1.2.3' -Rid osx-x64 -Flavor devtools -Symbols) -eq 'rustolonia-host-1.2.3-osx-x64-devtools-symbols.tar.gz') 'Host asset names must encode flavor and symbols.'
     Assert-Throws { Get-HostAssetName -Version '1.2.3' -Rid 'freebsd-x64' } 'Unsupported RID'
+    Assert-True ((Get-HostAssetName -Version '1.2.3' -Rid osx-arm64 -Linkage Static) -eq 'rustolonia-host-1.2.3-osx-arm64-static.tar.gz') 'Static hosts must have a separate release asset.'
+    Assert-True ((Get-HostAssetName -Version '1.2.3' -Rid linux-x64 -LinuxBackend Drm -Linkage Static) -eq 'rustolonia-host-1.2.3-linux-x64-drm-static.tar.gz') 'Static asset names must match rustolonia-sys host_variant.'
+    Assert-Throws { Get-HostAssetName -Version '1.2.3' -Rid ios-arm64 -Linkage Static } 'Only desktop RIDs'
+    Assert-Throws { Get-HostAssetName -Version '1.2.3' -Rid $script:BrowserHostRid -Linkage Static } 'Only desktop RIDs'
+    Assert-True ((Get-RidTargetInfo -Rid win-x64).StaticHostFileName -eq 'rustolonia_host.lib') 'Windows static hosts must be .lib archives.'
+    Assert-True ((Get-RidTargetInfo -Rid linux-arm64).StaticHostFileName -eq 'librustolonia_host.a') 'Unix static hosts must be .a archives.'
+    $staticCargo = New-CargoBuildCommand -ManifestPath 'Cargo.toml' -PackageName app -TargetTriple aarch64-apple-darwin -BinaryName app -Features @('rustolonia/static-host')
+    Assert-True (($staticCargo -join ' ') -eq 'cargo build --manifest-path Cargo.toml -p app --features rustolonia/static-host --bin app --target aarch64-apple-darwin --release') 'Static consumer builds must enable rustolonia/static-host.'
     $releaseVersion = Get-RustoloniaReleaseVersion -RustoloniaRoot $root
     Assert-True ($releaseVersion -match '^\d+\.\d+\.\d+') 'The release version must come from release-manifest.json.'
     $abiFingerprint = Get-AbiFingerprint -RustoloniaRoot $root
@@ -702,6 +710,7 @@ version = "0.1.0"
     $hostManifest = $hostManifestText | ConvertFrom-Json
     Assert-True ($hostManifest.version -eq $releaseVersion -and $hostManifest.rid -eq 'win-x64' -and $hostManifest.abiFingerprint -eq $abiFingerprint) 'host-manifest.json must record version, RID and ABI fingerprint.'
     Assert-True ($hostManifest.hostFile -eq 'rustolonia_host.dll') 'host-manifest.json must name the host library.'
+    Assert-True ($hostManifest.linkage -eq 'Shared') 'host-manifest.json must record the host linkage.'
     Assert-True ((@($hostManifest.files.name) -join ',') -eq 'LICENSE,rustolonia_host.dll') 'host-manifest.json must hash every other bundle file.'
     Write-HostManifest -Directory $hostStage -Version $releaseVersion -Rid linux-arm64 -LinuxBackend Drm -AbiFingerprint $abiFingerprint -RustoloniaRoot $root
     $drmManifest = Get-Content -LiteralPath (Join-Path $hostStage 'host-manifest.json') -Raw | ConvertFrom-Json
@@ -765,6 +774,12 @@ version = "0.1.0"
     $sumsLines += foreach ($rid in @('linux-x64', 'linux-arm64')) {
         "$('f' * 64)  $(Get-HostAssetName -Version '9.8.7-rc.1' -Rid $rid -LinuxBackend Drm)"
     }
+    $sumsLines += foreach ($rid in @('win-x64', 'win-arm64', 'linux-x64', 'linux-arm64', 'osx-x64', 'osx-arm64')) {
+        "$('9' * 64)  $(Get-HostAssetName -Version '9.8.7-rc.1' -Rid $rid -Linkage Static)"
+    }
+    $sumsLines += foreach ($rid in @('linux-x64', 'linux-arm64')) {
+        "$('8' * 64)  $(Get-HostAssetName -Version '9.8.7-rc.1' -Rid $rid -LinuxBackend Drm -Linkage Static)"
+    }
     $sumsLines += "$('d' * 64)  $(Get-HostAssetName -Version '9.8.7-rc.1' -Rid $script:BrowserHostRid)"
     $sumsLines += "$('e' * 64)  $(Get-AndroidHostAssetName -Version '9.8.7-rc.1')"
     $sumsLines += "$('f' * 64)  unrelated.apk"
@@ -772,7 +787,7 @@ version = "0.1.0"
     [IO.File]::WriteAllLines($sumsFile, [string[]]$sumsLines)
     & $prepareRelease -Checksums -SumsFile $sumsFile -RustoloniaRoot $releaseRoot | Out-Null
     $checksumLines = @(Get-Content -LiteralPath (Join-Path $releaseRoot 'rust/rustolonia-sys/host-checksums.txt') | Where-Object { $_ -and -not $_.StartsWith('#') })
-    Assert-True ($checksumLines.Count -eq 13) 'host-checksums.txt must list every desktop, DRM, iOS and browser host tarball and the Android host APK.'
+    Assert-True ($checksumLines.Count -eq 21) 'host-checksums.txt must list every desktop, DRM, static, iOS and browser host tarball and the Android host APK.'
     Assert-True (@($checksumLines | Where-Object { $_ -like '*symbols*' -or $_ -like '*unrelated*' }).Count -eq 0) 'host-checksums.txt must not list symbol tarballs or other files.'
     [IO.File]::WriteAllLines($sumsFile, [string[]]($sumsLines | Select-Object -Skip 2))
     Assert-Throws { & $prepareRelease -Checksums -SumsFile $sumsFile -RustoloniaRoot $releaseRoot } 'no entry for rustolonia-host-9\.8\.7-rc\.1-win-x64'
@@ -784,6 +799,8 @@ version = "0.1.0"
     Assert-Throws { & $prepareRelease -Checksums -SumsFile $sumsFile -RustoloniaRoot $releaseRoot } 'no entry for rustolonia-host-9\.8\.7-rc\.1-android\.apk'
     [IO.File]::WriteAllLines($sumsFile, [string[]]($sumsLines | Where-Object { $_ -notlike '*linux-arm64-drm.tar.gz' }))
     Assert-Throws { & $prepareRelease -Checksums -SumsFile $sumsFile -RustoloniaRoot $releaseRoot } 'no entry for rustolonia-host-9\.8\.7-rc\.1-linux-arm64-drm'
+    [IO.File]::WriteAllLines($sumsFile, [string[]]($sumsLines | Where-Object { $_ -notlike '*osx-arm64-static.tar.gz' }))
+    Assert-Throws { & $prepareRelease -Checksums -SumsFile $sumsFile -RustoloniaRoot $releaseRoot } 'no entry for rustolonia-host-9\.8\.7-rc\.1-osx-arm64-static'
 
     function Invoke-ChecksumsFromTestRelease([string]$ReleaseSums) {
         function gh {
@@ -798,12 +815,12 @@ version = "0.1.0"
     $releaseWarnings = @(Invoke-ChecksumsFromTestRelease $sumsFile 3>&1 | Where-Object { $_ -is [System.Management.Automation.WarningRecord] })
     Assert-True ($releaseWarnings.Count -eq 0) 'Recovering a complete release must not warn about missing hosts.'
     $checksumLines = @(Get-Content -LiteralPath (Join-Path $releaseRoot 'rust/rustolonia-sys/host-checksums.txt') | Where-Object { $_ -and -not $_.StartsWith('#') })
-    Assert-True ($checksumLines.Count -eq 13) 'Complete release recovery must retain every host.'
+    Assert-True ($checksumLines.Count -eq 21) 'Complete release recovery must retain every host.'
 
-    $desktopOnlySums = @($sumsLines | Where-Object { $_ -notlike '*-ios*.tar.gz' -and $_ -notlike '*-browser-wasm.tar.gz' -and $_ -notlike '*-drm.tar.gz' -and $_ -notlike '*.apk' })
+    $desktopOnlySums = @($sumsLines | Where-Object { $_ -notlike '*-ios*.tar.gz' -and $_ -notlike '*-browser-wasm.tar.gz' -and $_ -notlike '*-drm.tar.gz' -and $_ -notlike '*-static.tar.gz' -and $_ -notlike '*.apk' })
     [IO.File]::WriteAllLines($sumsFile, [string[]]$desktopOnlySums)
     $releaseWarnings = @(Invoke-ChecksumsFromTestRelease $sumsFile 3>&1 | Where-Object { $_ -is [System.Management.Automation.WarningRecord] })
-    Assert-True ($releaseWarnings.Count -eq 4 -and $releaseWarnings[0].Message -match 'legacy desktop-only') 'Recovering a legacy release must warn that it has no iOS, browser, DRM or Android host.'
+    Assert-True ($releaseWarnings.Count -eq 5 -and $releaseWarnings[0].Message -match 'legacy desktop-only') 'Recovering a legacy release must warn that it has no iOS, browser, DRM, static or Android host.'
     $checksumLines = @(Get-Content -LiteralPath (Join-Path $releaseRoot 'rust/rustolonia-sys/host-checksums.txt') | Where-Object { $_ -and -not $_.StartsWith('#') })
     Assert-True ($checksumLines.Count -eq 6) 'Legacy release recovery must retain the desktop hosts.'
     Assert-Throws { & $prepareRelease -Checksums -SumsFile $sumsFile -RustoloniaRoot $releaseRoot } 'no entry for rustolonia-host-9\.8\.7-rc\.1-ios-arm64'

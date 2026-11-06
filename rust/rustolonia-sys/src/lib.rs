@@ -117,9 +117,10 @@ pub type AllocUtf16Fn = unsafe extern "C" fn(i32) -> *mut u16;
 pub type GetLastErrorFn = unsafe extern "C" fn(*mut *mut u16) -> i32;
 pub type GetHostInfoFn = unsafe extern "C" fn(*mut HostInfoNative) -> i32;
 
-// Browser builds link the Rust app into the .NET WebAssembly host, which
-// exports these symbols from `host/Exports.cs`.
-#[cfg(target_os = "emscripten")]
+// Browser builds link the Rust app into the .NET WebAssembly host, and the
+// `static-host` feature links the NativeAOT host archive into a desktop app;
+// either way these symbols come from `host/Exports.cs`.
+#[cfg(any(target_os = "emscripten", rustolonia_static_host))]
 extern "C" {
     fn avn_get_activation_factory(factory: *mut *mut c_void) -> i32;
     fn avn_free(ptr: *mut c_void);
@@ -136,6 +137,10 @@ pub const ABI_FINGERPRINT: &str = env!("RUSTOLONIA_ABI_FINGERPRINT");
 /// feature is enabled and a host was staged. Only meaningful on the build
 /// machine; used as a last-resort runtime search path.
 pub const BUILD_HOST_DIR: Option<&str> = option_env!("RUSTOLONIA_BUILD_HOST_DIR");
+
+/// Whether the `static-host` feature linked the host into this binary, so
+/// [`Host::load_static`] binds it instead of loading a shared library.
+pub const STATIC_HOST: bool = cfg!(rustolonia_static_host);
 
 /// Out-parameter of `avn_get_host_info`.
 #[doc(hidden)]
@@ -184,6 +189,9 @@ pub enum HostLoadError {
     IncompatibleAllocator,
     InvalidExportsSize(u32),
     MissingExport(&'static str),
+    /// [`Host::load_static`] was called, but no host is linked into this
+    /// binary (enable the `static-host` feature).
+    NotStaticallyLinked,
     /// The host was built against a different ABI than this crate. `found`
     /// is `None` for hosts that predate `avn_get_host_info`.
     IncompatibleHost {
@@ -207,6 +215,9 @@ impl std::fmt::Display for HostLoadError {
             Self::MissingExport(name) => {
                 write!(formatter, "in-process Avalonia host is missing {name}")
             }
+            Self::NotStaticallyLinked => formatter.write_str(
+                "no rustolonia host is linked into this binary; enable the `static-host` feature",
+            ),
             Self::IncompatibleHost { expected, found } => match found {
                 Some(found) => write!(
                     formatter,
@@ -466,6 +477,41 @@ impl Host {
         })
     }
 
+    /// Binds the host the `static-host` feature linked into this binary.
+    ///
+    /// The host's own native dependencies (Avalonia.Native, SkiaSharp,
+    /// HarfBuzzSharp) stay shared libraries. The host finds them next to the
+    /// executable; otherwise they are preloaded from the macOS bundle's
+    /// `Contents/Frameworks` or, with the `dev-host-path` feature, from the
+    /// directory the host was staged in at build time.
+    #[cfg(rustolonia_static_host)]
+    pub fn load_static() -> std::result::Result<Self, HostLoadError> {
+        let dependencies = static_host_dependencies()?;
+        let exports = ResolvedHostExports {
+            get_activation_factory: avn_get_activation_factory,
+            free: avn_free,
+            alloc_utf16: avn_alloc_utf16,
+            get_last_error: avn_get_last_error,
+        };
+        let found = unsafe { query_host_info(avn_get_host_info) };
+        let info = publish_host_exports(found, &exports)?;
+        Ok(Self {
+            _lib: None,
+            _dependencies: ManuallyDrop::new(dependencies),
+            get_activation_factory: exports.get_activation_factory,
+            free: exports.free,
+            get_last_error: exports.get_last_error,
+            info,
+        })
+    }
+
+    /// Fails: no host is linked into this binary without the `static-host`
+    /// feature. Check [`STATIC_HOST`] first.
+    #[cfg(not(any(target_os = "emscripten", rustolonia_static_host)))]
+    pub fn load_static() -> std::result::Result<Self, HostLoadError> {
+        Err(HostLoadError::NotStaticallyLinked)
+    }
+
     #[cfg(not(target_os = "emscripten"))]
     pub fn load(path: impl AsRef<Path>) -> std::result::Result<Self, HostLoadError> {
         unsafe {
@@ -600,6 +646,58 @@ impl Host {
             Some(result)
         }
     }
+}
+
+/// Preloads the shared native libraries a statically linked host depends on
+/// when they are not next to the executable, where the host looks first.
+#[cfg(rustolonia_static_host)]
+fn static_host_dependencies() -> std::result::Result<Vec<Library>, HostLoadError> {
+    let extension = if cfg!(target_os = "windows") {
+        "dll"
+    } else if cfg!(target_os = "macos") {
+        "dylib"
+    } else {
+        "so"
+    };
+    let has_dependencies = |dir: &Path| {
+        std::fs::read_dir(dir).is_ok_and(|entries| {
+            entries.flatten().any(|entry| {
+                let name = entry.file_name();
+                let name = name.to_string_lossy();
+                name.starts_with("libSkiaSharp.") || name.starts_with("libAvaloniaNative.")
+            })
+        })
+    };
+    let exe = std::env::current_exe().ok();
+    let exe_dir = exe.as_deref().and_then(Path::parent);
+    if exe_dir.is_some_and(has_dependencies) {
+        return Ok(Vec::new());
+    }
+    let frameworks = exe_dir
+        .filter(|_| cfg!(target_os = "macos"))
+        .and_then(Path::parent)
+        .map(|contents| contents.join("Frameworks"));
+    let Some(dir) = frameworks
+        .into_iter()
+        .chain(BUILD_HOST_DIR.map(std::path::PathBuf::from))
+        .find(|dir| has_dependencies(dir))
+    else {
+        return Ok(Vec::new());
+    };
+    let mut files: Vec<_> = std::fs::read_dir(&dir)
+        .map(|entries| {
+            entries
+                .flatten()
+                .map(|entry| entry.path())
+                .filter(|path| path.extension().is_some_and(|ext| ext == extension))
+                .collect()
+        })
+        .unwrap_or_default();
+    files.sort();
+    files
+        .into_iter()
+        .map(|path| unsafe { Library::new(path) }.map_err(HostLoadError::from))
+        .collect()
 }
 
 #[cfg(test)]

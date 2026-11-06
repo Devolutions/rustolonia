@@ -378,13 +378,14 @@ cargo package --locked -p rustolonia-sys -p rustolonia-bindgen -p rustolonia
 
 ### Prebuilt host tarballs
 
-`rust/package-host.ps1 -Rid <rid> [-LinuxBackend X11|Drm] [-Flavor default|devtools]` publishes the
+`rust/package-host.ps1 -Rid <rid> [-LinuxBackend X11|Drm] [-Flavor default|devtools] [-Linkage Shared|Static]` publishes the
 NativeAOT host (or packages an existing `-PublishDirectory`) into
 `rust/artifacts/host/`:
 
 | Asset | Contents |
 | --- | --- |
 | `rustolonia-host-<v>-<rid>[-drm][-devtools].tar.gz` | Flat root: host library, native dependencies, notices, `sbom.cdx.json`, `host-manifest.json` |
+| `rustolonia-host-<v>-<rid>[-drm][-devtools]-static.tar.gz` | Static host archive, NativeAOT runtime archives, `rustolonia-host-link.txt`, shared native dependencies, notices, SBOM, manifest |
 | `…tar.gz.sha256` | `sha256sum` sidecar |
 | `rustolonia-host-<v>-<rid>[-drm][-devtools]-symbols.tar.gz` | `.pdb` / `.dbg` / `.dSYM` symbols, never downloaded by `build.rs` |
 
@@ -406,6 +407,20 @@ release CI, including an adjacent-host distributable. Hosted runners cannot
 launch DRM without a display device, so these checks explicitly use
 `-BuildOnly`; `rust/tests/test-embedded-linux.py` exercises presentation,
 input and shutdown in a QEMU guest separately.
+
+Every desktop RID (and both DRM variants) also publishes a `-static` archive,
+built with `-Linkage Static` (`NativeLib=Static`) and selected by the
+`static-host` Cargo feature. `rustolonia-sys` links the host, a whole-archive
+bootstrapper and the runtime archives listed in `rustolonia-host-link.txt`
+into the Rust executable; the manifest records `linkage: Static` and the
+archive `hostFile`. Graphics dependencies remain shared libraries that ship
+beside the executable. On macOS the publish retargets `libAvaloniaNative`'s
+install name to `@rpath/libAvaloniaNative.dylib` and re-signs it, so NativeAOT's
+leaf-name `dlopen` matches the preloaded image. Static archives have no
+symbols archive. Release checksum pinning requires every static archive.
+`rust/build-app.ps1 -Linkage Static` builds a consumer app the same way, and
+release CI runs `rust/tests/test-standalone-app.ps1 -Linkage Static
+-Distributable` for each RID.
 
 For experimental iOS, `rust/package-ios-host.ps1 -Rid <rid>` produces a
 separate archive for `ios-arm64`, `iossimulator-arm64`, or

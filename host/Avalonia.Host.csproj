@@ -53,6 +53,62 @@
     <Copy SourceFiles="$(_RustoloniaHostSource)" DestinationFiles="$(_RustoloniaHostFile)" />
     <Delete Files="$(_RustoloniaHostSource)" />
   </Target>
+  <!--
+    NativeLib=Static publishes the host as librustolonia_host.a (Unix) or
+    rustolonia_host.lib (Windows) for linking into a Rust executable
+    (rustolonia-sys `static-host`). A static NativeAOT library only holds the
+    compiled managed code, so this also stages the NativeAOT runtime libraries
+    NativeAOT itself would have linked, and writes rustolonia-host-link.txt
+    describing how to link them, one directive per line, in link order:
+
+      static <file>        static library in this directory
+      whole-static <file>  static library whose every object must be linked
+      system <name>        platform library (-l<name> or <name>.lib)
+      framework <name>     Apple framework
+      search <dir>         additional system library search directory
+
+    Object files (the NativeAOT bootstrapper) are wrapped in a static library
+    because Cargo only forwards libraries, not objects, from a dependency.
+  -->
+  <Target Name="StageRustoloniaStaticHost" AfterTargets="CopyNativeBinary" Condition="'$(PublishAot)' == 'true' and '$(NativeLib)' == 'Static' and '$(AvaloniaRustHostPlatform)' != 'iOS'">
+    <PropertyGroup>
+      <_RustoloniaStaticWindows Condition="'$(NativeBinaryExt)' == '.lib'">true</_RustoloniaStaticWindows>
+      <_RustoloniaStaticPrefix Condition="'$(_RustoloniaStaticWindows)' != 'true'">lib</_RustoloniaStaticPrefix>
+      <_RustoloniaStaticSource>$(PublishDir)$(TargetName)$(NativeBinaryExt)</_RustoloniaStaticSource>
+      <_RustoloniaStaticFileName>$(_RustoloniaStaticPrefix)$(RustoloniaHostBaseName)$(NativeBinaryExt)</_RustoloniaStaticFileName>
+      <_RustoloniaBootstrapFileName>$(_RustoloniaStaticPrefix)$(RustoloniaHostBaseName)_bootstrap$(NativeBinaryExt)</_RustoloniaBootstrapFileName>
+      <_RustoloniaLinkFile>$(PublishDir)rustolonia-host-link.txt</_RustoloniaLinkFile>
+    </PropertyGroup>
+    <ItemGroup>
+      <!-- dllmain.obj only matters when NativeAOT itself links a DLL. -->
+      <_RustoloniaStaticObject Include="@(NativeLibrary)" Condition="('%(Extension)' == '.o' or '%(Extension)' == '.obj') and '%(Filename)' != 'dllmain'" />
+      <_RustoloniaStaticLibrary Include="@(NativeLibrary)" Condition="'%(Extension)' != '.o' and '%(Extension)' != '.obj'" />
+      <_RustoloniaLinkLine Include="static $(_RustoloniaStaticFileName)" />
+      <_RustoloniaLinkLine Include="whole-static $(_RustoloniaBootstrapFileName)" />
+      <_RustoloniaLinkLine Include="@(_RustoloniaStaticLibrary->'static %(Filename)%(Extension)')" />
+      <_RustoloniaLinkLine Include="@(NativeSystemLibrary->'system %(Identity)')" />
+      <_RustoloniaLinkLine Include="@(SdkNativeLibrary->'system %(Filename)')" />
+      <_RustoloniaLinkLine Include="@(NativeFramework->'framework %(Identity)')" />
+      <_RustoloniaLinkLine Include="search /usr/lib/swift" Condition="'$(_IsApplePlatform)' == 'true'" />
+    </ItemGroup>
+    <Error Condition="'@(_RustoloniaStaticObject)' == ''" Text="NativeAOT did not report its bootstrapper object for the static host." />
+    <Copy SourceFiles="$(_RustoloniaStaticSource)" DestinationFiles="$(PublishDir)$(_RustoloniaStaticFileName)" />
+    <Delete Files="$(_RustoloniaStaticSource)" />
+    <Copy SourceFiles="@(_RustoloniaStaticLibrary)" DestinationFolder="$(PublishDir)" />
+    <Delete Files="$(PublishDir)$(_RustoloniaBootstrapFileName)" />
+    <Exec Condition="'$(_RustoloniaStaticWindows)' != 'true'" Command="&quot;$(CppLibCreator)&quot; crs &quot;$(PublishDir)$(_RustoloniaBootstrapFileName)&quot; @(_RustoloniaStaticObject->'&quot;%(Identity)&quot;', ' ')" />
+    <Exec Condition="'$(_RustoloniaStaticWindows)' == 'true'" Command="&quot;$(CppLibCreator)&quot; /NOLOGO /OUT:&quot;$(PublishDir)$(_RustoloniaBootstrapFileName)&quot; @(_RustoloniaStaticObject->'&quot;%(Identity)&quot;', ' ')" />
+    <WriteLinesToFile File="$(_RustoloniaLinkFile)" Lines="@(_RustoloniaLinkLine)" Overwrite="true" Encoding="ascii" />
+  </Target>
+  <!--
+    A statically linked host resolves libAvaloniaNative from the executable's
+    directory. When it lives elsewhere (cargo run, an app bundle's Frameworks),
+    rustolonia-sys preloads it, and dlopen("libAvaloniaNative.dylib") only
+    matches a loaded image whose install name has that leaf name.
+  -->
+  <Target Name="RetargetRustoloniaAvaloniaNativeInstallName" AfterTargets="Publish" Condition="'$(PublishAot)' == 'true' and '$(NativeLib)' == 'Static' and '$(AvaloniaRustHostPlatform)' == 'OSX' and Exists('$(PublishDir)libAvaloniaNative.dylib')">
+    <Exec Command="install_name_tool -id @rpath/libAvaloniaNative.dylib &quot;$(PublishDir)libAvaloniaNative.dylib&quot; 2&gt;/dev/null &amp;&amp; codesign --force --sign - &quot;$(PublishDir)libAvaloniaNative.dylib&quot;" />
+  </Target>
   <Target Name="ValidateAvaloniaRustHostPlatform" BeforeTargets="PrepareForBuild">
     <Error Condition="'$(AvaloniaRustHostPlatform)' != 'Win32' and '$(AvaloniaRustHostPlatform)' != 'X11' and '$(AvaloniaRustHostPlatform)' != 'LinuxDrm' and '$(AvaloniaRustHostPlatform)' != 'OSX' and '$(AvaloniaRustHostPlatform)' != 'iOS'"
            Text="AvaloniaRustHostPlatform must be Win32, X11, LinuxDrm, OSX, or iOS for runtime identifier '$(RuntimeIdentifier)'." />

@@ -47,7 +47,7 @@ fn manifest(version: &str, rid: &str, fingerprint: &str) -> String {
 
 fn write_host_dir(dir: &Path, manifest: Option<&str>) {
     fs::create_dir_all(dir).unwrap();
-    fs::write(dir.join(host_file_name(RID)), b"host").unwrap();
+    fs::write(dir.join(host_file_name(RID, false)), b"host").unwrap();
     if let Some(manifest) = manifest {
         fs::write(dir.join(MANIFEST_FILE), manifest).unwrap();
     }
@@ -57,7 +57,7 @@ fn tarball(manifest: &str) -> Vec<u8> {
     let encoder = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::fast());
     let mut builder = tar::Builder::new(encoder);
     for (name, contents) in [
-        (host_file_name(RID), b"host".as_slice()),
+        (host_file_name(RID, false), b"host".as_slice()),
         (MANIFEST_FILE, manifest.as_bytes()),
         ("THIRD-PARTY-NOTICES.txt", b"notices".as_slice()),
     ] {
@@ -75,6 +75,7 @@ fn config(cache_root: &Path) -> Config {
         version: VERSION.into(),
         target: TARGET.into(),
         linux_drm: false,
+        static_host: false,
         abi_fingerprint: FINGERPRINT.into(),
         host_dir: None,
         skip_download: false,
@@ -91,6 +92,7 @@ fn expected() -> Expected<'static> {
         rid: RID,
         abi_fingerprint: FINGERPRINT,
         linux_drm: false,
+        static_host: false,
     }
 }
 
@@ -185,9 +187,12 @@ fn builds_asset_urls() {
         asset_url("https://example.test/dl/", "0.1.0", "osx-arm64"),
         "https://example.test/dl/v0.1.0/rustolonia-host-0.1.0-osx-arm64.tar.gz"
     );
-    assert_eq!(host_file_name("win-arm64"), "rustolonia_host.dll");
-    assert_eq!(host_file_name("osx-x64"), "librustolonia_host.dylib");
-    assert_eq!(host_file_name("linux-arm64"), "librustolonia_host.so");
+    assert_eq!(host_file_name("win-arm64", false), "rustolonia_host.dll");
+    assert_eq!(host_file_name("osx-x64", false), "librustolonia_host.dylib");
+    assert_eq!(
+        host_file_name("linux-arm64", false),
+        "librustolonia_host.so"
+    );
 }
 
 #[test]
@@ -353,7 +358,10 @@ fn downloads_verifies_and_caches_from_http() {
             source: Source::Download
         }
     );
-    assert_eq!(fs::read(cached.join(host_file_name(RID))).unwrap(), b"host");
+    assert_eq!(
+        fs::read(cached.join(host_file_name(RID, false))).unwrap(),
+        b"host"
+    );
     assert!(cached.join("THIRD-PARTY-NOTICES.txt").is_file());
     let leftovers: Vec<_> = fs::read_dir(temp.0.join(VERSION))
         .unwrap()
@@ -521,4 +529,131 @@ fn downloads_drm_separately_and_reuses_only_its_own_cache() {
             source: Source::Cache
         }
     );
+}
+
+#[test]
+fn names_static_hosts_and_variants() {
+    assert_eq!(host_file_name("win-x64", true), "rustolonia_host.lib");
+    assert_eq!(host_file_name("osx-arm64", true), "librustolonia_host.a");
+    assert_eq!(host_file_name("linux-x64", true), "librustolonia_host.a");
+    assert_eq!(host_variant("linux-x64", false, false), "linux-x64");
+    assert_eq!(
+        host_variant("linux-x64", true, true),
+        "linux-x64-drm-static"
+    );
+    assert_eq!(
+        asset_name("1.2.3", &host_variant("osx-arm64", false, true)),
+        "rustolonia-host-1.2.3-osx-arm64-static.tar.gz"
+    );
+}
+
+#[test]
+fn parses_static_link_files() {
+    let directives = parse_link_file(
+        "# comment\nstatic librustolonia_host.a\nwhole-static librustolonia_host_bootstrap.a\n\
+         system dl\nframework Foundation\nsearch /usr/lib/swift\n",
+    )
+    .unwrap();
+    assert_eq!(
+        directives,
+        [
+            LinkDirective::Static("librustolonia_host.a".into()),
+            LinkDirective::WholeStatic("librustolonia_host_bootstrap.a".into()),
+            LinkDirective::System("dl".into()),
+            LinkDirective::Framework("Foundation".into()),
+            LinkDirective::Search("/usr/lib/swift".into()),
+        ]
+    );
+    assert!(parse_link_file("dynamic libfoo.so").is_err());
+    assert!(parse_link_file("static").is_err());
+    assert_eq!(
+        static_link_name("libRuntime.WorkstationGC.a"),
+        "Runtime.WorkstationGC"
+    );
+    assert_eq!(static_link_name("libstdc++compat.a"), "stdc++compat");
+    assert_eq!(
+        static_link_name("Runtime.WorkstationGC.lib"),
+        "Runtime.WorkstationGC"
+    );
+    assert_eq!(static_link_name("rustolonia_host.lib"), "rustolonia_host");
+}
+
+fn write_static_host_dir(dir: &Path, linkage: Option<&str>) {
+    fs::create_dir_all(dir).unwrap();
+    fs::write(dir.join(host_file_name(RID, true)), b"host").unwrap();
+    fs::write(dir.join("libRuntime.WorkstationGC.a"), b"runtime").unwrap();
+    fs::write(
+        dir.join(LINK_FILE),
+        "static librustolonia_host.a\nstatic libRuntime.WorkstationGC.a\nsystem dl\n",
+    )
+    .unwrap();
+    let mut manifest = manifest(VERSION, RID, FINGERPRINT);
+    if let Some(linkage) = linkage {
+        manifest = manifest.replace(
+            "\"schemaVersion\"",
+            &format!("\"linkage\": \"{linkage}\",\n  \"schemaVersion\""),
+        );
+    }
+    fs::write(dir.join(MANIFEST_FILE), manifest).unwrap();
+}
+
+#[test]
+fn validates_static_host_dirs() {
+    let static_expected = Expected {
+        static_host: true,
+        ..expected()
+    };
+    let dir = TempDir::new();
+    write_static_host_dir(&dir.0, Some("Static"));
+    validate_host_dir(&dir.0, &static_expected, true).unwrap();
+    // A static archive is not a shared host, and vice versa.
+    assert!(validate_host_dir(&dir.0, &expected(), false).is_err());
+    let shared = TempDir::new();
+    write_host_dir(&shared.0, Some(&manifest(VERSION, RID, FINGERPRINT)));
+    let error = validate_host_dir(&shared.0, &static_expected, true).unwrap_err();
+    assert!(error.contains("static-host"), "{error}");
+
+    // Every archive named in the link file must be present.
+    fs::remove_file(dir.0.join("libRuntime.WorkstationGC.a")).unwrap();
+    let error = validate_host_dir(&dir.0, &static_expected, true).unwrap_err();
+    assert!(error.contains("libRuntime.WorkstationGC.a"), "{error}");
+
+    let mislabeled = TempDir::new();
+    write_static_host_dir(&mislabeled.0, Some("Shared"));
+    let error = validate_host_dir(&mislabeled.0, &static_expected, true).unwrap_err();
+    assert!(error.contains("linkage Shared"), "{error}");
+    let unlabeled = TempDir::new();
+    write_static_host_dir(&unlabeled.0, None);
+    assert!(validate_host_dir(&unlabeled.0, &static_expected, true).is_err());
+}
+
+#[test]
+fn static_hosts_resolve_from_their_own_cache_variant() {
+    let cache = TempDir::new();
+    let mut config = config(&cache.0);
+    config.static_host = true;
+    // The shared host cache entry must not satisfy a static build.
+    write_host_dir(
+        &cache.0.join(VERSION).join(RID),
+        Some(&manifest(VERSION, RID, FINGERPRINT)),
+    );
+    let static_dir = cache.0.join(VERSION).join(format!("{RID}-static"));
+    write_static_host_dir(&static_dir, Some("Static"));
+    assert_eq!(
+        resolve(&config).unwrap(),
+        Resolution::Found {
+            dir: static_dir,
+            source: Source::Cache,
+        }
+    );
+}
+
+#[test]
+fn static_hosts_cannot_skip_the_download() {
+    let cache = TempDir::new();
+    let mut config = config(&cache.0);
+    config.static_host = true;
+    config.skip_download = true;
+    let error = resolve(&config).unwrap_err();
+    assert!(error.contains("no-download"), "{error}");
 }

@@ -174,6 +174,17 @@ if ($FromRelease -and @($drmAssets | Where-Object { $entries.Contains($_) }).Cou
 else {
     $requiredAssets += $drmAssets
 }
+$staticAssets = @($script:RidTargets.Keys | ForEach-Object {
+    Get-HostAssetName -Version $version -Rid $_ -Linkage Static
+}) + @('linux-x64', 'linux-arm64' | ForEach-Object {
+    Get-HostAssetName -Version $version -Rid $_ -LinuxBackend Drm -Linkage Static
+})
+if ($FromRelease -and @($staticAssets | Where-Object { $entries.Contains($_) }).Count -eq 0) {
+    Write-Warning "Release v$version has no static host checksums; treating it as a release without static hosts."
+}
+else {
+    $requiredAssets += $staticAssets
+}
 if ($FromRelease -and -not $entries.Contains($androidAsset)) {
     Write-Warning "Release v$version has no Android host checksum; treating it as a release without an Android host."
 }

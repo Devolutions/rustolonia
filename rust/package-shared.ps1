@@ -45,6 +45,8 @@ function Get-RidTargetInfo {
     }
 
     $target = $script:RidTargets[$Rid].Clone()
+    # NativeLib=Static output of host/Avalonia.Host.csproj (StageRustoloniaStaticHost).
+    $target.StaticHostFileName = if ($target.OS -eq 'Windows') { 'rustolonia_host.lib' } else { 'librustolonia_host.a' }
     if ($LinuxBackend -eq 'Drm') {
         if ($target.OS -ne 'Linux') {
             throw 'The Drm backend requires a Linux RID.'
@@ -215,10 +217,15 @@ function New-CargoBuildCommand {
         [Parameter(Mandatory)][string]$TargetTriple,
         [string]$Configuration = 'Release',
         [string]$Example,
-        [string]$BinaryName
+        [string]$BinaryName,
+        [string[]]$Features = @()
     )
 
     $args = @('build', '--manifest-path', $ManifestPath, '-p', $PackageName)
+    $Features = @($Features | Where-Object { $_ })
+    if ($Features.Count -gt 0) {
+        $args += @('--features', ($Features -join ','))
+    }
     if ($PSBoundParameters.ContainsKey('Example')) {
         $args += @('--example', $Example)
     }
@@ -672,7 +679,8 @@ function Copy-BundleFiles {
         [Parameter(Mandatory)][string]$SourceDirectory,
         [Parameter(Mandatory)][string]$DestinationDirectory,
         [Parameter(Mandatory)][string]$HostFile,
-        [Parameter(Mandatory)][string]$Rid
+        [Parameter(Mandatory)][string]$Rid,
+        [switch]$Static
     )
 
     $resolvedSource = (Resolve-Path -LiteralPath $SourceDirectory).Path
@@ -701,10 +709,18 @@ function Copy-BundleFiles {
     }
     Copy-Item -LiteralPath $HostFile -Destination $resolvedDestination
 
+    # A static host also carries the NativeAOT runtime libraries and the
+    # link directives rustolonia-sys reads (rustolonia-host-link.txt).
+    $staticExtensions = if (-not $Static) { @() } elseif ($target.OS -eq 'Windows') { @('.lib') } else { @('.a') }
+    if ($Static -and -not (Test-Path -LiteralPath (Join-Path $resolvedSource 'rustolonia-host-link.txt') -PathType Leaf)) {
+        throw 'rustolonia-host-link.txt was not published with the static host.'
+    }
     $artifactFiles = Get-ChildItem -LiteralPath $resolvedSource -File | Where-Object {
         $_.FullName -ne $HostFile -and (
             $_.Extension -in @('.dll', '.so', '.dylib') -or
-            $_.Name -like '*.so.*'
+            $_.Name -like '*.so.*' -or
+            $_.Extension -in $staticExtensions -or
+            ($Static -and $_.Name -eq 'rustolonia-host-link.txt')
         )
     }
 
@@ -773,6 +789,7 @@ function Get-HostAssetName {
         [Parameter(Mandatory)][string]$Rid,
         [ValidateSet('default', 'devtools')][string]$Flavor = 'default',
         [ValidateSet('X11', 'Drm')][string]$LinuxBackend = 'X11',
+        [ValidateSet('Shared', 'Static')][string]$Linkage = 'Shared',
         [switch]$Symbols
     )
 
@@ -782,8 +799,12 @@ function Get-HostAssetName {
     elseif ($LinuxBackend -eq 'Drm') {
         throw 'The Drm backend requires a Linux RID.'
     }
+    elseif ($Linkage -eq 'Static') {
+        throw 'Only desktop RIDs have a separate static host.'
+    }
     $name = "rustolonia-host-$Version-$Rid"
     if ($LinuxBackend -eq 'Drm') { $name += '-drm' }
+    if ($Linkage -eq 'Static') { $name += '-static' }
     if ($Flavor -ne 'default') { $name += "-$Flavor" }
     if ($Symbols) { $name += '-symbols' }
     return "$name.tar.gz"
@@ -805,6 +826,7 @@ function Write-HostManifest {
         [Parameter(Mandatory)][string]$RustoloniaRoot,
         [ValidateSet('default', 'devtools')][string]$Flavor = 'default',
         [ValidateSet('X11', 'Drm')][string]$LinuxBackend = 'X11',
+        [ValidateSet('Shared', 'Static')][string]$Linkage = 'Shared',
         [string]$SourceRevision
     )
 
@@ -823,7 +845,8 @@ function Write-HostManifest {
         rid            = $Rid
         abiFingerprint = $AbiFingerprint
         platform       = $target.Platform
-        hostFile       = $target.HostFileName
+        linkage        = $Linkage
+        hostFile       = if ($Linkage -eq 'Static') { $target.StaticHostFileName } else { $target.HostFileName }
         flavor         = $Flavor
         schemaVersion  = 1
         sourceRevision = $SourceRevision

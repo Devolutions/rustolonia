@@ -206,6 +206,19 @@ jobs:
             -LinuxBackend ${{ matrix.backend || 'X11' }} -BuildOnly:('${{ matrix.backend }}' -eq 'Drm') `
             -WorkDirectory (Join-Path $env:RUNNER_TEMP 'git-app')
 
+      - name: Package the static host tarball
+        shell: pwsh
+        env:
+          AVALONIA_RUST_SIGN_COMMAND: ${{ vars.AVALONIA_RUST_SIGN_COMMAND }}
+        run: ./rust/package-host.ps1 -Rid ${{ matrix.rid }} -LinuxBackend ${{ matrix.backend || 'X11' }} -Linkage Static -OutputRoot rust/artifacts/host
+
+      - name: Build and launch a standalone app linked against the static host tarball
+        shell: pwsh
+        run: |
+          ./rust/tests/test-standalone-app.ps1 -Rid ${{ matrix.rid }} -LinuxBackend ${{ matrix.backend || 'X11' }} `
+            -Linkage Static -TarballDirectory rust/artifacts/host -WorkDirectory "$env:RUNNER_TEMP/standalone-static-app" `
+            -Distributable -BuildOnly:('${{ matrix.backend }}' -eq 'Drm')
+
       - uses: actions/upload-artifact@v4
         with:
           name: rustolonia-host-${{ matrix.rid }}${{ matrix.backend == 'Drm' && '-drm' || '' }}

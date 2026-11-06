@@ -65,6 +65,22 @@ supported; an explicit local directory without any manifest remains a developer
 override, with the usual runtime ABI check. A release containing the new DRM
 archives is required; this feature cannot use older X11-only assets.
 
+The `static-host` feature links the NativeAOT host into the executable instead
+of loading a shared library. `rustolonia` forwards it. It stages a
+`-static` archive (`rustolonia-host-<version>-<rid>[-drm]-static.tar.gz`, cached
+as `<rid>[-drm]-static`) containing `rustolonia_host.lib` or
+`librustolonia_host.a`, the NativeAOT runtime archives and
+`rustolonia-host-link.txt`, which lists the link inputs `build.rs` passes to
+rustc. Its manifest must record `linkage` as `Static`. The host must come from
+`RUSTOLONIA_HOST_DIR` or a download, so the feature cannot be combined with
+`no-download`. `Host::load` and `App::load_from_env` then bind the linked
+exports directly. Native graphics dependencies (`libAvaloniaNative`,
+`libSkiaSharp`, `libHarfBuzzSharp` or their Windows/Linux equivalents) stay
+shared libraries: ship them beside the executable (or in macOS
+`Contents/Frameworks`). With `dev-host-path`, they are preloaded from the
+staged directory so `cargo run` works. Static assets require a release that
+includes them.
+
 On iOS, `build.rs` skips desktop host staging and downloads. The separate
 [standalone iOS app builder](https://github.com/Devolutions/rustolonia/tree/master/samples/ios-standalone)
 verifies a matching static-host release archive and links it into the app;
