@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -43,9 +44,11 @@ public class ReleaseManifestTests
         Assert.Equal(
             abiBaseline.RootElement.GetProperty("schemaVersion").GetInt32(),
             schemas.GetProperty("abiBaseline").GetInt32());
-        Assert.Equal(
-            abiBaseline.RootElement.GetProperty("producerPin").GetString(),
-            element.GetProperty("producerPin").GetString());
+
+        var producerPin = element.GetProperty("producerPin").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(producerPin));
+        Assert.Equal(Git(root, "rev-parse", "--verify", "HEAD:avalonia-src"), producerPin);
+        Assert.Equal(producerPin, Git(Path.Combine(root, "avalonia-src"), "rev-parse", "--verify", "HEAD"));
 
         var patches = element.GetProperty("patches").EnumerateArray().ToArray();
         Assert.NotEmpty(patches);
@@ -59,6 +62,27 @@ public class ReleaseManifestTests
                 patch.GetProperty("sha256").GetString(),
                 actualHash);
         }
+    }
+
+    private static string Git(string workingDirectory, params string[] arguments)
+    {
+        var startInfo = new ProcessStartInfo("git")
+        {
+            WorkingDirectory = workingDirectory,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+        };
+        foreach (var argument in arguments)
+            startInfo.ArgumentList.Add(argument);
+
+        using var process = Process.Start(startInfo)
+            ?? throw new InvalidOperationException("Could not start git.");
+        var output = process.StandardOutput.ReadToEnd();
+        var error = process.StandardError.ReadToEnd();
+        process.WaitForExit();
+        Assert.True(process.ExitCode == 0, $"git {string.Join(" ", arguments)} failed: {error}");
+        return output.Trim();
     }
 
     private static string FindRepositoryRoot()
