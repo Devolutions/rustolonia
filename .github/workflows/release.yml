@@ -429,6 +429,8 @@ jobs:
           name: rustolonia-host-browser-wasm
           path: rust/artifacts/host/*.tar.gz
           if-no-files-found: error
+          # A runner can stop after uploading but before completing the job.
+          overwrite: true
 
   stage-release:
     name: stage release artifacts

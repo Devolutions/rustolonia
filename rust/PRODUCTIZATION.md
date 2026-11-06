@@ -544,13 +544,27 @@ pushes made with it do trigger CI. A GitHub App installation token cannot be
 stored as this secret because it expires after an hour. If the rules
 require signed commits, use the manual path.
 
-If any job before the push fails, nothing is committed or tagged, so fix the
-cause and dispatch `phase = all` again. If `publish` or `publish-crates`
-fails after the push, the tag already exists and a new `phase = all` run
-refuses to start. Re-run only the failed jobs of the same run
-(`gh run rerun RUN_ID --failed`). They reuse its artifacts, build commit,
-and pinned commit. `phase = publish` cannot take over, because it requires
-a `build_run_id` whose run succeeded.
+If any job before the push fails, nothing is committed or tagged. If the
+browser-host runner reports a shutdown signal without an earlier failed step,
+the **Retry interrupted browser host** workflow waits for the release run to
+finish, then re-runs that job and its dependents once on a fresh runner. Other
+failures and cancelled runs are not retried automatically. The re-run uses the
+original source and successful job outputs; the existing master and tag checks
+still apply. If the retry also fails, inspect both attempts. Fix other failures
+and dispatch `phase = all` again.
+
+The retry workflow must already be on `master` when the release finishes; it
+does not retry older runs. If the monitor fails or was not yet installed,
+review the original run and intended release before rerunning the browser job
+from Actions or with `gh run rerun RUN_ID --job JOB_ID`, using the job's
+`databaseId` from `gh run view RUN_ID --json jobs`. A successful rerun also
+resumes its dependent jobs and can tag and publish a non-draft release.
+
+If `publish` or `publish-crates` fails after the push, the tag already exists
+and a new `phase = all` run refuses to start. Re-run only the failed jobs of
+the same run (`gh run rerun RUN_ID --failed`). They reuse its artifacts,
+build commit, and pinned commit. `phase = publish` cannot take over, because
+it requires a `build_run_id` whose run succeeded.
 
 #### Manual two-dispatch release (fallback)
 
