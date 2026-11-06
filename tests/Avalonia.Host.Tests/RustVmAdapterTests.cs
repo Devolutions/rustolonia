@@ -227,18 +227,18 @@ public class RustVmAdapterTests
     {
         var model = new Model();
         using var adapter = new SampleViewModelAdapter(model, action => action());
-        var sink2 = (IAvnRustVmSink2)model.Sink;
+        var sink = model.Sink;
 
         Assert.Null(adapter.Nickname);
 
         Assert.Equal(0, model.Sink.SetString(5, "Nick"));
         Assert.Equal("Nick", adapter.Nickname);
 
-        Assert.Equal(0, sink2.SetNull(5));
+        Assert.Equal(0, sink.SetNull(5));
         Assert.Null(adapter.Nickname);
 
         // Invalid-contract: SetNull on a non-nullable property is rejected explicitly.
-        Assert.True(sink2.SetNull(1) < 0);
+        Assert.True(sink.SetNull(1) < 0);
 
         // The managed round trip (typing clears via the dedicated command,
         // not a direct null write) also resolves to null.
@@ -347,28 +347,28 @@ public class RustVmAdapterTests
     {
         var model = new Model();
         using var adapter = new SampleViewModelAdapter(model, action => action());
-        var sink2 = (IAvnRustVmSink2)model.Sink;
+        var sink = model.Sink;
 
-        Assert.Equal(0, sink2.InsertString(1, 0, "Zeroth"));
+        Assert.Equal(0, sink.InsertString(1, 0, "Zeroth"));
         Assert.Equal(["Zeroth", "First"], adapter.Items);
 
-        Assert.Equal(0, sink2.ReplaceString(1, 1, "Replaced"));
+        Assert.Equal(0, sink.ReplaceString(1, 1, "Replaced"));
         Assert.Equal(["Zeroth", "Replaced"], adapter.Items);
 
-        Assert.Equal(0, sink2.MoveItem(1, 1, 0));
+        Assert.Equal(0, sink.MoveItem(1, 1, 0));
         Assert.Equal(["Replaced", "Zeroth"], adapter.Items);
 
-        Assert.Equal(0, sink2.RemoveAt(1, 0));
+        Assert.Equal(0, sink.RemoveAt(1, 0));
         Assert.Equal(["Zeroth"], adapter.Items);
 
-        Assert.Equal(0, sink2.ClearCollection(1));
+        Assert.Equal(0, sink.ClearCollection(1));
         Assert.Empty(adapter.Items);
 
         // Invalid-contract: an unknown collection ID is rejected explicitly.
-        Assert.True(sink2.InsertString(999, 0, "x") < 0);
-        Assert.True(sink2.RemoveAt(999, 0) < 0);
-        Assert.True(sink2.MoveItem(999, 0, 0) < 0);
-        Assert.True(sink2.ClearCollection(999) < 0);
+        Assert.True(sink.InsertString(999, 0, "x") < 0);
+        Assert.True(sink.RemoveAt(999, 0) < 0);
+        Assert.True(sink.MoveItem(999, 0, 0) < 0);
+        Assert.True(sink.ClearCollection(999) < 0);
     }
 
     [Fact]
@@ -376,7 +376,7 @@ public class RustVmAdapterTests
     {
         var model = new Model();
         using var adapter = new SampleViewModelAdapter(model, action => action());
-        var sink = (IAvnRustVmSink2)model.Sink;
+        var sink = model.Sink;
 
         Assert.True(sink.InsertString(1, -1, "bad") < 0);
         Assert.True(sink.InsertString(1, 2, "bad") < 0);
@@ -395,7 +395,7 @@ public class RustVmAdapterTests
         var model = new Model();
         using var adapter = new ReflectableRustViewModelAdapter(
             model, SampleViewModelMetadata.Descriptor, action => action());
-        var sink = (IAvnRustVmSink2)model.Sink;
+        var sink = model.Sink;
 
         Assert.True(sink.InsertString(1, -1, "bad") < 0);
         Assert.True(sink.ReplaceString(1, 1, "bad") < 0);
@@ -413,7 +413,7 @@ public class RustVmAdapterTests
         using var adapter = new SampleViewModelAdapter(model, action => action());
         var failing = new FailingNestedViewModel();
 
-        var result = await Task.Run(() => ((IAvnRustVmSink2)model.Sink).SetModel(7, failing));
+        var result = await Task.Run(() => model.Sink.SetModel(7, failing));
 
         Assert.True(result < 0);
         Assert.Null(adapter.Address);
@@ -428,7 +428,7 @@ public class RustVmAdapterTests
             model, SampleViewModelMetadata.Descriptor, action => action());
         var failing = new FailingNestedViewModel();
 
-        var result = await Task.Run(() => ((IAvnRustVmSink2)model.Sink).SetModel(7, failing));
+        var result = await Task.Run(() => model.Sink.SetModel(7, failing));
 
         Assert.True(result < 0);
         Assert.Null(((IReflectableType)adapter).GetTypeInfo().GetProperty("Address")!.GetValue(adapter));
@@ -501,25 +501,25 @@ public class RustVmAdapterTests
     {
         var model = new Model();
         using var adapter = new SampleViewModelAdapter(model, action => action());
-        var sink2 = (IAvnRustVmSink2)model.Sink;
+        var sink = model.Sink;
         var raisedCount = 0;
         adapter.SaveCommand.CanExecuteChanged += (_, _) => raisedCount++;
 
         Assert.True(adapter.SaveCommand.CanExecute(null));
 
-        Assert.Equal(0, sink2.SetCommandEnabled(3, 0));
+        Assert.Equal(0, sink.SetCommandEnabled(3, 0));
         Assert.False(adapter.SaveCommand.CanExecute(null));
         Assert.Equal(1, raisedCount);
 
         // Setting the same state again must not raise a redundant notification.
-        Assert.Equal(0, sink2.SetCommandEnabled(3, 0));
+        Assert.Equal(0, sink.SetCommandEnabled(3, 0));
         Assert.Equal(1, raisedCount);
 
-        Assert.Equal(0, sink2.SetCommandEnabled(3, 1));
+        Assert.Equal(0, sink.SetCommandEnabled(3, 1));
         Assert.True(adapter.SaveCommand.CanExecute(null));
         Assert.Equal(2, raisedCount);
 
-        Assert.True(sink2.SetCommandEnabled(999, 1) < 0);
+        Assert.True(sink.SetCommandEnabled(999, 1) < 0);
     }
 
     [Fact]
@@ -527,25 +527,25 @@ public class RustVmAdapterTests
     {
         var model = new Model();
         using var adapter = new SampleViewModelAdapter(model, action => action());
-        var sink2 = (IAvnRustVmSink2)model.Sink;
+        var sink = model.Sink;
         var raised = new List<string?>();
         adapter.ErrorsChanged += (_, args) => raised.Add(args.PropertyName);
 
         Assert.False(adapter.HasErrors);
         Assert.Empty(adapter.GetErrors(nameof(SampleViewModelAdapter.Name)));
 
-        Assert.Equal(0, sink2.SetPropertyError(1, "Name cannot be empty."));
+        Assert.Equal(0, sink.SetPropertyError(1, "Name cannot be empty."));
         Assert.True(adapter.HasErrors);
         Assert.Equal(
             ["Name cannot be empty."],
             adapter.GetErrors(nameof(SampleViewModelAdapter.Name)).Cast<string>().ToList());
         Assert.Equal([nameof(SampleViewModelAdapter.Name)], raised);
 
-        Assert.Equal(0, sink2.SetPropertyError(1, null));
+        Assert.Equal(0, sink.SetPropertyError(1, null));
         Assert.False(adapter.HasErrors);
         Assert.Equal([nameof(SampleViewModelAdapter.Name), nameof(SampleViewModelAdapter.Name)], raised);
 
-        Assert.True(sink2.SetPropertyError(999, "bad") < 0);
+        Assert.True(sink.SetPropertyError(999, "bad") < 0);
     }
 
     [Fact]
@@ -632,12 +632,12 @@ public class RustVmAdapterTests
         var nickname = typeInfo.GetProperty("Nickname")!;
         var priority = typeInfo.GetProperty("Priority")!;
         var address = typeInfo.GetProperty("Address")!;
-        var sink2 = (IAvnRustVmSink2)model.Sink;
+        var sink = model.Sink;
 
         Assert.Null(nickname.GetValue(adapter));
         Assert.Equal(0, model.Sink.SetString(5, "Nick"));
         Assert.Equal("Nick", nickname.GetValue(adapter));
-        Assert.Equal(0, sink2.SetNull(5));
+        Assert.Equal(0, sink.SetNull(5));
         Assert.Null(nickname.GetValue(adapter));
 
         Assert.IsType<Priority>(priority.GetValue(adapter));
@@ -647,9 +647,9 @@ public class RustVmAdapterTests
 
         Assert.Null(address.GetValue(adapter));
         var nested = new FakeNestedViewModel();
-        Assert.Equal(0, sink2.SetModel(7, nested));
+        Assert.Equal(0, sink.SetModel(7, nested));
         Assert.IsType<ReflectableRustViewModelAdapter>(address.GetValue(adapter));
-        Assert.Equal(0, sink2.SetModel(7, null));
+        Assert.Equal(0, sink.SetModel(7, null));
         Assert.Null(address.GetValue(adapter));
         Assert.Equal(1, nested.DetachCalls);
     }
@@ -665,20 +665,20 @@ public class RustVmAdapterTests
         var typeInfo = ((IReflectableType)adapter).GetTypeInfo();
         var tasks = (System.Collections.ObjectModel.ObservableCollection<object?>)
             typeInfo.GetProperty("Tasks")!.GetValue(adapter)!;
-        var sink2 = (IAvnRustVmSink2)model.Sink;
+        var sink = model.Sink;
 
         var first = new FakeNestedViewModel();
         var second = new FakeNestedViewModel();
-        Assert.Equal(0, sink2.AddModel(2, first));
-        Assert.Equal(0, sink2.AddModel(2, second));
+        Assert.Equal(0, sink.AddModel(2, first));
+        Assert.Equal(0, sink.AddModel(2, second));
         Assert.Equal(2, tasks.Count);
 
-        Assert.Equal(0, sink2.MoveItem(2, 0, 1));
+        Assert.Equal(0, sink.MoveItem(2, 0, 1));
 
-        Assert.Equal(0, sink2.RemoveAt(2, 0));
+        Assert.Equal(0, sink.RemoveAt(2, 0));
         Assert.Single(tasks);
 
-        Assert.Equal(0, sink2.ClearCollection(2));
+        Assert.Equal(0, sink.ClearCollection(2));
         Assert.Empty(tasks);
         Assert.Equal(1, first.DetachCalls);
         Assert.Equal(1, second.DetachCalls);
@@ -689,20 +689,20 @@ public class RustVmAdapterTests
     {
         var model = new Model();
         using var adapter = new SampleViewModelAdapter(model, action => action());
-        var sink2 = (IAvnRustVmSink2)model.Sink;
+        var sink = model.Sink;
 
         Assert.True(model.Sink.SetString(999, "x") < 0);
         Assert.True(model.Sink.SetInteger(999, 0) < 0);
         Assert.True(model.Sink.SetBoolean(999, 0) < 0);
         Assert.True(model.Sink.SetDouble(999, 0) < 0);
         Assert.True(model.Sink.AddString(999, "x") < 0);
-        Assert.True(sink2.SetNull(999) < 0);
-        Assert.True(sink2.SetModel(999, null) < 0);
-        Assert.True(sink2.AddModel(999, null) < 0);
-        Assert.True(sink2.InsertModel(999, 0, null) < 0);
-        Assert.True(sink2.ReplaceModel(999, 0, null) < 0);
-        Assert.True(sink2.SetCommandEnabled(999, 1) < 0);
-        Assert.True(sink2.SetPropertyError(999, "x") < 0);
+        Assert.True(sink.SetNull(999) < 0);
+        Assert.True(sink.SetModel(999, null) < 0);
+        Assert.True(sink.AddModel(999, null) < 0);
+        Assert.True(sink.InsertModel(999, 0, null) < 0);
+        Assert.True(sink.ReplaceModel(999, 0, null) < 0);
+        Assert.True(sink.SetCommandEnabled(999, 1) < 0);
+        Assert.True(sink.SetPropertyError(999, "x") < 0);
 
         // None of the invalid calls perturbed valid state.
         Assert.Equal("Initial", adapter.Name);
@@ -756,6 +756,14 @@ public class RustVmAdapterTests
         public int SetDouble(int propertyId, double value) => unchecked((int)0x80070057);
         public int Execute(int commandId, string? parameter) => unchecked((int)0x80070057);
         public int BeginAsync(int commandId, string? parameter) => unchecked((int)0x80070057);
+
+        public int BeginAsyncTracked(int commandId, string? parameter, out long operationId)
+        {
+            operationId = 0;
+            return BeginAsync(commandId, parameter);
+        }
+
+        public int CancelAsync(int commandId, long operationId) => 0;
     }
 
     private sealed class NonEchoingModel(bool failWrites = false) : IAvnRustViewModel
@@ -787,6 +795,14 @@ public class RustVmAdapterTests
         public int SetDouble(int propertyId, double value) => unchecked((int)0x80070057);
         public int Execute(int commandId, string? parameter) => unchecked((int)0x80070057);
         public int BeginAsync(int commandId, string? parameter) => unchecked((int)0x80070057);
+
+        public int BeginAsyncTracked(int commandId, string? parameter, out long operationId)
+        {
+            operationId = 0;
+            return BeginAsync(commandId, parameter);
+        }
+
+        public int CancelAsync(int commandId, long operationId) => 0;
     }
 
     private sealed class NormalizingModel : IAvnRustViewModel
@@ -815,15 +831,23 @@ public class RustVmAdapterTests
         public int SetDouble(int propertyId, double value) => unchecked((int)0x80070057);
         public int Execute(int commandId, string? parameter) => unchecked((int)0x80070057);
         public int BeginAsync(int commandId, string? parameter) => unchecked((int)0x80070057);
+
+        public int BeginAsyncTracked(int commandId, string? parameter, out long operationId)
+        {
+            operationId = 0;
+            return BeginAsync(commandId, parameter);
+        }
+
+        public int CancelAsync(int commandId, long operationId) => 0;
     }
 
     private sealed class NullNormalizingModel : IAvnRustViewModel
     {
-        private IAvnRustVmSink2? _sink;
+        private IAvnRustVmSink? _sink;
 
         public int Attach(IAvnRustVmSink? sink)
         {
-            _sink = (IAvnRustVmSink2)sink!;
+            _sink = sink!;
             return 0;
         }
 
@@ -843,6 +867,14 @@ public class RustVmAdapterTests
         public int SetDouble(int propertyId, double value) => unchecked((int)0x80070057);
         public int Execute(int commandId, string? parameter) => unchecked((int)0x80070057);
         public int BeginAsync(int commandId, string? parameter) => unchecked((int)0x80070057);
+
+        public int BeginAsyncTracked(int commandId, string? parameter, out long operationId)
+        {
+            operationId = 0;
+            return BeginAsync(commandId, parameter);
+        }
+
+        public int CancelAsync(int commandId, long operationId) => 0;
     }
 
     private sealed class FailingNestedViewModel : IAvnRustViewModel
@@ -856,6 +888,14 @@ public class RustVmAdapterTests
         public int SetDouble(int propertyId, double value) => 0;
         public int Execute(int commandId, string? parameter) => 0;
         public int BeginAsync(int commandId, string? parameter) => 0;
+
+        public int BeginAsyncTracked(int commandId, string? parameter, out long operationId)
+        {
+            operationId = 0;
+            return BeginAsync(commandId, parameter);
+        }
+
+        public int CancelAsync(int commandId, long operationId) => 0;
     }
 
     private sealed class NestedPublishingModel(bool failAttach, bool failDetach) : IAvnRustViewModel
@@ -865,7 +905,7 @@ public class RustVmAdapterTests
 
         public int Attach(IAvnRustVmSink? sink)
         {
-            var result = ((IAvnRustVmSink2)sink!).AddModel(2, Nested);
+            var result = sink!.AddModel(2, Nested);
             return result < 0 || failAttach ? unchecked((int)0x80004005) : 0;
         }
 
@@ -881,6 +921,14 @@ public class RustVmAdapterTests
         public int SetDouble(int propertyId, double value) => unchecked((int)0x80070057);
         public int Execute(int commandId, string? parameter) => unchecked((int)0x80070057);
         public int BeginAsync(int commandId, string? parameter) => unchecked((int)0x80070057);
+
+        public int BeginAsyncTracked(int commandId, string? parameter, out long operationId)
+        {
+            operationId = 0;
+            return BeginAsync(commandId, parameter);
+        }
+
+        public int CancelAsync(int commandId, long operationId) => 0;
     }
 
     private sealed class Model : IAvnRustViewModel
@@ -965,7 +1013,7 @@ public class RustVmAdapterTests
 
         public int Execute(int commandId, string? parameter)
         {
-            var sink2 = (IAvnRustVmSink2)_sink!;
+            var sink = _sink!;
             switch (commandId)
             {
                 case 1:
@@ -978,7 +1026,7 @@ public class RustVmAdapterTests
                     return 0;
                 case 4:
                     Nickname = null;
-                    sink2.SetNull(5);
+                    sink.SetNull(5);
                     return 0;
                 case 5:
                     _addressSet = !_addressSet;
@@ -986,30 +1034,30 @@ public class RustVmAdapterTests
                     {
                         var address = new FakeNestedViewModel();
                         LastAddress = address;
-                        sink2.SetModel(7, address);
+                        sink.SetModel(7, address);
                     }
                     else
                     {
-                        sink2.SetModel(7, null);
+                        sink.SetModel(7, null);
                     }
                     return 0;
                 case 6:
                     _taskCount++;
                     var task = new FakeNestedViewModel();
                     Tasks.Add(task);
-                    sink2.AddModel(2, task);
+                    sink.AddModel(2, task);
                     return 0;
                 case 7:
                     if (_taskCount == 0)
                         return 0;
                     _taskCount--;
                     Tasks.RemoveAt(0);
-                    sink2.RemoveAt(2, 0);
+                    sink.RemoveAt(2, 0);
                     return 0;
                 case 8:
                     if (_taskCount < 2)
                         return 0;
-                    sink2.MoveItem(2, _taskCount - 1, 0);
+                    sink.MoveItem(2, _taskCount - 1, 0);
                     var moved = Tasks[^1];
                     Tasks.RemoveAt(Tasks.Count - 1);
                     Tasks.Insert(0, moved);
@@ -1017,7 +1065,7 @@ public class RustVmAdapterTests
                 case 9:
                     _taskCount = 0;
                     Tasks.Clear();
-                    sink2.ClearCollection(2);
+                    sink.ClearCollection(2);
                     return 0;
                 default:
                     return unchecked((int)0x80070057);
@@ -1030,5 +1078,13 @@ public class RustVmAdapterTests
             SaveCalls++;
             return 0;
         }
+
+        public int BeginAsyncTracked(int commandId, string? parameter, out long operationId)
+        {
+            operationId = 0;
+            return BeginAsync(commandId, parameter);
+        }
+
+        public int CancelAsync(int commandId, long operationId) => 0;
     }
 }

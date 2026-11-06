@@ -1,13 +1,13 @@
-//! Raw ABI conformance for the stage 29 desktop file integration capability.
+//! Raw ABI conformance for desktop file integration.
 //!
-//! These run against the published NativeAOT host and prove that every vtable
-//! slot of the new, separately versioned interfaces lines up between the
-//! managed `[GeneratedComInterface]` declarations and the handwritten Rust
-//! bindings. Nothing here opens a platform dialog.
+//! These run against the published NativeAOT host and prove that every
+//! storage slot of `IAvnApplication` and the storage interfaces lines up
+//! between the managed `[GeneratedComInterface]` declarations and the
+//! handwritten Rust bindings. Nothing here opens a platform dialog.
 
 use rustolonia_sys::{
     activation_handler, app_handler, file_drop_handler, storage_completion, ComPtr, Error, Host,
-    IAvnApplication3, IAvnControl, IAvnFilePickerOptions, IAvnStorageCompletion, IAvnWindow,
+    IAvnApplication, IAvnControl, IAvnFilePickerOptions, IAvnStorageCompletion, IAvnWindow,
     AVN_E_FIXTURE, E_INVALIDARG, E_POINTER,
 };
 use std::path::PathBuf;
@@ -64,7 +64,7 @@ fn startup_arguments_and_activation_items_round_trip_without_a_ui_thread() {
         .unwrap()
         .create_application()
         .unwrap();
-    let desktop: ComPtr<IAvnApplication3> = application.desktop_files().unwrap();
+    let desktop: &ComPtr<IAvnApplication> = &application;
 
     desktop.clear_startup_arguments().unwrap();
     assert_eq!(0, desktop.startup_argument_count().unwrap());
@@ -125,7 +125,7 @@ fn picker_options_accept_every_documented_field() {
         .unwrap()
         .create_application()
         .unwrap();
-    let desktop = application.desktop_files().unwrap();
+    let desktop = &application;
     let options = desktop.create_picker_options().unwrap();
 
     options.set_title(Some(&utf16("Open logs"))).unwrap();
@@ -190,7 +190,7 @@ fn null_arguments_are_rejected_before_any_work_happens() {
         .unwrap()
         .create_application()
         .unwrap();
-    let desktop = application.desktop_files().unwrap();
+    let desktop = &application;
 
     // `AddStartupArgument(null)` is the one string parameter that must not be
     // silently treated as an empty argument: an activation list is ordered and
@@ -213,7 +213,7 @@ fn drop_and_activation_subscriptions_attach_and_detach_on_the_ui_thread() {
 
     let application_for_handler = application.clone();
     let handler = app_handler(move || {
-        let desktop = application_for_handler.desktop_files()?;
+        let desktop = &application_for_handler;
 
         let border = controls.create_border()?;
         let target: ComPtr<IAvnControl> = border.query_interface()?;
@@ -277,14 +277,14 @@ fn drop_and_activation_subscriptions_attach_and_detach_on_the_ui_thread() {
         let options = desktop.create_picker_options()?;
         let completion = storage_completion(|_| Ok(()));
         for start in [
-            IAvnApplication3Start::OpenFile,
-            IAvnApplication3Start::OpenFolder,
-            IAvnApplication3Start::SaveFile,
+            PickerStart::OpenFile,
+            PickerStart::OpenFolder,
+            PickerStart::SaveFile,
         ] {
             assert_eq!(
                 E_POINTER,
                 start
-                    .call(&desktop, None, Some(&options), Some(&completion))
+                    .call(desktop, None, Some(&options), Some(&completion))
                     .unwrap_err()
                     .0,
                 "{start:?}: a null window must be rejected"
@@ -292,7 +292,7 @@ fn drop_and_activation_subscriptions_attach_and_detach_on_the_ui_thread() {
             assert_eq!(
                 E_POINTER,
                 start
-                    .call(&desktop, Some(&window), None, Some(&completion))
+                    .call(desktop, Some(&window), None, Some(&completion))
                     .unwrap_err()
                     .0,
                 "{start:?}: null options must be rejected"
@@ -300,7 +300,7 @@ fn drop_and_activation_subscriptions_attach_and_detach_on_the_ui_thread() {
             assert_eq!(
                 E_POINTER,
                 start
-                    .call(&desktop, Some(&window), Some(&options), None)
+                    .call(desktop, Some(&window), Some(&options), None)
                     .unwrap_err()
                     .0,
                 "{start:?}: a null completion must be rejected"
@@ -326,16 +326,16 @@ fn drop_and_activation_subscriptions_attach_and_detach_on_the_ui_thread() {
 /// The three picker starts share one ABI shape; this keeps the conformance
 /// assertions above identical for all of them.
 #[derive(Clone, Copy, Debug)]
-enum IAvnApplication3Start {
+enum PickerStart {
     OpenFile,
     OpenFolder,
     SaveFile,
 }
 
-impl IAvnApplication3Start {
+impl PickerStart {
     fn call(
         self,
-        desktop: &ComPtr<IAvnApplication3>,
+        desktop: &ComPtr<IAvnApplication>,
         window: Option<&ComPtr<IAvnWindow>>,
         options: Option<&ComPtr<IAvnFilePickerOptions>>,
         completion: Option<&ComPtr<IAvnStorageCompletion>>,

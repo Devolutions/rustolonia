@@ -246,6 +246,14 @@ public class RustValueConverterTests : IDisposable
         }
 
         public int BeginAsync(int commandId, string? parameter) => unchecked((int)0x80070057);
+
+        public int BeginAsyncTracked(int commandId, string? parameter, out long operationId)
+        {
+            operationId = 0;
+            return BeginAsync(commandId, parameter);
+        }
+
+        public int CancelAsync(int commandId, long operationId) => 0;
     }
 
     private sealed class FakeValueConverterProvider : IAvnRustValueConverterProvider

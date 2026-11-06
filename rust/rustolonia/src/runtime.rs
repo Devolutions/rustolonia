@@ -184,7 +184,7 @@ pub struct App {
 pub struct SingleViewSession {
     _app: App,
     scope: AppScope,
-    single_view: sys::ComPtr<sys::IAvnApplication13>,
+    single_view: sys::ComPtr<sys::IAvnApplication>,
     mounted: bool,
     active: bool,
     _thread_affinity: PhantomData<Rc<()>>,
@@ -259,11 +259,7 @@ impl AppScope {
     /// reject this with `E_NOTIMPL`; use [`AppScope::mount`] there.
     pub fn set_main_view(&self, view: &impl AsControl) -> Result<()> {
         let view = view.as_control()?;
-        let single_view = self
-            .context
-            .application
-            .query_interface::<sys::IAvnApplication13>()?;
-        Ok(single_view.set_main_view(Some(&view))?)
+        Ok(self.context.application.set_main_view(Some(&view))?)
     }
 
     pub(crate) fn record_window(&self, window: Window) {
@@ -344,7 +340,7 @@ impl AppScope {
         let owner = window.raw.clone();
         let dialog = dialog.raw.clone();
         let application = self.context.application.clone();
-        let dialogs = application.dialogs()?;
+        let dialogs = application.clone();
         AsyncOperation::start(
             application,
             move |completion| {
@@ -622,7 +618,7 @@ impl App {
         if !self.dispatcher.check_access()? {
             return Err(Error::NoUiContext);
         }
-        let single_view = self.application.single_view()?;
+        let single_view = self.application.clone();
         let context = AppContext {
             application: self.application.clone(),
             dispatcher: self.dispatcher.clone(),
@@ -678,13 +674,11 @@ impl App {
     /// replace bundle metadata. Call before [`App::run`], not in its callback.
     ///
     /// Empty/whitespace-only names and embedded NULs return `E_INVALIDARG`.
-    /// Older hosts without this capability return `E_NOINTERFACE`; iOS and
-    /// Android, where Avalonia is initialized before Rust runs, return `E_NOTIMPL`.
+    /// iOS and Android, where Avalonia is initialized before Rust runs, return
+    /// `E_NOTIMPL`.
     pub fn with_application_name(self, name: impl AsRef<str>) -> Result<Self> {
         let name = encode_application_name(name.as_ref())?;
-        self.application
-            .application_name()?
-            .set_application_name(Some(&name))?;
+        self.application.set_application_name(Some(&name))?;
         Ok(self)
     }
 
@@ -775,17 +769,15 @@ fn encode_application_name(name: &str) -> Result<Vec<u16>> {
     Ok(name.encode_utf16().chain(Some(0)).collect())
 }
 
-/// Publishes the startup arguments through the separately versioned desktop
-/// file integration capability, before the managed lifetime starts.
+/// Publishes the startup arguments before the managed lifetime starts.
 fn publish_startup_arguments(
     application: &sys::ComPtr<sys::IAvnApplication>,
     arguments: &[String],
 ) -> Result<()> {
-    let desktop = application.desktop_files()?;
-    desktop.clear_startup_arguments()?;
+    application.clear_startup_arguments()?;
     for argument in arguments {
         let encoded: Vec<u16> = argument.encode_utf16().chain(Some(0)).collect();
-        desktop.add_startup_argument(Some(&encoded))?;
+        application.add_startup_argument(Some(&encoded))?;
     }
     Ok(())
 }

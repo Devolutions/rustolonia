@@ -15,12 +15,11 @@ each half lives.
 | --- | --- | --- |
 | Menu structure, headers, gestures, check marks | Managed presentation | Generated `NativeMenu`/`ContextMenu` factories |
 | Commands, toggles, radio values, recent-file entries | Rust state | Already generated command and property surface |
-| Clipboard read/write/clear | Host, on Avalonia's `IClipboard` | New `IAvnApplication4` capability |
+| Clipboard read/write/clear | Host, on Avalonia's `IClipboard` | `IAvnApplication` clipboard slots |
 
 Because a menu only binds already generated commands and properties, **menus
-add no view-model ABI at all**. The clipboard does need the host, so it gets one
-new, separately versioned capability. The published `IAvnApplication`,
-`IAvnApplication2` and `IAvnApplication3` vtables are untouched.
+add no view-model ABI at all**. The clipboard does need the host, so it adds
+slots to `IAvnApplication`.
 
 ## Schema version 5
 
@@ -128,8 +127,8 @@ and a command run when the icon itself is clicked:
 ```
 
 Like a view, a mounted tray gets its own model instance; the generated Rust
-`mount_notify(scope, model)` shows it through the stage 33 `IAvnApplication6`
-capability, and the icon stays until the application shuts down. Tray menus
+`mount_notify(scope, model)` shows it through the stage 33 `IAvnApplication`
+desktop shell slots, and the icon stays until the application shuts down. Tray menus
 reject gestures, since a tray menu has no keyboard focus to bind them to. A
 tray application usually also calls `scope.set_shutdown_mode(OnExplicitShutdown)`
 and mounts its windows hidden (`mount_dynamic_view_model_hidden`), so it keeps
@@ -203,8 +202,7 @@ re-opening the current file does not republish.
 
 ## Clipboard
 
-Plain-text write and read already exist on the frozen `IAvnApplication` vtable
-and are unchanged. Stage 31 adds `IAvnApplication4`:
+Plain-text write and read were already on `IAvnApplication`. Stage 31 adds:
 
 | Method | Purpose |
 | --- | --- |
@@ -266,7 +264,7 @@ honoured by compiled AXAML instead of being metadata-only.
 
 Apps without a view-model schema build the same Avalonia
 [`NativeMenu`](https://docs.avaloniaui.net/controls/menus/nativemenu) from Rust
-through the optional `IAvnApplication15` capability (`examples/native_menu.rs`).
+through `IAvnApplication` and `IAvnNativeMenu` (`examples/native_menu.rs`).
 Like `ShellTray`, Rust numbers the items and receives one callback per click;
 no schema is compiled into the host.
 

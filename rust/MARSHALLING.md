@@ -151,8 +151,8 @@ always a solid brush by construction and anything a source brush carried beyond
 colour and opacity (transforms, gradient stops) is dropped rather than guessed.
 
 `DrawingBrush` and `VisualBrush` remain out of scope for this ABI. A future wave
-that needs them must add a separately named, separately versioned interface
-rather than widening `IAvnBrush`, following the pattern gradients use below.
+that needs them should add its own interface for each brush type rather than
+widening `IAvnBrush`, following the pattern gradients use below.
 
 In safe Rust the brush is a plain value; only crossing the ABI needs the factory:
 
@@ -212,11 +212,7 @@ AvnHResult (AVN_CALL *create_radial_gradient_brush)(
 
 `AvnRelativePoint`/`AvnRelativeScalar` carry a `RelativeUnit` ordinal
 (`Relative = 0`, `Absolute = 1`) alongside their coordinates, mirroring
-`Avalonia.RelativePoint`/`RelativeUnit`. Growing `IAvnControlFactory` to add
-these two slots required minting a new IID for it (the ABI-baseline check
-treats any slot-list change under a published IID as a break, even an
-additive one) — see [Versioning of the widened vtables](#versioning-of-the-widened-vtables)
-for the general rule.
+`Avalonia.RelativePoint`/`RelativeUnit`.
 
 In safe Rust, `LinearGradientBrush` and `RadialGradientBrush` are plain values
 alongside `Brush`, and `Paint` is the enum that spans all three shapes a
@@ -342,9 +338,8 @@ The list carries only each track's `Width`/`Height`, because that is all
 `MaxHeight` and `SharedSizeGroup` on an individual definition are **not** in
 scope of this ABI, and a set replaces the whole collection, so anything a
 previous definition carried beyond its length is dropped rather than merged. That
-is a deliberate v1 boundary rather than an oversight: a per-definition surface
-needs its own separately named, separately versioned interfaces and is left to a
-later wave. A consumer that needs shared size groups should keep those tracks in
+is a deliberate boundary rather than an oversight: a per-definition surface
+needs its own interfaces and is left to a later wave. A consumer that needs shared size groups should keep those tracks in
 AXAML.
 
 A malformed entry fails the call — `Parse` throws and the `HRESULT` carries it
@@ -383,8 +378,8 @@ the previous source stays in place.
 
 ### What the string does and does not carry
 
-Reading is narrower than writing, and this is the honest boundary of the v1
-shape. A `Bitmap` does not remember where it came from, so the host remembers
+Reading is narrower than writing, and this is the honest boundary of the
+string shape. A `Bitmap` does not remember where it came from, so the host remembers
 instead: `AvnImageSource` keeps the string that produced an image in a weak table
 and hands it back on read. Consequences:
 
@@ -400,8 +395,7 @@ and hands it back on read. Consequences:
 No `IAvnBitmap`, `IAvnImageSource` or image-list interface is minted, so this
 costs `IAvnImage` two slots plus the three enums and nothing else. Projecting a
 real image object — with pixel size, DPI, and construction from a byte buffer —
-needs its own separately named, separately versioned interface and is left to a
-later wave.
+needs its own interface and is left to a later wave.
 
 ## ToolTip
 
@@ -648,70 +642,20 @@ wave.
 `ClockIdentifier` is a plain string that Avalonia validates as `"12HourClock"` or
 `"24HourClock"`; an unknown value fails the call because the managed setter throws.
 
-## Versioning of the widened vtables
+## Flattened vtables
+
 Nano-COM vtables are flattened, so widening a base type moves every slot of every
-interface that inherits from it. Each wave therefore republishes the affected
-interfaces at a new `abiVersion` under a fresh IID; the retired IIDs are never
-reused. An interface whose flattened vtable is byte-identical keeps its IID, so a
-stale consumer that queries for it still gets exactly the contract it was
-compiled against.
+interface that inherits from it. Interfaces are unversioned (see
+[COMPATIBILITY.md](COMPATIBILITY.md#native-abi)): the affected interfaces keep
+their names and IIDs and change in place, because the host and the crates that
+call through those vtables always ship together. The collection interfaces and
+the event handler interfaces carry interface pointers rather than the widened
+layouts, so they do not change when a control interface grows.
 
-| Wave     | Widened                                                     | Version | Unchanged |
-| -------- | ----------------------------------------------------------- | ------- | --------- |
-| Layout   | `IAvnStyledElement`, `IAvnControl` and everything below them | 2 → 3   | `IAvnAvaloniaObject` (2) |
-| Chrome   | `IAvnBorder`, `IAvnPanel`, `IAvnTemplatedControl`, `IAvnTextBlock` and everything below them | 3 → 4 | `IAvnAvaloniaObject` (2), `IAvnStyledElement`, `IAvnControl`, `IAvnDecorator` (3) |
-| Completeness | `IAvnContentControl`, `IAvnButton`, `IAvnToggleButton`, `IAvnListBox`, `IAvnComboBox` and everything below them | 4 → 5 | `IAvnAvaloniaObject` (2), `IAvnStyledElement`, `IAvnControl`, `IAvnDecorator` (3), `IAvnBorder`, `IAvnPanel`, `IAvnGrid`, `IAvnCanvas`, `IAvnDockPanel`, `IAvnStackPanel`, `IAvnTextBlock`, `IAvnTemplatedControl`, `IAvnItemsControl`, `IAvnSelectingItemsControl`, `IAvnTextBox`, `IAvnRangeBase`, `IAvnSlider`, `IAvnProgressBar` (4) |
-| Definitions | `IAvnGrid` alone | 4 → 5 | everything else, including `IAvnPanel`, `IAvnCanvas`, `IAvnDockPanel`, `IAvnStackPanel` (4) |
-| New controls A | nothing — seven brand-new interfaces | — | every interface that shipped before, at the version it last published |
-| New controls B | nothing — ten brand-new interfaces | — | every interface that shipped before, at the version it last published |
-| New controls C | nothing — seven brand-new interfaces | — | every interface that shipped before, at the version it last published |
-
-Nothing in the object model derives from `Grid`, so the definitions wave moves
-exactly one interface. `IAvnGrid` has published versions 1–4 and now publishes 5;
-all four earlier IIDs are retired for good.
-
-Wave A is the first wave that widens **nothing**. `IAvnImage`,
-`IAvnHeaderedItemsControl`, `IAvnTabControl`, `IAvnTabItem`, `IAvnTreeView`,
-`IAvnTreeViewItem`, `IAvnToolTip` and `IAvnToolTipStatics` are all new, so they
-publish at version 1, and every interface they derive from keeps the IID it last
-shipped. A consumer compiled against the definitions wave can keep every
-interface pointer it already holds.
-
-Wave B widens nothing either. `IAvnFlyoutBase`, `IAvnPopupFlyoutBase`,
-`IAvnFlyout`, `IAvnMenuBase`, `IAvnMenu`, `IAvnHeaderedSelectingItemsControl`,
-`IAvnMenuItem`, `IAvnSplitView`, `IAvnDatePicker` and `IAvnTimePicker` are all new
-and publish at version 1. The flyout trio hangs off `IAvnAvaloniaObject` rather
-than off `IAvnControl`, so it cannot move a control interface even in principle;
-`IAvnHeaderedSelectingItemsControl` is inserted below `IAvnSelectingItemsControl`
-and nothing that shipped derives from it. Even the wave A interfaces are unmoved,
-so a consumer compiled against wave A keeps every control pointer it holds.
-
-`IAvnControlFactory` grew `create_solid_color_brush` and moved from version 1 to
-2. Neither the completeness nor the definitions wave adds a factory slot, so it
-stayed at 2; wave A gives it a creator per new control plus
-`get_tool_tip_statics`, so it moves to 3; wave B gives it a creator per
-constructible new type — `Flyout`, `Menu`, `MenuItem`,
-`HeaderedSelectingItemsControl`, `SplitView`, `DatePicker` and `TimePicker` — so it
-moves to 4. Wave C gives it a creator per constructible new type — `WrapPanel`,
-`UniformGrid`, `RelativePanel`, `Viewbox`, `Thumb` and `GridSplitter`
-— plus `get_relative_panel_statics`, so it moves to 5. The abstract bases
-(`FlyoutBase`, `PopupFlyoutBase`, `MenuBase`) get no creator; they are reachable
-by `query_interface` only. `IAvnBrush` is brand new, so it starts at version 1.
-The collection interfaces and the event handler interfaces are unchanged, because
-they carry interface pointers rather than the widened layouts.
-
-The gradient wave grows `IAvnControlFactory` again, for
-`create_linear_gradient_brush` and `create_radial_gradient_brush`, so it
-publishes another new IID. `IAvnGradientBrush`, `IAvnLinearGradientBrush` and
-`IAvnRadialGradientBrush` are brand new, so each starts at version 1; `IAvnBrush`
-itself is untouched and keeps the IID it published with.
-
-`Decorator` sits between `Control` and `Border`. The chrome wave added members to
-`Border`, not to `Decorator`, and nothing was added to `Decorator`'s bases either,
-so `IAvnDecorator` keeps the version 3 IID it published with the layout wave even
-though `IAvnBorder` moved to 4. `ListBox` and `ComboBox` derive from
-`SelectingItemsControl`, not from `ContentControl`, so they moved to 5 for their
-own members while `IAvnItemsControl` and `IAvnSelectingItemsControl` stayed at 4.
+Abstract bases (`FlyoutBase`, `PopupFlyoutBase`, `MenuBase`) get no
+`IAvnControlFactory` creator; they are reachable by `query_interface` only. The
+flyout family hangs off `IAvnAvaloniaObject` rather than off `IAvnControl`, so
+widening a control interface never changes a flyout interface.
 
 ## Host constraint: same-assembly structs
 

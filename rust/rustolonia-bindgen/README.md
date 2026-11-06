@@ -10,7 +10,6 @@ sources in the released crates can be reproduced.
 
 ```text
 rustolonia-bindgen [--check] <projection.ir.json> <sys-output> [safe-output]
-rustolonia-bindgen --write-baseline <projection.ir.json> <header> <baseline.json>
 ```
 
 `--check` compares instead of writing and fails if the outputs are stale.

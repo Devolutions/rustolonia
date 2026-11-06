@@ -3,7 +3,7 @@
 const HEADER: &str = include_str!("../include/avalonia-rust-abi.h");
 
 #[test]
-fn icons_and_table_view_publish_at_version_one() {
+fn icons_and_table_view_publish_their_members() {
     for expected in [
         "*set_data)(IAvnPathIcon* self, const uint16_t* value)",
         "*set_can_user_resize_columns)(IAvnTableView* self, int32_t value)",
@@ -11,9 +11,6 @@ fn icons_and_table_view_publish_at_version_one() {
         "*create_path_icon)(IAvnControlFactory* self, IAvnPathIcon** value)",
         "*create_table_view)(IAvnControlFactory* self, IAvnTableView** value)",
         "*create_table_view_column)(IAvnControlFactory* self, IAvnTableViewColumn** value)",
-        "#define I_AVN_PATH_ICON_ABI_VERSION 12",
-        "#define I_AVN_TABLE_VIEW_ABI_VERSION 16",
-        "#define I_AVN_CONTROL_FACTORY_ABI_VERSION 14",
     ] {
         assert!(HEADER.contains(expected), "header is missing `{expected}`");
     }

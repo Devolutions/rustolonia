@@ -12,7 +12,7 @@ using Avalonia.VisualTree;
 namespace Avalonia.Host.Com;
 
 /// <summary>Stage 34: creates Rust-drawn pixel surfaces.</summary>
-public partial class AvnApplication : IAvnApplication7
+public partial class AvnApplication
 {
     public int CreatePixelSurface(IAvnPixelSurfaceHandler? handler, out IAvnPixelSurface? surface)
     {

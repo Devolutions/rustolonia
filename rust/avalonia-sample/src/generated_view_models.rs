@@ -70,7 +70,7 @@ impl SampleViewModelSink {
     pub fn add_core_ticks(&self, value: i64) -> crate::Result<()> { self.0.add_integer(9, value) }
     pub fn insert_core_ticks(&self, index: i32, value: i64) -> crate::Result<()> { self.0.insert_integer(9, index, value) }
     pub fn replace_core_ticks(&self, index: i32, value: i64) -> crate::Result<()> { self.0.replace_integer(9, index, value) }
-    /// True when the attached host implements the scalar-number sink capability.
+    /// True when the attached sink reports the scalar-number capability.
     /// The reflectable (dynamic-binding) adapter deliberately does not.
     pub fn supports_number_collections(&self) -> bool { self.0.supports_number_collections() }
     pub fn remove_items(&self, index: i32) -> crate::Result<()> { self.0.remove_string_at(1, index) }
@@ -143,7 +143,7 @@ impl SampleViewModelSink {
     pub fn set_log_window_status_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(15, message) }
     pub fn set_show_trace_details_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(16, message) }
     pub fn set_clipboard_status_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(17, message) }
-    /// True when the attached host implements the stage 30 sink capability.
+    /// True when the attached sink reports the richer-shape capability.
     /// The reflectable (dynamic-binding) adapter deliberately does not.
     pub fn supports_richer_shapes(&self) -> bool { self.0.supports_richer_shapes() }
     pub fn set_severity_counts(&self, key: impl Into<crate::MapKey>, value: i64) -> crate::Result<()> { self.0.map_set_integer(1, key.into(), value) }

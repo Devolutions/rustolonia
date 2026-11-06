@@ -8,7 +8,7 @@ namespace Avalonia.Host.Com;
 /// <summary>
 /// A <see cref="NativeMenu"/> Rust builds item by item, numbering the items
 /// itself. Shared by Rust-built tray icons (stage 34) and Rust-built window and
-/// application menus (<see cref="IAvnApplication15"/>). UI thread only.
+/// application menus (<see cref="IAvnApplication.SetApplicationMenu"/>). UI thread only.
 /// </summary>
 /// <remarks>
 /// <para>

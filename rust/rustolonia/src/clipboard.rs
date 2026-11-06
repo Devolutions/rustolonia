@@ -1,9 +1,8 @@
 //! Stage 31 clipboard commands for Rust consumers.
 //!
-//! Everything here goes through Avalonia's own clipboard abstraction over the
-//! separately versioned `IAvnApplication4` capability. Plain-text write and
-//! read still use the frozen `IAvnApplication` methods; this module adds
-//! clearing, multi-format writes and reading file entries back as the same
+//! Everything here goes through Avalonia's own clipboard abstraction over
+//! `IAvnApplication`'s clipboard commands. Plain-text write and read use the
+//! original text methods; this module adds clearing, multi-format writes and reading file entries back as the same
 //! immutable [`StorageItem`] snapshots stage 29 produces.
 //!
 //! Every operation is asynchronous. A clipboard read can block for as long as
@@ -174,15 +173,10 @@ fn decode_files(
 }
 
 impl AppContext {
-    /// Queries the stage 31 clipboard command capability.
-    fn clipboard_capability(&self) -> Result<sys::ComPtr<sys::IAvnApplication4>> {
-        Ok(self.application().clipboard()?)
-    }
-
     /// Reports what this window's clipboard supports.
     pub fn clipboard_capabilities(&self, window: &Window) -> Result<ClipboardCapabilities> {
         let bits = self
-            .clipboard_capability()?
+            .application()
             .clipboard_capabilities(Some(&window.raw))?;
         Ok(ClipboardCapabilities::from_bits(bits))
     }
@@ -196,7 +190,7 @@ impl AppContext {
         if data.is_empty() {
             return Err(Error::InvalidAsyncValue);
         }
-        let capability = self.clipboard_capability()?;
+        let capability = self.application();
         let payload = capability.create_clipboard_data()?;
         if let Some(text) = data.text_value() {
             payload.set_text(Some(&utf16(text)))?;
@@ -217,7 +211,7 @@ impl AppContext {
 
     /// Clears the clipboard.
     pub fn clipboard_clear(&self, window: &Window) -> Result<AsyncOperation<()>> {
-        let capability = self.clipboard_capability()?;
+        let capability = self.application();
         let window = window.raw.clone();
         let application = self.application().clone();
         AsyncOperation::start(
@@ -232,7 +226,7 @@ impl AppContext {
     /// A clipboard that carries no files completes successfully with an empty
     /// list; only a real platform failure is an error.
     pub fn clipboard_read_files(&self, window: &Window) -> Result<ClipboardFilesOperation> {
-        let capability = self.clipboard_capability()?;
+        let capability = self.application();
         let state = Arc::new(Mutex::new(CompletionSlot::default()));
         let completion_state = state.clone();
         let completion = sys::storage_completion(move |arguments| {

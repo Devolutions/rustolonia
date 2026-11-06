@@ -7,7 +7,7 @@ using System.Runtime.InteropServices.Marshalling;
 namespace Avalonia.Host.Com;
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("907404D5-1DE4-574D-990E-2D8A79373D6D")]
+[Guid("2BCB83F7-B59E-5F2E-8A3A-322D5D077275")]
 public partial interface IAvnButtonSpinner : IAvnSpinner
 {
     [PreserveSig]

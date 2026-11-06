@@ -7,12 +7,6 @@ fn main() -> ExitCode {
     let args: Vec<_> = env::args_os().collect();
     if args
         .get(1)
-        .is_some_and(|argument| argument == "--write-baseline")
-    {
-        return write_baseline(&args[2..]);
-    }
-    if args
-        .get(1)
         .is_some_and(|argument| argument == "--compile-axaml")
     {
         return compile_axaml_cli(&args[2..]);
@@ -88,54 +82,6 @@ fn main() -> ExitCode {
     }
 
     ExitCode::SUCCESS
-}
-
-/// Rewrites the frozen released-ABI snapshot from the current header and IR.
-/// Run only as part of an intentional ABI release wave; the regenerated
-/// baseline makes the change auditable in review and keeps the identity
-/// contract test green afterwards.
-fn write_baseline(args: &[std::ffi::OsString]) -> ExitCode {
-    if args.len() != 3 {
-        eprintln!(
-            "Usage: rustolonia-bindgen --write-baseline <projection.ir.json> <abi-header> <abi-baseline.json>"
-        );
-        return ExitCode::from(2);
-    }
-    let ir = match fs::read_to_string(&args[0]) {
-        Ok(value) => value,
-        Err(error) => {
-            eprintln!("Failed to read projection IR: {error}");
-            return ExitCode::FAILURE;
-        }
-    };
-    let header = match fs::read_to_string(&args[1]) {
-        Ok(value) => value,
-        Err(error) => {
-            eprintln!("Failed to read native ABI header: {error}");
-            return ExitCode::FAILURE;
-        }
-    };
-    let existing = match fs::read_to_string(&args[2]) {
-        Ok(value) => value,
-        Err(error) => {
-            eprintln!("Failed to read existing ABI baseline: {error}");
-            return ExitCode::FAILURE;
-        }
-    };
-    match rustolonia_bindgen::regenerate_baseline(&ir, &header, &existing) {
-        Ok(json) => {
-            if let Err(error) = fs::write(&args[2], json) {
-                eprintln!("Failed to write ABI baseline: {error}");
-                return ExitCode::FAILURE;
-            }
-            println!("Regenerated the released ABI baseline.");
-            ExitCode::SUCCESS
-        }
-        Err(error) => {
-            eprintln!("Failed to regenerate ABI baseline: {error}");
-            ExitCode::FAILURE
-        }
-    }
 }
 
 fn compile_axaml_cli(args: &[std::ffi::OsString]) -> ExitCode {

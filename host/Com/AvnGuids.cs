@@ -12,9 +12,7 @@ internal static class AvnGuids
     public const string IAvnResourceValue = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4D16";
     public const string IAvnAsyncCompletion = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4D17";
 
-    // Stage 29 desktop file integration. These are a separately versioned
-    // capability: nothing below is ever added to an already published vtable.
-    public const string IAvnApplication3 = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4D50";
+    // Desktop file integration.
     public const string IAvnFilePickerOptions = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4D51";
     public const string IAvnStorageItem = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4D52";
     public const string IAvnStorageItemList = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4D53";
@@ -22,47 +20,21 @@ internal static class AvnGuids
     public const string IAvnFileDropHandler = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4D55";
     public const string IAvnActivationHandler = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4D56";
 
-    // Stage 31 clipboard commands. Another separately versioned capability;
-    // the stage 29 storage snapshot interfaces are reused as-is for reading
-    // file entries back, and nothing below is added to a published vtable.
-    public const string IAvnApplication4 = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4D60";
+    // Clipboard payloads.
     public const string IAvnClipboardData = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4D61";
 
-    // Stage 32 modal dialog activation. Another separately versioned capability;
-    // the completion rides the shared async operation registry, and nothing below
-    // is added to a published vtable.
-    public const string IAvnApplication5 = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4D70";
-
-    // Stage 33 desktop shell integration: shutdown mode, tray icons and the
-    // window-level settings a capture tool needs. Another separately versioned
-    // capability; nothing below is added to a published vtable.
-    public const string IAvnApplication6 = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4D80";
-
-    // Stage 34 Rust-drawn surfaces: bitmap layers Rust fills and the raw
-    // pointer stream. Another separately versioned capability; nothing below is
-    // added to a published vtable.
-    public const string IAvnApplication7 = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4D90";
+    // Rust-drawn surfaces and code-first tray icons.
     public const string IAvnPixelSurface = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4D91";
     public const string IAvnPixelSurfaceHandler = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4D92";
     public const string IAvnShellTray = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4D93";
     public const string IAvnShellTrayHandler = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4D94";
 
-    // Stage 35 native-window operations. Queried as a separate capability.
-    public const string IAvnApplication8 = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DA0";
-    public const string IAvnApplication9 = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DA1";
-    public const string IAvnApplication10 = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DA2";
+    // Native-window callbacks.
     public const string IAvnNativePopupHandler = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DA3";
-    public const string IAvnApplication11 = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DA4";
     public const string IAvnTerminationHandler = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DA5";
-    public const string IAvnApplication12 = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DA6";
     public const string IAvnFileDragHandler = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DA7";
-    public const string IAvnApplication13 = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DA8";
-    public const string IAvnApplication14 = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DA9";
 
-    // Code-first native menus: Rust-built window and application menus.
-    // Another separately versioned capability; the tray's published
-    // IAvnShellTray is unchanged.
-    public const string IAvnApplication15 = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DAA";
+    // Code-first native menus.
     public const string IAvnNativeMenu = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DAB";
     public const string IAvnNativeMenuHandler = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DAC";
 }

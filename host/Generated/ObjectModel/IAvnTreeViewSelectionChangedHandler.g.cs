@@ -7,7 +7,7 @@ using System.Linq;
 namespace Avalonia.Host.Com;
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("A29EDF0E-EBE4-5118-99EB-615AE00A6BD5")]
+[Guid("27F32F75-8F72-51BA-87AA-A6A3F9CAB0B4")]
 public partial interface IAvnTreeViewSelectionChangedArgs
 {
     [PreserveSig]
@@ -96,7 +96,7 @@ public sealed partial class AvnTreeViewSelectionChangedArgs : IAvnTreeViewSelect
 }
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("9F8E36AD-6E33-5211-B570-EB8B0C949511")]
+[Guid("DE7E6F7E-936A-50FC-9E92-B83EEA26B83F")]
 public partial interface IAvnTreeViewSelectionChangedHandler
 {
     [PreserveSig]

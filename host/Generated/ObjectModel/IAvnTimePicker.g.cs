@@ -7,7 +7,7 @@ using System.Runtime.InteropServices.Marshalling;
 namespace Avalonia.Host.Com;
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("B5A38C06-2DB2-5199-83DC-05C28A15DA69")]
+[Guid("8BDE28C7-E81C-5710-9ACC-B0C1E7D85C67")]
 public partial interface IAvnTimePicker : IAvnTemplatedControl
 {
     [PreserveSig]

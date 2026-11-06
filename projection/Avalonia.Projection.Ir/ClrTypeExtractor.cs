@@ -85,70 +85,65 @@ public static class ClrTypeExtractor
             SourceAssembly = string.Join(
                 ",",
                 selected.Select(t => t.Assembly.GetName().Name).Distinct(StringComparer.Ordinal)),
-            FactoryIid = CreateDeterministicIid(
-                $"{policy.ProjectionNamespace}.IAvnControlFactory",
-                policy.GetAbiVersion($"{policy.ProjectionNamespace}.IAvnControlFactory")),
-            FactoryAbiVersion = policy.GetAbiVersion($"{policy.ProjectionNamespace}.IAvnControlFactory"),
+            FactoryIid = CreateDeterministicIid($"{policy.ProjectionNamespace}.IAvnControlFactory"),
             BrushInterfaceName = usesBrush ? brushInterfaceName : null,
             BrushInterfaceIid = usesBrush
-                ? CreateDeterministicIid(brushInterfaceName, policy.GetAbiVersion(brushInterfaceName))
+                ? CreateDeterministicIid(brushInterfaceName)
                 : null,
-            BrushAbiVersion = policy.GetAbiVersion(brushInterfaceName),
             GradientBrushInterfaceName = usesBrush ? gradientBrushInterfaceName : null,
             GradientBrushInterfaceIid = usesBrush
-                ? CreateDeterministicIid(gradientBrushInterfaceName, 1)
+                ? CreateDeterministicIid(gradientBrushInterfaceName)
                 : null,
             LinearGradientBrushInterfaceName = usesBrush ? linearGradientBrushInterfaceName : null,
             LinearGradientBrushInterfaceIid = usesBrush
-                ? CreateDeterministicIid(linearGradientBrushInterfaceName, 1)
+                ? CreateDeterministicIid(linearGradientBrushInterfaceName)
                 : null,
             RadialGradientBrushInterfaceName = usesBrush ? radialGradientBrushInterfaceName : null,
             RadialGradientBrushInterfaceIid = usesBrush
-                ? CreateDeterministicIid(radialGradientBrushInterfaceName, 1)
+                ? CreateDeterministicIid(radialGradientBrushInterfaceName)
                 : null,
             CommandInterfaceName = usesCommand ? commandInterfaceName : null,
             CommandInterfaceIid = usesCommand
-                ? CreateDeterministicIid(commandInterfaceName, policy.GetAbiVersion(commandInterfaceName))
+                ? CreateDeterministicIid(commandInterfaceName)
                 : null,
-            CommandAbiVersion = policy.GetAbiVersion(commandInterfaceName),
             CommandHandlerInterfaceName = usesCommand ? commandHandlerInterfaceName : null,
             CommandHandlerInterfaceIid = usesCommand
-                ? CreateDeterministicIid(commandHandlerInterfaceName, 1)
+                ? CreateDeterministicIid(commandHandlerInterfaceName)
                 : null,
             TemplateInterfaceName = usesTemplate ? templateInterfaceName : null,
             TemplateInterfaceIid = usesTemplate
-                ? CreateDeterministicIid(templateInterfaceName, policy.GetAbiVersion(templateInterfaceName))
+                ? CreateDeterministicIid(templateInterfaceName)
                 : null,
             ItemFilterInterfaceName = usesItemFilter ? itemFilterInterfaceName : null,
             ItemFilterInterfaceIid = usesItemFilter
-                ? CreateDeterministicIid(itemFilterInterfaceName, 1)
+                ? CreateDeterministicIid(itemFilterInterfaceName)
                 : null,
             TextFilterInterfaceName = usesTextFilter ? textFilterInterfaceName : null,
             TextFilterInterfaceIid = usesTextFilter
-                ? CreateDeterministicIid(textFilterInterfaceName, 1)
+                ? CreateDeterministicIid(textFilterInterfaceName)
                 : null,
             NotificationInterfaceName = usesNotification ? notificationInterfaceName : null,
             NotificationInterfaceIid = usesNotification
-                ? CreateDeterministicIid(notificationInterfaceName, 1)
+                ? CreateDeterministicIid(notificationInterfaceName)
                 : null,
             NotificationHandlerInterfaceIid = usesNotification
-                ? CreateDeterministicIid($"{policy.ProjectionNamespace}.IAvnNotificationActionHandler", 1)
+                ? CreateDeterministicIid($"{policy.ProjectionNamespace}.IAvnNotificationActionHandler")
                 : null,
             ItemSelectorInterfaceName = usesItemSelector ? itemSelectorInterfaceName : null,
             ItemSelectorInterfaceIid = usesItemSelector
-                ? CreateDeterministicIid(itemSelectorInterfaceName, 1)
+                ? CreateDeterministicIid(itemSelectorInterfaceName)
                 : null,
             TextSelectorInterfaceName = usesTextSelector ? textSelectorInterfaceName : null,
             TextSelectorInterfaceIid = usesTextSelector
-                ? CreateDeterministicIid(textSelectorInterfaceName, 1)
+                ? CreateDeterministicIid(textSelectorInterfaceName)
                 : null,
             PopupPlacementInterfaceName = usesPopupPlacement ? popupPlacementInterfaceName : null,
             PopupPlacementInterfaceIid = usesPopupPlacement
-                ? CreateDeterministicIid(popupPlacementInterfaceName, 1)
+                ? CreateDeterministicIid(popupPlacementInterfaceName)
                 : null,
             AsyncPopulatorInterfaceName = usesAsyncPopulator ? asyncPopulatorInterfaceName : null,
             AsyncPopulatorInterfaceIid = usesAsyncPopulator
-                ? CreateDeterministicIid(asyncPopulatorInterfaceName, 1)
+                ? CreateDeterministicIid(asyncPopulatorInterfaceName)
                 : null,
             AsyncPopulatorCompletionInterfaceName = usesAsyncPopulator
                 ? $"{policy.ProjectionNamespace}.{AsyncMarshalling.AsyncPopulatorCompletionInterfaceName}"
@@ -158,7 +153,7 @@ public static class ClrTypeExtractor
                 : null,
             DialogCompletionInterfaceName = usesDialogCompletion ? dialogCompletionInterfaceName : null,
             DialogCompletionInterfaceIid = usesDialogCompletion
-                ? CreateDeterministicIid(dialogCompletionInterfaceName, 1)
+                ? CreateDeterministicIid(dialogCompletionInterfaceName)
                 : null,
             Types = types,
             Enums = ExtractEnums(selected, policy),
@@ -167,10 +162,16 @@ public static class ClrTypeExtractor
         };
     }
 
-    public static string CreateDeterministicIid(string projectedFullName, int abiVersion = 1)
+    /// <summary>
+    /// Derives an interface's IID from its projected name alone. Interfaces are
+    /// unversioned: a changed interface keeps its name and IID, because the
+    /// host and the Rust crates always ship together and the ABI header
+    /// fingerprint rejects any mismatched pair at load time.
+    /// </summary>
+    public static string CreateDeterministicIid(string projectedFullName)
     {
         var hash = SHA256.HashData(Encoding.UTF8.GetBytes(
-            $"Avalonia.Rust.ABI/{projectedFullName}/v{abiVersion}"));
+            $"Avalonia.Rust.ABI/{projectedFullName}"));
         Span<byte> guidBytes = stackalloc byte[16];
         hash.AsSpan(0, guidBytes.Length).CopyTo(guidBytes);
         guidBytes[7] = (byte)((guidBytes[7] & 0x0f) | 0x50);
@@ -223,11 +224,8 @@ public static class ClrTypeExtractor
                 Kind = kind,
                 InterfaceName = interfaceName,
                 InterfaceIid = kind is MarshallingKind.ComCollection or MarshallingKind.Brush
-                    ? CreateDeterministicIid(interfaceName!, policy.GetAbiVersion(interfaceName!))
+                    ? CreateDeterministicIid(interfaceName!)
                     : null,
-                InterfaceAbiVersion = kind is MarshallingKind.ComCollection or MarshallingKind.Brush
-                    ? policy.GetAbiVersion(interfaceName!)
-                    : 1,
                 ElementInterfaceName = policy.TryGetOverride(type, property, out var memberOverride)
                     ? memberOverride.ElementInterfaceName
                     : null,
@@ -399,10 +397,7 @@ public static class ClrTypeExtractor
             {
                 Name = @event.Name,
                 HandlerInterfaceName = handlerInterfaceName,
-                HandlerInterfaceIid = CreateDeterministicIid(
-                    handlerInterfaceName,
-                    policy.GetAbiVersion(handlerInterfaceName)),
-                HandlerInterfaceAbiVersion = policy.GetAbiVersion(handlerInterfaceName),
+                HandlerInterfaceIid = CreateDeterministicIid(handlerInterfaceName),
                 PayloadKind = eventProjection.PayloadKind,
                 ManagedHandlerTypeName = @event.EventHandlerType is { } handlerType
                     ? ManagedTypeName(handlerType)
@@ -463,10 +458,7 @@ public static class ClrTypeExtractor
             FullName = projectedFullName,
             ManagedFullName = type.FullName ?? type.Name,
             Kind = ProjectedTypeKind.Class,
-            Iid = CreateDeterministicIid(
-                projectedFullName,
-                policy.GetProjectedTypeAbiVersion(projectedFullName)),
-            AbiVersion = policy.GetProjectedTypeAbiVersion(projectedFullName),
+            Iid = CreateDeterministicIid(projectedFullName),
             BaseFullName = FindProjectedBase(type.BaseType, selected, projectedNames),
             IsConstructible = !type.IsAbstract && type.GetConstructor(Type.EmptyTypes) is not null,
             Properties = properties,
@@ -932,10 +924,7 @@ public static class ClrTypeExtractor
                     OwnerName = owner.Name,
                     OwnerManagedFullName = owner.FullName!,
                     StaticsInterfaceName = staticsInterfaceName,
-                    StaticsInterfaceIid = CreateDeterministicIid(
-                        staticsInterfaceName,
-                        policy.GetAbiVersion(staticsInterfaceName)),
-                    StaticsInterfaceAbiVersion = policy.GetAbiVersion(staticsInterfaceName),
+                    StaticsInterfaceIid = CreateDeterministicIid(staticsInterfaceName),
                     Name = name,
                     Kind = kind,
                     ManagedTypeName = getter.ReturnType.FullName!,

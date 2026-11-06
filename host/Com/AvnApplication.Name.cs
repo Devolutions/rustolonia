@@ -2,7 +2,7 @@ using System;
 
 namespace Avalonia.Host.Com;
 
-public partial class AvnApplication : IAvnApplication14
+public partial class AvnApplication
 {
 #if !AVN_HOST_ANDROID && !AVN_HOST_IOS
     private string? _applicationName;

@@ -1,8 +1,6 @@
 //! Code-first native menus.
 //!
-//! `IAvnApplication15` is a separately versioned capability queried from
-//! `IAvnApplication`; nothing here is added to an already published vtable. It
-//! builds Avalonia `NativeMenu`s from Rust (`IAvnNativeMenu`, reporting clicks
+//! `IAvnApplication` builds Avalonia `NativeMenu`s from Rust (`IAvnNativeMenu`, reporting clicks
 //! to a Rust-implemented `IAvnNativeMenuHandler`) and attaches them as a
 //! window's menu bar or as the macOS application menu.
 
@@ -37,51 +35,7 @@ pub const NATIVE_MENU_FLAG_CHECKED: i32 = 1;
 pub const NATIVE_MENU_FLAG_DISABLED: i32 = 2;
 pub const NATIVE_MENU_FLAG_HIDDEN: i32 = 4;
 
-#[repr(C)]
-struct IAvnApplication15Vtbl {
-    query_interface: QueryInterface,
-    add_ref: AddRef,
-    release: AddRef,
-    create_native_menu: unsafe extern "system" fn(
-        *mut IAvnApplication15,
-        *mut IAvnNativeMenuHandler,
-        *mut *mut IAvnNativeMenu,
-    ) -> i32,
-    set_application_menu:
-        unsafe extern "system" fn(*mut IAvnApplication15, *mut IAvnNativeMenu) -> i32,
-    set_window_menu: unsafe extern "system" fn(
-        *mut IAvnApplication15,
-        *mut IAvnWindow,
-        *mut IAvnNativeMenu,
-    ) -> i32,
-    is_native_menu_exported:
-        unsafe extern "system" fn(*mut IAvnApplication15, *mut IAvnWindow, *mut i32) -> i32,
-    create_native_menu_bar:
-        unsafe extern "system" fn(*mut IAvnApplication15, *mut *mut IAvnControl) -> i32,
-}
-
-/// Creates native menus and attaches them to windows and the application.
-#[repr(C)]
-pub struct IAvnApplication15 {
-    vtbl: *const IAvnApplication15Vtbl,
-}
-
-unsafe impl ComInterface for IAvnApplication15 {
-    const IID: Guid = iid(0xAA);
-}
-
 impl ComPtr<IAvnApplication> {
-    /// Queries the separately versioned native menu capability.
-    pub fn native_menus(&self) -> Result<ComPtr<IAvnApplication15>> {
-        self.query_interface()
-    }
-}
-
-impl ComPtr<IAvnApplication15> {
-    fn vtbl(&self) -> &IAvnApplication15Vtbl {
-        unsafe { (*self.as_raw()).vtbl.as_ref().unwrap() }
-    }
-
     /// Creates an empty menu reporting clicks to `handler`, or one that does nothing.
     pub fn create_native_menu(
         &self,
@@ -292,8 +246,6 @@ pub fn native_menu_handler(
     )
 }
 
-/// Number of methods `IAvnApplication15` publishes after `IUnknown`.
-pub const IAVN_APPLICATION15_METHOD_COUNT: usize = 5;
 /// Number of methods `IAvnNativeMenu` publishes after `IUnknown`.
 pub const IAVN_NATIVE_MENU_METHOD_COUNT: usize = 3;
 /// Number of methods `IAvnNativeMenuHandler` publishes after `IUnknown`.
@@ -312,10 +264,6 @@ mod tests {
     #[test]
     fn vtables_have_expected_slot_counts() {
         assert_eq!(
-            3 + IAVN_APPLICATION15_METHOD_COUNT,
-            slots::<IAvnApplication15Vtbl>()
-        );
-        assert_eq!(
             3 + IAVN_NATIVE_MENU_METHOD_COUNT,
             slots::<IAvnNativeMenuVtbl>()
         );
@@ -326,11 +274,9 @@ mod tests {
     }
 
     #[test]
-    fn iids_follow_the_application_name_capability() {
-        assert_eq!(0xAA, IAvnApplication15::IID.data4[7]);
+    fn iids_are_stable() {
         assert_eq!(0xAB, IAvnNativeMenu::IID.data4[7]);
         assert_eq!(0xAC, IAvnNativeMenuHandler::IID.data4[7]);
-        assert_ne!(crate::IAvnApplication14::IID, IAvnApplication15::IID);
     }
 
     #[test]

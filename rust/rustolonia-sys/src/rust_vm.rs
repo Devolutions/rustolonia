@@ -22,27 +22,6 @@ const IAVN_RUST_VM_SINK_IID: Guid = Guid {
     data4: [0x9A, 0x77, 0x1F, 0x0C, 0x2B, 0x3A, 0x4D, 0x25],
 };
 
-/// A second, independently versioned sink interface carrying the transport
-/// added for nested view models, nullable values, collection insert/remove/
-/// replace/move/clear, command `CanExecute` state, and validation-error
-/// projection. Kept separate from `IAvnRustVmSink` (rather than extending its
-/// vtable) so an older generated adapter that only implements v1 fails a
-/// `QueryInterface` for this IID with a normal, explicit ABI error instead of
-/// corrupting an existing call site.
-const IAVN_RUST_VM_SINK2_IID: Guid = Guid {
-    data1: 0x6B2E8F10,
-    data2: 0x4C91,
-    data3: 0x4E3A,
-    data4: [0x9A, 0x77, 0x1F, 0x0C, 0x2B, 0x3A, 0x4D, 0x26],
-};
-
-const IAVN_RUST_VM_SINK3_IID: Guid = Guid {
-    data1: 0x6B2E8F10,
-    data2: 0x4C91,
-    data3: 0x4E3A,
-    data4: [0x9A, 0x77, 0x1F, 0x0C, 0x2B, 0x3A, 0x4D, 0x27],
-};
-
 const IAVN_RUST_VM_UPDATE_BATCH_IID: Guid = Guid {
     data1: 0x6B2E8F10,
     data2: 0x4C91,
@@ -55,39 +34,6 @@ const IAVN_RUST_VM_UPDATE_OPERATION_IID: Guid = Guid {
     data2: 0x4C91,
     data3: 0x4E3A,
     data4: [0x9A, 0x77, 0x1F, 0x0C, 0x2B, 0x3A, 0x4D, 0x29],
-};
-
-/// The batch's separately versioned ownership-commit capability. It is a
-/// distinct IID and vtable rather than an extension of
-/// `IAvnRustVmUpdateBatch`, so the immutable batch contract that already
-/// shipped is untouched. Managed code calls it exactly once, after every
-/// notification-free state store and before any notification is published.
-const IAVN_RUST_VM_UPDATE_BATCH2_IID: Guid = Guid {
-    data1: 0x6B2E8F10,
-    data2: 0x4C91,
-    data3: 0x4E3A,
-    data4: [0x9A, 0x77, 0x1F, 0x0C, 0x2B, 0x3A, 0x4D, 0x2A],
-};
-
-/// Stage 30 sink capability: observable keyed maps, structured command
-/// results, async command progress and windowed range publication. A new IID
-/// and vtable, so every already-published sink contract is untouched.
-const IAVN_RUST_VM_SINK4_IID: Guid = Guid {
-    data1: 0x6B2E8F10,
-    data2: 0x4C91,
-    data3: 0x4E3A,
-    data4: [0x9A, 0x77, 0x1F, 0x0C, 0x2B, 0x3A, 0x4D, 0x2B],
-};
-
-/// Scalar-number collection capability: appending, inserting and replacing
-/// `i64`/`f64` elements. A new IID and vtable, so every already-published sink
-/// contract is untouched. Removal, movement and clearing carry no element
-/// value and therefore stay on `IAvnRustVmSink2`.
-const IAVN_RUST_VM_SINK5_IID: Guid = Guid {
-    data1: 0x6B2E8F10,
-    data2: 0x4C91,
-    data3: 0x4E3A,
-    data4: [0x9A, 0x77, 0x1F, 0x0C, 0x2B, 0x3A, 0x4D, 0x2F],
 };
 
 /// One immutable realized range (or range reset) of a windowed collection.
@@ -108,17 +54,9 @@ const IAVN_RUST_RANGE_SOURCE_IID: Guid = Guid {
     data4: [0x9A, 0x77, 0x1F, 0x0C, 0x2B, 0x3A, 0x4D, 0x2D],
 };
 
-/// The Rust-implemented tracked-async capability managed code queries from
-/// `IAvnRustViewModel`. `cancel_async` deliberately does not take the
-/// view-model lock, so cancelling never blocks the UI thread behind a running
-/// worker.
-const IAVN_RUST_VIEW_MODEL2_IID: Guid = Guid {
-    data1: 0x6B2E8F10,
-    data2: 0x4C91,
-    data3: 0x4E3A,
-    data4: [0x9A, 0x77, 0x1F, 0x0C, 0x2B, 0x3A, 0x4D, 0x2E],
-};
-
+/// The managed adapter's sink. Every member exists on every sink; the optional
+/// transports a sink does not apply are reported by `get_capabilities` and
+/// otherwise fail with `E_NOTIMPL`.
 #[repr(C)]
 struct IAvnRustVmSinkVtbl {
     query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
@@ -129,7 +67,59 @@ struct IAvnRustVmSinkVtbl {
     set_boolean: unsafe extern "system" fn(*mut IAvnRustVmSink, i32, i32) -> i32,
     set_double: unsafe extern "system" fn(*mut IAvnRustVmSink, i32, f64) -> i32,
     add_string: unsafe extern "system" fn(*mut IAvnRustVmSink, i32, *const u16) -> i32,
+    set_null: unsafe extern "system" fn(*mut IAvnRustVmSink, i32) -> i32,
+    set_model: unsafe extern "system" fn(*mut IAvnRustVmSink, i32, *mut IAvnRustViewModel) -> i32,
+    add_model: unsafe extern "system" fn(*mut IAvnRustVmSink, i32, *mut IAvnRustViewModel) -> i32,
+    insert_string: unsafe extern "system" fn(*mut IAvnRustVmSink, i32, i32, *const u16) -> i32,
+    insert_model:
+        unsafe extern "system" fn(*mut IAvnRustVmSink, i32, i32, *mut IAvnRustViewModel) -> i32,
+    replace_string: unsafe extern "system" fn(*mut IAvnRustVmSink, i32, i32, *const u16) -> i32,
+    replace_model:
+        unsafe extern "system" fn(*mut IAvnRustVmSink, i32, i32, *mut IAvnRustViewModel) -> i32,
+    remove_at: unsafe extern "system" fn(*mut IAvnRustVmSink, i32, i32) -> i32,
+    move_item: unsafe extern "system" fn(*mut IAvnRustVmSink, i32, i32, i32) -> i32,
+    clear_collection: unsafe extern "system" fn(*mut IAvnRustVmSink, i32) -> i32,
+    set_command_enabled: unsafe extern "system" fn(*mut IAvnRustVmSink, i32, i32) -> i32,
+    set_property_error: unsafe extern "system" fn(*mut IAvnRustVmSink, i32, *const u16) -> i32,
+    submit_batch: unsafe extern "system" fn(*mut IAvnRustVmSink, *mut IAvnRustVmUpdateBatch) -> i32,
+    map_set_string:
+        unsafe extern "system" fn(*mut IAvnRustVmSink, i32, *const u16, i64, *const u16) -> i32,
+    map_set_integer:
+        unsafe extern "system" fn(*mut IAvnRustVmSink, i32, *const u16, i64, i64) -> i32,
+    map_set_boolean:
+        unsafe extern "system" fn(*mut IAvnRustVmSink, i32, *const u16, i64, i32) -> i32,
+    map_set_double:
+        unsafe extern "system" fn(*mut IAvnRustVmSink, i32, *const u16, i64, f64) -> i32,
+    map_set_model: unsafe extern "system" fn(
+        *mut IAvnRustVmSink,
+        i32,
+        *const u16,
+        i64,
+        *mut IAvnRustViewModel,
+    ) -> i32,
+    map_remove: unsafe extern "system" fn(*mut IAvnRustVmSink, i32, *const u16, i64) -> i32,
+    map_clear: unsafe extern "system" fn(*mut IAvnRustVmSink, i32) -> i32,
+    set_command_progress:
+        unsafe extern "system" fn(*mut IAvnRustVmSink, i32, i32, f64, *const u16) -> i32,
+    set_command_result:
+        unsafe extern "system" fn(*mut IAvnRustVmSink, i32, *mut IAvnRustViewModel) -> i32,
+    set_command_running: unsafe extern "system" fn(*mut IAvnRustVmSink, i32, i32) -> i32,
+    publish_range: unsafe extern "system" fn(*mut IAvnRustVmSink, *mut IAvnRustVmRangeBatch) -> i32,
+    add_integer: unsafe extern "system" fn(*mut IAvnRustVmSink, i32, i64) -> i32,
+    insert_integer: unsafe extern "system" fn(*mut IAvnRustVmSink, i32, i32, i64) -> i32,
+    replace_integer: unsafe extern "system" fn(*mut IAvnRustVmSink, i32, i32, i64) -> i32,
+    add_double: unsafe extern "system" fn(*mut IAvnRustVmSink, i32, f64) -> i32,
+    insert_double: unsafe extern "system" fn(*mut IAvnRustVmSink, i32, i32, f64) -> i32,
+    replace_double: unsafe extern "system" fn(*mut IAvnRustVmSink, i32, i32, f64) -> i32,
+    get_capabilities: unsafe extern "system" fn(*mut IAvnRustVmSink, *mut i32) -> i32,
 }
+
+/// Sink capability flag: keyed maps, command results/progress/running state
+/// and windowed ranges.
+pub const RUST_VM_SINK_RICHER_SHAPES: i32 = 1;
+
+/// Sink capability flag: integer and double collection elements.
+pub const RUST_VM_SINK_NUMBER_COLLECTIONS: i32 = 2;
 
 #[repr(C)]
 pub struct IAvnRustVmSink {
@@ -192,39 +182,21 @@ impl ComPtr<IAvnRustVmSink> {
             ))
         }
     }
+
+    /// Reads the sink's `RUST_VM_SINK_*` capability flags.
+    pub fn get_capabilities(&self) -> Result<i32> {
+        let mut capabilities = 0;
+        unsafe {
+            hresult::check(((*self.as_raw()).vtbl.as_ref().unwrap().get_capabilities)(
+                self.as_raw(),
+                &mut capabilities,
+            ))?;
+        }
+        Ok(capabilities)
+    }
 }
 
-#[repr(C)]
-struct IAvnRustVmSink2Vtbl {
-    query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
-    add_ref: unsafe extern "system" fn(*mut IUnknown) -> u32,
-    release: unsafe extern "system" fn(*mut IUnknown) -> u32,
-    set_null: unsafe extern "system" fn(*mut IAvnRustVmSink2, i32) -> i32,
-    set_model: unsafe extern "system" fn(*mut IAvnRustVmSink2, i32, *mut IAvnRustViewModel) -> i32,
-    add_model: unsafe extern "system" fn(*mut IAvnRustVmSink2, i32, *mut IAvnRustViewModel) -> i32,
-    insert_string: unsafe extern "system" fn(*mut IAvnRustVmSink2, i32, i32, *const u16) -> i32,
-    insert_model:
-        unsafe extern "system" fn(*mut IAvnRustVmSink2, i32, i32, *mut IAvnRustViewModel) -> i32,
-    replace_string: unsafe extern "system" fn(*mut IAvnRustVmSink2, i32, i32, *const u16) -> i32,
-    replace_model:
-        unsafe extern "system" fn(*mut IAvnRustVmSink2, i32, i32, *mut IAvnRustViewModel) -> i32,
-    remove_at: unsafe extern "system" fn(*mut IAvnRustVmSink2, i32, i32) -> i32,
-    move_item: unsafe extern "system" fn(*mut IAvnRustVmSink2, i32, i32, i32) -> i32,
-    clear_collection: unsafe extern "system" fn(*mut IAvnRustVmSink2, i32) -> i32,
-    set_command_enabled: unsafe extern "system" fn(*mut IAvnRustVmSink2, i32, i32) -> i32,
-    set_property_error: unsafe extern "system" fn(*mut IAvnRustVmSink2, i32, *const u16) -> i32,
-}
-
-#[repr(C)]
-pub struct IAvnRustVmSink2 {
-    vtbl: *const IAvnRustVmSink2Vtbl,
-}
-
-unsafe impl ComInterface for IAvnRustVmSink2 {
-    const IID: Guid = IAVN_RUST_VM_SINK2_IID;
-}
-
-impl ComPtr<IAvnRustVmSink2> {
+impl ComPtr<IAvnRustVmSink> {
     pub fn set_null(&self, property_id: i32) -> Result<()> {
         unsafe {
             hresult::check(((*self.as_raw()).vtbl.as_ref().unwrap().set_null)(
@@ -235,25 +207,7 @@ impl ComPtr<IAvnRustVmSink2> {
     }
 }
 
-#[repr(C)]
-struct IAvnRustVmSink3Vtbl {
-    query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
-    add_ref: unsafe extern "system" fn(*mut IUnknown) -> u32,
-    release: unsafe extern "system" fn(*mut IUnknown) -> u32,
-    submit_batch:
-        unsafe extern "system" fn(*mut IAvnRustVmSink3, *mut IAvnRustVmUpdateBatch) -> i32,
-}
-
-#[repr(C)]
-pub struct IAvnRustVmSink3 {
-    vtbl: *const IAvnRustVmSink3Vtbl,
-}
-
-unsafe impl ComInterface for IAvnRustVmSink3 {
-    const IID: Guid = IAVN_RUST_VM_SINK3_IID;
-}
-
-impl ComPtr<IAvnRustVmSink3> {
+impl ComPtr<IAvnRustVmSink> {
     pub fn submit_batch(&self, batch: &ComPtr<IAvnRustVmUpdateBatch>) -> Result<()> {
         unsafe {
             hresult::check(((*self.as_raw()).vtbl.as_ref().unwrap().submit_batch)(
@@ -264,69 +218,7 @@ impl ComPtr<IAvnRustVmSink3> {
     }
 }
 
-#[repr(C)]
-struct IAvnRustVmSink4Vtbl {
-    query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
-    add_ref: unsafe extern "system" fn(*mut IUnknown) -> u32,
-    release: unsafe extern "system" fn(*mut IUnknown) -> u32,
-    map_set_string:
-        unsafe extern "system" fn(*mut IAvnRustVmSink4, i32, *const u16, i64, *const u16) -> i32,
-    map_set_integer:
-        unsafe extern "system" fn(*mut IAvnRustVmSink4, i32, *const u16, i64, i64) -> i32,
-    map_set_boolean:
-        unsafe extern "system" fn(*mut IAvnRustVmSink4, i32, *const u16, i64, i32) -> i32,
-    map_set_double:
-        unsafe extern "system" fn(*mut IAvnRustVmSink4, i32, *const u16, i64, f64) -> i32,
-    map_set_model: unsafe extern "system" fn(
-        *mut IAvnRustVmSink4,
-        i32,
-        *const u16,
-        i64,
-        *mut IAvnRustViewModel,
-    ) -> i32,
-    map_remove: unsafe extern "system" fn(*mut IAvnRustVmSink4, i32, *const u16, i64) -> i32,
-    map_clear: unsafe extern "system" fn(*mut IAvnRustVmSink4, i32) -> i32,
-    set_command_progress:
-        unsafe extern "system" fn(*mut IAvnRustVmSink4, i32, i32, f64, *const u16) -> i32,
-    set_command_result:
-        unsafe extern "system" fn(*mut IAvnRustVmSink4, i32, *mut IAvnRustViewModel) -> i32,
-    set_command_running: unsafe extern "system" fn(*mut IAvnRustVmSink4, i32, i32) -> i32,
-    publish_range:
-        unsafe extern "system" fn(*mut IAvnRustVmSink4, *mut IAvnRustVmRangeBatch) -> i32,
-}
-
-#[repr(C)]
-pub struct IAvnRustVmSink4 {
-    vtbl: *const IAvnRustVmSink4Vtbl,
-}
-
-unsafe impl ComInterface for IAvnRustVmSink4 {
-    const IID: Guid = IAVN_RUST_VM_SINK4_IID;
-}
-
-#[repr(C)]
-struct IAvnRustVmSink5Vtbl {
-    query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
-    add_ref: unsafe extern "system" fn(*mut IUnknown) -> u32,
-    release: unsafe extern "system" fn(*mut IUnknown) -> u32,
-    add_integer: unsafe extern "system" fn(*mut IAvnRustVmSink5, i32, i64) -> i32,
-    insert_integer: unsafe extern "system" fn(*mut IAvnRustVmSink5, i32, i32, i64) -> i32,
-    replace_integer: unsafe extern "system" fn(*mut IAvnRustVmSink5, i32, i32, i64) -> i32,
-    add_double: unsafe extern "system" fn(*mut IAvnRustVmSink5, i32, f64) -> i32,
-    insert_double: unsafe extern "system" fn(*mut IAvnRustVmSink5, i32, i32, f64) -> i32,
-    replace_double: unsafe extern "system" fn(*mut IAvnRustVmSink5, i32, i32, f64) -> i32,
-}
-
-#[repr(C)]
-pub struct IAvnRustVmSink5 {
-    vtbl: *const IAvnRustVmSink5Vtbl,
-}
-
-unsafe impl ComInterface for IAvnRustVmSink5 {
-    const IID: Guid = IAVN_RUST_VM_SINK5_IID;
-}
-
-impl ComPtr<IAvnRustVmSink5> {
+impl ComPtr<IAvnRustVmSink> {
     pub fn add_integer(&self, collection_id: i32, value: i64) -> Result<()> {
         unsafe {
             hresult::check(((*self.as_raw()).vtbl.as_ref().unwrap().add_integer)(
@@ -410,7 +302,7 @@ impl MapKey {
     }
 }
 
-impl ComPtr<IAvnRustVmSink4> {
+impl ComPtr<IAvnRustVmSink> {
     pub fn map_set_string(&self, map_id: i32, key: &MapKey, value: &[u16]) -> Result<()> {
         let value = crate::terminated_utf16(value);
         let (text, integer) = key.parts();
@@ -575,9 +467,7 @@ impl ComPtr<IAvnRustVmUpdateBatch> {
             ))
         }
     }
-}
 
-impl ComPtr<IAvnRustVmUpdateBatch2> {
     /// Hands the batch's nested ownership to its producer. Managed code calls
     /// this exactly once, between the state commit and the notifications.
     pub fn commit_ownership(&self) -> Result<()> {
@@ -607,25 +497,6 @@ unsafe impl ComInterface for IAvnRustVmUpdateOperation {
     const IID: Guid = IAVN_RUST_VM_UPDATE_OPERATION_IID;
 }
 
-/// The batch's ownership-commit interface. Deliberately a separate vtable from
-/// [`IAvnRustVmUpdateBatch`]; the two are exposed by the same object.
-#[repr(C)]
-pub struct IAvnRustVmUpdateBatch2 {
-    vtbl: *const IAvnRustVmUpdateBatch2Vtbl,
-}
-
-unsafe impl ComInterface for IAvnRustVmUpdateBatch2 {
-    const IID: Guid = IAVN_RUST_VM_UPDATE_BATCH2_IID;
-}
-
-#[repr(C)]
-struct IAvnRustVmUpdateBatch2Vtbl {
-    query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
-    add_ref: unsafe extern "system" fn(*mut IUnknown) -> u32,
-    release: unsafe extern "system" fn(*mut IUnknown) -> u32,
-    commit_ownership: unsafe extern "system" fn(*mut IAvnRustVmUpdateBatch2) -> i32,
-}
-
 #[repr(C)]
 struct IAvnRustVmUpdateBatchVtbl {
     query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
@@ -651,6 +522,7 @@ struct IAvnRustVmUpdateBatchVtbl {
         *mut *mut IAvnRustViewModel,
     ) -> i32,
     complete: unsafe extern "system" fn(*mut IAvnRustVmUpdateBatch, i32, i32) -> i32,
+    commit_ownership: unsafe extern "system" fn(*mut IAvnRustVmUpdateBatch) -> i32,
 }
 
 #[repr(C)]
@@ -673,7 +545,7 @@ struct IAvnRustVmUpdateOperationVtbl {
     ) -> i32,
 }
 
-impl ComPtr<IAvnRustVmSink2> {
+impl ComPtr<IAvnRustVmSink> {
     pub fn set_model(
         &self,
         property_id: i32,
@@ -828,7 +700,7 @@ pub struct RustViewModelCallbacks {
 /// collection on a model, so the ID matters as much as the offset.
 pub type RustVmDroppedRange = (i32, i64);
 
-/// Stage 30 control callbacks. They are stored behind their *own* lock,
+/// Range and cancellation control callbacks. They are stored behind their *own* lock,
 /// separate from `RustViewModelCallbacks`, precisely because managed code
 /// invokes them on the UI thread while a Rust worker may be holding the
 /// view-model lock. Implementations must only enqueue or flip a flag; they
@@ -933,25 +805,33 @@ impl ComPtr<IAvnRustRangeSource> {
 }
 
 #[repr(C)]
-struct IAvnRustViewModel2Vtbl {
+struct IAvnRustViewModelVtbl {
     query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
     add_ref: unsafe extern "system" fn(*mut IUnknown) -> u32,
     release: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    attach: unsafe extern "system" fn(*mut IAvnRustViewModel, *mut IAvnRustVmSink) -> i32,
+    detach: unsafe extern "system" fn(*mut IAvnRustViewModel) -> i32,
+    set_string: unsafe extern "system" fn(*mut IAvnRustViewModel, i32, *const u16) -> i32,
+    set_integer: unsafe extern "system" fn(*mut IAvnRustViewModel, i32, i64) -> i32,
+    set_boolean: unsafe extern "system" fn(*mut IAvnRustViewModel, i32, i32) -> i32,
+    set_double: unsafe extern "system" fn(*mut IAvnRustViewModel, i32, f64) -> i32,
+    execute: unsafe extern "system" fn(*mut IAvnRustViewModel, i32, *const u16) -> i32,
+    begin_async: unsafe extern "system" fn(*mut IAvnRustViewModel, i32, *const u16) -> i32,
     begin_async_tracked:
-        unsafe extern "system" fn(*mut IAvnRustViewModel2, i32, *const u16, *mut i64) -> i32,
-    cancel_async: unsafe extern "system" fn(*mut IAvnRustViewModel2, i32, i64) -> i32,
+        unsafe extern "system" fn(*mut IAvnRustViewModel, i32, *const u16, *mut i64) -> i32,
+    cancel_async: unsafe extern "system" fn(*mut IAvnRustViewModel, i32, i64) -> i32,
 }
 
 #[repr(C)]
-pub struct IAvnRustViewModel2 {
-    vtbl: *const IAvnRustViewModel2Vtbl,
+pub struct IAvnRustViewModel {
+    vtbl: *const IAvnRustViewModelVtbl,
 }
 
-unsafe impl ComInterface for IAvnRustViewModel2 {
-    const IID: Guid = IAVN_RUST_VIEW_MODEL2_IID;
+unsafe impl ComInterface for IAvnRustViewModel {
+    const IID: Guid = IAVN_RUST_VIEW_MODEL_IID;
 }
 
-impl ComPtr<IAvnRustViewModel2> {
+impl ComPtr<IAvnRustViewModel> {
     /// Starts a tracked async invocation and returns its never-reused handle.
     pub fn begin_async_tracked(&self, command_id: i32, parameter: Option<&[u16]>) -> Result<i64> {
         let parameter = parameter.map(crate::terminated_utf16);
@@ -984,34 +864,9 @@ impl ComPtr<IAvnRustViewModel2> {
 }
 
 #[repr(C)]
-struct IAvnRustViewModelVtbl {
-    query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
-    add_ref: unsafe extern "system" fn(*mut IUnknown) -> u32,
-    release: unsafe extern "system" fn(*mut IUnknown) -> u32,
-    attach: unsafe extern "system" fn(*mut IAvnRustViewModel, *mut IAvnRustVmSink) -> i32,
-    detach: unsafe extern "system" fn(*mut IAvnRustViewModel) -> i32,
-    set_string: unsafe extern "system" fn(*mut IAvnRustViewModel, i32, *const u16) -> i32,
-    set_integer: unsafe extern "system" fn(*mut IAvnRustViewModel, i32, i64) -> i32,
-    set_boolean: unsafe extern "system" fn(*mut IAvnRustViewModel, i32, i32) -> i32,
-    set_double: unsafe extern "system" fn(*mut IAvnRustViewModel, i32, f64) -> i32,
-    execute: unsafe extern "system" fn(*mut IAvnRustViewModel, i32, *const u16) -> i32,
-    begin_async: unsafe extern "system" fn(*mut IAvnRustViewModel, i32, *const u16) -> i32,
-}
-
-#[repr(C)]
-pub struct IAvnRustViewModel {
-    vtbl: *const IAvnRustViewModelVtbl,
-}
-
-unsafe impl ComInterface for IAvnRustViewModel {
-    const IID: Guid = IAVN_RUST_VIEW_MODEL_IID;
-}
-
-#[repr(C)]
 struct RustViewModelObject {
     interface: IAvnRustViewModel,
     range_interface: IAvnRustRangeSource,
-    model2_interface: IAvnRustViewModel2,
     references: AtomicU32,
     callbacks: Mutex<RustViewModelCallbacks>,
     /// Deliberately a second lock: UI-thread control calls must never queue
@@ -1033,6 +888,8 @@ static RUST_VIEW_MODEL_VTBL: IAvnRustViewModelVtbl = IAvnRustViewModelVtbl {
     set_double,
     execute,
     begin_async,
+    begin_async_tracked,
+    cancel_async,
 };
 
 static RUST_RANGE_SOURCE_VTBL: IAvnRustRangeSourceVtbl = IAvnRustRangeSourceVtbl {
@@ -1043,22 +900,13 @@ static RUST_RANGE_SOURCE_VTBL: IAvnRustRangeSourceVtbl = IAvnRustRangeSourceVtbl
     request_range,
 };
 
-static RUST_VIEW_MODEL2_VTBL: IAvnRustViewModel2Vtbl = IAvnRustViewModel2Vtbl {
-    query_interface: model2_query_interface,
-    add_ref: model2_add_ref,
-    release: model2_release,
-    begin_async_tracked,
-    cancel_async,
-};
-
 pub fn rust_view_model(callbacks: RustViewModelCallbacks) -> ComPtr<IAvnRustViewModel> {
     rust_view_model_with_control(callbacks, RustViewModelControlCallbacks::default(), None)
 }
 
-/// Creates a view model that also exposes the stage 30 range-source and
-/// tracked-async capabilities. Both are separate IIDs on the same object and
-/// share its single reference count; the published `IAvnRustViewModel` vtable
-/// is untouched.
+/// Creates a view model with range-source and tracked-async control callbacks.
+/// The range source is a distinct interface on the same object and shares its
+/// single reference count.
 pub fn rust_view_model_with_control(
     callbacks: RustViewModelCallbacks,
     control: RustViewModelControlCallbacks,
@@ -1070,9 +918,6 @@ pub fn rust_view_model_with_control(
         },
         range_interface: IAvnRustRangeSource {
             vtbl: &RUST_RANGE_SOURCE_VTBL,
-        },
-        model2_interface: IAvnRustViewModel2 {
-            vtbl: &RUST_VIEW_MODEL2_VTBL,
         },
         references: AtomicU32::new(1),
         callbacks: Mutex::new(callbacks),
@@ -1092,12 +937,6 @@ unsafe fn model_from_range(this: *mut c_void) -> *mut RustViewModelObject {
         .cast::<RustViewModelObject>()
 }
 
-unsafe fn model_from_model2(this: *mut c_void) -> *mut RustViewModelObject {
-    this.cast::<u8>()
-        .sub(std::mem::offset_of!(RustViewModelObject, model2_interface))
-        .cast::<RustViewModelObject>()
-}
-
 unsafe fn model_query(
     object: *mut RustViewModelObject,
     iid: *const Guid,
@@ -1112,11 +951,6 @@ unsafe fn model_query(
     if *iid == IAVN_RUST_RANGE_SOURCE_IID {
         (*object).references.fetch_add(1, Ordering::Relaxed);
         *result = ptr::addr_of_mut!((*object).range_interface).cast();
-        return hresult::S_OK;
-    }
-    if *iid == IAVN_RUST_VIEW_MODEL2_IID {
-        (*object).references.fetch_add(1, Ordering::Relaxed);
-        *result = ptr::addr_of_mut!((*object).model2_interface).cast();
         return hresult::S_OK;
     }
     hresult::E_NOINTERFACE
@@ -1144,17 +978,6 @@ unsafe extern "system" fn range_query_interface(
     model_query(model_from_range(this.cast()), iid, result)
 }
 
-unsafe extern "system" fn model2_query_interface(
-    this: *mut IUnknown,
-    iid: *const Guid,
-    result: *mut *mut c_void,
-) -> i32 {
-    if this.is_null() || iid.is_null() || result.is_null() {
-        return hresult::E_POINTER;
-    }
-    model_query(model_from_model2(this.cast()), iid, result)
-}
-
 unsafe extern "system" fn add_ref(this: *mut IUnknown) -> u32 {
     let object = this.cast::<RustViewModelObject>();
     (*object).references.fetch_add(1, Ordering::Relaxed) + 1
@@ -1162,10 +985,6 @@ unsafe extern "system" fn add_ref(this: *mut IUnknown) -> u32 {
 
 unsafe extern "system" fn range_add_ref(this: *mut IUnknown) -> u32 {
     add_ref(model_from_range(this.cast()).cast())
-}
-
-unsafe extern "system" fn model2_add_ref(this: *mut IUnknown) -> u32 {
-    add_ref(model_from_model2(this.cast()).cast())
 }
 
 unsafe extern "system" fn release(this: *mut IUnknown) -> u32 {
@@ -1180,10 +999,6 @@ unsafe extern "system" fn release(this: *mut IUnknown) -> u32 {
 
 unsafe extern "system" fn range_release(this: *mut IUnknown) -> u32 {
     release(model_from_range(this.cast()).cast())
-}
-
-unsafe extern "system" fn model2_release(this: *mut IUnknown) -> u32 {
-    release(model_from_model2(this.cast()).cast())
 }
 
 /// Reads a windowed collection's identity. Takes only the control lock, so it
@@ -1246,7 +1061,7 @@ unsafe extern "system" fn request_range(
 
 /// Starts one tracked async invocation and hands back its never-reused handle.
 unsafe extern "system" fn begin_async_tracked(
-    this: *mut IAvnRustViewModel2,
+    this: *mut IAvnRustViewModel,
     command_id: i32,
     parameter: *const u16,
     operation_id: *mut i64,
@@ -1256,7 +1071,7 @@ unsafe extern "system" fn begin_async_tracked(
     }
     *operation_id = 0;
     let parameter = crate::clone_utf16(parameter);
-    let object = model_from_model2(this.cast());
+    let object = this.cast::<RustViewModelObject>();
     let handle = (*object).next_operation.fetch_add(1, Ordering::Relaxed);
     let result = ffi(|| {
         let mut tracked = (*object)
@@ -1267,9 +1082,8 @@ unsafe extern "system" fn begin_async_tracked(
             return begin(command_id, parameter, handle);
         }
         drop(tracked);
-        // No tracked entry point: fall back to the untracked one so a producer
-        // that only supports stage 27 async still runs, simply without
-        // cancellation.
+        // No tracked entry point: fall back to the untracked one so the
+        // command still runs, simply without cancellation.
         let mut callbacks = (*object)
             .callbacks
             .lock()
@@ -1285,7 +1099,7 @@ unsafe extern "system" fn begin_async_tracked(
 /// Signals cancellation. Takes only the control lock, so cancelling never
 /// blocks the UI thread behind the running worker it is cancelling.
 unsafe extern "system" fn cancel_async(
-    this: *mut IAvnRustViewModel2,
+    this: *mut IAvnRustViewModel,
     command_id: i32,
     operation_id: i64,
 ) -> i32 {
@@ -1293,7 +1107,7 @@ unsafe extern "system" fn cancel_async(
         if this.is_null() {
             return Err(hresult::Error(hresult::E_POINTER));
         }
-        let object = model_from_model2(this.cast());
+        let object = this.cast::<RustViewModelObject>();
         let mut control = (*object)
             .control
             .lock()
@@ -1389,7 +1203,7 @@ unsafe fn invoke(
     }
 }
 
-/// Immutable update operation used by the v3 batch transport. The numeric tags
+/// Immutable update operation carried by an update batch. The numeric tags
 /// intentionally match `Avalonia.Rust.RustVmUpdateKind`; unknown tags are
 /// rejected by managed code before it mutates presentation state.
 #[derive(Clone)]
@@ -1439,13 +1253,9 @@ struct RustVmBatchState {
     completion: Mutex<Option<RustVmBatchCompletion>>,
 }
 
-/// One allocation exposing two interfaces: the immutable batch itself and the
-/// separately versioned ownership-commit capability. Both share the object's
-/// single reference count.
 #[repr(C)]
 struct RustVmBatchObject {
     interface: IAvnRustVmUpdateBatch,
-    ownership_interface: IAvnRustVmUpdateBatch2,
     references: AtomicU32,
     state: Arc<RustVmBatchState>,
 }
@@ -1470,12 +1280,6 @@ static RUST_VM_BATCH_VTBL: IAvnRustVmUpdateBatchVtbl = IAvnRustVmUpdateBatchVtbl
     copy_snapshot_string: batch_copy_snapshot_string,
     get_snapshot_model: batch_get_snapshot_model,
     complete: batch_complete,
-};
-
-static RUST_VM_BATCH_OWNERSHIP_VTBL: IAvnRustVmUpdateBatch2Vtbl = IAvnRustVmUpdateBatch2Vtbl {
-    query_interface: ownership_query_interface,
-    add_ref: ownership_add_ref,
-    release: ownership_release,
     commit_ownership: batch_commit_ownership,
 };
 
@@ -1496,8 +1300,7 @@ static RUST_VM_BATCH_OPERATION_VTBL: IAvnRustVmUpdateOperationVtbl =
         get_model: operation_get_model,
     };
 
-/// Creates an immutable nano-COM batch exposing both the batch interface and
-/// its separately versioned ownership-commit capability. `ownership` is taken
+/// Creates an immutable nano-COM batch. `ownership` is taken
 /// exactly once, by managed code, between the state commit and the
 /// notifications; `completion` is taken exactly once after apply/stale/cancel/
 /// error. Neither is ever invoked by SubmitBatch. Dropping the batch without an
@@ -1511,9 +1314,6 @@ pub fn rust_vm_update_batch(
     let object = Box::new(RustVmBatchObject {
         interface: IAvnRustVmUpdateBatch {
             vtbl: &RUST_VM_BATCH_VTBL,
-        },
-        ownership_interface: IAvnRustVmUpdateBatch2 {
-            vtbl: &RUST_VM_BATCH_OWNERSHIP_VTBL,
         },
         references: AtomicU32::new(1),
         state: Arc::new(RustVmBatchState {
@@ -1529,14 +1329,6 @@ pub fn rust_vm_update_batch(
     }
 }
 
-/// Resolves the owning object from either of the two interface pointers it
-/// exposes.
-unsafe fn batch_object_from_ownership(this: *mut c_void) -> *mut RustVmBatchObject {
-    this.cast::<u8>()
-        .sub(std::mem::offset_of!(RustVmBatchObject, ownership_interface))
-        .cast::<RustVmBatchObject>()
-}
-
 unsafe fn batch_query(
     object: *mut RustVmBatchObject,
     iid: *const Guid,
@@ -1546,11 +1338,6 @@ unsafe fn batch_query(
     if *iid == Guid::IUNKNOWN || *iid == IAVN_RUST_VM_UPDATE_BATCH_IID {
         (*object).references.fetch_add(1, Ordering::Relaxed);
         *result = ptr::addr_of_mut!((*object).interface).cast();
-        return hresult::S_OK;
-    }
-    if *iid == IAVN_RUST_VM_UPDATE_BATCH2_IID {
-        (*object).references.fetch_add(1, Ordering::Relaxed);
-        *result = ptr::addr_of_mut!((*object).ownership_interface).cast();
         return hresult::S_OK;
     }
     hresult::E_NOINTERFACE
@@ -1567,26 +1354,11 @@ unsafe extern "system" fn batch_query_interface(
     batch_query(this.cast::<RustVmBatchObject>(), iid, result)
 }
 
-unsafe extern "system" fn ownership_query_interface(
-    this: *mut IUnknown,
-    iid: *const Guid,
-    result: *mut *mut c_void,
-) -> i32 {
-    if this.is_null() || iid.is_null() || result.is_null() {
-        return hresult::E_POINTER;
-    }
-    batch_query(batch_object_from_ownership(this.cast()), iid, result)
-}
-
 unsafe extern "system" fn batch_add_ref(this: *mut IUnknown) -> u32 {
     (*this.cast::<RustVmBatchObject>())
         .references
         .fetch_add(1, Ordering::Relaxed)
         + 1
-}
-
-unsafe extern "system" fn ownership_add_ref(this: *mut IUnknown) -> u32 {
-    batch_add_ref(batch_object_from_ownership(this.cast()).cast())
 }
 
 unsafe extern "system" fn batch_release(this: *mut IUnknown) -> u32 {
@@ -1599,19 +1371,12 @@ unsafe extern "system" fn batch_release(this: *mut IUnknown) -> u32 {
     remaining
 }
 
-unsafe extern "system" fn ownership_release(this: *mut IUnknown) -> u32 {
-    batch_release(batch_object_from_ownership(this.cast()).cast())
-}
-
 /// Hands the batch's nested ownership to the producer. The callback is taken
 /// under the state lock, so it runs at most once no matter how many times
 /// managed code calls this.
-unsafe extern "system" fn batch_commit_ownership(this: *mut IAvnRustVmUpdateBatch2) -> i32 {
+unsafe extern "system" fn batch_commit_ownership(this: *mut IAvnRustVmUpdateBatch) -> i32 {
     ffi(|| {
-        if this.is_null() {
-            return Err(hresult::Error(hresult::E_POINTER));
-        }
-        let state = (*batch_object_from_ownership(this.cast())).state.clone();
+        let state = batch_state(this)?;
         let ownership = state
             .ownership
             .lock()
@@ -2276,21 +2041,17 @@ mod tests {
         }
     }
 
-    /// The stage 30 capabilities are separate IIDs on the same object, so a
-    /// query must hand back a distinct interface pointer that shares the
-    /// object's single reference count.
+    /// The range source is a separate IID on the same object, so a query must
+    /// hand back a distinct interface pointer that shares the object's single
+    /// reference count.
     #[test]
-    fn the_view_model_object_exposes_the_stage_thirty_capabilities() {
+    fn the_view_model_object_exposes_the_range_source() {
         let model = rust_view_model(callbacks());
         let range = model
             .query_interface::<IAvnRustRangeSource>()
             .expect("range source");
-        let tracked = model
-            .query_interface::<IAvnRustViewModel2>()
-            .expect("tracked async");
 
         assert_ne!(model.as_raw().cast::<u8>(), range.as_raw().cast::<u8>());
-        assert_ne!(model.as_raw().cast::<u8>(), tracked.as_raw().cast::<u8>());
 
         // Round-tripping back to the primary interface must land on the same
         // pointer, proving the identity rule holds through the new vtables.
@@ -2414,20 +2175,18 @@ mod tests {
                 Ok(())
             })),
         );
-        let tracked = model
-            .query_interface::<IAvnRustViewModel2>()
-            .expect("tracked async");
+        let tracked = model.as_raw();
 
         let mut first = 0i64;
         let mut second = 0i64;
         unsafe {
             assert_eq!(
                 hresult::S_OK,
-                begin_async_tracked(tracked.as_raw(), 7, ptr::null(), &mut first)
+                begin_async_tracked(tracked, 7, ptr::null(), &mut first)
             );
             assert_eq!(
                 hresult::S_OK,
-                begin_async_tracked(tracked.as_raw(), 7, ptr::null(), &mut second)
+                begin_async_tracked(tracked, 7, ptr::null(), &mut second)
             );
         }
 
@@ -2445,15 +2204,13 @@ mod tests {
             RustViewModelControlCallbacks::default(),
             Some(Box::new(|_, _, _| Err(hresult::Error(hresult::E_FAIL)))),
         );
-        let tracked = model
-            .query_interface::<IAvnRustViewModel2>()
-            .expect("tracked async");
+        let tracked = model.as_raw();
 
         let mut operation = 99i64;
         unsafe {
             assert_eq!(
                 hresult::E_FAIL,
-                begin_async_tracked(tracked.as_raw(), 1, ptr::null(), &mut operation)
+                begin_async_tracked(tracked, 1, ptr::null(), &mut operation)
             );
         }
         assert_eq!(0, operation, "a failed start must not publish a handle");
@@ -2474,16 +2231,14 @@ mod tests {
             },
             None,
         );
-        let tracked = model
-            .query_interface::<IAvnRustViewModel2>()
-            .expect("tracked async");
+        let tracked = model.as_raw();
 
         // Hold the model lock exactly as a running worker would; cancelling
         // must still complete rather than deadlocking.
         let object = model.as_raw().cast::<RustViewModelObject>();
         let guard = unsafe { (*object).callbacks.lock().expect("model lock") };
         unsafe {
-            assert_eq!(hresult::S_OK, cancel_async(tracked.as_raw(), 3, 42));
+            assert_eq!(hresult::S_OK, cancel_async(tracked, 3, 42));
         }
         drop(guard);
 
@@ -2634,12 +2389,20 @@ mod tests {
     /// silently shift every later slot. `RustDataShapeTests` asserts the same
     /// counts from the managed side; changing either without the other fails.
     #[test]
-    fn stage_thirty_vtables_have_their_published_slot_counts() {
+    fn view_model_vtables_have_matching_slot_counts() {
         const PTR: usize = std::mem::size_of::<usize>();
         const IUNKNOWN: usize = 3;
         assert_eq!(
-            (IUNKNOWN + 11) * PTR,
-            std::mem::size_of::<IAvnRustVmSink4Vtbl>()
+            (IUNKNOWN + 10) * PTR,
+            std::mem::size_of::<IAvnRustViewModelVtbl>()
+        );
+        assert_eq!(
+            (IUNKNOWN + 36) * PTR,
+            std::mem::size_of::<IAvnRustVmSinkVtbl>()
+        );
+        assert_eq!(
+            (IUNKNOWN + 9) * PTR,
+            std::mem::size_of::<IAvnRustVmUpdateBatchVtbl>()
         );
         assert_eq!(
             (IUNKNOWN + 10) * PTR,
@@ -2648,14 +2411,6 @@ mod tests {
         assert_eq!(
             (IUNKNOWN + 2) * PTR,
             std::mem::size_of::<IAvnRustRangeSourceVtbl>()
-        );
-        assert_eq!(
-            (IUNKNOWN + 2) * PTR,
-            std::mem::size_of::<IAvnRustViewModel2Vtbl>()
-        );
-        assert_eq!(
-            (IUNKNOWN + 6) * PTR,
-            std::mem::size_of::<IAvnRustVmSink5Vtbl>()
         );
     }
 }

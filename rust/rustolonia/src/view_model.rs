@@ -8,7 +8,7 @@ use std::any::Any;
 use std::collections::HashMap;
 use std::fmt;
 use std::sync::mpsc::{self, Receiver, TryRecvError};
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Arc, Mutex};
 
 /// Rust-side bookkeeping for nested view-model handles a sink has published:
 /// one slot per nested-model property (replacing drops the previous handle)
@@ -61,7 +61,7 @@ impl NestedSlots {
         let mut collections = self.collections.lock_slots();
         let items = collections.entry(collection_id).or_default();
         // Managed validated the index against its own mirror of this list; a
-        // disagreement means an interleaved legacy v2 call already changed the
+        // disagreement means an interleaved per-call sink update already changed the
         // list, so append rather than panic on a stale index.
         let index = index.min(items.len());
         items.insert(index, Box::new(handle));
@@ -216,106 +216,47 @@ impl fmt::Debug for NestedSlots {
 #[derive(Clone, Debug)]
 pub struct ViewModelSink {
     raw: sys::ComPtr<sys::IAvnRustVmSink>,
-    raw2: sys::ComPtr<sys::IAvnRustVmSink2>,
-    raw3: Arc<OnceLock<BatchCapability>>,
-    raw4: Arc<OnceLock<ShapesCapability>>,
-    raw5: Arc<OnceLock<NumbersCapability>>,
+    /// The `RUST_VM_SINK_*` flags the attached adapter reported at attach.
+    capabilities: i32,
     nested: Arc<NestedSlots>,
     ranges: Arc<RangeStates>,
     completions: Arc<CompletionSlots>,
 }
 
-/// The cached result of the one-time `IAvnRustVmSink3` query. Only
-/// `E_NOINTERFACE` is recorded as "absent"; any other `QueryInterface` failure
-/// is recorded verbatim and reported to every later submission instead of being
-/// silently downgraded to "this host has no batch support".
-type BatchCapability = std::result::Result<Option<sys::ComPtr<sys::IAvnRustVmSink3>>, sys::Error>;
-
-/// The cached result of the one-time `IAvnRustVmSink4` query, resolved with
-/// exactly the same discipline as the batch capability. A host that predates
-/// stage 30 reports `E_NOINTERFACE` from every map/progress/result/range call
-/// instead of silently dropping the update.
-type ShapesCapability = std::result::Result<Option<sys::ComPtr<sys::IAvnRustVmSink4>>, sys::Error>;
-
-/// The cached result of the one-time `IAvnRustVmSink5` query, resolved with
-/// exactly the same discipline as the batch and shapes capabilities. A host
-/// whose adapter declares no scalar-number collection reports `E_NOINTERFACE`
-/// from every integer/double element call instead of silently dropping it.
-type NumbersCapability = std::result::Result<Option<sys::ComPtr<sys::IAvnRustVmSink5>>, sys::Error>;
-
 impl ViewModelSink {
-    /// Wraps a freshly attached v1 sink and eagerly resolves the v2
-    /// capability. Failing fast here (rather than lazily on first v2 use)
-    /// keeps the contract explicit: a host whose generated adapter has not
-    /// been regenerated to implement `IAvnRustVmSink2` fails attach with a
-    /// clear ABI error instead of silently dropping nested/nullable/
-    /// collection/`CanExecute`/validation updates later.
-    ///
-    /// v3 is deliberately different: it is an optional capability resolved
-    /// lazily on first batch submission and cached, so a v1/v2-only host still
-    /// attaches and publishes normally and only `submit_batch` reports
-    /// `E_NOINTERFACE`.
+    /// Wraps a freshly attached sink and reads its optional-transport flags
+    /// once. The reflectable (dynamic-binding) adapter applies neither richer
+    /// shapes nor scalar-number collections, so those calls fail with
+    /// `E_NOTIMPL` against it instead of silently dropping the update.
     fn with_state(
         raw: sys::ComPtr<sys::IAvnRustVmSink>,
         ranges: Arc<RangeStates>,
         completions: Arc<CompletionSlots>,
     ) -> Result<Self> {
-        let raw2 = raw.query_interface::<sys::IAvnRustVmSink2>()?;
+        let capabilities = raw.get_capabilities()?;
         Ok(Self {
             raw,
-            raw2,
-            raw3: Arc::new(OnceLock::new()),
-            raw4: Arc::new(OnceLock::new()),
-            raw5: Arc::new(OnceLock::new()),
+            capabilities,
             nested: Arc::new(NestedSlots::default()),
             ranges,
             completions,
         })
     }
 
-    /// Resolves (once) the optional stage 30 richer-shapes capability.
-    fn shapes_sink(&self) -> Result<&sys::ComPtr<sys::IAvnRustVmSink4>> {
-        match self.raw4.get_or_init(
-            || match self.raw.query_interface::<sys::IAvnRustVmSink4>() {
-                Ok(value) => Ok(Some(value)),
-                Err(error) if error.0 == sys::E_NOINTERFACE => Ok(None),
-                Err(error) => Err(error),
-            },
-        ) {
-            Ok(Some(sink)) => Ok(sink),
-            Ok(None) => Err(Error::Abi(sys::Error(sys::E_NOINTERFACE))),
-            Err(error) => Err(Error::Abi(*error)),
+    fn capable(&self, capability: i32) -> Result<&sys::ComPtr<sys::IAvnRustVmSink>> {
+        if self.capabilities & capability == capability {
+            Ok(&self.raw)
+        } else {
+            Err(Error::Abi(sys::Error(sys::E_NOTIMPL)))
         }
     }
 
-    /// Resolves (once) the optional scalar-number collection capability.
-    fn numbers_sink(&self) -> Result<&sys::ComPtr<sys::IAvnRustVmSink5>> {
-        match self.raw5.get_or_init(
-            || match self.raw.query_interface::<sys::IAvnRustVmSink5>() {
-                Ok(value) => Ok(Some(value)),
-                Err(error) if error.0 == sys::E_NOINTERFACE => Ok(None),
-                Err(error) => Err(error),
-            },
-        ) {
-            Ok(Some(sink)) => Ok(sink),
-            Ok(None) => Err(Error::Abi(sys::Error(sys::E_NOINTERFACE))),
-            Err(error) => Err(Error::Abi(*error)),
-        }
+    fn shapes_sink(&self) -> Result<&sys::ComPtr<sys::IAvnRustVmSink>> {
+        self.capable(sys::RUST_VM_SINK_RICHER_SHAPES)
     }
 
-    /// Resolves (once) the optional batch capability.
-    fn batch_sink(&self) -> Result<&sys::ComPtr<sys::IAvnRustVmSink3>> {
-        match self.raw3.get_or_init(
-            || match self.raw.query_interface::<sys::IAvnRustVmSink3>() {
-                Ok(value) => Ok(Some(value)),
-                Err(error) if error.0 == sys::E_NOINTERFACE => Ok(None),
-                Err(error) => Err(error),
-            },
-        ) {
-            Ok(Some(sink)) => Ok(sink),
-            Ok(None) => Err(Error::Abi(sys::Error(sys::E_NOINTERFACE))),
-            Err(error) => Err(Error::Abi(*error)),
-        }
+    fn numbers_sink(&self) -> Result<&sys::ComPtr<sys::IAvnRustVmSink>> {
+        self.capable(sys::RUST_VM_SINK_NUMBER_COLLECTIONS)
     }
 
     pub fn set_string(&self, property_id: i32, value: impl AsRef<str>) -> Result<()> {
@@ -347,7 +288,7 @@ impl ViewModelSink {
 
     /// Publishes that a nullable scalar property currently has no value.
     pub fn set_null(&self, property_id: i32) -> Result<()> {
-        self.raw2.set_null(property_id)?;
+        self.raw.set_null(property_id)?;
         self.nested.set_property(property_id, None);
         Ok(())
     }
@@ -360,11 +301,11 @@ impl ViewModelSink {
         match model {
             Some(model) => {
                 let handle = ViewModelHandle::new(model);
-                self.raw2.set_model(property_id, Some(&handle.raw))?;
+                self.raw.set_model(property_id, Some(&handle.raw))?;
                 self.nested.set_property(property_id, Some(handle));
             }
             None => {
-                self.raw2.set_model(property_id, None)?;
+                self.raw.set_model(property_id, None)?;
                 self.nested.set_property(property_id, None);
             }
         }
@@ -374,7 +315,7 @@ impl ViewModelSink {
     /// Appends a nested view-model item to a model-kind collection.
     pub fn add_model(&self, collection_id: i32, model: impl DynamicViewModel) -> Result<()> {
         let handle = ViewModelHandle::new(model);
-        self.raw2.add_model(collection_id, &handle.raw)?;
+        self.raw.add_model(collection_id, &handle.raw)?;
         self.nested.push_collection_item(collection_id, handle);
         Ok(())
     }
@@ -385,7 +326,7 @@ impl ViewModelSink {
         index: i32,
         value: impl AsRef<str>,
     ) -> Result<()> {
-        self.raw2
+        self.raw
             .insert_string(collection_id, index, &utf16(value))?;
         Ok(())
     }
@@ -397,7 +338,7 @@ impl ViewModelSink {
         model: impl DynamicViewModel,
     ) -> Result<()> {
         let handle = ViewModelHandle::new(model);
-        self.raw2.insert_model(collection_id, index, &handle.raw)?;
+        self.raw.insert_model(collection_id, index, &handle.raw)?;
         self.nested
             .insert_collection_item(collection_id, index as usize, handle);
         Ok(())
@@ -409,7 +350,7 @@ impl ViewModelSink {
         index: i32,
         value: impl AsRef<str>,
     ) -> Result<()> {
-        self.raw2
+        self.raw
             .replace_string(collection_id, index, &utf16(value))?;
         Ok(())
     }
@@ -421,19 +362,19 @@ impl ViewModelSink {
         model: impl DynamicViewModel,
     ) -> Result<()> {
         let handle = ViewModelHandle::new(model);
-        self.raw2.replace_model(collection_id, index, &handle.raw)?;
+        self.raw.replace_model(collection_id, index, &handle.raw)?;
         self.nested
             .replace_collection_item(collection_id, index as usize, handle);
         Ok(())
     }
 
     pub fn remove_string_at(&self, collection_id: i32, index: i32) -> Result<()> {
-        self.raw2.remove_at(collection_id, index)?;
+        self.raw.remove_at(collection_id, index)?;
         Ok(())
     }
 
     pub fn remove_model_at(&self, collection_id: i32, index: i32) -> Result<()> {
-        self.raw2.remove_at(collection_id, index)?;
+        self.raw.remove_at(collection_id, index)?;
         self.nested
             .remove_collection_item(collection_id, index as usize);
         Ok(())
@@ -445,7 +386,7 @@ impl ViewModelSink {
         from_index: i32,
         to_index: i32,
     ) -> Result<()> {
-        self.raw2.move_item(collection_id, from_index, to_index)?;
+        self.raw.move_item(collection_id, from_index, to_index)?;
         Ok(())
     }
 
@@ -455,29 +396,28 @@ impl ViewModelSink {
         from_index: i32,
         to_index: i32,
     ) -> Result<()> {
-        self.raw2.move_item(collection_id, from_index, to_index)?;
+        self.raw.move_item(collection_id, from_index, to_index)?;
         self.nested
             .move_collection_item(collection_id, from_index as usize, to_index as usize);
         Ok(())
     }
 
     pub fn clear_string_collection(&self, collection_id: i32) -> Result<()> {
-        self.raw2.clear_collection(collection_id)?;
+        self.raw.clear_collection(collection_id)?;
         Ok(())
     }
 
     pub fn clear_model_collection(&self, collection_id: i32) -> Result<()> {
-        self.raw2.clear_collection(collection_id)?;
+        self.raw.clear_collection(collection_id)?;
         self.nested.clear_collection(collection_id);
         Ok(())
     }
 
-    // ---- Scalar-number collections (IAvnRustVmSink5) --------------------
+    // ---- Scalar-number collections ---------------------------------------
     //
-    // Only the value-carrying calls need the v5 capability. Removal, movement
-    // and clearing carry no element value, so they ride the v2 sink exactly
-    // like a string collection does and keep working against a host that
-    // never had to grow a new vtable.
+    // Only the value-carrying calls need the number-collection capability.
+    // Removal, movement and clearing carry no element value, so they share
+    // the string collection members.
 
     pub fn add_integer(&self, collection_id: i32, value: i64) -> Result<()> {
         self.numbers_sink()?.add_integer(collection_id, value)?;
@@ -514,7 +454,7 @@ impl ViewModelSink {
     }
 
     pub fn remove_number_at(&self, collection_id: i32, index: i32) -> Result<()> {
-        self.raw2.remove_at(collection_id, index)?;
+        self.raw.remove_at(collection_id, index)?;
         Ok(())
     }
 
@@ -524,39 +464,38 @@ impl ViewModelSink {
         from_index: i32,
         to_index: i32,
     ) -> Result<()> {
-        self.raw2.move_item(collection_id, from_index, to_index)?;
+        self.raw.move_item(collection_id, from_index, to_index)?;
         Ok(())
     }
 
     pub fn clear_number_collection(&self, collection_id: i32) -> Result<()> {
-        self.raw2.clear_collection(collection_id)?;
+        self.raw.clear_collection(collection_id)?;
         Ok(())
     }
 
-    /// True when the attached host implements the scalar-number collection
+    /// True when the attached sink reports the scalar-number collection
     /// capability. A model shared by a generated adapter and the reflectable
     /// (dynamic-binding) adapter checks this once instead of treating an
-    /// explicit `E_NOINTERFACE` as a failure.
+    /// explicit `E_NOTIMPL` as a failure.
     pub fn supports_number_collections(&self) -> bool {
         self.numbers_sink().is_ok()
     }
 
     /// Publishes a command's current `ICommand.CanExecute` state.
-    /// Publishes a command's current <c>ICommand.CanExecute</c> state.
     pub fn set_command_enabled(&self, command_id: i32, enabled: bool) -> Result<()> {
-        self.raw2.set_command_enabled(command_id, enabled)?;
+        self.raw.set_command_enabled(command_id, enabled)?;
         Ok(())
     }
 
-    /// True when the attached host implements the stage 30 sink capability.
-    /// The reflectable (dynamic-binding) adapter deliberately does not, so a
-    /// model shared by both mounts checks this once instead of treating an
-    /// explicit `E_NOINTERFACE` as a failure.
+    /// True when the attached sink reports the richer-shape capability. The
+    /// reflectable (dynamic-binding) adapter deliberately does not, so a model
+    /// shared by both mounts checks this once instead of treating an explicit
+    /// `E_NOTIMPL` as a failure.
     pub fn supports_richer_shapes(&self) -> bool {
         self.shapes_sink().is_ok()
     }
 
-    // ---- Stage 30: observable keyed maps -------------------------------
+    // ---- Observable keyed maps ------------------------------------------
 
     /// Inserts or replaces a string value for one map key.
     pub fn map_set_string(&self, map_id: i32, key: MapKey, value: impl AsRef<str>) -> Result<()> {
@@ -616,7 +555,7 @@ impl ViewModelSink {
         Ok(())
     }
 
-    // ---- Stage 30: async progress, cancellation and structured results ---
+    // ---- Async progress, cancellation and structured results ------------
 
     /// Publishes determinate (`Some`, clamped to 0..1) or indeterminate
     /// (`None`) progress for an async command.
@@ -679,7 +618,7 @@ impl ViewModelSink {
         self.completions.claim(command_id, token.operation_id())
     }
 
-    // ---- Stage 30: windowed range publication ---------------------------
+    // ---- Windowed range publication --------------------------------------
 
     /// Republishes a windowed collection's identity. Every realized page is
     /// invalidated managed-side, because rows may no longer be at the same
@@ -757,8 +696,8 @@ impl ViewModelSink {
         batch: RangeBatch,
         callback: impl FnOnce(i32, i32) + Send + 'static,
     ) -> Result<()> {
-        // Resolve the optional capability before taking ownership of the
-        // elements, so a host without stage 30 support leaves them untouched.
+        // Check the capability before taking ownership of the elements, so a
+        // sink without range support leaves them untouched.
         let sink = self.shapes_sink()?.clone();
         let (collection_id, generation, total_count, offset, items) = batch.into_parts();
         let raw = sys::rust_vm_range_batch(
@@ -798,9 +737,9 @@ impl ViewModelSink {
     pub fn set_property_error(&self, property_id: i32, message: Option<&str>) -> Result<()> {
         match message {
             Some(message) => self
-                .raw2
+                .raw
                 .set_property_error(property_id, Some(&utf16(message)))?,
-            None => self.raw2.set_property_error(property_id, None)?,
+            None => self.raw.set_property_error(property_id, None)?,
         }
         Ok(())
     }
@@ -832,9 +771,7 @@ impl ViewModelSink {
         batch: ViewModelBatch,
         callback: impl FnOnce(i32, i32) + Send + 'static,
     ) -> Result<()> {
-        // Resolve the optional capability before taking ownership of the batch,
-        // so a v1/v2-only host leaves the caller's nested candidates untouched.
-        let sink = self.batch_sink()?.clone();
+        let sink = self.raw.clone();
         let ViewModelBatch {
             generation,
             operations,
@@ -1082,8 +1019,8 @@ pub trait DynamicViewModel: Send + 'static {
 
     /// Starts a tracked async invocation with a cancellation token whose
     /// handle managed code can cancel. The default forwards to
-    /// [`DynamicViewModel::begin_async`], so a model that predates stage 30
-    /// keeps working -- it simply ignores cancellation.
+    /// [`DynamicViewModel::begin_async`], so a model that does not support
+    /// cancellation keeps working -- it simply ignores it.
     fn begin_async_tracked(
         &mut self,
         command_id: i32,
@@ -1307,7 +1244,6 @@ impl AppScope {
     pub fn mount_dynamic_tray(&self, tray_id: i32, model: impl DynamicViewModel) -> Result<()> {
         let model = ViewModelHandle::new(model);
         self.application()
-            .shell()?
             .create_rust_vm_tray(tray_id, &model.raw)?;
         self.retain_object(model);
         Ok(())
@@ -1766,22 +1702,18 @@ mod tests {
         assert_eq!(2, alive.load(Ordering::SeqCst), "the batch owns candidates");
         assert!(slots.properties.lock_slots().is_empty());
 
-        let ownership = raw
-            .query_interface::<sys::IAvnRustVmUpdateBatch2>()
-            .expect("the batch must expose its ownership capability");
-        ownership.commit_ownership().expect("commit must succeed");
+        raw.commit_ownership().expect("commit must succeed");
 
         assert_eq!(1, slots.properties.lock_slots().len());
         assert_eq!(1, slots.collections.lock_slots()[&2].len());
 
         // A second call is a no-op: the callback was consumed by the first.
-        ownership.commit_ownership().expect("commit must stay safe");
+        raw.commit_ownership().expect("commit must stay safe");
         assert_eq!(1, slots.properties.lock_slots().len());
         assert_eq!(1, slots.collections.lock_slots()[&2].len());
 
         // Completion still arrives after ownership, and only once.
         raw.complete(APPLIED, 0).expect("complete must succeed");
-        drop(ownership);
         drop(raw);
         assert_eq!(Ok(BatchOutcome::Applied), completion.wait());
         assert_eq!(2, alive.load(Ordering::SeqCst), "committed handles live on");
@@ -1789,11 +1721,7 @@ mod tests {
         // A second applied batch replaces the property slot and appends to the
         // collection, so ownership tracks managed state rather than accumulating.
         let (second, _) = raw_batch(batch_with_models(2, &alive), &slots);
-        second
-            .query_interface::<sys::IAvnRustVmUpdateBatch2>()
-            .expect("capability")
-            .commit_ownership()
-            .expect("commit");
+        second.commit_ownership().expect("commit");
         drop(second);
         assert_eq!(3, alive.load(Ordering::SeqCst));
         assert_eq!(2, slots.collections.lock_slots()[&2].len());
@@ -1848,10 +1776,7 @@ mod tests {
         );
         let (raw, _completion) = raw_batch(batch, &slots);
 
-        raw.query_interface::<sys::IAvnRustVmUpdateBatch2>()
-            .expect("capability")
-            .commit_ownership()
-            .expect("commit");
+        raw.commit_ownership().expect("commit");
         assert_eq!(2, slots.collections.lock_slots()[&2].len());
 
         // The "observer" update.
@@ -1880,16 +1805,13 @@ mod tests {
                 .collect::<Vec<_>>(),
         );
         let (raw, _completion) = raw_batch(batch, &slots);
-        raw.query_interface::<sys::IAvnRustVmUpdateBatch2>()
-            .expect("capability")
-            .commit_ownership()
-            .expect("commit");
+        raw.commit_ownership().expect("commit");
         raw.complete(APPLIED, 0).expect("complete");
         drop(raw);
         assert_eq!(3, alive.load(Ordering::SeqCst));
 
         // The snapshot must leave a real slot list behind so the synchronous
-        // v2 path keeps working without panicking on a missing entry.
+        // per-call path keeps working without panicking on a missing entry.
         slots.replace_collection_item(2, 1, ViewModelHandle::new(CountedModel::new(alive.clone())));
         assert_eq!(3, alive.load(Ordering::SeqCst));
         slots.move_collection_item(2, 0, 2);
@@ -1944,19 +1866,15 @@ mod tests {
         assert_eq!(Some(String::new()), batch.operations[2].text);
     }
 
-    /// A hand-rolled sink whose `QueryInterface` answers a chosen HRESULT for
-    /// the v3 batch IID while still satisfying the mandatory v2 query, so the
-    /// lazy capability cache can be tested for both "absent" and "failed".
+    /// A hand-rolled sink that only answers `GetCapabilities`, so the
+    /// capability gate can be tested without a managed host. No publication
+    /// slot is ever reached: every gated call is rejected before dispatch.
     #[repr(C)]
     struct FakeSink {
         vtbl: *const FakeSinkVtbl,
         references: AtomicU32,
-        sink3_result: i32,
-        sink4_result: i32,
-        sink5_result: i32,
-        queries: Arc<AtomicUsize>,
-        shape_queries: Arc<AtomicUsize>,
-        number_queries: Arc<AtomicUsize>,
+        capabilities: i32,
+        result: i32,
     }
 
     #[repr(C)]
@@ -1968,35 +1886,24 @@ mod tests {
         ) -> i32,
         add_ref: unsafe extern "system" fn(*mut FakeSink) -> u32,
         release: unsafe extern "system" fn(*mut FakeSink) -> u32,
+        /// The 35 publication slots that precede `GetCapabilities`.
+        publication: [usize; 35],
+        get_capabilities: unsafe extern "system" fn(*mut FakeSink, *mut i32) -> i32,
     }
 
     static FAKE_SINK_VTBL: FakeSinkVtbl = FakeSinkVtbl {
         query_interface: fake_query_interface,
         add_ref: fake_add_ref,
         release: fake_release,
+        publication: [0; 35],
+        get_capabilities: fake_get_capabilities,
     };
 
     unsafe extern "system" fn fake_query_interface(
         this: *mut FakeSink,
-        iid: *const sys::Guid,
+        _iid: *const sys::Guid,
         result: *mut *mut std::ffi::c_void,
     ) -> i32 {
-        *result = std::ptr::null_mut();
-
-        if *iid == <sys::IAvnRustVmSink3 as sys::ComInterface>::IID {
-            (*this).queries.fetch_add(1, Ordering::SeqCst);
-            return (*this).sink3_result;
-        }
-        if *iid == <sys::IAvnRustVmSink4 as sys::ComInterface>::IID {
-            (*this).shape_queries.fetch_add(1, Ordering::SeqCst);
-            return (*this).sink4_result;
-        }
-        if *iid == <sys::IAvnRustVmSink5 as sys::ComInterface>::IID {
-            (*this).number_queries.fetch_add(1, Ordering::SeqCst);
-            return (*this).sink5_result;
-        }
-        // Everything else (IUnknown, v1 and v2) resolves to the same object;
-        // only the header layout matters for these tests.
         fake_add_ref(this);
         *result = this.cast();
         sys::S_OK
@@ -2014,162 +1921,87 @@ mod tests {
         remaining
     }
 
-    fn fake_sink(sink3_result: i32) -> (ViewModelSink, Arc<AtomicUsize>) {
-        let (sink, queries, _) = fake_sink_with_shapes(sink3_result, sys::E_NOINTERFACE);
-        (sink, queries)
+    unsafe extern "system" fn fake_get_capabilities(
+        this: *mut FakeSink,
+        capabilities: *mut i32,
+    ) -> i32 {
+        *capabilities = (*this).capabilities;
+        (*this).result
     }
 
-    fn fake_sink_with_shapes(
-        sink3_result: i32,
-        sink4_result: i32,
-    ) -> (ViewModelSink, Arc<AtomicUsize>, Arc<AtomicUsize>) {
-        let (sink, queries, shape_queries, _) =
-            fake_sink_with_capabilities(sink3_result, sink4_result, sys::E_NOINTERFACE);
-        (sink, queries, shape_queries)
-    }
-
-    fn fake_sink_with_capabilities(
-        sink3_result: i32,
-        sink4_result: i32,
-        sink5_result: i32,
-    ) -> (
-        ViewModelSink,
-        Arc<AtomicUsize>,
-        Arc<AtomicUsize>,
-        Arc<AtomicUsize>,
-    ) {
-        let queries = Arc::new(AtomicUsize::new(0));
-        let shape_queries = Arc::new(AtomicUsize::new(0));
-        let number_queries = Arc::new(AtomicUsize::new(0));
+    fn try_fake_sink(capabilities: i32, result: i32) -> Result<ViewModelSink> {
         let object = Box::new(FakeSink {
             vtbl: &FAKE_SINK_VTBL,
             references: AtomicU32::new(1),
-            sink3_result,
-            sink4_result,
-            sink5_result,
-            queries: queries.clone(),
-            shape_queries: shape_queries.clone(),
-            number_queries: number_queries.clone(),
+            capabilities,
+            result,
         });
         let raw = unsafe {
             sys::ComPtr::<sys::IAvnRustVmSink>::from_raw(Box::into_raw(object).cast())
                 .expect("non-null")
         };
-        (
-            ViewModelSink::with_state(
-                raw,
-                Arc::new(RangeStates::default()),
-                Arc::new(CompletionSlots::default()),
-            )
-            .expect("v2 must resolve"),
-            queries,
-            shape_queries,
-            number_queries,
+        ViewModelSink::with_state(
+            raw,
+            Arc::new(RangeStates::default()),
+            Arc::new(CompletionSlots::default()),
         )
     }
 
-    /// An absent v5 capability must be an explicit, cached ABI error on every
+    fn fake_sink(capabilities: i32) -> ViewModelSink {
+        try_fake_sink(capabilities, sys::S_OK).expect("attach")
+    }
+
+    #[test]
+    fn the_fake_sink_vtable_matches_the_sink_slot_count() {
+        assert_eq!(
+            (3 + 36) * std::mem::size_of::<usize>(),
+            std::mem::size_of::<FakeSinkVtbl>()
+        );
+    }
+
+    /// An absent number capability must be an explicit ABI error on every
     /// value-carrying call rather than a silently dropped element.
     #[test]
-    fn an_absent_number_capability_is_cached_as_e_nointerface() {
-        let (sink, _, _, number_queries) =
-            fake_sink_with_capabilities(sys::E_NOINTERFACE, sys::E_NOINTERFACE, sys::E_NOINTERFACE);
+    fn an_absent_number_capability_is_reported_as_e_notimpl() {
+        let sink = fake_sink(sys::RUST_VM_SINK_RICHER_SHAPES);
 
-        for _ in 0..3 {
-            match sink.add_double(8, 1.0) {
-                Err(Error::Abi(error)) => assert_eq!(sys::E_NOINTERFACE, error.0),
-                other => panic!("expected E_NOINTERFACE, got {other:?}"),
-            }
+        match sink.add_double(8, 1.0) {
+            Err(Error::Abi(error)) => assert_eq!(sys::E_NOTIMPL, error.0),
+            other => panic!("expected E_NOTIMPL, got {other:?}"),
         }
-        match sink.add_integer(9, 1) {
-            Err(Error::Abi(error)) => assert_eq!(sys::E_NOINTERFACE, error.0),
-            other => panic!("expected E_NOINTERFACE, got {other:?}"),
-        }
-        assert!(!sink.supports_number_collections());
-        assert_eq!(
-            1,
-            number_queries.load(Ordering::SeqCst),
-            "the query is cached"
-        );
-    }
-
-    #[test]
-    fn a_failed_number_capability_query_is_reported_verbatim_not_as_absence() {
-        let (sink, _, _, _) =
-            fake_sink_with_capabilities(sys::E_NOINTERFACE, sys::E_NOINTERFACE, sys::E_FAIL);
-
         match sink.replace_integer(9, 0, 1) {
-            Err(Error::Abi(error)) => assert_eq!(sys::E_FAIL, error.0),
-            other => panic!("expected E_FAIL, got {other:?}"),
+            Err(Error::Abi(error)) => assert_eq!(sys::E_NOTIMPL, error.0),
+            other => panic!("expected E_NOTIMPL, got {other:?}"),
         }
         assert!(!sink.supports_number_collections());
+        assert!(sink.supports_richer_shapes());
     }
 
+    /// The reflectable adapter reports no richer shapes, so a producer
+    /// attached to it gets `E_NOTIMPL` from every richer-shape call instead of
+    /// silently dropping the update.
     #[test]
-    fn an_absent_batch_capability_is_cached_as_e_nointerface() {
-        let (sink, queries) = fake_sink(sys::E_NOINTERFACE);
-
-        for _ in 0..3 {
-            match sink.batch_sink() {
-                Err(Error::Abi(error)) => assert_eq!(sys::E_NOINTERFACE, error.0),
-                other => panic!("expected E_NOINTERFACE, got {other:?}"),
-            }
-        }
-        assert_eq!(1, queries.load(Ordering::SeqCst), "the query is cached");
-    }
-
-    #[test]
-    fn a_failed_batch_capability_query_is_reported_verbatim_not_as_absence() {
-        let (sink, queries) = fake_sink(sys::E_FAIL);
-
-        for _ in 0..3 {
-            match sink.batch_sink() {
-                Err(Error::Abi(error)) => assert_eq!(
-                    sys::E_FAIL,
-                    error.0,
-                    "a transport failure must not be downgraded to E_NOINTERFACE"
-                ),
-                other => panic!("expected E_FAIL, got {other:?}"),
-            }
-        }
-        assert_eq!(1, queries.load(Ordering::SeqCst), "the failure is cached");
-    }
-    /// The stage 30 capability is optional and resolved exactly once, with the
-    /// same discipline as the batch capability: a producer attached to a host
-    /// that predates it reports `E_NOINTERFACE` from every richer-shape call
-    /// instead of silently dropping the update.
-    #[test]
-    fn an_absent_richer_shapes_capability_is_reported_and_cached() {
-        let (sink, _, shape_queries) =
-            fake_sink_with_shapes(sys::E_NOINTERFACE, sys::E_NOINTERFACE);
+    fn an_absent_richer_shapes_capability_is_reported_as_e_notimpl() {
+        let sink = fake_sink(sys::RUST_VM_SINK_NUMBER_COLLECTIONS);
 
         assert!(!sink.supports_richer_shapes());
-        for _ in 0..3 {
-            match sink.map_set_integer(1, MapKey::Text("Error".to_owned()), 1) {
-                Err(Error::Abi(error)) => assert_eq!(sys::E_NOINTERFACE, error.0),
-                other => panic!("expected E_NOINTERFACE, got {other:?}"),
-            }
+        assert!(sink.supports_number_collections());
+        match sink.map_set_integer(1, MapKey::Text("Error".to_owned()), 1) {
+            Err(Error::Abi(error)) => assert_eq!(sys::E_NOTIMPL, error.0),
+            other => panic!("expected E_NOTIMPL, got {other:?}"),
         }
         match sink.publish_range_reset(5, 1, 100) {
-            Err(Error::Abi(error)) => assert_eq!(sys::E_NOINTERFACE, error.0),
-            other => panic!("expected E_NOINTERFACE, got {other:?}"),
+            Err(Error::Abi(error)) => assert_eq!(sys::E_NOTIMPL, error.0),
+            other => panic!("expected E_NOTIMPL, got {other:?}"),
         }
-        assert_eq!(
-            1,
-            shape_queries.load(Ordering::SeqCst),
-            "the capability query is cached"
-        );
     }
 
     #[test]
-    fn a_failed_richer_shapes_query_is_reported_verbatim_not_as_absence() {
-        let (sink, _, _) = fake_sink_with_shapes(sys::E_NOINTERFACE, sys::E_FAIL);
-
-        match sink.map_clear(1) {
+    fn a_failed_capability_read_fails_attach() {
+        match try_fake_sink(0, sys::E_FAIL) {
             Err(Error::Abi(error)) => assert_eq!(sys::E_FAIL, error.0),
             other => panic!("expected E_FAIL, got {other:?}"),
         }
-        assert!(!sink.supports_richer_shapes());
     }
 
     /// A range batch is only meaningful against a published generation, so
@@ -2177,14 +2009,14 @@ mod tests {
     /// never reset.
     #[test]
     fn a_range_page_requires_a_published_generation() {
-        let (sink, _, _) = fake_sink_with_shapes(sys::E_NOINTERFACE, sys::E_NOINTERFACE);
+        let sink = fake_sink(0);
 
         assert!(sink.range_batch(5, 0).is_none());
     }
 
     #[test]
     fn a_completion_is_claimed_once_per_invocation() {
-        let (sink, _, _) = fake_sink_with_shapes(sys::E_NOINTERFACE, sys::E_NOINTERFACE);
+        let sink = fake_sink(0);
         let first = CancellationToken::none();
 
         assert!(sink.claim_completion(3, &first));

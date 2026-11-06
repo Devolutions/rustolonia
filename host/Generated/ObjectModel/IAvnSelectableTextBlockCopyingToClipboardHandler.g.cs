@@ -6,7 +6,7 @@ using System.Runtime.InteropServices.Marshalling;
 namespace Avalonia.Host.Com;
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("CB10B16D-D8FC-53DE-A8B0-1008B8215501")]
+[Guid("7AB59978-BF12-5401-87E2-D033946B05D2")]
 public partial interface IAvnSelectableTextBlockCopyingToClipboardHandler
 {
     [PreserveSig]

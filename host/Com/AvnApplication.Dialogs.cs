@@ -12,7 +12,7 @@ namespace Avalonia.Host.Com;
 /// exactly one completion, cancellable, and the UI thread is never blocked waiting on the
 /// dialog.
 /// </summary>
-public partial class AvnApplication : IAvnApplication5
+public partial class AvnApplication
 {
     public int StartShowDialog(
         IAvnWindow? owner,

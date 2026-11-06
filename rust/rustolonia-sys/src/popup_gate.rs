@@ -1,62 +1,23 @@
 use crate::{ComInterface, ComPtr, Guid, IAvnApplication, IAvnWindow, IUnknown, Result};
 use std::ffi::c_void;
 
-#[cfg(test)]
-fn iid(last: u8) -> Guid {
-    Guid {
-        data1: 0x6B2E8F10,
-        data2: 0x4C91,
-        data3: 0x4E3A,
-        data4: [0x9A, 0x77, 0x1F, 0x0C, 0x2B, 0x3A, 0x4D, last],
-    }
-}
-
-#[repr(C)]
-struct ApplicationVtbl {
-    query: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
-    add: unsafe extern "system" fn(*mut IUnknown) -> u32,
-    release: unsafe extern "system" fn(*mut IUnknown) -> u32,
-    set: unsafe extern "system" fn(
-        *mut IAvnApplication10,
-        *mut IAvnWindow,
-        *mut IAvnNativePopupHandler,
-    ) -> i32,
-    acknowledge: unsafe extern "system" fn(*mut IAvnApplication10, i64) -> i32,
-}
-#[repr(C)]
-pub struct IAvnApplication10 {
-    vtbl: *const ApplicationVtbl,
-}
-unsafe impl ComInterface for IAvnApplication10 {
-    const IID: Guid = Guid {
-        data1: 0x6B2E8F10,
-        data2: 0x4C91,
-        data3: 0x4E3A,
-        data4: [0x9A, 0x77, 0x1F, 0x0C, 0x2B, 0x3A, 0x4D, 0xA2],
-    };
-}
 impl ComPtr<IAvnApplication> {
-    pub fn popup_gate(&self) -> Result<ComPtr<IAvnApplication10>> {
-        self.query_interface()
-    }
-}
-impl ComPtr<IAvnApplication10> {
-    pub fn set(
+    pub fn set_native_popup_gate(
         &self,
         window: &ComPtr<IAvnWindow>,
         handler: Option<&ComPtr<IAvnNativePopupHandler>>,
     ) -> Result<()> {
         unsafe {
-            crate::hresult::check(((*(*self.as_raw()).vtbl).set)(
+            crate::hresult::check((self.vtbl().set_native_popup_gate)(
                 self.as_raw(),
                 window.as_raw(),
                 handler.map_or(std::ptr::null_mut(), |handler| handler.as_raw()),
             ))
         }
     }
-    pub fn acknowledge(&self, token: i64) -> Result<()> {
+    pub fn acknowledge_native_popup(&self, token: i64) -> Result<()> {
         unsafe {
-            crate::hresult::check(((*(*self.as_raw()).vtbl).acknowledge)(self.as_raw(), token))
+            crate::hresult::check((self.vtbl().acknowledge_native_popup)(self.as_raw(), token))
         }
     }
 }
@@ -140,12 +101,11 @@ pub fn native_popup_handler(
 mod tests {
     use super::*;
     #[test]
-    fn stable_capability_shape() {
+    fn handler_shape_is_stable() {
         assert_eq!(
             5 * std::mem::size_of::<usize>(),
-            std::mem::size_of::<ApplicationVtbl>()
+            std::mem::size_of::<HandlerVtbl>()
         );
-        assert_eq!(iid(0xA2), IAvnApplication10::IID);
-        assert_eq!(iid(0xA3), IAvnNativePopupHandler::IID);
+        assert_eq!(0xA3, IAvnNativePopupHandler::IID.data4[7]);
     }
 }

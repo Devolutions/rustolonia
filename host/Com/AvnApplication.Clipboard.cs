@@ -19,7 +19,7 @@ namespace Avalonia.Host.Com;
 /// because a clipboard read can block for as long as the owning application
 /// takes to render the requested format.
 /// </remarks>
-public partial class AvnApplication : IAvnApplication4
+public partial class AvnApplication
 {
     public int CreateClipboardData(out IAvnClipboardData? data)
     {

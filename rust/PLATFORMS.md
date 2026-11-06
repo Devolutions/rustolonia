@@ -711,8 +711,8 @@ and must not be assumed. Where a host has no activation feature the
 subscription stays valid and never fires, so no consumer needs a platform
 branch.
 
-**Decision:** desktop file integration ships as one separately versioned
-capability interface rather than per-platform host methods. Drag-effect
+**Decision:** desktop file integration ships as platform-neutral
+`IAvnApplication` slots rather than per-platform host methods. Drag-effect
 negotiation stays a conservative, subscription-time declaration instead of a
 synchronous Rust callback, because calling an external consumer from inside a
 platform drag loop is not safe. File type associations are packaging metadata
@@ -792,8 +792,7 @@ fn build_ui(scope: &AppScope) -> Result<()> {
 }
 ```
 
-`set_main_view` uses the separately versioned `IAvnApplication13` capability
-(IID `6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DA8`), which is outside the generated
+`set_main_view` is an `IAvnApplication` slot, which is outside the generated
 ABI header and fingerprint. It returns `E_NOTIMPL` on desktop hosts, whose
 lifetime has no main view. On the browser `App::run` returns as soon as the single-view lifetime has
 started, so the startup callback runs later on the page's event loop. The
@@ -817,16 +816,20 @@ shim does not emit types, scan assemblies or discover attributes at runtime.
 The generator loads the SDK generator in the compiler process; that build-time
 reflection is not part of the browser app.
 
-The ABI seen by Rust is identical on both platforms. Optional casts between
-versioned interfaces continue to follow `QueryInterface`: the generator emits
-a proxy for each possible combination of supported interfaces in a family.
-This has an exponential build-time and size cost (a 13-interface family needs
-8,191 proxy types, and each extra version doubles it); families are limited to
-12 interfaces and produce a build error beyond that limit. Families only
-managed code implements, such as the application family, are listed in
-`BrowserComHostOnlyFamilies` (`host/Browser/Avalonia.Host.Browser.csproj`):
-their objects return to managed code as CCWs and unwrap, so they get no proxy
-types and wrapping a native object of such a family throws. Projects that implement
+The ABI seen by Rust is identical on both platforms. Casts between interfaces
+continue to follow `QueryInterface`. The generator groups interfaces whose
+names differ only by a trailing number into a family and emits a proxy for each
+possible combination of supported interfaces in it, which has an exponential
+build-time and size cost (a 13-interface family needs 8,191 proxy types);
+families are limited to 12 interfaces and produce a build error beyond that
+limit. Interfaces are unversioned (see
+[COMPATIBILITY.md](COMPATIBILITY.md#native-abi)), so every family is a single
+interface with a single proxy; this cost is one more reason never to add a
+numbered successor interface. Interfaces only managed code implements, such as
+`IAvnApplication`, are listed in `BrowserComHostOnlyFamilies`
+(`host/Browser/Avalonia.Host.Browser.csproj`): their objects return to managed
+code as CCWs and unwrap, so they get no proxy type and wrapping a native object
+of such an interface throws. Projects that implement
 or consume Rustolonia COM interfaces must multi-target
 `$(AvsCurrentBrowserTargetFramework)` and import `BrowserCom.targets`, so their
 registrations and all referenced interface families are available at build time.

@@ -17,7 +17,7 @@ namespace Avalonia.Host.Com;
 /// capture exclusion calls the platform directly, because Avalonia has no
 /// equivalent.
 /// </summary>
-public partial class AvnApplication : IAvnApplication6
+public partial class AvnApplication
 {
     private ShutdownMode _shutdownMode = ShutdownMode.OnLastWindowClose;
     private readonly List<IDisposable> _trays = new();
@@ -134,7 +134,7 @@ public partial class AvnApplication : IAvnApplication6
     }
 }
 
-public partial class AvnApplication : IAvnApplication8, IAvnApplication9
+public partial class AvnApplication
 {
     public int SetWindowOverlayPopups(IAvnWindow? window, int enabled) =>
         WithWindow(window, managed =>

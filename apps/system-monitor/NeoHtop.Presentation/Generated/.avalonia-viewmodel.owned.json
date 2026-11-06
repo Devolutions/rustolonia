@@ -3,7 +3,7 @@
   "files": [
     {
       "path": "CpuCoreViewModelAdapter.g.cs",
-      "sha256": "21b0a498dc73c76298de5111050803c6ad5030fb159e0b55b216ebef6b025928"
+      "sha256": "604cc2b383b85110ee6ad59acc5463e7e72ab15208c0ab24512e90cd5c2a4e65"
     },
     {
       "path": "CpuCoreViewModelMetadata.g.cs",
@@ -11,7 +11,7 @@
     },
     {
       "path": "MainViewModelAdapter.g.cs",
-      "sha256": "76284340a29f17a1f3d694489a0d1e7371c322b69f25b0e666e56baafe6bbcad"
+      "sha256": "7cf2b5be972c64146fa38afe6c4841e0b0755f55305ceb0c72eeadee08434765"
     },
     {
       "path": "MainViewModelMenus.g.cs",
@@ -23,7 +23,7 @@
     },
     {
       "path": "ProcessRowViewModelAdapter.g.cs",
-      "sha256": "0e98be90847b234b80aa1680074ad08ea4fec71b609f1ed90d1ab895090dbbc1"
+      "sha256": "708e7180f0032d664da879b5cab8c1410341263e46cc20235a56eae3f019221f"
     },
     {
       "path": "ProcessRowViewModelMetadata.g.cs",

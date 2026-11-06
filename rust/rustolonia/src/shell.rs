@@ -1,5 +1,4 @@
-//! Desktop shell integration: separately versioned stage 33
-//! `IAvnApplication6` and stage 35 `IAvnApplication8` capabilities.
+//! Desktop shell integration.
 //!
 //! A tray or capture tool needs a few things the rest of the projection does
 //! not cover: an application that keeps running with no window open
@@ -116,19 +115,20 @@ impl AppContext {
         });
         Ok(self
             .application()
-            .popup_gate()?
-            .set(&window.raw, Some(&handler))?)
+            .set_native_popup_gate(&window.raw, Some(&handler))?)
     }
 
     /// UI thread only. Reveal the still-live popup after capture-filter acknowledgement.
     pub fn acknowledge_native_popup(&self, token: i64) -> Result<()> {
-        Ok(self.application().popup_gate()?.acknowledge(token)?)
+        Ok(self.application().acknowledge_native_popup(token)?)
     }
 
     /// Removes an owner's gate. First close all its popups; pending popups
     /// are never implicitly acknowledged by policy removal.
     pub fn clear_native_popup_gate(&self, window: &Window) -> Result<()> {
-        Ok(self.application().popup_gate()?.set(&window.raw, None)?)
+        Ok(self
+            .application()
+            .set_native_popup_gate(&window.raw, None)?)
     }
 
     /// Keeps popups targeting `window` inside its client-area overlay rather
@@ -142,28 +142,22 @@ impl AppContext {
     /// This does not perform capture exclusion. On macOS, first acknowledge
     /// exclusion of the owning window in every active ScreenCaptureKit stream
     /// before revealing it. This API exposes no additional borrowed handles.
-    /// Older hosts return `E_NOINTERFACE`; do not reveal protected popups then.
     pub fn set_overlay_popups(&self, window: &Window, enabled: bool) -> Result<()> {
         Ok(self
             .application()
-            .popup_hosting()?
             .set_window_overlay_popups(&window.raw, enabled)?)
-    }
-
-    fn shell(&self) -> Result<sys::ComPtr<sys::IAvnApplication6>> {
-        Ok(self.application().shell()?)
     }
 
     /// Sets when the application exits. Takes effect at once; call it from the
     /// startup callback, before the first window can close.
     pub fn set_shutdown_mode(&self, mode: ShutdownMode) -> Result<()> {
-        Ok(self.shell()?.set_shutdown_mode(mode.to_abi())?)
+        Ok(self.application().set_shutdown_mode(mode.to_abi())?)
     }
 
     /// The window's native handle (an `HWND` on Windows), or 0 while the
     /// platform window does not exist yet (before it is first shown).
     pub fn platform_handle(&self, window: &Window) -> Result<isize> {
-        Ok(self.shell()?.platform_handle(&window.raw)? as isize)
+        Ok(self.application().platform_handle(&window.raw)? as isize)
     }
 
     /// Returns the typed native handle once the window has been created.
@@ -175,10 +169,7 @@ impl AppContext {
         &self,
         window: &'window Window,
     ) -> Result<Option<NativeWindowHandle<'window>>> {
-        let (raw, kind) = self
-            .application()
-            .native_windows()?
-            .native_window_handle(&window.raw)?;
+        let (raw, kind) = self.application().native_window_handle(&window.raw)?;
         let raw = isize::try_from(raw).map_err(|_| sys::Error(sys::E_FAIL))?;
         if raw == 0 {
             return Ok(None);
@@ -195,10 +186,7 @@ impl AppContext {
     ///
     /// This does not exclude the window from capture by other applications.
     pub fn macos_window_number(&self, window: &Window) -> Result<i32> {
-        Ok(self
-            .application()
-            .native_windows()?
-            .macos_window_number(&window.raw)?)
+        Ok(self.application().macos_window_number(&window.raw)?)
     }
 
     /// Enables or disables AppKit mouse-event passthrough for a window.
@@ -206,7 +194,6 @@ impl AppContext {
     pub fn set_mouse_passthrough(&self, window: &Window, enabled: bool) -> Result<()> {
         Ok(self
             .application()
-            .native_windows()?
             .set_macos_window_ignores_mouse_events(&window.raw, enabled)?)
     }
 
@@ -214,30 +201,26 @@ impl AppContext {
     /// visible, `activate = true` activates it and `false` leaves its current
     /// activation unchanged.
     pub fn show_window(&self, window: &Window, activate: bool) -> Result<()> {
-        Ok(self
-            .application()
-            .native_windows()?
-            .show_window(&window.raw, activate)?)
+        Ok(self.application().show_window(&window.raw, activate)?)
     }
 
     /// Activates a visible window.
     pub fn activate_window(&self, window: &Window) -> Result<()> {
-        Ok(self
-            .application()
-            .native_windows()?
-            .activate_window(&window.raw)?)
+        Ok(self.application().activate_window(&window.raw)?)
     }
 
     /// Keeps `window` above every window that is not topmost.
     pub fn set_topmost(&self, window: &Window, topmost: bool) -> Result<()> {
-        Ok(self.shell()?.set_window_topmost(&window.raw, topmost)?)
+        Ok(self
+            .application()
+            .set_window_topmost(&window.raw, topmost)?)
     }
 
     /// Asks for per-pixel transparency, so a transparent background shows
     /// what is behind the window.
     pub fn set_transparent(&self, window: &Window, transparent: bool) -> Result<()> {
         Ok(self
-            .shell()?
+            .application()
             .set_window_transparent(&window.raw, transparent)?)
     }
 
@@ -246,7 +229,7 @@ impl AppContext {
     /// native window exists.
     pub fn set_excluded_from_capture(&self, window: &Window, excluded: bool) -> Result<()> {
         Ok(self
-            .shell()?
+            .application()
             .set_window_excluded_from_capture(&window.raw, excluded)?)
     }
 }
@@ -452,10 +435,7 @@ impl AppContext {
                 _ => sys::Error(sys::E_FAIL),
             })
         });
-        let raw = self
-            .application()
-            .pixel_surfaces()?
-            .create_tray_icon(Some(&sys_handler))?;
+        let raw = self.application().create_tray_icon(Some(&sys_handler))?;
         Ok(ShellTray { raw })
     }
 }

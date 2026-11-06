@@ -1,5 +1,4 @@
-//! Rust-drawn surfaces: the separately versioned stage 34 `IAvnApplication7`
-//! capability.
+//! Rust-drawn surfaces.
 //!
 //! A [`PixelSurface`] is a control that shows pixels Rust produced and reports
 //! the raw pointer stream (press, move, release, wheel) and keyboard input to a
@@ -436,10 +435,6 @@ fn abi_len(value: u32) -> Result<i32> {
 }
 
 impl AppContext {
-    fn surfaces(&self) -> Result<sys::ComPtr<sys::IAvnApplication7>> {
-        Ok(self.application().pixel_surfaces()?)
-    }
-
     /// Creates a surface reporting its input to `handler`, which returns
     /// whether it handled the event (a handled event does not bubble). The
     /// handler runs on the UI thread; an input raised while it is already
@@ -454,12 +449,15 @@ impl AppContext {
                 _ => sys::Error(sys::E_FAIL),
             })
         });
-        self.wrap(self.surfaces()?.create_pixel_surface(Some(&sys_handler))?)
+        self.wrap(
+            self.application()
+                .create_pixel_surface(Some(&sys_handler))?,
+        )
     }
 
     /// Creates a surface that only draws: it reports no input.
     pub fn create_display_surface(&self) -> Result<PixelSurface> {
-        self.wrap(self.surfaces()?.create_pixel_surface(None)?)
+        self.wrap(self.application().create_pixel_surface(None)?)
     }
 
     fn wrap(&self, raw: sys::ComPtr<sys::IAvnPixelSurface>) -> Result<PixelSurface> {

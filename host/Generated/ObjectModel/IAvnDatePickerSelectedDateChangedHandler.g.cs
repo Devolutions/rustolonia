@@ -6,7 +6,7 @@ using System.Runtime.InteropServices.Marshalling;
 namespace Avalonia.Host.Com;
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("74C9BE6F-E5CD-5936-B4BF-59CC0843096F")]
+[Guid("857AA120-280D-5BCE-A337-1668EF070DA0")]
 public partial interface IAvnDatePickerSelectedDateChangedHandler
 {
     [PreserveSig]

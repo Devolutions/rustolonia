@@ -6,7 +6,6 @@ public sealed class ProjectedType
     public required string FullName { get; init; }
     public required ProjectedTypeKind Kind { get; init; }
     public string? Iid { get; init; }
-    public int AbiVersion { get; init; } = 1;
     public string? BaseFullName { get; init; }
     public string? ManagedFullName { get; init; }
     public bool IsConstructible { get; init; }
@@ -23,7 +22,6 @@ public sealed class ProjectedProperty
     public bool CanWrite { get; init; }
     public string? InterfaceName { get; init; }
     public string? InterfaceIid { get; init; }
-    public int InterfaceAbiVersion { get; init; } = 1;
     public string? ElementInterfaceName { get; init; }
     public MarshallingKind? ElementKind { get; init; }
     public string? ManagedTypeName { get; init; }

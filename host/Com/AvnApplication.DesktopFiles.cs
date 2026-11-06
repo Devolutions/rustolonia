@@ -18,7 +18,7 @@ namespace Avalonia.Host.Com;
 /// abstractions (<see cref="IStorageProvider"/>, <see cref="DragDrop"/> and the
 /// desktop lifetime). No platform dialog API is used.
 /// </summary>
-public partial class AvnApplication : IAvnApplication3
+public partial class AvnApplication
 {
     private readonly List<string> _startupArguments = new();
     private readonly AvnFileDropRegistry _fileDrops = new();

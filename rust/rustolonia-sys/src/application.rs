@@ -1,11 +1,23 @@
 use crate::app_handler::IAvnAppHandler;
 use crate::async_completion::IAvnAsyncCompletion;
+use crate::clipboard::IAvnClipboardData;
 use crate::com::{ComInterface, ComPtr, IUnknown};
-use crate::generated::IAvnWindow;
+use crate::file_drag::IAvnFileDragHandler;
+use crate::generated::{IAvnControl, IAvnWindow};
 use crate::guid::Guid;
 use crate::hresult::{self, Result};
+use crate::native_menu::{IAvnNativeMenu, IAvnNativeMenuHandler};
+use crate::pixel_surface::{
+    IAvnPixelSurface, IAvnPixelSurfaceHandler, IAvnShellTray, IAvnShellTrayHandler,
+};
+use crate::popup_gate::IAvnNativePopupHandler;
 use crate::rust_vm::IAvnRustViewModel;
+use crate::storage::{
+    IAvnActivationHandler, IAvnFileDropHandler, IAvnFilePickerOptions, IAvnStorageCompletion,
+    IAvnStorageItemList,
+};
 use crate::terminated_utf16;
+use crate::termination::IAvnTerminationHandler;
 use crate::value_converter::IAvnRustValueConverterProvider;
 use std::ffi::c_void;
 use std::ptr;
@@ -34,13 +46,6 @@ mod string_tests {
         }
     }
 }
-
-const IAVN_APPLICATION2_IID: Guid = Guid {
-    data1: 0x6B2E8F10,
-    data2: 0x4C91,
-    data3: 0x4E3A,
-    data4: [0x9A, 0x77, 0x1F, 0x0C, 0x2B, 0x3A, 0x4D, 0x41],
-};
 
 const IAVN_RESOURCE_VALUE_IID: Guid = Guid {
     data1: 0x6B2E8F10,
@@ -128,50 +133,200 @@ impl ComPtr<IAvnResourceValue> {
     }
 }
 
+/// Number of methods `IAvnApplication` declares after `IUnknown`.
+///
+/// A cross-language tripwire: the managed `IAvnApplication` and
+/// [`IAvnApplicationVtbl`] must list the same methods in the same order.
+pub const IAVN_APPLICATION_METHOD_COUNT: usize = 60;
+
+type App = IAvnApplication;
+
+/// The one application vtable. Its slot order matches the managed
+/// `Avalonia.Host.Com.IAvnApplication` declaration exactly; the interface is
+/// changed in place (host and crates ship together), never versioned.
 #[repr(C)]
-struct IAvnApplicationVtbl {
+pub(crate) struct IAvnApplicationVtbl {
     query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
     add_ref: unsafe extern "system" fn(*mut IUnknown) -> u32,
     release: unsafe extern "system" fn(*mut IUnknown) -> u32,
-    run: unsafe extern "system" fn(*mut IAvnApplication, *mut c_void) -> i32,
-    shutdown: unsafe extern "system" fn(*mut IAvnApplication) -> i32,
-    get_requested_theme_variant: unsafe extern "system" fn(*mut IAvnApplication, *mut i32) -> i32,
-    set_requested_theme_variant: unsafe extern "system" fn(*mut IAvnApplication, i32) -> i32,
-    get_actual_theme_variant: unsafe extern "system" fn(*mut IAvnApplication, *mut i32) -> i32,
+    run: unsafe extern "system" fn(*mut App, *mut c_void) -> i32,
+    shutdown: unsafe extern "system" fn(*mut App) -> i32,
+    get_requested_theme_variant: unsafe extern "system" fn(*mut App, *mut i32) -> i32,
+    set_requested_theme_variant: unsafe extern "system" fn(*mut App, i32) -> i32,
+    get_actual_theme_variant: unsafe extern "system" fn(*mut App, *mut i32) -> i32,
     try_get_resource: unsafe extern "system" fn(
-        *mut IAvnApplication,
+        *mut App,
         *const u16,
         i32,
         *mut i32,
         *mut *mut IAvnResourceValue,
     ) -> i32,
-    start_delay: unsafe extern "system" fn(
-        *mut IAvnApplication,
-        i32,
-        *mut IAvnAsyncCompletion,
-        *mut i64,
-    ) -> i32,
+    start_delay:
+        unsafe extern "system" fn(*mut App, i32, *mut IAvnAsyncCompletion, *mut i64) -> i32,
     start_clipboard_set_text: unsafe extern "system" fn(
-        *mut IAvnApplication,
+        *mut App,
         *mut IAvnWindow,
         *const u16,
         *mut IAvnAsyncCompletion,
         *mut i64,
     ) -> i32,
     start_clipboard_get_text: unsafe extern "system" fn(
-        *mut IAvnApplication,
+        *mut App,
         *mut IAvnWindow,
         *mut IAvnAsyncCompletion,
         *mut i64,
     ) -> i32,
-    cancel_async_operation: unsafe extern "system" fn(*mut IAvnApplication, i64) -> i32,
+    cancel_async_operation: unsafe extern "system" fn(*mut App, i64) -> i32,
     create_rust_vm_window: unsafe extern "system" fn(
-        *mut IAvnApplication,
+        *mut App,
         i32,
         *mut IAvnRustViewModel,
         *mut *mut IAvnWindow,
     ) -> i32,
+    set_value_converter_provider:
+        unsafe extern "system" fn(*mut App, *mut IAvnRustValueConverterProvider) -> i32,
+
+    // Desktop file integration (storage.rs).
+    pub(crate) create_picker_options:
+        unsafe extern "system" fn(*mut App, *mut *mut IAvnFilePickerOptions) -> i32,
+    pub(crate) get_storage_capabilities:
+        unsafe extern "system" fn(*mut App, *mut IAvnWindow, *mut i32) -> i32,
+    pub(crate) start_open_file_picker: StartPicker,
+    pub(crate) start_open_folder_picker: StartPicker,
+    pub(crate) start_save_file_picker: StartPicker,
+    pub(crate) subscribe_file_drop: unsafe extern "system" fn(
+        *mut App,
+        *mut IAvnControl,
+        i32,
+        *mut IAvnFileDropHandler,
+        *mut i64,
+    ) -> i32,
+    pub(crate) unsubscribe_file_drop: unsafe extern "system" fn(*mut App, i64) -> i32,
+    pub(crate) clear_startup_arguments: unsafe extern "system" fn(*mut App) -> i32,
+    pub(crate) add_startup_argument: unsafe extern "system" fn(*mut App, *const u16) -> i32,
+    pub(crate) get_startup_argument_count: unsafe extern "system" fn(*mut App, *mut i32) -> i32,
+    pub(crate) get_startup_argument: unsafe extern "system" fn(*mut App, i32, *mut *mut u16) -> i32,
+    pub(crate) get_activation_items:
+        unsafe extern "system" fn(*mut App, *mut *mut IAvnStorageItemList) -> i32,
+    pub(crate) advise_activation:
+        unsafe extern "system" fn(*mut App, *mut IAvnActivationHandler, *mut i64) -> i32,
+    pub(crate) unadvise_activation: unsafe extern "system" fn(*mut App, i64) -> i32,
+
+    // Clipboard commands (clipboard.rs).
+    pub(crate) create_clipboard_data:
+        unsafe extern "system" fn(*mut App, *mut *mut IAvnClipboardData) -> i32,
+    pub(crate) get_clipboard_capabilities:
+        unsafe extern "system" fn(*mut App, *mut IAvnWindow, *mut i32) -> i32,
+    pub(crate) start_clipboard_write: unsafe extern "system" fn(
+        *mut App,
+        *mut IAvnWindow,
+        *mut IAvnClipboardData,
+        *mut IAvnAsyncCompletion,
+        *mut i64,
+    ) -> i32,
+    pub(crate) start_clipboard_clear: unsafe extern "system" fn(
+        *mut App,
+        *mut IAvnWindow,
+        *mut IAvnAsyncCompletion,
+        *mut i64,
+    ) -> i32,
+    pub(crate) start_clipboard_read_files: unsafe extern "system" fn(
+        *mut App,
+        *mut IAvnWindow,
+        *mut IAvnStorageCompletion,
+        *mut i64,
+    ) -> i32,
+
+    // Modal dialogs (dialogs.rs).
+    pub(crate) start_show_dialog: unsafe extern "system" fn(
+        *mut App,
+        *mut IAvnWindow,
+        *mut IAvnWindow,
+        *mut IAvnAsyncCompletion,
+        *mut i64,
+    ) -> i32,
+
+    // Desktop shell (shell.rs).
+    pub(crate) set_shutdown_mode: unsafe extern "system" fn(*mut App, i32) -> i32,
+    pub(crate) create_rust_vm_tray:
+        unsafe extern "system" fn(*mut App, i32, *mut IAvnRustViewModel) -> i32,
+    pub(crate) get_platform_handle:
+        unsafe extern "system" fn(*mut App, *mut IAvnWindow, *mut i64) -> i32,
+    pub(crate) set_window_topmost: unsafe extern "system" fn(*mut App, *mut IAvnWindow, i32) -> i32,
+    pub(crate) set_window_transparent:
+        unsafe extern "system" fn(*mut App, *mut IAvnWindow, i32) -> i32,
+    pub(crate) set_window_excluded_from_capture:
+        unsafe extern "system" fn(*mut App, *mut IAvnWindow, i32) -> i32,
+
+    // Pixel surfaces and code-first tray icons (pixel_surface.rs).
+    pub(crate) create_pixel_surface: unsafe extern "system" fn(
+        *mut App,
+        *mut IAvnPixelSurfaceHandler,
+        *mut *mut IAvnPixelSurface,
+    ) -> i32,
+    pub(crate) create_tray_icon: unsafe extern "system" fn(
+        *mut App,
+        *mut IAvnShellTrayHandler,
+        *mut *mut IAvnShellTray,
+    ) -> i32,
+
+    // Native-window operations (shell.rs).
+    pub(crate) get_native_window_handle:
+        unsafe extern "system" fn(*mut App, *mut IAvnWindow, *mut i64, *mut i32) -> i32,
+    pub(crate) get_macos_window_number:
+        unsafe extern "system" fn(*mut App, *mut IAvnWindow, *mut i32) -> i32,
+    pub(crate) set_macos_window_ignores_mouse_events:
+        unsafe extern "system" fn(*mut App, *mut IAvnWindow, i32) -> i32,
+    pub(crate) show_window: unsafe extern "system" fn(*mut App, *mut IAvnWindow, i32) -> i32,
+    pub(crate) activate_window: unsafe extern "system" fn(*mut App, *mut IAvnWindow) -> i32,
+    pub(crate) set_window_overlay_popups:
+        unsafe extern "system" fn(*mut App, *mut IAvnWindow, i32) -> i32,
+
+    // Native popup gate (popup_gate.rs).
+    pub(crate) set_native_popup_gate:
+        unsafe extern "system" fn(*mut App, *mut IAvnWindow, *mut IAvnNativePopupHandler) -> i32,
+    pub(crate) acknowledge_native_popup: unsafe extern "system" fn(*mut App, i64) -> i32,
+
+    // Termination requests (termination.rs).
+    pub(crate) set_termination_handler:
+        unsafe extern "system" fn(*mut App, *mut IAvnTerminationHandler) -> i32,
+    pub(crate) complete_termination: unsafe extern "system" fn(*mut App, i64, i32) -> i32,
+
+    // Outgoing file drags (file_drag.rs).
+    pub(crate) set_file_drag_handler:
+        unsafe extern "system" fn(*mut App, *mut IAvnControl, *mut IAvnFileDragHandler) -> i32,
+    pub(crate) complete_file_drag: unsafe extern "system" fn(*mut App, i64, *const u16) -> i32,
+    pub(crate) cancel_file_drag: unsafe extern "system" fn(*mut App, i64) -> i32,
+
+    // Single-view lifetimes (main_view.rs).
+    pub(crate) set_main_view: unsafe extern "system" fn(*mut App, *mut IAvnControl) -> i32,
+
+    // Application naming (application_name.rs).
+    pub(crate) set_application_name: unsafe extern "system" fn(*mut App, *const u16) -> i32,
+
+    // Code-first native menus (native_menu.rs).
+    pub(crate) create_native_menu: unsafe extern "system" fn(
+        *mut App,
+        *mut IAvnNativeMenuHandler,
+        *mut *mut IAvnNativeMenu,
+    ) -> i32,
+    pub(crate) set_application_menu:
+        unsafe extern "system" fn(*mut App, *mut IAvnNativeMenu) -> i32,
+    pub(crate) set_window_menu:
+        unsafe extern "system" fn(*mut App, *mut IAvnWindow, *mut IAvnNativeMenu) -> i32,
+    pub(crate) is_native_menu_exported:
+        unsafe extern "system" fn(*mut App, *mut IAvnWindow, *mut i32) -> i32,
+    pub(crate) create_native_menu_bar:
+        unsafe extern "system" fn(*mut App, *mut *mut IAvnControl) -> i32,
 }
+
+pub(crate) type StartPicker = unsafe extern "system" fn(
+    *mut App,
+    *mut IAvnWindow,
+    *mut IAvnFilePickerOptions,
+    *mut IAvnStorageCompletion,
+    *mut i64,
+) -> i32;
 
 #[repr(C)]
 pub struct IAvnApplication {
@@ -182,24 +337,10 @@ unsafe impl ComInterface for IAvnApplication {
     const IID: Guid = Guid::IAVN_APPLICATION;
 }
 
-#[repr(C)]
-struct IAvnApplication2Vtbl {
-    query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
-    add_ref: unsafe extern "system" fn(*mut IUnknown) -> u32,
-    release: unsafe extern "system" fn(*mut IUnknown) -> u32,
-    set_value_converter_provider: unsafe extern "system" fn(
-        *mut IAvnApplication2,
-        *mut IAvnRustValueConverterProvider,
-    ) -> i32,
-}
-
-#[repr(C)]
-struct IAvnApplication2 {
-    vtbl: *const IAvnApplication2Vtbl,
-}
-
-unsafe impl ComInterface for IAvnApplication2 {
-    const IID: Guid = IAVN_APPLICATION2_IID;
+impl ComPtr<IAvnApplication> {
+    pub(crate) fn vtbl(&self) -> &IAvnApplicationVtbl {
+        unsafe { (*self.as_raw()).vtbl.as_ref().unwrap() }
+    }
 }
 
 impl ComPtr<IAvnApplication> {
@@ -381,15 +522,26 @@ impl ComPtr<IAvnApplication> {
         &self,
         provider: Option<&ComPtr<IAvnRustValueConverterProvider>>,
     ) -> Result<()> {
+        let raw = provider.map_or(ptr::null_mut(), ComPtr::as_raw);
         unsafe {
-            let extension = self.query_interface::<IAvnApplication2>()?;
-            let raw = provider.map_or(ptr::null_mut(), ComPtr::as_raw);
-            let hr = ((*extension.as_raw())
-                .vtbl
-                .as_ref()
-                .unwrap()
-                .set_value_converter_provider)(extension.as_raw(), raw);
-            hresult::check(hr)
+            hresult::check((self.vtbl().set_value_converter_provider)(
+                self.as_raw(),
+                raw,
+            ))
         }
+    }
+}
+
+#[cfg(test)]
+mod vtable_tests {
+    use super::*;
+    use std::mem::size_of;
+
+    #[test]
+    fn application_vtable_has_one_slot_per_managed_method() {
+        assert_eq!(
+            3 + IAVN_APPLICATION_METHOD_COUNT,
+            size_of::<IAvnApplicationVtbl>() / size_of::<usize>()
+        );
     }
 }

@@ -6,7 +6,7 @@ using System.Runtime.InteropServices.Marshalling;
 namespace Avalonia.Host.Com;
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("BE1A8386-E73B-5FC4-84AA-92AD4F0D79DC")]
+[Guid("4774750F-A7F4-59C4-ABF7-4A396A284CA1")]
 public partial interface IAvnCalendarDatePickerCalendarClosedHandler
 {
     [PreserveSig]

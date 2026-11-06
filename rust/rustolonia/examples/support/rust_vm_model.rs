@@ -204,10 +204,10 @@ impl Model {
         self.publish_trace_snapshot(sink)
     }
 
-    /// Publishes the scalar-number collections. Like the stage 30 shapes these
-    /// ride a separately versioned capability, so the model asks once instead
-    /// of treating an explicit `E_NOINTERFACE` from the reflectable
-    /// (dynamic-binding) adapter as a failure.
+    /// Publishes the scalar-number collections. Like the richer shapes these
+    /// are gated by a sink capability flag that the reflectable
+    /// (dynamic-binding) adapter does not report, so the model checks it
+    /// instead of treating an explicit `E_NOTIMPL` as a failure.
     fn publish_number_collections(&self, sink: &SampleViewModelSink) -> rustolonia::Result<()> {
         if !sink.supports_number_collections() {
             return Ok(());
@@ -221,12 +221,12 @@ impl Model {
         Ok(())
     }
 
-    /// Publishes the stage 30 shapes: an observable keyed map, a hierarchical
+    /// Publishes the richer shapes: an observable keyed map, a hierarchical
     /// tree and the windowed dataset's identity.
     ///
-    /// The reflectable (dynamic-binding) adapter deliberately does not
-    /// implement the stage 30 sink capability, so the model asks once instead
-    /// of treating an explicit `E_NOINTERFACE` as a failure.
+    /// The reflectable (dynamic-binding) adapter deliberately does not report
+    /// the richer-shapes sink capability, so the model checks it instead of
+    /// treating an explicit `E_NOTIMPL` as a failure.
     fn publish_richer_shapes(&self, sink: &SampleViewModelSink) -> rustolonia::Result<()> {
         if !sink.supports_richer_shapes() {
             return Ok(());

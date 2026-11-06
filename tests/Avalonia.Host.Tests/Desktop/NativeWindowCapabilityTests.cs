@@ -10,24 +10,6 @@ namespace Avalonia.Host.Tests.Desktop;
 public class NativeWindowCapabilityTests
 {
     [Fact]
-    public void Application8_is_a_separate_capability_with_a_stable_abi_shape()
-    {
-        Assert.Equal(
-            Guid.Parse("6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DA0"),
-            typeof(IAvnApplication8).GUID);
-        Assert.Equal(
-            new[]
-            {
-                nameof(IAvnApplication8.GetNativeWindowHandle),
-                nameof(IAvnApplication8.GetMacOSWindowNumber),
-                nameof(IAvnApplication8.SetMacOSWindowIgnoresMouseEvents),
-                nameof(IAvnApplication8.ShowWindow),
-                nameof(IAvnApplication8.ActivateWindow),
-            },
-            typeof(IAvnApplication8).GetMethods().Select(method => method.Name));
-    }
-
-    [Fact]
     public void Null_native_window_arguments_return_pointer_errors_and_zero_outputs()
     {
         var application = new AvnApplication();

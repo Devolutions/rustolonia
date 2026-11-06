@@ -18,7 +18,7 @@ using Avalonia.Threading;
 namespace Avalonia.Rust.Sample.Generated;
 
 [GeneratedComClass]
-public sealed partial class SampleViewModelAdapter : IAvnRustVmSink, IAvnRustVmSink2, IAvnRustVmSink3, IAvnRustVmSink4, IAvnRustVmSink5, IRustVmStringSnapshotSink, IRustVmModelSnapshotSink, IRustVmBatchTarget, IRustVmTableSelectionBatchTarget, INotifyPropertyChanged, INotifyDataErrorInfo, IDisposable
+public sealed partial class SampleViewModelAdapter : IAvnRustVmSink, IRustVmStringSnapshotSink, IRustVmModelSnapshotSink, IRustVmBatchTarget, IRustVmTableSelectionBatchTarget, INotifyPropertyChanged, INotifyDataErrorInfo, IDisposable
 {
     private readonly IAvnRustViewModel _model;
     private readonly Action<Action> _dispatch;
@@ -26,7 +26,6 @@ public sealed partial class SampleViewModelAdapter : IAvnRustVmSink, IAvnRustVmS
     private readonly RustVmBatchCoordinator _batch;
     private readonly Dictionary<string, string> _errors = new(StringComparer.Ordinal);
     private readonly RustVmInboundWriteTracker _inboundWrites = new();
-    private readonly IAvnRustViewModel2? _tracked;
     private readonly RustRangeCoordinator _ranges;
     private long _saveOperation;
     private string _name = "Avalonia from Rust";
@@ -55,15 +54,14 @@ public sealed partial class SampleViewModelAdapter : IAvnRustVmSink, IAvnRustVmS
     public SampleViewModelAdapter(IAvnRustViewModel model) : this(model, null, null) { }
 
     /// <summary>
-    /// Creates an adapter with a custom synchronous dispatch for the legacy v1/v2
-    /// sink path. Kept as a distinct CLR signature (not an optional parameter) so
-    /// already-compiled callers keep binding to it.
+    /// Creates an adapter with a custom synchronous dispatch for the per-call
+    /// sink path.
     /// </summary>
     public SampleViewModelAdapter(IAvnRustViewModel model, Action<Action>? dispatch) : this(model, dispatch, null) { }
 
     /// <summary>
     /// Creates an adapter with a custom synchronous <paramref name="dispatch"/> for the
-    /// legacy v1/v2 sink path and a custom nonblocking <paramref name="post"/> for
+    /// per-call sink path and a custom nonblocking <paramref name="post"/> for
     /// batch submission.
     /// </summary>
     public SampleViewModelAdapter(IAvnRustViewModel model, Action<Action>? dispatch, Action<Action>? post)
@@ -72,7 +70,6 @@ public sealed partial class SampleViewModelAdapter : IAvnRustVmSink, IAvnRustVmS
         _dispatch = dispatch ?? Dispatch;
         _post = post;
         _batch = new RustVmBatchCoordinator(this, post);
-        _tracked = RustAsyncCommands.TryResolve(model);
         _ranges = new RustRangeCoordinator(ResolveWindow, post);
         var rangeSource = RustAsyncCommands.TryResolveRangeSource(model);
         LogWindow = new RustWindowedCollection(5, 64, 8, (nested, _) => new global::Avalonia.Rust.Sample.Generated.TraceRowViewModelAdapter(nested!, _dispatch, _post));
@@ -80,8 +77,8 @@ public sealed partial class SampleViewModelAdapter : IAvnRustVmSink, IAvnRustVmS
         LogWindow.SetPeerResolver(ResolveWindow);
         IncrementCommand = new DelegateCommand(parameter => Check(_model.Execute(1, null)));
         AddCommand = new DelegateCommand(parameter => Check(_model.Execute(2, CommandArgumentOrFallback(parameter, NewItem))));
-        SaveCommand = new DelegateCommand(parameter => _saveOperation = RustAsyncCommands.Begin(_model, _tracked, 3, null));
-        CancelSaveCommand = new DelegateCommand(_ => RustAsyncCommands.Cancel(_tracked, 3, _saveOperation));
+        SaveCommand = new DelegateCommand(parameter => _saveOperation = RustAsyncCommands.Begin(_model, 3, null));
+        CancelSaveCommand = new DelegateCommand(_ => RustAsyncCommands.Cancel(_model, 3, _saveOperation));
         CancelSaveCommand.SetEnabledCore(false);
         ClearNicknameCommand = new DelegateCommand(parameter => Check(_model.Execute(4, null)));
         ToggleAddressCommand = new DelegateCommand(parameter => Check(_model.Execute(5, null)));
@@ -877,6 +874,12 @@ public sealed partial class SampleViewModelAdapter : IAvnRustVmSink, IAvnRustVmS
         8 => Apply(() => { if ((uint)index >= (uint)CoreLoads.Count) return unchecked((int)0x80070057); CoreLoads[index] = value; return 0; }),
         _ => unchecked((int)0x80070057),
     };
+
+    public int GetCapabilities(out int capabilities)
+    {
+        capabilities = RustVmSinkCapabilities.All;
+        return 0;
+    }
 
     public int ReplaceStringSnapshot(int collectionId, IReadOnlyList<string> values) => collectionId switch
     {

@@ -13,7 +13,7 @@ using Avalonia.VisualTree;
 
 namespace Avalonia.Host.Com;
 
-public partial class AvnApplication : IAvnApplication12
+public partial class AvnApplication
 {
     private readonly Dictionary<Control, FileDragRegistration> _fileDrags = new();
     private static readonly Dictionary<Control, FileDragRegistration> ActiveFileDrags = new();

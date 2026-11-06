@@ -7,7 +7,7 @@ using System.Linq;
 namespace Avalonia.Host.Com;
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("80F7B3EB-F408-5597-88C1-C8405B36A477")]
+[Guid("E8B4BEB1-6CE6-5285-AE1B-2DD471AA83B4")]
 public partial interface IAvnCalendarDatePickerSelectedDateChangedArgs
 {
     [PreserveSig]
@@ -96,7 +96,7 @@ public sealed partial class AvnCalendarDatePickerSelectedDateChangedArgs : IAvnC
 }
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("F858AFA0-12BA-5E22-AED9-E8869218DECD")]
+[Guid("ECEE7A25-4AEB-5EE9-928F-5412C1CDE47E")]
 public partial interface IAvnCalendarDatePickerSelectedDateChangedHandler
 {
     [PreserveSig]

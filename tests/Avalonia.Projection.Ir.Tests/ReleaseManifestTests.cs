@@ -39,11 +39,7 @@ public class ReleaseManifestTests
             .GetProperty("properties").GetProperty("version").GetProperty("const").GetInt32();
         Assert.Equal(consumerManifestVersion, schemas.GetProperty("consumerAppManifest").GetInt32());
 
-        using var abiBaseline = JsonDocument.Parse(
-            File.ReadAllText(Path.Combine(root, "rust", "abi-baseline.json")));
-        Assert.Equal(
-            abiBaseline.RootElement.GetProperty("schemaVersion").GetInt32(),
-            schemas.GetProperty("abiBaseline").GetInt32());
+        Assert.False(schemas.TryGetProperty("abiBaseline", out _));
 
         var producerPin = element.GetProperty("producerPin").GetString();
         Assert.False(string.IsNullOrWhiteSpace(producerPin));

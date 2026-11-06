@@ -6,7 +6,7 @@ using System.Runtime.InteropServices.Marshalling;
 namespace Avalonia.Host.Com;
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("66A75556-3AA6-5EC7-B4A4-0265CFD78139")]
+[Guid("85CF2909-FD1A-5A95-95D9-5FD36CF92515")]
 public partial interface IAvnScrollViewerScrollChangedHandler
 {
     [PreserveSig]

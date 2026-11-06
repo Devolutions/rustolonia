@@ -3,7 +3,7 @@
   "files": [
     {
       "path": "AddressViewModelAdapter.g.cs",
-      "sha256": "52d8f368019c7e24e6908232697bfceed93c439a81a8418e0755e563ade73a9a"
+      "sha256": "58765dedcaf29e06383ec206877c8a9d50992e3ebc678e445f8365191cd5fc70"
     },
     {
       "path": "AddressViewModelMetadata.g.cs",
@@ -15,7 +15,7 @@
     },
     {
       "path": "LogNodeViewModelAdapter.g.cs",
-      "sha256": "ca7cadec6fdd0593e2b5f1c6dde7bd31d0229555f68b1328a976dc12053912c7"
+      "sha256": "62d677e4b01e5e081de654251694c1128929e908f7122ea79c417a3bfc49d75e"
     },
     {
       "path": "LogNodeViewModelMetadata.g.cs",
@@ -31,7 +31,7 @@
     },
     {
       "path": "SampleViewModelAdapter.g.cs",
-      "sha256": "042093d020971e8c757a3aa0ee3bbbedaeea60b9a1532480d7664263b406825a"
+      "sha256": "96a55c434c5d0f07dee7c0ce9788086e877ef3cfb15469f2c83fbd8a92fbb4d3"
     },
     {
       "path": "SampleViewModelMenus.g.cs",
@@ -43,7 +43,7 @@
     },
     {
       "path": "SaveReportViewModelAdapter.g.cs",
-      "sha256": "46c3d242a2d3b7ff1298b588ad364396dbd8d1daedfaa24a5dd8e953c0457750"
+      "sha256": "0d4590cb1e7dc744758b9ff645555eae6aaf96a09d6e68859b0d1f5b80eb968a"
     },
     {
       "path": "SaveReportViewModelMetadata.g.cs",
@@ -51,7 +51,7 @@
     },
     {
       "path": "TaskItemViewModelAdapter.g.cs",
-      "sha256": "af476ae26f65d7641fe10298e789f5369aa33bd7c8b76e488464e72f0e50c97b"
+      "sha256": "10aeb97189bac456e87a867f4cd52e2793287922dedea636680ba30646a4fd50"
     },
     {
       "path": "TaskItemViewModelMetadata.g.cs",
@@ -59,7 +59,7 @@
     },
     {
       "path": "TraceEventViewModelAdapter.g.cs",
-      "sha256": "317e5cdf36f573dab38ce7827aa20e8e1c267ba0c90e334a767db5572d907eb3"
+      "sha256": "d4a470a0cccf754b655ad2de64a793da0d5380d6a9bbd864629a3c666cc443dd"
     },
     {
       "path": "TraceEventViewModelMetadata.g.cs",
@@ -67,7 +67,7 @@
     },
     {
       "path": "TraceRowViewModelAdapter.g.cs",
-      "sha256": "c79806d15782fd33d1c0a1347b485f00559ccb6b40a66b724bf42b6b3fb105d0"
+      "sha256": "c5361794c34ed1e97fe569e176202c40b8a88fa817121977bde9a7ddd546748d"
     },
     {
       "path": "TraceRowViewModelMetadata.g.cs",

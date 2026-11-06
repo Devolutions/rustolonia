@@ -7,7 +7,7 @@ using System.Runtime.InteropServices.Marshalling;
 namespace Avalonia.Host.Com;
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("BE757F89-DDC2-5DDD-B763-CB90C709886E")]
+[Guid("88CBF4E2-354E-5EEE-B774-1E1D17BADD1C")]
 public partial interface IAvnAsyncPopulatorCompletion
 {
     [PreserveSig]
@@ -15,7 +15,7 @@ public partial interface IAvnAsyncPopulatorCompletion
 }
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("126B1732-9310-5B23-8E98-0123B31352EC")]
+[Guid("1CF3B03C-5613-570B-B243-7F111F25BF5D")]
 public partial interface IAvnAsyncPopulator
 {
     [PreserveSig]

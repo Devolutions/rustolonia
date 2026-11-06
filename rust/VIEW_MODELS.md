@@ -150,9 +150,8 @@ after the window that declared them was constructed (for example inside a
 a `ContentPresenter`). Applications and views that never use Rust value
 converters are unaffected: the provider is nullable, and `SetValueConverterProvider(null)`
 is always valid. `AppScope` releases the registration during its own cleanup,
-so the provider does not outlive application shutdown. Registration uses the
-separately versioned `IAvnApplication2` interface, so a newer Rust client fails
-safely when an older host lacks converter support.
+so the provider does not outlive application shutdown. Registration is a
+`SetValueConverterProvider` slot on `IAvnApplication`.
 
 ### Generated surface
 
@@ -185,32 +184,33 @@ edits, command availability, and validation — all without widening the core
 ABI's method count per feature or forking the canonical IR/generator pipeline
 for C# and Rust.
 
-### A second, independently versioned sink interface
+### One sink interface
 
-Every capability below is carried by `IAvnRustVmSink2`, a second interface
-(new IID, own vtable) that a generated adapter implements *in addition to*
-`IAvnRustVmSink`, not a replacement for or extension of it. This keeps ABI
-compatibility explicit: `IAvnRustVmSink` (property/collection-append) is
-untouched, so nothing that worked before regresses, while
-`ViewModelSink::new` resolves `IAvnRustVmSink2` once via `QueryInterface` when
-a model attaches and fails the attach explicitly (`E_NOINTERFACE`) if an older,
-not-yet-regenerated adapter is missing it — the same versioning pattern
-already used for `IAvnApplication2` (Rust value converters). There is no
-partial/degraded mode: a generated adapter and its Rust model are always
-regenerated together from the same schema, so v2 is always present in
-practice; the explicit failure exists for the case where that invariant is
-violated (an adapter built from a stale schema).
+Every capability below is a slot on the single `IAvnRustVmSink` interface; the
+sink is not split into numbered successors (see
+[COMPATIBILITY.md](COMPATIBILITY.md#native-abi)). A generated adapter and its
+Rust model are always regenerated together from the same schema, and the host
+ships with the crates, so both sides always agree on the vtable.
 
-`IAvnRustVmSink2` adds: `SetNull`, `SetModel`, `AddModel`, `InsertString`,
-`InsertModel`, `ReplaceString`, `ReplaceModel`, `RemoveAt`, `MoveItem`,
-`ClearCollection`, `SetCommandEnabled`, and `SetPropertyError` — generic,
-ID-addressed operations exactly like the v1 transport, never named after an
-application's models or members.
+Beyond the scalar setters and `AddString`, the sink carries `SetNull`,
+`SetModel`, `AddModel`, `InsertString`, `InsertModel`, `ReplaceString`,
+`ReplaceModel`, `RemoveAt`, `MoveItem`, `ClearCollection`, `SetCommandEnabled`,
+and `SetPropertyError` — generic, ID-addressed operations, never named after
+an application's models or members.
+
+Optional transports that the dynamic (reflectable) adapter does not implement
+are reported by `GetCapabilities` (`RustVmSinkCapabilities`): `RicherShapes`
+covers the stage 30 maps, command results/progress/running state and windowed
+ranges, and `NumberCollections` covers integer and double collection elements.
+Rust reads the flags once when a model attaches; a call whose capability is
+absent fails with `E_NOTIMPL` on the Rust side before reaching the sink, and the
+sink itself returns `E_NOTIMPL` for it too, so an update is never silently
+dropped.
 
 ### Nullable values
 
 A string property may declare `"nullable": true`. Rust publishes "no value"
-through `IAvnRustVmSink2.SetNull(propertyId)` instead of an empty string;
+through `IAvnRustVmSink.SetNull(propertyId)` instead of an empty string;
 managed backing fields become `string?` and the generated named Rust setter
 becomes `Option<impl AsRef<str>>` (`None` calls `set_null`, `Some` calls the
 existing `SetString`). Inbound writes are always concrete — an application
@@ -239,7 +239,7 @@ A property (or a collection element) can declare `"kind": "Model"` with a
 `models` array. A nested model is *not* a new concept at the ABI level: Rust
 wraps it in exactly the same `IAvnRustViewModel` capability a top-level mount
 uses, just without making it a window, and publishes it through
-`IAvnRustVmSink2.SetModel`/`AddModel`/`InsertModel`/`ReplaceModel`. The
+`IAvnRustVmSink.SetModel`/`AddModel`/`InsertModel`/`ReplaceModel`. The
 managed side constructs an ordinary instance of that nested model's own
 generated adapter — the exact same adapter type/constructor a top-level view
 would use — so a nested model's own properties, commands, and validation
@@ -272,7 +272,7 @@ through the parent.
 
 ### Collection insert/remove/replace/move/clear
 
-Beyond the original `AddString` (append), `IAvnRustVmSink2` adds ID-addressed,
+Beyond `AddString` (append), the sink has ID-addressed,
 index-based `Insert`/`Replace`/`RemoveAt`/`MoveItem`/`ClearCollection`
 operations, generated per collection and per element kind (`insert_items`,
 `replace_tasks`, `remove_tasks`, `move_tasks`, `clear_tasks`, and so on).
@@ -285,7 +285,7 @@ collection disposes the nested adapter(s) it evicts.
 ### Command `CanExecute` state
 
 Rust can publish a command's enabled/disabled state with
-`IAvnRustVmSink2.SetCommandEnabled` (generated as, for example,
+`IAvnRustVmSink.SetCommandEnabled` (generated as, for example,
 `set_save_enabled(bool)`). The generated `DelegateCommand` (both the compiled
 adapter's and the dynamic reflectable adapter's) carries real `CanExecute`
 state and raises `CanExecuteChanged` only when the state actually changes.
@@ -295,7 +295,7 @@ and re-enables it on completion.
 ### Validation-error projection
 
 Rust can publish (or clear) a human-readable validation message for any
-property with `IAvnRustVmSink2.SetPropertyError(propertyId, message)`
+property with `IAvnRustVmSink.SetPropertyError(propertyId, message)`
 (generated as, for example, `set_name_error(Option<&str>)`). Generated
 adapters implement `INotifyDataErrorInfo`, so Avalonia's binding pipeline
 surfaces the error (and its `:error` pseudo-class / `DataValidationErrors`)
@@ -326,7 +326,7 @@ thread affinity (worker-thread sink publication dispatched to a queued
 "UI thread" and late updates after dispose ignored, for both the compiled and
 dynamic adapters), invalid-contract behavior (unknown property/collection/
 command IDs and out-of-range enum values return a negative HRESULT and leave
-existing state untouched, on every new v2 method), and leak-shaped behavior
+existing state untouched, on every ID-addressed method), and leak-shaped behavior
 (disposing a parent adapter disposes every nested model/collection item
 exactly once). `rust/rustolonia/src/view_model.rs` covers the same
 nested-handle lifetime guarantees at the Rust `NestedSlots` level, including a
@@ -334,11 +334,10 @@ nested-handle lifetime guarantees at the Rust `NestedSlots` level, including a
 
 ## Stage 27: immutable worker batches
 
-`IAvnRustVmSink3` is a separately versioned capability; v1 and v2 vtables are
-unchanged. It accepts an immutable `IAvnRustVmUpdateBatch`, which is retained
+`IAvnRustVmSink.SubmitBatch` accepts an immutable `IAvnRustVmUpdateBatch`, which is retained
 and inspected only by one `Dispatcher.UIThread.Post` callback. Submission never
 uses `Invoke`, never waits, and never calls back into Rust on the submitting
-stack. Keep v1/v2 calls only for UI-thread compatibility; worker and
+stack. Keep the immediate sink calls for UI-thread publishing; worker and
 high-volume publishers must use the generated `sink.batch(generation)` builder
 and `sink.submit_batch(batch)`.
 
@@ -348,9 +347,8 @@ complete as `Stale`. `BatchCompletion` (or `submit_batch_with_callback`) reports
 `Applied`, `Stale`, `Cancelled` after disposal, or `Error` after UI processing.
 The batch owns strings and retained nested model COM references until that
 outcome, and the FFI accessors validate pointers, indices, and tags under a
-panic boundary. The batch object also exposes the separately versioned
-`IAvnRustVmUpdateBatch2` ownership-commit capability described below; the
-original batch IID and vtable are unchanged.
+panic boundary. The batch also exposes the `CommitOwnership` slot described
+below.
 
 `replace_*_snapshot` stages a complete string or nested-model collection then
 commits it with one collection `Reset`; it is the required path for large
@@ -384,7 +382,7 @@ and performs notification-free stores. A batch runs in four ordered phases:
    errors and collection contents are stored with no externally observable
    notification (collections go through `IRustVmBatchCollection.SetContents`).
    The producer's nested ownership is then transferred through
-   `IAvnRustVmUpdateBatch2.CommitOwnership`, and only after that are coalesced
+   `IAvnRustVmUpdateBatch.CommitOwnership`, and only after that are coalesced
    `PropertyChanged`, `ErrorsChanged`, `CanExecuteChanged` and at most one
    collection `Reset` per changed collection published; each is isolated, so a
    throwing observer cannot suppress the others. State is already fully
@@ -399,16 +397,10 @@ whole snapshot.
 
 ### Ownership transfer ordering
 
-`IAvnRustVmUpdateBatch2` is a separately versioned IID and vtable exposed by the
-same batch object; the original `IAvnRustVmUpdateBatch` contract is untouched.
-The adapter requires it and resolves it before it decodes or stages anything, so
-a producer that cannot hand over ownership at the right point fails the batch
-with zero mutation.
-
 `CommitOwnership` runs exactly once, strictly between the notification-free
 state commit and the first notification. That ordering is what makes a reentrant
 publish safe: when a notification observer synchronously publishes a further
-nested update through the v1/v2 sink, the batch's own nested handles are already
+nested update through the immediate sink calls, the batch's own nested handles are already
 reconciled on the producer side, so the observer's update applies on top of them
 instead of racing them. A batch that is rejected during validation or staging,
 or that completes as stale, cancelled or in error, never receives the call and
@@ -435,15 +427,8 @@ commit and the notifications. A batch that never reaches that point - stale,
 cancelled, rejected or failed - simply drops the callback, releasing its
 candidate handles without touching the slots that are still live. Slot updates
 are bounds-checked rather than panicking, and a model snapshot installs a real
-slot list, so synchronous v1/v2 `remove`/`move`/`replace`/`clear` keeps working
+slot list, so synchronous `remove`/`move`/`replace`/`clear` keeps working
 after a batch snapshot has been applied.
-
-`IAvnRustVmSink3` is resolved lazily on first submission and cached. Only
-`E_NOINTERFACE` is cached as "absent": any other `QueryInterface` failure is
-cached and reported verbatim, so a transport error is never silently downgraded
-to "this host has no batch support". A host that only implements v1/v2 still
-attaches and publishes normally, and only `submit_batch` reports
-`E_NOINTERFACE`.
 
 ## Stage 30: richer application data shapes
 
@@ -451,11 +436,11 @@ Stage 28 bounded *visuals*. Stage 30 bounds *data objects*, and adds the four
 other shapes a diagnostic workspace needs: observable keyed maps, hierarchical
 trees, typed structured command results, and async progress with cancellation.
 
-Everything here is one new, separately versioned sink capability
-(`IAvnRustVmSink4`) plus two Rust-implemented capabilities queried from
-`IAvnRustViewModel` (`IAvnRustRangeSource`, `IAvnRustViewModel2`) and one new
-immutable batch interface (`IAvnRustVmRangeBatch`). No already-published vtable
-was widened. Schema version 4 gates every new shape; a version 3 schema that
+Everything here is the `RicherShapes` capability of `IAvnRustVmSink` (maps,
+command progress/result/running state and `PublishRange`), the
+`BeginAsyncTracked`/`CancelAsync` slots on `IAvnRustViewModel`, the
+Rust-implemented `IAvnRustRangeSource` queried from a view model that owns a
+windowed collection, and the immutable `IAvnRustVmRangeBatch`. Schema version 4 gates every new shape; a version 3 schema that
 declares one is rejected with an explicit upgrade message.
 
 ### Range-backed windows (the highest-impact item)
@@ -537,7 +522,7 @@ real nested adapter, not a formatted string), `{Name}Progress` (`double?`,
 `null` while indeterminate), `{Name}ProgressMessage`, `{Name}IsRunning` and a
 `Cancel{Name}Command` that is disabled while nothing is running.
 
-`IAvnRustViewModel2::BeginAsyncTracked` returns a never-reused invocation
+`IAvnRustViewModel::BeginAsyncTracked` returns a never-reused invocation
 handle, so a cancellation that arrives after its invocation finished is dropped
 instead of aborting the successor. `CancelAsync` takes only the control lock, so
 cancelling never blocks the UI thread behind the worker it is cancelling.
@@ -546,9 +531,9 @@ generated `claim_{command}_completion` lets exactly one of them win.
 
 ### Honest limits
 
-- The dynamic (reflectable) adapter deliberately does not implement
-  `IAvnRustVmSink4`. Rust resolves the capability once, reports
-  `E_NOINTERFACE` explicitly rather than silently dropping updates, and exposes
+- The dynamic (reflectable) adapter deliberately does not report the
+  `RicherShapes` capability. Rust reads the capability once, reports
+  `E_NOTIMPL` explicitly rather than silently dropping updates, and exposes
   `supports_richer_shapes()` so a model shared by both mounts checks instead of
   failing.
 - A windowed collection is excluded from every materializing path: it has no
@@ -599,10 +584,9 @@ the schema's declared column minimum is now honoured by compiled AXAML, and
 `TableViewRow` composes its accessible name from its cells instead of the row
 item's CLR type name.
 
-Only the clipboard needs the host: a fourth separately versioned capability
-(`IAvnApplication4`) adds clearing, multi-format writes and reading file entries
-back as immutable storage snapshots. The frozen text methods on
-`IAvnApplication` are unchanged.
+Only the clipboard needs the host: `IAvnApplication` adds clearing,
+multi-format writes and reading file entries back as immutable storage
+snapshots alongside its text methods.
 
 See [MENUS.md](MENUS.md) for the full design, the enabled-state rule and the
 honest platform limits.
@@ -616,8 +600,8 @@ string collection). A scalar-number collection must not declare
 `elementModelName`, and it cannot back a table, tree or window: those are
 nested-model shapes and a range batch has no scalar-number wire form.
 
-The three value-carrying operations ride a fifth, separately versioned sink,
-**`IAvnRustVmSink5`** (IID `6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4D2F`):
+The three value-carrying operations are `IAvnRustVmSink` slots covered by the
+`NumberCollections` capability:
 
 ```
 AddInteger(collectionId, long)                 AddDouble(collectionId, double)
@@ -625,19 +609,16 @@ InsertInteger(collectionId, index, long)       InsertDouble(collectionId, index,
 ReplaceInteger(collectionId, index, long)      ReplaceDouble(collectionId, index, double)
 ```
 
-No published vtable is widened. A generated adapter implements the interface
-only when the model declares at least one scalar-number collection, Rust queries
-it once and caches the result, and a host that has not been regenerated fails
-`QueryInterface` and reports an explicit `E_NOINTERFACE` from every element call
-instead of silently dropping the update — the same discipline as
-`IAvnRustVmSink3`/`IAvnRustVmSink4`. Managed dispatch rejects an ID whose
+A generated adapter reports the capability, Rust reads it once when the model
+attaches, and a sink without it makes every element call report an explicit
+`E_NOTIMPL` instead of silently dropping the update — the same discipline as
+`RicherShapes`. Managed dispatch rejects an ID whose
 declared element kind does not match the call (`AddInteger` on a `Double`
 collection is `E_INVALIDARG`, never a coercion) and rejects out-of-range
 indices.
 
 `RemoveAt`, `MoveItem` and `ClearCollection` carry no element value, so they are
-deliberately *not* duplicated here: the already-published `IAvnRustVmSink2`
-operations apply to a scalar-number collection exactly as they do to a string or
+deliberately *not* duplicated here: the existing sink operations apply to a scalar-number collection exactly as they do to a string or
 model one.
 
 Generated Rust names never expose the transport or the schema ID:
@@ -649,9 +630,9 @@ sink.replace_core_ticks(2, 99)?;     // ObservableCollection<long>
 sink.clear_core_ticks()?;
 ```
 
-Worker batches (`IAvnRustVmSink3`) still carry only string and model elements,
+Worker batches (`SubmitBatch`) still carry only string and model elements,
 so a scalar-number collection has no `add_*` batch method; its removal, move and
 clear operations do work inside a batch. The dynamic (reflectable) adapter does
-not implement `IAvnRustVmSink5`, so a model shared by both mounts can check
-`supports_number_collections()` once rather than treating `E_NOINTERFACE` as a
+not report `NumberCollections`, so a model shared by both mounts can check
+`supports_number_collections()` once rather than treating `E_NOTIMPL` as a
 failure.

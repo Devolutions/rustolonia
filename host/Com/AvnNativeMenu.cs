@@ -10,8 +10,8 @@ using Avalonia.Threading;
 
 namespace Avalonia.Host.Com;
 
-/// <summary>Code-first native menus (<see cref="IAvnApplication15"/>).</summary>
-public partial class AvnApplication : IAvnApplication15
+/// <summary>Code-first native menus (<see cref="IAvnApplication.CreateNativeMenu"/>).</summary>
+public partial class AvnApplication
 {
     private readonly List<AvnNativeMenu> _nativeMenus = new();
     private readonly ConditionalWeakTable<Window, NativeMenu> _windowMenuSlots = new();

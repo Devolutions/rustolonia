@@ -3,7 +3,7 @@
   "files": [
     {
       "path": "FileRowViewModelAdapter.g.cs",
-      "sha256": "f0ed9a0fa23bf02cfc83d43eafc5638e67c63d1546ad2f4905d9d8d5cba772c4"
+      "sha256": "2ca6cf89f93d0950b5828b9391bbce197bc5577f55740222d238591df8d3c5c6"
     },
     {
       "path": "FileRowViewModelMetadata.g.cs",
@@ -11,7 +11,7 @@
     },
     {
       "path": "MainViewModelAdapter.g.cs",
-      "sha256": "9e162bb8fa023fa8c85eb1182c62afac44235db38ae01201bc20b4c2a877efdc"
+      "sha256": "5d2a7baeb109fab7ad806384662f5a131ebe44c8574605fce0dbefcfa29fe8df"
     },
     {
       "path": "MainViewModelMenus.g.cs",

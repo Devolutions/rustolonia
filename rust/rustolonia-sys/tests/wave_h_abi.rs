@@ -16,8 +16,6 @@ fn shapes_carry_brushes_points_and_path_data() {
         "*create_ellipse)(IAvnControlFactory* self, IAvnEllipse** value)",
         "*create_line)(IAvnControlFactory* self, IAvnLine** value)",
         "*create_path)(IAvnControlFactory* self, IAvnPath** value)",
-        "#define I_AVN_SHAPE_ABI_VERSION 11",
-        "#define I_AVN_CONTROL_FACTORY_ABI_VERSION 14",
     ] {
         assert!(HEADER.contains(expected), "header is missing `{expected}`");
     }
