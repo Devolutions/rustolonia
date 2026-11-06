@@ -57,4 +57,5 @@ internal static class AvnGuids
     public const string IAvnApplication12 = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DA6";
     public const string IAvnFileDragHandler = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DA7";
     public const string IAvnApplication13 = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DA8";
+    public const string IAvnApplication14 = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DA9";
 }

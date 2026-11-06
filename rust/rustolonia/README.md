@@ -37,6 +37,32 @@ fn main() -> rustolonia::Result<()> {
 
 `cargo run` is all it takes.
 
+Set the application name before `run` when shipping a desktop application:
+
+```rust,no_run
+use rustolonia::App;
+
+fn main() -> rustolonia::Result<()> {
+    App::load_from_env()?
+        .with_application_name("Jiffshot")?
+        .run(|scope| {
+            // Create and mount your windows here.
+            scope.shutdown()
+        })
+}
+```
+
+This sets Avalonia's `Application.Name` before initialization. On macOS,
+Avalonia uses it for the running-process name, application-menu title and
+`Hide Jiffshot` item, including when switching between windows. Window titles
+and packaged app metadata (`CFBundleName` / `CFBundleDisplayName`) remain
+separate; set those consistently when packaging. Omitting the option preserves
+Avalonia's default name. The name must not be empty, whitespace-only or contain
+NUL. The call is fallible: older hosts without the naming capability report
+`E_NOINTERFACE`, and Android/iOS hosts report `E_NOTIMPL` because their platform
+initializes Avalonia before Rust starts. Desktop, browser and Linux DRM hosts
+accept the option before `run`; do not call it inside the startup callback.
+
 On the first build, `rustolonia-sys` downloads the prebuilt
 `rustolonia_host` library for your target from the matching
 [GitHub release](https://github.com/Devolutions/rustolonia/releases),

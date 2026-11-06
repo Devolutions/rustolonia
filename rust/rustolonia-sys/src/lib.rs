@@ -15,6 +15,7 @@ pub(crate) fn terminated_utf16(value: &[u16]) -> std::borrow::Cow<'_, [u16]> {
 
 mod app_handler;
 mod application;
+mod application_name;
 mod async_completion;
 mod async_populator;
 mod clipboard;
@@ -42,6 +43,7 @@ mod value_converter;
 
 pub use app_handler::{app_handler, IAvnAppHandler};
 pub use application::{IAvnApplication, IAvnResourceValue};
+pub use application_name::IAvnApplication14;
 pub use async_completion::{async_completion, AsyncCompletionArgs, IAvnAsyncCompletion};
 pub use async_populator::{async_populator, AsyncPopulator, PopulateCompletion};
 pub use clipboard::{IAvnApplication4, IAvnClipboardData, IAVN_APPLICATION4_METHOD_COUNT};

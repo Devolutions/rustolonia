@@ -150,6 +150,18 @@ ScreenCaptureKit matching and does not promise capture exclusion. Existing
 Any unavoidable incompatible ABI change requires a new host ABI generation and
 a coordinated major release.
 
+`IAvnApplication14` adds pre-initialization application naming with a new IID
+and a single `SetApplicationName` slot. It leaves all existing identities
+unchanged. `App::with_application_name` queries this capability explicitly;
+missing support is `E_NOINTERFACE`, not a silently ignored name. The host
+stages the name for its application factory, before Avalonia registers native
+application services. Late changes fail; platform-owned Android/iOS startup
+returns `E_NOTIMPL`. The hash-pinned `avalonia-application-name.patch` also
+names Avalonia's default application-menu holder before export; setting the
+process name alone otherwise leaves its native item/submenu titles empty.
+This host/crate addition must ship in a matching lockstep
+release before consumers can remove native naming workarounds.
+
 The frozen released C ABI snapshot is [`abi-baseline.json`](abi-baseline.json)
 (`kind: released`, schema version 3). It records producer pin, ABI typedef and
 macro expansions (`AvnHResult` → `int32_t`, `AVN_CALL` → `__stdcall` on

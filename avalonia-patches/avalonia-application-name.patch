@@ -1,0 +1,9 @@
+diff --git a/src/Avalonia.Native/AvaloniaNativeMenuExporter.cs b/src/Avalonia.Native/AvaloniaNativeMenuExporter.cs
+--- a/src/Avalonia.Native/AvaloniaNativeMenuExporter.cs
++++ b/src/Avalonia.Native/AvaloniaNativeMenuExporter.cs
+@@ -284,4 +284,4 @@ namespace Avalonia.Native
+             if (menuItem is null)
+             {
+-                menuItem = new NativeMenuItem();
++                menuItem = new NativeMenuItem(Application.Current?.Name ?? "");
+             }

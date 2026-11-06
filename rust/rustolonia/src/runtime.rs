@@ -671,6 +671,23 @@ impl App {
         self
     }
 
+    /// Sets Avalonia's application name before initialization.
+    ///
+    /// On macOS this supplies the running-process name and default application
+    /// menu title, including the Hide item. It does not set window titles or
+    /// replace bundle metadata. Call before [`App::run`], not in its callback.
+    ///
+    /// Empty/whitespace-only names and embedded NULs return `E_INVALIDARG`.
+    /// Older hosts without this capability return `E_NOINTERFACE`; iOS and
+    /// Android, where Avalonia is initialized before Rust runs, return `E_NOTIMPL`.
+    pub fn with_application_name(self, name: impl AsRef<str>) -> Result<Self> {
+        let name = encode_application_name(name.as_ref())?;
+        self.application
+            .application_name()?
+            .set_application_name(Some(&name))?;
+        Ok(self)
+    }
+
     /// Starts with no startup arguments at all.
     pub fn without_startup_arguments(mut self) -> Self {
         self.startup_arguments = Some(Vec::new());
@@ -751,6 +768,13 @@ fn process_startup_arguments() -> Vec<String> {
         .collect()
 }
 
+fn encode_application_name(name: &str) -> Result<Vec<u16>> {
+    if name.trim().is_empty() || name.contains('\0') {
+        return Err(sys::Error(sys::E_INVALIDARG).into());
+    }
+    Ok(name.encode_utf16().chain(Some(0)).collect())
+}
+
 /// Publishes the startup arguments through the separately versioned desktop
 /// file integration capability, before the managed lifetime starts.
 fn publish_startup_arguments(
@@ -810,6 +834,32 @@ fn resource_value(value: sys::ComPtr<sys::IAvnResourceValue>) -> Result<Resource
         5 => ResourceValue::Color(value.color()?),
         kind => return Err(Error::InvalidEnumValue(kind)),
     })
+}
+
+#[cfg(test)]
+mod application_name_tests {
+    use super::*;
+
+    #[test]
+    fn encodes_unicode_without_trimming() {
+        let name = " Jiffshot \u{1f4f7} ";
+        let encoded = encode_application_name(name).unwrap();
+        assert_eq!(encoded.last(), Some(&0));
+        assert_eq!(
+            String::from_utf16(&encoded[..encoded.len() - 1]).unwrap(),
+            name
+        );
+    }
+
+    #[test]
+    fn rejects_empty_whitespace_and_embedded_nul_names() {
+        for name in ["", " \t\n", "\u{2003}", "Jiff\0shot", "Jiffshot\0"] {
+            assert!(matches!(
+                encode_application_name(name),
+                Err(Error::Abi(sys::Error(sys::E_INVALIDARG)))
+            ));
+        }
+    }
 }
 
 #[cfg(test)]
