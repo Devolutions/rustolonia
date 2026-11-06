@@ -170,6 +170,9 @@ templates, value-struct layouts, and flattened IR lineage fingerprints for each
 released identity. New current identities are allowed; the gate only requires
 every released IID to keep its contract. `projectionIrVersion` in the snapshot
 is provenance, not a live lock against `ProjectionIr.CurrentVersion`.
+The snapshot's `producerPin` likewise records the producer used for that
+baseline; the current release manifest's pin must instead match the
+`avalonia-src` gitlink and checkout.
 
 The pointer spelling in a slot (`const T*`, `T**`) is indirection and
 constness only. It does not encode COM lifetime, free-ownership, or
