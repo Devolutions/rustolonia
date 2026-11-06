@@ -53,12 +53,12 @@ public partial class AvnApplication : IAvnApplication, IAvnApplication2
         }
     }
 
-    private static async Task RunBrowserAsync(IAvnAppHandler handler)
+    private async Task RunBrowserAsync(IAvnAppHandler handler)
     {
         try
         {
             await Avalonia.Browser.BrowserAppBuilder.StartBrowserAppAsync(
-                RustHostPlatform.Configure(AppBuilder.Configure<HostApplication>()),
+                CreateAppBuilder(),
                 BrowserMainDivId);
             var started = handler.OnStarted();
             if (started < 0)
@@ -136,7 +136,7 @@ public partial class AvnApplication : IAvnApplication, IAvnApplication2
             };
             _lifetime = lifetime;
 
-            RustHostPlatform.Configure(AppBuilder.Configure<HostApplication>())
+            CreateAppBuilder()
                 .SetupWithLifetime(lifetime);
 
             lifetime.Startup += (_, _) =>

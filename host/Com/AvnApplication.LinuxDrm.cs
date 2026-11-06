@@ -14,7 +14,7 @@ public partial class AvnApplication
         using var terminate = PosixSignalRegistration.Create(PosixSignal.SIGTERM, OnSignal);
         using var interrupt = PosixSignalRegistration.Create(PosixSignal.SIGINT, OnSignal);
         var options = LinuxDrmSettings.FromEnvironment(Environment.GetEnvironmentVariable);
-        RustHostPlatform.Configure(AppBuilder.Configure<HostApplication>())
+        CreateAppBuilder()
             .AfterSetup(builder =>
             {
                 var lifetime = builder.Instance?.ApplicationLifetime as IControlledApplicationLifetime

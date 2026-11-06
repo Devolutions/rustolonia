@@ -19,6 +19,10 @@
     {
       "path": "avalonia-patches/avalonia-file-drag.patch",
       "sha256": "771ac93c5e7c88ab7ffd46299d0790192f9a8ca43d5231aa943aca69c3e23f22"
+    },
+    {
+      "path": "avalonia-patches/avalonia-application-name.patch",
+      "sha256": "126eac76c265d29f5296eb3e112ff283830c7d56348aeebc093845b5a579bb3b"
     }
   ],
   "schemas": {

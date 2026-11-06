@@ -45,6 +45,7 @@ $patches = @(
     'avalonia-overlay-popups.patch'
     'avalonia-termination.patch'
     'avalonia-file-drag.patch'
+    'avalonia-application-name.patch'
 )
 
 foreach ($patch in $patches) {

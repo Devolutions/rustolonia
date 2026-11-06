@@ -217,6 +217,17 @@ jobs:
         shell: pwsh
         run: ./rust/build.ps1 -Architecture ${{ matrix.architecture }}
 
+      - name: Verify macOS application names across window activation
+        if: runner.os == 'macOS'
+        shell: pwsh
+        run: |
+          $hostDirectory = (Resolve-Path 'rust/target/dotnet-osx-arm64/publish/Avalonia.Host/release_osx-arm64').Path
+          $env:RUSTOLONIA_HOST_LIB = Join-Path $hostDirectory 'librustolonia_host.dylib'
+          $env:RUSTOLONIA_HOST_DIR = $hostDirectory
+          $env:CARGO_TARGET_DIR = Join-Path $env:GITHUB_WORKSPACE 'rust/target/cargo-osx-arm64'
+          cargo test --manifest-path rust/Cargo.toml -p rustolonia --test application_name --locked -- --ignored
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Build and launch a standalone app against the packaged crates and host tarball
         shell: pwsh
         run: |

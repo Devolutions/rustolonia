@@ -19,6 +19,10 @@ path = "src/native_host_shutdown.rs"
 name = "native_popup_host"
 path = "src/native_popup_host.rs"
 
+[[bin]]
+name = "native_application_name"
+path = "src/native_application_name.rs"
+
 [features]
 default = ["dev-host-path"]
 # See rustolonia-sys: never download the prebuilt host at build time.
