@@ -295,151 +295,6 @@ public class ClrTypeExtractorTests
     }
 
     [Fact]
-    public void Layout_members_keep_the_abi_version_of_the_interfaces_they_widened()
-    {
-        var ir = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
-
-        // AvaloniaObject projects no members, so its flattened vtable is unchanged and it
-        // must keep the IID it published at version 2.
-        var avaloniaObject = Type(ir, "IAvnAvaloniaObject");
-        Assert.Equal(2, avaloniaObject.AbiVersion);
-        Assert.Equal(
-            ClrTypeExtractor.CreateDeterministicIid(avaloniaObject.FullName, 2),
-            avaloniaObject.Iid);
-
-        // StyledElement is unchanged. Control grew ContextMenu/IsLoaded (wave), Decorator
-        // republishes with every Control growth plus its own; U19 grew ContentControl
-        // above Decorator too.
-        Assert.Equal(6, Type(ir, "IAvnStyledElement").AbiVersion);
-        Assert.Equal(11, Type(ir, "IAvnControl").AbiVersion);
-        Assert.Equal(13, Type(ir, "IAvnDecorator").AbiVersion);
-        Assert.Equal(
-            ClrTypeExtractor.CreateDeterministicIid(
-                Type(ir, "IAvnDecorator").FullName, 13),
-            Type(ir, "IAvnDecorator").Iid);
-    }
-
-    [Fact]
-    public void Chrome_members_keep_the_abi_version_of_the_interfaces_they_widened()
-    {
-        var ir = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
-
-        // Border and Panel grew slots in the chrome wave and nothing since has moved them,
-        // so they stay on their version 4 IIDs. TemplatedControl and TextBlock moved in wave M.
-        Assert.All(
-            new[] { "IAvnPanel", "IAvnCanvas", "IAvnDockPanel" },
-            name => { var type = Type(ir, name); Assert.Equal(14, type.AbiVersion);
-                Assert.Equal(
-                    ClrTypeExtractor.CreateDeterministicIid(type.FullName, 14),
-                    type.Iid);
-            });
-        Assert.All(
-            new[] { "IAvnBorder", "IAvnStackPanel" },
-            name =>
-            {
-                var type = Type(ir, name);
-                Assert.Equal(15, type.AbiVersion);
-                Assert.Equal(
-                    ClrTypeExtractor.CreateDeterministicIid(type.FullName, 15),
-                    type.Iid);
-            });
-
-        // The factory grew a creator per wave A control plus GetToolTipStatics, then one per
-        // constructible wave B type, then one per constructible wave C type, so it has moved
-        // three times off the version 2 IID it published for CreateSolidColorBrush.
-        Assert.Equal(14, ir.FactoryAbiVersion);
-        Assert.Equal(
-            ClrTypeExtractor.CreateDeterministicIid("Avalonia.Host.Com.IAvnControlFactory", 14),
-            ir.FactoryIid);
-    }
-
-    [Fact]
-    public void Completeness_members_keep_the_abi_version_of_every_widened_interface()
-    {
-        var ir = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
-
-        // Grid is a Panel descendant, so it republishes with every Control/StyledElement
-        // growth in addition to its own waves.
-        Assert.Equal(15, Type(ir, "IAvnGrid").AbiVersion);
-        Assert.Equal(
-            ClrTypeExtractor.CreateDeterministicIid(Type(ir, "IAvnGrid").FullName, 15),
-            Type(ir, "IAvnGrid").Iid);
-
-        // Completeness-wave types sat at 5 until wave M grew TemplatedControl under them,
-        // and every StyledElement/Control growth since republishes them again. The two
-        // items-derived ones republish with the items lineage too (U17).
-        Assert.All(
-            new[] { "IAvnContentControl", "IAvnHeaderedContentControl", "IAvnExpander" },
-            name =>
-            {
-                var type = Type(ir, name);
-                Assert.Equal(16, type.AbiVersion);
-                Assert.Equal(
-                    ClrTypeExtractor.CreateDeterministicIid(type.FullName, 16),
-                    type.Iid);
-            });
-        Assert.All(
-            new[] { "IAvnListBoxItem", "IAvnComboBoxItem" },
-            name =>
-            {
-                var type = Type(ir, name);
-                Assert.Equal(18, type.AbiVersion);
-                Assert.Equal(
-                        ClrTypeExtractor.CreateDeterministicIid(type.FullName, 18),
-                        type.Iid);
-            });
-
-        var window = Type(ir, "IAvnWindow");
-        Assert.Equal(21, window.AbiVersion);
-        Assert.Equal(
-            ClrTypeExtractor.CreateDeterministicIid(window.FullName, 21),
-            window.Iid);
-    }
-
-    [Fact]
-    public void Wave_a_controls_publish_new_interfaces_at_version_one()
-    {
-        var ir = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
-
-        // Every wave A interface is brand new, so it publishes at version 1 rather than
-        // inheriting the version its neighbours happen to sit on.
-        Assert.Equal(11, Type(ir, "IAvnImage").AbiVersion);
-        // U17 republished TabItem with the items lineage; ToolTip was untouched.
-        Assert.Equal(14, Type(ir, "IAvnTabItem").AbiVersion);
-        Assert.Equal(12, Type(ir, "IAvnToolTip").AbiVersion);
-        Assert.All(
-            new[]
-            {
-                "IAvnHeaderedItemsControl", "IAvnTabControl",
-                "IAvnTreeView", "IAvnTreeViewItem",
-            },
-            name => { var type = Type(ir, name); Assert.Equal(15, type.AbiVersion);
-            });
-
-        // Wave M grew TemplatedControl, so every previously published interface below it
-        // moved; Image sits on Control and is unchanged.
-        var pinned = new Dictionary<string, int>(StringComparer.Ordinal)
-        {
-            ["IAvnAvaloniaObject"] = 2,
-            ["IAvnStyledElement"] = 6,
-            ["IAvnControl"] = 11,
-            ["IAvnDecorator"] = 13,
-            ["IAvnItemsControl"] = 18,
-            ["IAvnSelectingItemsControl"] = 18,
-            ["IAvnContentControl"] = 16,
-            ["IAvnHeaderedContentControl"] = 16,
-        };
-        Assert.All(pinned, entry =>
-        {
-            var type = Type(ir, entry.Key);
-            Assert.Equal(entry.Value, type.AbiVersion);
-            Assert.Equal(
-                ClrTypeExtractor.CreateDeterministicIid(type.FullName, entry.Value),
-                type.Iid);
-        });
-    }
-
-    [Fact]
     public void Projects_the_wave_a_controls_onto_the_types_that_declare_them()
     {
         var ir = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
@@ -539,58 +394,10 @@ public class ClrTypeExtractorTests
     }
 
     [Fact]
-    public void Wave_b_controls_publish_new_interfaces_at_version_one()
+    public void Every_projected_interface_has_a_distinct_iid()
     {
         var ir = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
 
-        Assert.Equal(1, Type(ir, "IAvnFlyoutBase").AbiVersion);
-        // PopupFlyoutBase stayed; Flyout grew ContentTemplate in U19.
-        Assert.Equal(6, Type(ir, "IAvnPopupFlyoutBase").AbiVersion);
-        Assert.Equal(4, Type(ir, "IAvnFlyout").AbiVersion);
-        Assert.All(
-            new[] { "IAvnSplitView" },
-            name =>
-            {
-                var type = Type(ir, name);
-                Assert.Equal(12, type.AbiVersion);
-                Assert.Equal(
-                    ClrTypeExtractor.CreateDeterministicIid(type.FullName, 12),
-                    type.Iid);
-            });
-        Assert.All(
-            new[] { "IAvnDatePicker", "IAvnTimePicker" },
-            name =>
-            {
-                var type = Type(ir, name);
-                Assert.Equal(14, type.AbiVersion);
-                Assert.Equal(
-                    ClrTypeExtractor.CreateDeterministicIid(type.FullName, 14),
-                    type.Iid);
-            });
-        Assert.All(
-            new[] { "IAvnMenuBase", "IAvnMenu", "IAvnHeaderedSelectingItemsControl" }, name => Assert.Equal(15, Type(ir, name).AbiVersion));
-        Assert.Equal(18, Type(ir, "IAvnMenuItem").AbiVersion);
-
-        var pinned = new Dictionary<string, int>(StringComparer.Ordinal)
-        {
-            ["IAvnAvaloniaObject"] = 2,
-            ["IAvnControl"] = 11,
-            ["IAvnItemsControl"] = 18,
-            ["IAvnSelectingItemsControl"] = 18,
-            ["IAvnTemplatedControl"] = 15,
-            ["IAvnContentControl"] = 16,
-        };
-        Assert.All(pinned, entry =>
-        {
-            var type = Type(ir, entry.Key);
-            Assert.Equal(entry.Value, type.AbiVersion);
-            Assert.Equal(
-                ClrTypeExtractor.CreateDeterministicIid(type.FullName, entry.Value),
-                type.Iid);
-        });
-
-        // Reusing a retired IID would silently hand a stale consumer a changed contract, so no
-        // two projected interfaces may ever share one.
         Assert.Equal(
             ir.Types.Count,
             ir.Types.Select(type => type.Iid).Distinct(StringComparer.Ordinal).Count());
@@ -845,7 +652,6 @@ public class ClrTypeExtractorTests
         var tip = ir.AttachedProperties.Single(property =>
             property.OwnerName == nameof(ToolTip) && property.Name == "Tip");
         Assert.Equal("Avalonia.Host.Com.IAvnToolTipStatics", tip.StaticsInterfaceName);
-        Assert.Equal(1, tip.StaticsInterfaceAbiVersion);
         // The managed property is an object; the ABI carries text and only text.
         Assert.Equal("System.Object", tip.ManagedTypeName);
         Assert.Equal(MarshallingKind.StringUtf16, tip.Kind);
@@ -884,9 +690,8 @@ public class ClrTypeExtractorTests
         var ir = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
 
         Assert.Equal("Avalonia.Host.Com.IAvnBrush", ir.BrushInterfaceName);
-        Assert.Equal(1, ir.BrushAbiVersion);
         Assert.Equal(
-            ClrTypeExtractor.CreateDeterministicIid("Avalonia.Host.Com.IAvnBrush", 1),
+            ClrTypeExtractor.CreateDeterministicIid("Avalonia.Host.Com.IAvnBrush"),
             ir.BrushInterfaceIid);
 
         // Every IBrush member projects as the one brush interface and is always nullable,
@@ -1160,7 +965,7 @@ public class ClrTypeExtractorTests
     }
 
     [Fact]
-    public void Wave_c_layout_panels_publish_new_interfaces_at_version_one()
+    public void Wave_c_layout_panels_publish_new_interfaces()
     {
         var ir = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
 
@@ -1172,9 +977,8 @@ public class ClrTypeExtractorTests
             name =>
             {
                 var type = Type(ir, name);
-                Assert.Equal(11, type.AbiVersion);
                 Assert.Equal(
-                    ClrTypeExtractor.CreateDeterministicIid(type.FullName, 11),
+                    ClrTypeExtractor.CreateDeterministicIid(type.FullName),
                     type.Iid);
                 Assert.True(type.IsConstructible);
             });
@@ -1183,7 +987,6 @@ public class ClrTypeExtractorTests
             name =>
             {
                 var type = Type(ir, name);
-                Assert.Equal(13, type.AbiVersion);
                 Assert.True(type.IsConstructible);
             });
 
@@ -1264,23 +1067,22 @@ public class ClrTypeExtractorTests
             property => property.Name is "Above" or "Below" or "LeftOf" or "RightOf"
                 or "AlignLeftWith" or "Order" or "Grow" or "Shrink" or "Basis");
 
-        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
-    public void Wave_d_button_family_publishes_new_interfaces_at_version_one()
+    public void Wave_d_button_family_publishes_new_interfaces()
     {
         var ir = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
 
-        Assert.Equal(5, Type(ir, "IAvnMenuFlyout").AbiVersion);
-        Assert.Equal(18, Type(ir, "IAvnContextMenu").AbiVersion);
         Assert.All(
             new[]
             {
                 "IAvnRepeatButton", "IAvnDropDownButton",
                 "IAvnHyperlinkButton",
             },
-            name => { var type = Type(ir, name); Assert.Equal(14, type.AbiVersion);
+            name =>
+            {
+                var type = Type(ir, name);
                 Assert.True(type.IsConstructible);
             });
         Assert.All(
@@ -1288,7 +1090,6 @@ public class ClrTypeExtractorTests
             name =>
             {
                 var type = Type(ir, name);
-                Assert.Equal(15, type.AbiVersion);
                 Assert.True(type.IsConstructible);
             });
 
@@ -1325,16 +1126,14 @@ public class ClrTypeExtractorTests
         Assert.Equal(MarshallingKind.ComCollection, items.Kind);
         Assert.Equal("Avalonia.Host.Com.IAvnItemList", items.InterfaceName);
 
-        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
-    public void Wave_e_input_controls_publish_new_interfaces_at_version_one()
+    public void Wave_e_input_controls_publish_new_interfaces()
     {
         var ir = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
 
         var spinner = Type(ir, "IAvnSpinner");
-        Assert.Equal(12, spinner.AbiVersion);
         Assert.False(spinner.IsConstructible);
         Assert.Equal("Avalonia.Host.Com.IAvnContentControl", spinner.BaseFullName);
 
@@ -1343,14 +1142,9 @@ public class ClrTypeExtractorTests
             name =>
             {
                 var type = Type(ir, name);
-                Assert.Equal(12, type.AbiVersion);
                 Assert.True(type.IsConstructible);
             });
-        Assert.Equal(14, Type(ir, "IAvnSelectableTextBlock").AbiVersion);
         Assert.True(Type(ir, "IAvnSelectableTextBlock").IsConstructible);
-        Assert.Equal(13, Type(ir, "IAvnNumericUpDown").AbiVersion);
-        Assert.Equal(19, Type(ir, "IAvnAutoCompleteBox").AbiVersion);
-        Assert.Equal(18, Type(ir, "IAvnMaskedTextBox").AbiVersion);
 
         Assert.Equal("Avalonia.Host.Com.IAvnSpinner", Type(ir, "IAvnButtonSpinner").BaseFullName);
         Assert.Equal("Avalonia.Host.Com.IAvnTemplatedControl", Type(ir, "IAvnNumericUpDown").BaseFullName);
@@ -1370,11 +1164,10 @@ public class ClrTypeExtractorTests
         Assert.True(selectedText.CanRead);
         Assert.False(selectedText.CanWrite);
 
-        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
-    public void Wave_f_calendar_family_publishes_new_interfaces_at_version_one()
+    public void Wave_f_calendar_family_publishes_new_interfaces()
     {
         var ir = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
 
@@ -1386,9 +1179,6 @@ public class ClrTypeExtractorTests
                 Assert.True(type.IsConstructible);
                 Assert.Equal("Avalonia.Host.Com.IAvnTemplatedControl", type.BaseFullName);
             });
-        // U17 grew Calendar alone (DisplayDateChanged); the picker did not move.
-        Assert.Equal(15, Type(ir, "IAvnCalendar").AbiVersion);
-        Assert.Equal(14, Type(ir, "IAvnCalendarDatePicker").AbiVersion);
 
         var selected = Type(ir, "IAvnCalendar").Properties.Single(p => p.Name == "SelectedDate");
         Assert.Equal(MarshallingKind.StringUtf16, selected.Kind);
@@ -1409,18 +1199,16 @@ public class ClrTypeExtractorTests
         Assert.Equal("Avalonia.Host.Com.AvnDateList", selectedDates.HostImplementationTypeName);
         Assert.False(selectedDates.CanWrite);
 
-        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
-    public void Wave_g_content_chrome_publishes_new_interfaces_at_version_one()
+    public void Wave_g_content_chrome_publishes_new_interfaces()
     {
         var ir = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
 
         Assert.Equal("Avalonia.Host.Com.IAvnSelectingItemsControl", Type(ir, "IAvnCarousel").BaseFullName);
         Assert.Equal("Avalonia.Host.Com.IAvnContentControl", Type(ir, "IAvnTransitioningContentControl").BaseFullName);
         Assert.Equal("Avalonia.Host.Com.IAvnContentControl", Type(ir, "IAvnLabel").BaseFullName);
-        Assert.Equal(13, Type(ir, "IAvnLabel").AbiVersion);
         Assert.Equal("Avalonia.Host.Com.IAvnTemplatedControl", Type(ir, "IAvnSeparator").BaseFullName);
         Assert.Equal("Avalonia.Host.Com.IAvnHeaderedContentControl", Type(ir, "IAvnGroupBox").BaseFullName);
         Assert.Equal("Avalonia.Host.Com.IAvnContentControl", Type(ir, "IAvnUserControl").BaseFullName);
@@ -1438,16 +1226,14 @@ public class ClrTypeExtractorTests
             Type(ir, "IAvnLayoutTransformControl").Properties,
             p => p.Name == "LayoutTransform");
 
-        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
-    public void Wave_h_shapes_publish_new_interfaces_at_version_one()
+    public void Wave_h_shapes_publish_new_interfaces()
     {
         var ir = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
 
         var shape = Type(ir, "IAvnShape");
-        Assert.Equal(11, shape.AbiVersion);
         Assert.False(shape.IsConstructible);
         Assert.Equal("Avalonia.Host.Com.IAvnControl", shape.BaseFullName);
         Assert.All(
@@ -1462,7 +1248,6 @@ public class ClrTypeExtractorTests
             name =>
             {
                 var type = Type(ir, name);
-                Assert.Equal(11, type.AbiVersion);
                 Assert.True(type.IsConstructible);
                 Assert.Equal("Avalonia.Host.Com.IAvnShape", type.BaseFullName);
             });
@@ -1480,11 +1265,10 @@ public class ClrTypeExtractorTests
         Assert.Equal(MarshallingKind.StringUtf16, polygonPoints.Kind);
         Assert.Equal("Avalonia.Host.Com.AvnPointList", polygonPoints.StringConverterTypeName);
 
-        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
-    public void Wave_i_overlay_publishes_new_interfaces_at_version_one()
+    public void Wave_i_overlay_publishes_new_interfaces()
     {
         var ir = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
 
@@ -1506,11 +1290,10 @@ public class ClrTypeExtractorTests
             MarshallingKind.Command,
             Type(ir, "IAvnTrayIcon").Properties.Single(p => p.Name == "Command").Kind);
 
-        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
-    public void Wave_j_command_bar_publishes_new_interfaces_at_version_one()
+    public void Wave_j_command_bar_publishes_new_interfaces()
     {
         var ir = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
 
@@ -1530,11 +1313,10 @@ public class ClrTypeExtractorTests
         var buttonIcon = Type(ir, "IAvnCommandBarButton").Properties.Single(p => p.Name == "Icon");
         Assert.Equal(MarshallingKind.Variant, buttonIcon.Kind);
 
-        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
-    public void Wave_k_icons_and_table_view_publish_new_interfaces_at_version_one()
+    public void Wave_k_icons_and_table_view_publish_new_interfaces()
     {
         var ir = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
 
@@ -1561,15 +1343,13 @@ public class ClrTypeExtractorTests
         var width = Type(ir, "IAvnTableViewColumn").Properties.Single(p => p.Name == "Width");
         Assert.Equal(MarshallingKind.StringUtf16, width.Kind);
 
-        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
-    public void Wave_l_window_chrome_bumps_only_window()
+    public void Wave_l_projects_window_chrome()
     {
         var ir = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
         var window = Type(ir, "IAvnWindow");
-        Assert.Equal(21, window.AbiVersion);
         Assert.Contains(window.Methods, m => m.Name == "Hide");
         Assert.All(
             new[]
@@ -1594,16 +1374,14 @@ public class ClrTypeExtractorTests
         Assert.Contains(closing.Parameters, p => p.Name == "Cancel" && p.Direction == ParameterDirection.InOut);
         Assert.Contains(closing.Parameters, p => p.Name == "CloseReason" && p.Kind == MarshallingKind.I32);
         Assert.Contains(closing.Parameters, p => p.Name == "IsProgrammatic" && p.Kind == MarshallingKind.Bool);
-        Assert.Equal(16, Type(ir, "IAvnContentControl").AbiVersion);
     }
 
     [Fact]
-    public void Wave_m_fonts_bump_templated_control_and_text_block()
+    public void Wave_m_projects_fonts_on_templated_control_and_text_block()
     {
         var ir = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
 
         var templated = Type(ir, "IAvnTemplatedControl");
-        Assert.Equal(15, templated.AbiVersion);
         Assert.All(
             new[] { "FontFamily", "FontStyle", "FontWeight", "FontStretch", "LetterSpacing", "Padding" },
             name => Assert.Contains(templated.Properties, p => p.Name == name));
@@ -1613,26 +1391,21 @@ public class ClrTypeExtractorTests
         Assert.Null(fontFamily.StringConverterTypeName);
 
         var textBlock = Type(ir, "IAvnTextBlock");
-        Assert.Equal(17, textBlock.AbiVersion);
         Assert.All(
             new[] { "FontFamily", "FontStyle", "FontStretch", "Background", "LetterSpacing",
                 "LineSpacing", "MaxLines", "TextWrapping" },
             name => Assert.Contains(textBlock.Properties, p => p.Name == name));
 
-        Assert.Equal(14, Type(ir, "IAvnSelectableTextBlock").AbiVersion);
-        Assert.Equal(15, Type(ir, "IAvnBorder").AbiVersion);
         var trimming = textBlock.Properties.Single(p => p.Name == "TextTrimming");
         Assert.Equal(MarshallingKind.StringUtf16, trimming.Kind);
         Assert.Equal("Avalonia.Host.Com.AvnTextTrimming", trimming.StringConverterTypeName);
-        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
-    public void Wave_n_textbox_remainder_bumps_only_textbox_and_masked_textbox()
+    public void Wave_n_projects_the_textbox_remainder()
     {
         var ir = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
         var textBox = Type(ir, "IAvnTextBox");
-        Assert.Equal(21, textBox.AbiVersion);
         Assert.All(
             new[] { "SelectedText", "TextAlignment", "SelectionBrush", "InnerLeftContent",
                 "UseFloatingPlaceholder", "PlaceholderForeground" },
@@ -1646,7 +1419,6 @@ public class ClrTypeExtractorTests
             MarshallingKind.TimeSpanI64,
             textBox.Properties.Single(p => p.Name == "CaretBlinkInterval").Kind);
         Assert.DoesNotContain(textBox.Properties, p => p.Name == "Watermark");
-        Assert.Equal(18, Type(ir, "IAvnMaskedTextBox").AbiVersion);
     }
 
     [Fact]
@@ -1655,13 +1427,10 @@ public class ClrTypeExtractorTests
         var ir = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
 
         // The decimal? old/new pair has no numeric ABI shape; it crosses as invariant
-        // UTF-16 through the AvnDecimal converter the Value property already uses, so the
-        // payload-carrying handler republishes at version 2 while the control itself moves
-        // only with its own members.
+        // UTF-16 through the AvnDecimal converter the Value property already uses.
         var valueChanged = Type(ir, "IAvnNumericUpDown").Events
             .Single(@event => @event.Name == nameof(NumericUpDown.ValueChanged));
         Assert.Equal(EventPayloadKind.Fields, valueChanged.PayloadKind);
-        Assert.Equal(2, valueChanged.HandlerInterfaceAbiVersion);
         Assert.All(valueChanged.Parameters, parameter =>
         {
             Assert.Equal(MarshallingKind.StringUtf16, parameter.Kind);
@@ -1673,8 +1442,6 @@ public class ClrTypeExtractorTests
                 nameof(NumericUpDownValueChangedEventArgs.NewValue)],
             valueChanged.Parameters.Select(parameter => parameter.Name));
         Assert.Contains(Type(ir, "IAvnMaskedTextBox").Properties, p => p.Name == "MaskCompleted");
-        Assert.Equal(15, Type(ir, "IAvnTemplatedControl").AbiVersion);
-        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
@@ -1682,21 +1449,17 @@ public class ClrTypeExtractorTests
     {
         var ir = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
         var combo = Type(ir, "IAvnComboBox");
-        Assert.Equal(20, combo.AbiVersion);
         Assert.Contains(combo.Properties, p => p.Name == "Text");
         Assert.Contains(combo.Methods, m => m.Name == "Clear");
         Assert.Contains(combo.Events, e => e.Name == "DropDownOpened");
 
         var scroll = Type(ir, "IAvnScrollViewer");
-        Assert.Equal(18, scroll.AbiVersion);
         Assert.Equal(MarshallingKind.Size, scroll.Properties.Single(p => p.Name == "Extent").Kind);
         Assert.Equal(MarshallingKind.Vector, scroll.Properties.Single(p => p.Name == "Offset").Kind);
         Assert.Equal(MarshallingKind.Size, scroll.Properties.Single(p => p.Name == "Viewport").Kind);
         Assert.Equal(MarshallingKind.Vector, scroll.Properties.Single(p => p.Name == "ScrollBarMaximum").Kind);
         Assert.False(scroll.Properties.Single(p => p.Name == "Extent").CanWrite);
         Assert.True(scroll.Properties.Single(p => p.Name == "Offset").CanWrite);
-        Assert.Equal(16, Type(ir, "IAvnContentControl").AbiVersion);
-        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
@@ -1704,38 +1467,28 @@ public class ClrTypeExtractorTests
     {
         var ir = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
         var button = Type(ir, "IAvnButton");
-        Assert.Equal(19, button.AbiVersion);
         var flyout = button.Properties.Single(p => p.Name == "Flyout");
         Assert.Equal(MarshallingKind.ComInterface, flyout.Kind);
         Assert.Equal("Avalonia.Host.Com.IAvnFlyoutBase", flyout.InterfaceName);
         Assert.True(flyout.IsNullable);
 
         var split = Type(ir, "IAvnSplitButton");
-        Assert.Equal(15, split.AbiVersion);
         Assert.Contains(split.Properties, p => p.Name == "Flyout");
 
         var menu = Type(ir, "IAvnMenuItem");
-        Assert.Equal(18, menu.AbiVersion);
         Assert.Contains(menu.Properties, p => p.Name == "HasSubMenu");
         Assert.Contains(menu.Methods, m => m.Name == "Open");
         Assert.Contains(menu.Methods, m => m.Name == "Close");
-        Assert.Equal(16, Type(ir, "IAvnContentControl").AbiVersion);
-        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
     public void Wave_q_sweeps_leaf_input_scalars()
     {
         var ir = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
-        Assert.Equal(19, Type(ir, "IAvnAutoCompleteBox").AbiVersion);
         Assert.Contains(Type(ir, "IAvnAutoCompleteBox").Properties, p => p.Name == "SearchText");
-        Assert.Equal(15, Type(ir, "IAvnCalendar").AbiVersion);
         Assert.Contains(Type(ir, "IAvnCalendar").Properties, p => p.Name == "IsTodayHighlighted");
-        Assert.Equal(14, Type(ir, "IAvnCalendarDatePicker").AbiVersion);
         Assert.Contains(Type(ir, "IAvnCalendarDatePicker").Methods, m => m.Name == "Clear");
-        Assert.Equal(13, Type(ir, "IAvnNumericUpDown").AbiVersion);
         Assert.Contains(Type(ir, "IAvnNumericUpDown").Properties, p => p.Name == "TextAlignment");
-        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
@@ -1743,18 +1496,13 @@ public class ClrTypeExtractorTests
     {
         var ir = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
         var items = Type(ir, "IAvnItemsControl");
-        Assert.Equal(18, items.AbiVersion);
         Assert.Contains(items.Properties, p => p.Name == "Items");
         Assert.Contains(items.Properties, p => p.Name == "ItemCount");
         Assert.Contains(items.Methods, m => m.ManagedName == "ScrollIntoView");
         var selecting = Type(ir, "IAvnSelectingItemsControl");
-        Assert.Equal(18, selecting.AbiVersion);
         Assert.Contains(selecting.Properties, p => p.Name == "SelectedIndex");
         Assert.Contains(selecting.Events, e => e.Name == "SelectionChanged");
         Assert.Contains(selecting.Properties, p => p.Name == "AutoScrollToSelectedItem");
-        Assert.Equal(16, Type(ir, "IAvnContentControl").AbiVersion);
-        Assert.Equal(21, Type(ir, "IAvnWindow").AbiVersion);
-        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
@@ -1762,46 +1510,32 @@ public class ClrTypeExtractorTests
     {
         var ir = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
         var textBlock = Type(ir, "IAvnTextBlock");
-        Assert.Equal(17, textBlock.AbiVersion);
         Assert.Contains(textBlock.Properties, p => p.Name == "LineHeight");
         Assert.Contains(textBlock.Properties, p => p.Name == "BaselineOffset");
         Assert.Contains(textBlock.Properties, p => p.Name == "TextTrimming");
 
         var selectable = Type(ir, "IAvnSelectableTextBlock");
-        Assert.Equal(14, selectable.AbiVersion);
         Assert.Contains(selectable.Properties, p => p.Name == "SelectionBrush");
         Assert.Contains(selectable.Methods, m => m.Name == "SelectAll");
         Assert.Contains(selectable.Events, e => e.Name == "CopyingToClipboard");
 
         var textBox = Type(ir, "IAvnTextBox");
-        Assert.Equal(21, textBox.AbiVersion);
         Assert.Contains(textBox.Methods, m => m.ManagedName == "ScrollToLine");
         var lineCount = textBox.Methods.Single(m => m.ManagedName == "GetLineCount");
         Assert.Contains(lineCount.Parameters, p => p.Name == "value" && p.Direction == ParameterDirection.Out);
         Assert.Equal(MarshallingKind.CharUtf16, textBox.Properties.Single(p => p.Name == "PasswordChar").Kind);
-        Assert.Equal(18, Type(ir, "IAvnMaskedTextBox").AbiVersion);
-        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
     public void Leaf_leftovers_project_marshallable_scalars_and_commands()
     {
         var ir = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
-        Assert.Equal(15, Type(ir, "IAvnCommandBar").AbiVersion);
         Assert.Contains(Type(ir, "IAvnCommandBar").Properties, p => p.Name == "HasSecondaryCommands");
         Assert.Contains(Type(ir, "IAvnCommandBar").Events, e => e.Name == "Opened");
-        Assert.Equal(16, Type(ir, "IAvnCarousel").AbiVersion);
         Assert.Contains(Type(ir, "IAvnCarousel").Methods, m => m.Name == "Next");
-        Assert.Equal(20, Type(ir, "IAvnComboBox").AbiVersion);
-        Assert.Equal(14, Type(ir, "IAvnDatePicker").AbiVersion);
         Assert.Contains(Type(ir, "IAvnDatePicker").Properties, p => p.Name == "VerticalContentAlignment");
-        Assert.Equal(18, Type(ir, "IAvnContextMenu").AbiVersion);
-        Assert.Equal(16, Type(ir, "IAvnProgressBar").AbiVersion);
         Assert.Contains(Type(ir, "IAvnProgressBar").Properties, p => p.Name == "Percentage");
-        Assert.Equal(15, Type(ir, "IAvnStackPanel").AbiVersion);
-        Assert.Equal(15, Type(ir, "IAvnBorder").AbiVersion);
         Assert.Contains(Type(ir, "IAvnBorder").Properties, p => p.Name == "ClipToBoundsRadius");
-        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
@@ -1809,7 +1543,6 @@ public class ClrTypeExtractorTests
     {
         var ir = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
         var popup = Type(ir, "IAvnPopup");
-        Assert.Equal(11, popup.AbiVersion);
         Assert.Contains(popup.Methods, m => m.Name == "Open");
         Assert.Contains(popup.Methods, m => m.Name == "Close");
         Assert.Contains(popup.Events, e => e.Name == "Opened");
@@ -1822,11 +1555,9 @@ public class ClrTypeExtractorTests
         Assert.Contains(popup.Properties, p => p.Name == "PlacementAnchor");
 
         var flyoutBase = Type(ir, "IAvnPopupFlyoutBase");
-        Assert.Equal(6, flyoutBase.AbiVersion);
         var popupProp = flyoutBase.Properties.Single(p => p.Name == "Popup");
         Assert.Equal("Avalonia.Host.Com.IAvnPopup", popupProp.InterfaceName);
 
-        Assert.Equal(18, Type(ir, "IAvnContextMenu").AbiVersion);
         Assert.Contains(Type(ir, "IAvnContextMenu").Properties, p => p.Name == "PlacementTarget");
         var openWithControl = Type(ir, "IAvnContextMenu").Methods
             .Single(m => m.Name == "OpenWithControl");
@@ -1834,7 +1565,6 @@ public class ClrTypeExtractorTests
         Assert.Equal("Avalonia.Host.Com.IAvnControl", openWithControl.Parameters.Single().InterfaceName);
         Assert.True(openWithControl.Parameters.Single().IsNullable);
         Assert.Contains(Type(ir, "IAvnContextMenu").Events, e => e.Name == "Opening");
-        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
@@ -1842,7 +1572,6 @@ public class ClrTypeExtractorTests
     {
         var ir = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
         var control = Type(ir, "IAvnControl");
-        Assert.Equal(11, control.AbiVersion);
         var menu = control.Properties.Single(p => p.Name == "ContextMenu");
         Assert.Equal(MarshallingKind.ComInterface, menu.Kind);
         Assert.Equal("Avalonia.Host.Com.IAvnContextMenu", menu.InterfaceName);
@@ -1852,10 +1581,6 @@ public class ClrTypeExtractorTests
         Assert.Contains(control.Properties, p => p.Name == "IsLoaded");
         Assert.Contains(control.Events, e => e.Name == "Loaded");
         Assert.Contains(control.Events, e => e.Name == "Unloaded");
-        Assert.Equal(6, Type(ir, "IAvnStyledElement").AbiVersion);
-        Assert.Equal(19, Type(ir, "IAvnButton").AbiVersion);
-        Assert.Equal(4, Type(ir, "IAvnFlyout").AbiVersion);
-        Assert.Equal(14, ir.FactoryAbiVersion);
     }
 
     [Fact]
@@ -1875,16 +1600,25 @@ public class ClrTypeExtractorTests
     }
 
     [Fact]
-    public void Iids_are_versioned_per_interface_not_by_ir_schema()
+    public void Iids_derive_from_the_projected_name_alone()
     {
-        const string name = "Avalonia.Host.Com.IAvnButton";
+        var first = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
+        var second = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
 
+        // Interfaces are unversioned: an IID is a pure function of the interface name, so
+        // growing an interface in place keeps its IID.
+        Assert.All(first.Types, type => Assert.Equal(
+            ClrTypeExtractor.CreateDeterministicIid(type.FullName),
+            type.Iid));
         Assert.Equal(
-            ClrTypeExtractor.CreateDeterministicIid(name, 1),
-            ClrTypeExtractor.CreateDeterministicIid(name));
+            ClrTypeExtractor.CreateDeterministicIid("Avalonia.Host.Com.IAvnControlFactory"),
+            first.FactoryIid);
+        Assert.Equal(
+            first.Types.Select(type => type.Iid),
+            second.Types.Select(type => type.Iid));
         Assert.NotEqual(
-            ClrTypeExtractor.CreateDeterministicIid(name, 1),
-            ClrTypeExtractor.CreateDeterministicIid(name, 2));
+            ClrTypeExtractor.CreateDeterministicIid("Avalonia.Host.Com.IAvnButton"),
+            ClrTypeExtractor.CreateDeterministicIid("Avalonia.Host.Com.IAvnTextBox"));
     }
 
     private static ProjectedType Type(ProjectionIr ir, string name) =>

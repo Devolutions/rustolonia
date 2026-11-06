@@ -8,9 +8,6 @@
 //! desktop. Attached to the application ([`AppContext::set_application_menu`])
 //! its items open the macOS application menu (About, Settings…), which other
 //! platforms do not show.
-//!
-//! Requires a host with the `IAvnApplication15` capability; on an older host
-//! [`AppContext::create_native_menu`] fails with `E_NOINTERFACE`.
 
 use crate::{AppContext, Control, Result, Window};
 use rustolonia_sys as sys;
@@ -248,10 +245,6 @@ impl NativeMenu {
 }
 
 impl AppContext {
-    fn native_menus(&self) -> Result<sys::ComPtr<sys::IAvnApplication15>> {
-        Ok(self.application().native_menus()?)
-    }
-
     /// Creates an empty native menu reporting the id of each clicked item (or
     /// pressed shortcut) to `handler`, on the UI thread.
     pub fn create_native_menu(
@@ -264,9 +257,7 @@ impl AppContext {
                 _ => sys::Error(sys::E_FAIL),
             })
         });
-        let raw = self
-            .native_menus()?
-            .create_native_menu(Some(&sys_handler))?;
+        let raw = self.application().create_native_menu(Some(&sys_handler))?;
         Ok(NativeMenu { raw })
     }
 
@@ -275,7 +266,7 @@ impl AppContext {
     /// menu cannot be both the application menu and a window menu.
     pub fn set_application_menu(&self, menu: Option<&NativeMenu>) -> Result<()> {
         Ok(self
-            .native_menus()?
+            .application()
             .set_application_menu(menu.map(|m| &m.raw))?)
     }
 
@@ -283,21 +274,21 @@ impl AppContext {
     /// window; `None` removes both. One menu can serve several windows.
     pub fn set_window_menu(&self, window: &Window, menu: Option<&NativeMenu>) -> Result<()> {
         Ok(self
-            .native_menus()?
+            .application()
             .set_window_menu(&window.raw, menu.map(|m| &m.raw))?)
     }
 
     /// Whether the platform shows `window`'s menu outside the window (the
     /// macOS menu bar), so no in-window bar is visible.
     pub fn is_native_menu_exported(&self, window: &Window) -> Result<bool> {
-        Ok(self.native_menus()?.is_native_menu_exported(&window.raw)?)
+        Ok(self.application().is_native_menu_exported(&window.raw)?)
     }
 
     /// A control drawing its window's menu in-window (Avalonia's
     /// `NativeMenuBar`). It hides itself while the platform exports the menu,
     /// so put one at the top of every window that has a menu.
     pub fn create_native_menu_bar(&self) -> Result<Control> {
-        let raw = self.native_menus()?.create_native_menu_bar()?;
+        let raw = self.application().create_native_menu_bar()?;
         Ok(Control { raw })
     }
 }

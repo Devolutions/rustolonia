@@ -169,7 +169,7 @@ public static class NativeHeaderEmitter
             {
                 // The args interface: one count/getter pair per projected property.
                 var argsName = SimpleName(argsFullName);
-                EmitIid(sb, argsName, @event.ArgsInterfaceIid!, 1);
+                EmitIid(sb, argsName, @event.ArgsInterfaceIid!);
                 BeginInterface(sb, argsName);
                 var slot = 3;
                 foreach (var parameter in @event.Parameters)
@@ -181,14 +181,14 @@ public static class NativeHeaderEmitter
                 }
                 EndInterface(sb, argsName, slot);
 
-                EmitIid(sb, name, @event.HandlerInterfaceIid, @event.HandlerInterfaceAbiVersion);
+                EmitIid(sb, name, @event.HandlerInterfaceIid);
                 BeginInterface(sb, name);
                 EmitSlot(sb, 3, "invoke", name, [$"{argsName}* args"]);
                 EndInterface(sb, name, 4);
                 continue;
             }
             var arguments = @event.Parameters.Select(EventParameter).ToArray();
-            EmitIid(sb, name, @event.HandlerInterfaceIid, @event.HandlerInterfaceAbiVersion);
+            EmitIid(sb, name, @event.HandlerInterfaceIid);
             BeginInterface(sb, name);
             EmitSlot(sb, 3, "invoke", name, arguments);
             EndInterface(sb, name, 4);
@@ -199,7 +199,7 @@ public static class NativeHeaderEmitter
             var brushName = SimpleName(brushInterfaceName);
             var colorAbiName = GeometryMarshalling.All
                 .Single(geometry => geometry.Kind == MarshallingKind.Color).AbiName;
-            EmitIid(sb, brushName, ir.BrushInterfaceIid!, ir.BrushAbiVersion);
+            EmitIid(sb, brushName, ir.BrushInterfaceIid!);
             BeginInterface(sb, brushName);
             EmitSlot(sb, 3, "get_color", brushName, [$"{colorAbiName}* value"]);
             EmitSlot(sb, 4, "get_opacity", brushName, ["double* value"]);
@@ -212,7 +212,7 @@ public static class NativeHeaderEmitter
             var linearName = SimpleName(ir.LinearGradientBrushInterfaceName!);
             var radialName = SimpleName(ir.RadialGradientBrushInterfaceName!);
 
-            EmitIid(sb, gradientName, ir.GradientBrushInterfaceIid!, 1);
+            EmitIid(sb, gradientName, ir.GradientBrushInterfaceIid!);
             BeginInterface(sb, gradientName);
             EmitSlot(sb, 3, "get_opacity", gradientName, ["double* value"]);
             EmitSlot(sb, 4, "get_spread_method", gradientName, ["int32_t* value"]);
@@ -222,7 +222,7 @@ public static class NativeHeaderEmitter
 
             // Derived gradient interfaces flatten the base's four slots ahead of their own,
             // mirroring the single-inheritance vtable layout produced for control interfaces.
-            EmitIid(sb, linearName, ir.LinearGradientBrushInterfaceIid!, 1);
+            EmitIid(sb, linearName, ir.LinearGradientBrushInterfaceIid!);
             BeginInterface(sb, linearName);
             EmitSlot(sb, 3, "get_opacity", linearName, ["double* value"]);
             EmitSlot(sb, 4, "get_spread_method", linearName, ["int32_t* value"]);
@@ -232,7 +232,7 @@ public static class NativeHeaderEmitter
             EmitSlot(sb, 8, "get_end_point", linearName, ["AvnRelativePoint* value"]);
             EndInterface(sb, linearName, 9);
 
-            EmitIid(sb, radialName, ir.RadialGradientBrushInterfaceIid!, 1);
+            EmitIid(sb, radialName, ir.RadialGradientBrushInterfaceIid!);
             BeginInterface(sb, radialName);
             EmitSlot(sb, 3, "get_opacity", radialName, ["double* value"]);
             EmitSlot(sb, 4, "get_spread_method", radialName, ["int32_t* value"]);
@@ -252,11 +252,11 @@ public static class NativeHeaderEmitter
             var ns = commandInterfaceName[..commandInterfaceName.LastIndexOf('.')];
             var handlerIid = ClrTypeExtractor.CreateDeterministicIid(
                 CommandMarshalling.QualifiedHandlerInterfaceName(ns));
-            EmitIid(sb, handlerName, handlerIid, 1);
+            EmitIid(sb, handlerName, handlerIid);
             BeginInterface(sb, handlerName);
             EmitSlot(sb, 3, "invoke", handlerName, []);
             EndInterface(sb, handlerName, 4);
-            EmitIid(sb, commandName, ir.CommandInterfaceIid!, ir.CommandAbiVersion);
+            EmitIid(sb, commandName, ir.CommandInterfaceIid!);
             BeginInterface(sb, commandName);
             EmitSlot(sb, 3, "execute", commandName, ["AvnVariant parameter"]);
             EmitSlot(sb, 4, "can_execute", commandName, ["AvnVariant parameter", "int32_t* value"]);
@@ -269,7 +269,7 @@ public static class NativeHeaderEmitter
         if (ir.TemplateInterfaceName is { } templateInterfaceName)
         {
             var templateName = SimpleName(templateInterfaceName);
-            EmitIid(sb, templateName, ir.TemplateInterfaceIid!, 1);
+            EmitIid(sb, templateName, ir.TemplateInterfaceIid!);
             BeginInterface(sb, templateName);
             EmitSlot(sb, 3, "match", templateName, ["AvnVariant data", "int32_t* value"]);
             EmitSlot(sb, 4, "build", templateName, ["IAvnControl** value"]);
@@ -279,7 +279,7 @@ public static class NativeHeaderEmitter
         if (ir.ItemFilterInterfaceName is { } itemFilterInterfaceName)
         {
             var name = SimpleName(itemFilterInterfaceName);
-            EmitIid(sb, name, ir.ItemFilterInterfaceIid!, 1);
+            EmitIid(sb, name, ir.ItemFilterInterfaceIid!);
             BeginInterface(sb, name);
             EmitSlot(sb, 3, "invoke", name, ["const uint16_t* search", "AvnVariant item", "int32_t* result"]);
             EndInterface(sb, name, 4);
@@ -288,7 +288,7 @@ public static class NativeHeaderEmitter
         if (ir.TextFilterInterfaceName is { } textFilterInterfaceName)
         {
             var name = SimpleName(textFilterInterfaceName);
-            EmitIid(sb, name, ir.TextFilterInterfaceIid!, 1);
+            EmitIid(sb, name, ir.TextFilterInterfaceIid!);
             BeginInterface(sb, name);
             EmitSlot(sb, 3, "invoke", name, ["const uint16_t* search", "const uint16_t* item", "int32_t* result"]);
             EndInterface(sb, name, 4);
@@ -297,7 +297,7 @@ public static class NativeHeaderEmitter
         if (ir.ItemSelectorInterfaceName is { } itemSelectorInterfaceName)
         {
             var name = SimpleName(itemSelectorInterfaceName);
-            EmitIid(sb, name, ir.ItemSelectorInterfaceIid!, 1);
+            EmitIid(sb, name, ir.ItemSelectorInterfaceIid!);
             BeginInterface(sb, name);
             EmitSlot(sb, 3, "invoke", name, ["const uint16_t* search", "AvnVariant item", "uint16_t** text"]);
             EndInterface(sb, name, 4);
@@ -306,7 +306,7 @@ public static class NativeHeaderEmitter
         if (ir.TextSelectorInterfaceName is { } textSelectorInterfaceName)
         {
             var name = SimpleName(textSelectorInterfaceName);
-            EmitIid(sb, name, ir.TextSelectorInterfaceIid!, 1);
+            EmitIid(sb, name, ir.TextSelectorInterfaceIid!);
             BeginInterface(sb, name);
             EmitSlot(sb, 3, "invoke", name, ["const uint16_t* search", "const uint16_t* item", "uint16_t** text"]);
             EndInterface(sb, name, 4);
@@ -315,7 +315,7 @@ public static class NativeHeaderEmitter
         if (ir.PopupPlacementInterfaceName is { } popupPlacementInterfaceName)
         {
             var name = SimpleName(popupPlacementInterfaceName);
-            EmitIid(sb, name, ir.PopupPlacementInterfaceIid!, 1);
+            EmitIid(sb, name, ir.PopupPlacementInterfaceIid!);
             BeginInterface(sb, name);
             EmitSlot(sb, 3, "invoke", name,
                 [
@@ -337,14 +337,14 @@ public static class NativeHeaderEmitter
         if (ir.AsyncPopulatorInterfaceName is { } asyncPopulatorInterfaceName)
         {
             var completionName = "IAvnAsyncPopulatorCompletion";
-            EmitIid(sb, completionName, ir.AsyncPopulatorCompletionInterfaceIid!, 1);
+            EmitIid(sb, completionName, ir.AsyncPopulatorCompletionInterfaceIid!);
             BeginInterface(sb, completionName);
             EmitSlot(sb, 3, "complete", completionName,
                 ["int64_t request_id", "int32_t hresult", "IAvnVariantList* items"]);
             EndInterface(sb, completionName, 4);
 
             var name = SimpleName(asyncPopulatorInterfaceName);
-            EmitIid(sb, name, ir.AsyncPopulatorInterfaceIid!, 1);
+            EmitIid(sb, name, ir.AsyncPopulatorInterfaceIid!);
             BeginInterface(sb, name);
             EmitSlot(sb, 3, "begin_populate", name,
                 ["int64_t request_id", "IAvnAsyncPopulatorCompletion* completion", "const uint16_t* search_text"]);
@@ -357,11 +357,11 @@ public static class NativeHeaderEmitter
             var ns = notificationInterfaceName[..notificationInterfaceName.LastIndexOf('.')];
             var handlerName = "IAvnNotificationActionHandler";
             var handlerIid = ClrTypeExtractor.CreateDeterministicIid($"{ns}.{handlerName}");
-            EmitIid(sb, handlerName, handlerIid, 1);
+            EmitIid(sb, handlerName, handlerIid);
             BeginInterface(sb, handlerName);
             EmitSlot(sb, 3, "invoke", handlerName, []);
             EndInterface(sb, handlerName, 4);
-            EmitIid(sb, name, ir.NotificationInterfaceIid!, 1);
+            EmitIid(sb, name, ir.NotificationInterfaceIid!);
             BeginInterface(sb, name);
             EmitSlot(sb, 3, "get_title", name, ["const uint16_t** value"]);
             EmitSlot(sb, 4, "get_message", name, ["const uint16_t** value"]);
@@ -379,7 +379,7 @@ public static class NativeHeaderEmitter
                 collection.ElementKind!.Value,
                 collection.ElementInterfaceName,
                 pointerForInterface: true);
-            EmitIid(sb, name, collection.InterfaceIid!, collection.InterfaceAbiVersion);
+            EmitIid(sb, name, collection.InterfaceIid!);
             BeginInterface(sb, name);
             EmitSlot(sb, 3, "get_count", name, ["int32_t* value"]);
             EmitSlot(sb, 4, "get_at", name, ["int32_t index", $"{element}* value"]);
@@ -393,7 +393,7 @@ public static class NativeHeaderEmitter
 
         foreach (var type in types)
         {
-            EmitIid(sb, type.Name, type.Iid!, type.AbiVersion);
+            EmitIid(sb, type.Name, type.Iid!);
             BeginInterface(sb, type.Name);
             var slot = 3;
             EmitSlot(sb, slot++, "get_object_id", type.Name, ["int64_t* value"]);
@@ -452,11 +452,7 @@ public static class NativeHeaderEmitter
         foreach (var group in statics)
         {
             var name = SimpleName(group.Key);
-            EmitIid(
-                sb,
-                name,
-                group.First().StaticsInterfaceIid,
-                group.First().StaticsInterfaceAbiVersion);
+            EmitIid(sb, name, group.First().StaticsInterfaceIid);
             BeginInterface(sb, name);
             var slot = 3;
             foreach (var property in group)
@@ -477,7 +473,7 @@ public static class NativeHeaderEmitter
             EndInterface(sb, name, slot);
         }
 
-        EmitIid(sb, "IAvnControlFactory", ir.FactoryIid!, ir.FactoryAbiVersion);
+        EmitIid(sb, "IAvnControlFactory", ir.FactoryIid!);
         BeginInterface(sb, "IAvnControlFactory");
         var factorySlot = 3;
         foreach (var type in types.Where(type => type.IsConstructible))
@@ -580,7 +576,7 @@ public static class NativeHeaderEmitter
             $"    AvnHResult (AVN_CALL *{method})({owner}* self{suffix}); /* slot {slot} */");
     }
 
-    private static void EmitIid(StringBuilder sb, string name, string value, int abiVersion)
+    private static void EmitIid(StringBuilder sb, string name, string value)
     {
         var guid = Guid.Parse(value);
         var bytes = guid.ToByteArray();
@@ -592,7 +588,6 @@ public static class NativeHeaderEmitter
         sb.Append(string.Join(", ", bytes[8..].Select(value => $"0x{value:X2}")));
         sb.AppendLine(" }");
         sb.AppendLine("};");
-        sb.AppendLine($"#define {Snake(name).ToUpperInvariant()}_ABI_VERSION {abiVersion}");
     }
 
     private static IReadOnlyList<ProjectedType> Lineage(ProjectionIr ir, ProjectedType type)

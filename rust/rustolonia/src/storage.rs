@@ -2,8 +2,8 @@
 //!
 //! Everything here goes through Avalonia's own abstractions
 //! (`TopLevel.StorageProvider`, `IStorageFile`/`IStorageFolder`, the drag-and-drop
-//! routed events and the desktop lifetime activation arguments) over the
-//! separately versioned stage 29 capability interface. No raw platform dialog
+//! routed events and the desktop lifetime activation arguments) over
+//! `IAvnApplication`'s desktop file operations. No raw platform dialog
 //! API is involved, and no application-specific host method is introduced.
 //!
 //! See `rust/DESKTOP_FILES.md` for the design, the drag-effect negotiation rule
@@ -639,16 +639,9 @@ fn decode_picker_completion(
 }
 
 impl AppContext {
-    /// Queries the stage 29 desktop file integration capability.
-    fn desktop_files(&self) -> Result<sys::ComPtr<sys::IAvnApplication3>> {
-        Ok(self.application().desktop_files()?)
-    }
-
     /// Reports which pickers this window's top-level supports.
     pub fn storage_capabilities(&self, window: &Window) -> Result<StorageCapabilities> {
-        let bits = self
-            .desktop_files()?
-            .storage_capabilities(Some(&window.raw))?;
+        let bits = self.application().storage_capabilities(Some(&window.raw))?;
         Ok(StorageCapabilities::from_bits(bits))
     }
 
@@ -658,7 +651,7 @@ impl AppContext {
         window: &Window,
         options: &OpenFilePickerOptions,
     ) -> Result<StoragePickerOperation> {
-        let desktop = self.desktop_files()?;
+        let desktop = self.application().clone();
         let abi = desktop.create_picker_options()?;
         apply_common(
             &abi,
@@ -679,7 +672,7 @@ impl AppContext {
         window: &Window,
         options: &FolderPickerOptions,
     ) -> Result<StoragePickerOperation> {
-        let desktop = self.desktop_files()?;
+        let desktop = self.application().clone();
         let abi = desktop.create_picker_options()?;
         apply_common(
             &abi,
@@ -702,7 +695,7 @@ impl AppContext {
         window: &Window,
         options: &SaveFilePickerOptions,
     ) -> Result<StoragePickerOperation> {
-        let desktop = self.desktop_files()?;
+        let desktop = self.application().clone();
         let abi = desktop.create_picker_options()?;
         apply_common(
             &abi,
@@ -726,7 +719,7 @@ impl AppContext {
 
     /// The verbatim startup arguments this process passed to the host.
     pub fn startup_arguments(&self) -> Result<Vec<String>> {
-        let desktop = self.desktop_files()?;
+        let desktop = self.application();
         let count = desktop.startup_argument_count()?;
         let mut arguments = Vec::with_capacity(count.max(0) as usize);
         for index in 0..count {
@@ -738,7 +731,7 @@ impl AppContext {
     /// The normalized, de-duplicated, order-preserving open-with items derived
     /// from the startup arguments.
     pub fn activation_items(&self) -> Result<Vec<StorageItem>> {
-        StorageItem::from_abi_list(self.desktop_files()?.activation_items()?)
+        StorageItem::from_abi_list(self.application().activation_items()?)
     }
 
     /// Subscribes to incoming file/folder drags on a control or window.
@@ -752,7 +745,7 @@ impl AppContext {
         callback: impl FnMut(FileDropEvent) + Send + 'static,
     ) -> Result<EventSubscription> {
         let target = target.as_control()?;
-        let desktop = self.desktop_files()?;
+        let desktop = self.application().clone();
         let mut callback = callback;
         let handler = sys::file_drop_handler(move |arguments| {
             let event =
@@ -772,7 +765,7 @@ impl AppContext {
         &self,
         callback: impl FnMut(ActivationEvent) + Send + 'static,
     ) -> Result<EventSubscription> {
-        let desktop = self.desktop_files()?;
+        let desktop = self.application().clone();
         let mut callback = callback;
         let handler = sys::activation_handler(move |arguments| {
             let event =

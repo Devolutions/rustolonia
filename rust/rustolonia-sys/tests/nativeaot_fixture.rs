@@ -170,11 +170,10 @@ fn factory_creates_application() {
 }
 
 #[test]
-fn application_exposes_the_shell_capability() {
+fn application_validates_the_shutdown_mode() {
     let host = load();
     let factory = host.activation_factory().unwrap();
-    let app = factory.create_application().unwrap();
-    let shell = app.shell().unwrap();
+    let shell = factory.create_application().unwrap();
     // Out-of-range modes are rejected; a valid mode is accepted before Run.
     assert!(shell.set_shutdown_mode(7).is_err());
     shell.set_shutdown_mode(2).unwrap();
@@ -182,11 +181,10 @@ fn application_exposes_the_shell_capability() {
 }
 
 #[test]
-fn application_exposes_the_code_first_desktop_capability() {
+fn application_creates_code_first_desktop_surfaces() {
     let host = load();
     let factory = host.activation_factory().unwrap();
-    let app = factory.create_application().unwrap();
-    let surfaces = app.pixel_surfaces().unwrap();
+    let surfaces = factory.create_application().unwrap();
     // Both need Avalonia's UI thread, which is whichever test thread touched
     // the dispatcher first: elsewhere they fail cleanly instead of crashing.
     let handler = rustolonia_sys::pixel_surface_handler(|_| Ok(false));

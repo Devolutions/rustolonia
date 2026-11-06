@@ -87,7 +87,7 @@ public partial interface IAvnStorageItemList
 
 /// <summary>
 /// Host-owned, mutable picker options builder. Rust never implements this: it
-/// creates one through <see cref="IAvnApplication3.CreatePickerOptions"/> and
+/// creates one through <see cref="IAvnApplication.CreatePickerOptions"/> and
 /// fills it in, so the ABI carries only primitives and UTF-16 strings.
 /// </summary>
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
@@ -194,89 +194,4 @@ public partial interface IAvnActivationHandler
     /// <param name="items">Activated items, empty for kinds that carry none.</param>
     [PreserveSig]
     int OnActivated(int kind, IAvnStorageItemList? items);
-}
-
-/// <summary>
-/// Stage 29 desktop file integration capability. Queried as an optional
-/// interface from <see cref="IAvnApplication"/>; the previously published
-/// <see cref="IAvnApplication"/> and <see cref="IAvnApplication2"/> vtables are
-/// unchanged.
-/// </summary>
-[GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid(AvnGuids.IAvnApplication3)]
-public partial interface IAvnApplication3
-{
-    /// <summary>Creates an empty, host-owned picker options builder.</summary>
-    [PreserveSig]
-    int CreatePickerOptions(out IAvnFilePickerOptions? options);
-
-    /// <summary>
-    /// Reports which pickers the window's top-level storage provider supports,
-    /// as <see cref="Avalonia.Host.Desktop.AvnStorageCapabilityFlags"/> flags.
-    /// </summary>
-    [PreserveSig]
-    int GetStorageCapabilities(IAvnWindow? window, out int capabilities);
-
-    [PreserveSig]
-    int StartOpenFilePicker(
-        IAvnWindow? window,
-        IAvnFilePickerOptions? options,
-        IAvnStorageCompletion? completion,
-        out long operationId);
-
-    [PreserveSig]
-    int StartOpenFolderPicker(
-        IAvnWindow? window,
-        IAvnFilePickerOptions? options,
-        IAvnStorageCompletion? completion,
-        out long operationId);
-
-    [PreserveSig]
-    int StartSaveFilePicker(
-        IAvnWindow? window,
-        IAvnFilePickerOptions? options,
-        IAvnStorageCompletion? completion,
-        out long operationId);
-
-    /// <param name="acceptedEffects">
-    /// A conservative <see cref="Avalonia.Input.DragDropEffects"/> mask chosen by
-    /// the subscriber; the host reports back the intersection with the platform's
-    /// allowed effects and never calls Rust to negotiate.
-    /// </param>
-    [PreserveSig]
-    int SubscribeFileDrop(
-        IAvnControl? target,
-        int acceptedEffects,
-        IAvnFileDropHandler? handler,
-        out long subscriptionId);
-
-    [PreserveSig]
-    int UnsubscribeFileDrop(long subscriptionId);
-
-    /// <summary>Clears the startup arguments collected for the next <c>Run</c>.</summary>
-    [PreserveSig]
-    int ClearStartupArguments();
-
-    /// <summary>Appends one verbatim startup argument, preserving order.</summary>
-    [PreserveSig]
-    int AddStartupArgument(string? value);
-
-    [PreserveSig]
-    int GetStartupArgumentCount(out int count);
-
-    [PreserveSig]
-    int GetStartupArgument(int index, out string? value);
-
-    /// <summary>
-    /// Returns the normalized, de-duplicated, order-preserving file/folder
-    /// activation items derived from the startup arguments.
-    /// </summary>
-    [PreserveSig]
-    int GetActivationItems(out IAvnStorageItemList? items);
-
-    [PreserveSig]
-    int AdviseActivation(IAvnActivationHandler? handler, out long subscriptionId);
-
-    [PreserveSig]
-    int UnadviseActivation(long subscriptionId);
 }

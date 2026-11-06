@@ -5,27 +5,16 @@ using Avalonia.Rust.Interop;
 namespace Avalonia.Rust;
 
 /// <summary>
-/// Shared plumbing for the stage 30 capabilities queried from a Rust view
-/// model: tracked async invocation with cancellation, and windowed range
-/// sources.
+/// Shared plumbing for tracked async command invocation with cancellation, and
+/// for windowed range sources queried from a Rust view model.
 ///
 /// An invocation handle identifies one specific async command run and is never
 /// reused, so a cancellation raised after that run already finished is dropped
-/// instead of aborting its successor. Both capabilities are optional: a host
-/// attached to a producer that predates them still starts commands through
-/// <see cref="IAvnRustViewModel.BeginAsync"/> and simply projects no windowed
-/// data, rather than failing attach.
+/// instead of aborting its successor.
 /// </summary>
 public static class RustAsyncCommands
 {
     private const int NoInterface = unchecked((int)0x80004002);
-
-    /// <summary>
-    /// Resolves the optional tracked-async capability. Returns null when the
-    /// producer does not implement it.
-    /// </summary>
-    public static IAvnRustViewModel2? TryResolve(IAvnRustViewModel model) =>
-        TryCast<IAvnRustViewModel2>(model);
 
     /// <summary>
     /// Resolves the optional range-source capability. Returns null when the
@@ -34,37 +23,25 @@ public static class RustAsyncCommands
     public static IAvnRustRangeSource? TryResolveRangeSource(IAvnRustViewModel model) =>
         TryCast<IAvnRustRangeSource>(model);
 
-    /// <summary>
-    /// Starts an async command, preferring the tracked capability. Returns the
-    /// invocation handle, or 0 when the producer only supports the untracked
-    /// entry point.
-    /// </summary>
-    public static long Begin(
-        IAvnRustViewModel model,
-        IAvnRustViewModel2? tracked,
-        int commandId,
-        string? parameter)
+    /// <summary>Starts an async command and returns its invocation handle.</summary>
+    public static long Begin(IAvnRustViewModel model, int commandId, string? parameter)
     {
         ArgumentNullException.ThrowIfNull(model);
-        if (tracked is null)
-        {
-            ThrowIfFailed(model.BeginAsync(commandId, parameter));
-            return 0;
-        }
-        ThrowIfFailed(tracked.BeginAsyncTracked(commandId, parameter, out var operationId));
+        ThrowIfFailed(model.BeginAsyncTracked(commandId, parameter, out var operationId));
         return operationId;
     }
 
     /// <summary>
     /// Requests cancellation of one in-flight invocation. A zero handle (no
-    /// invocation in flight, or an untracked producer) is a no-op rather than
-    /// an error, so a bound Cancel button can never throw at the user.
+    /// invocation in flight) is a no-op rather than an error, so a bound Cancel
+    /// button can never throw at the user.
     /// </summary>
-    public static void Cancel(IAvnRustViewModel2? tracked, int commandId, long operationId)
+    public static void Cancel(IAvnRustViewModel model, int commandId, long operationId)
     {
-        if (tracked is null || operationId == 0)
+        ArgumentNullException.ThrowIfNull(model);
+        if (operationId == 0)
             return;
-        ThrowIfFailed(tracked.CancelAsync(commandId, operationId));
+        ThrowIfFailed(model.CancelAsync(commandId, operationId));
     }
 
     /// <summary>Clamps a published progress fraction into the 0..1 domain.</summary>

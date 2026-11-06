@@ -1,4 +1,3 @@
-mod abi_contract;
 pub mod axaml;
 mod emit;
 mod emit_safe;
@@ -8,7 +7,6 @@ mod ir;
 mod owned;
 mod validate;
 mod variant;
-pub use abi_contract::regenerate_baseline;
 pub use axaml::{compile_axaml_from_json, compile_axaml_to_rust};
 pub use error::GenerationError;
 pub use ir::ProjectionIr;
@@ -261,11 +259,11 @@ mod tests {
 
     #[test]
     fn future_schema_version_is_rejected_by_public_entrypoint() {
-        let error = generate_from_json(r#"{ "version": 18, "types": [] }"#)
+        let error = generate_from_json(r#"{ "version": 19, "types": [] }"#)
             .unwrap_err()
             .to_string();
-        assert!(error.contains("Unsupported projection IR version 18"));
-        assert!(error.contains("1..=17"));
+        assert!(error.contains("Unsupported projection IR version 19"));
+        assert!(error.contains("1..=18"));
     }
 
     #[test]
@@ -438,9 +436,9 @@ mod tests {
 
     #[test]
     fn generate_from_ir_rejects_future_version() {
-        let ir: ProjectionIr = serde_json::from_str(r#"{ "version": 18, "types": [] }"#).unwrap();
+        let ir: ProjectionIr = serde_json::from_str(r#"{ "version": 19, "types": [] }"#).unwrap();
         let error = generate_from_ir(&ir).unwrap_err().to_string();
-        assert!(error.contains("Unsupported projection IR version 18"));
+        assert!(error.contains("Unsupported projection IR version 19"));
     }
 
     #[test]

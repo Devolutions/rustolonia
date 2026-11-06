@@ -110,7 +110,7 @@ internal static class AndroidWindowPresenter
     }
 
     /// <summary>
-    /// <c>IAvnApplication13.SetMainView</c>: the single-view root, shown
+    /// <c>IAvnApplication.SetMainView</c>: the single-view root, shown
     /// whenever no window is. Closing the last window then returns to it
     /// instead of finishing the activity.
     /// </summary>

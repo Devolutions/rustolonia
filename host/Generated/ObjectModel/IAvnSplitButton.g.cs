@@ -7,7 +7,7 @@ using System.Runtime.InteropServices.Marshalling;
 namespace Avalonia.Host.Com;
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("E162F1F5-7BC8-59CB-82D6-9A2A47F68884")]
+[Guid("F1F525E7-5344-5CBA-B2C9-A26A403BD75A")]
 public partial interface IAvnSplitButton : IAvnContentControl
 {
     [PreserveSig]

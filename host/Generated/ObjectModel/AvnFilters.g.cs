@@ -7,7 +7,7 @@ using System.Runtime.InteropServices.Marshalling;
 namespace Avalonia.Host.Com;
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("9BE82183-F2F3-5F56-99C8-5362F60D6D7E")]
+[Guid("ECB237A9-AE75-569C-8971-0E008D12433B")]
 public partial interface IAvnItemFilter
 {
     [PreserveSig]
@@ -46,7 +46,7 @@ public sealed partial class AvnItemFilter : IAvnItemFilter
 }
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("D1548C05-E9AB-53C3-8D87-A8BFEA3ABD9F")]
+[Guid("4D61F31A-FD4E-55CC-B2EC-7C5052C4484E")]
 public partial interface IAvnTextFilter
 {
     [PreserveSig]

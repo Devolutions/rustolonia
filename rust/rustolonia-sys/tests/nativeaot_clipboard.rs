@@ -1,16 +1,12 @@
-//! Raw ABI conformance for the stage 31 clipboard command capability.
+//! Raw ABI conformance for the clipboard commands.
 //!
-//! These run against the published NativeAOT host and prove that every vtable
-//! slot of `IAvnApplication4`/`IAvnClipboardData` lines up between the managed
-//! `[GeneratedComInterface]` declarations and the handwritten Rust bindings,
-//! and that the capability is separately versioned rather than bolted onto an
-//! already published vtable. Nothing here touches a real platform clipboard:
+//! These run against the published NativeAOT host and prove that every
+//! clipboard slot of `IAvnApplication`/`IAvnClipboardData` lines up between the
+//! managed `[GeneratedComInterface]` declarations and the handwritten Rust
+//! bindings. Nothing here touches a real platform clipboard:
 //! every operation that needs a window is exercised for its argument contract.
 
-use rustolonia_sys::{
-    ComPtr, Host, IAvnApplication3, IAvnApplication4, IAvnClipboardData, E_INVALIDARG, E_POINTER,
-    IAVN_APPLICATION4_METHOD_COUNT,
-};
+use rustolonia_sys::{ComPtr, Host, IAvnApplication, IAvnClipboardData, E_INVALIDARG, E_POINTER};
 use std::path::PathBuf;
 
 fn host_path() -> PathBuf {
@@ -52,37 +48,11 @@ fn load() -> Host {
     Host::load(&path).unwrap_or_else(|error| panic!("load {}: {error}", path.display()))
 }
 
-fn clipboard(host: &Host) -> ComPtr<IAvnApplication4> {
+fn clipboard(host: &Host) -> ComPtr<IAvnApplication> {
     host.activation_factory()
         .unwrap()
         .create_application()
         .unwrap()
-        .clipboard()
-        .unwrap()
-}
-
-/// The clipboard capability is queried, never bolted onto a published vtable.
-#[ignore = "requires a desktop session: host bootstrap needs a display (X11) or the macOS main thread (tracked)"]
-#[test]
-fn the_clipboard_capability_is_separately_versioned() {
-    let host = load();
-    let application = host
-        .activation_factory()
-        .unwrap()
-        .create_application()
-        .unwrap();
-
-    let stage29: ComPtr<IAvnApplication3> = application.desktop_files().unwrap();
-    let stage31: ComPtr<IAvnApplication4> = application.clipboard().unwrap();
-
-    // Distinct capabilities on one object: both resolve, and neither is the
-    // other's vtable.
-    assert_ne!(
-        stage29.as_raw() as usize,
-        stage31.as_raw() as usize,
-        "a separately versioned capability must have its own vtable pointer"
-    );
-    assert_eq!(5, IAVN_APPLICATION4_METHOD_COUNT);
 }
 
 /// The payload builder is host-owned, so this direction of the ABI only ever

@@ -1,8 +1,6 @@
-//! Stage 34 code-first desktop ABI.
+//! Code-first desktop surfaces.
 //!
-//! `IAvnApplication7` is a separately versioned capability queried from
-//! `IAvnApplication`; nothing here is added to an already published vtable. It
-//! creates pixel surfaces: host controls that draw bitmap layers Rust fills
+//! `IAvnApplication` creates pixel surfaces: host controls that draw bitmap layers Rust fills
 //! (`IAvnPixelSurface`) and report their raw pointer and keyboard input to a
 //! Rust-implemented `IAvnPixelSurfaceHandler`; and tray icons whose menu Rust
 //! builds (`IAvnShellTray`, reporting to an `IAvnShellTrayHandler`).
@@ -26,7 +24,6 @@ const fn stage34_iid(last: u8) -> Guid {
     }
 }
 
-const IAVN_APPLICATION7_IID: Guid = stage34_iid(0x90);
 const IAVN_PIXEL_SURFACE_IID: Guid = stage34_iid(0x91);
 const IAVN_PIXEL_SURFACE_HANDLER_IID: Guid = stage34_iid(0x92);
 const IAVN_SHELL_TRAY_IID: Guid = stage34_iid(0x93);
@@ -36,37 +33,7 @@ type QueryInterface =
     unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32;
 type AddRef = unsafe extern "system" fn(*mut IUnknown) -> u32;
 
-#[repr(C)]
-struct IAvnApplication7Vtbl {
-    query_interface: QueryInterface,
-    add_ref: AddRef,
-    release: AddRef,
-    create_pixel_surface: unsafe extern "system" fn(
-        *mut IAvnApplication7,
-        *mut IAvnPixelSurfaceHandler,
-        *mut *mut IAvnPixelSurface,
-    ) -> i32,
-    create_tray_icon: unsafe extern "system" fn(
-        *mut IAvnApplication7,
-        *mut IAvnShellTrayHandler,
-        *mut *mut IAvnShellTray,
-    ) -> i32,
-}
-
-#[repr(C)]
-pub struct IAvnApplication7 {
-    vtbl: *const IAvnApplication7Vtbl,
-}
-
-unsafe impl ComInterface for IAvnApplication7 {
-    const IID: Guid = IAVN_APPLICATION7_IID;
-}
-
-impl ComPtr<IAvnApplication7> {
-    fn vtbl(&self) -> &IAvnApplication7Vtbl {
-        unsafe { (*self.as_raw()).vtbl.as_ref().unwrap() }
-    }
-
+impl ComPtr<IAvnApplication> {
     /// Creates a pixel surface reporting its input to `handler`, or a
     /// display-only one.
     pub fn create_pixel_surface(
@@ -98,13 +65,6 @@ impl ComPtr<IAvnApplication7> {
             ))?;
             ComPtr::from_raw(tray).ok_or(hresult::Error(hresult::E_POINTER))
         }
-    }
-}
-
-impl ComPtr<IAvnApplication> {
-    /// Queries the separately versioned Rust-drawn surfaces capability.
-    pub fn pixel_surfaces(&self) -> Result<ComPtr<IAvnApplication7>> {
-        self.query_interface::<IAvnApplication7>()
     }
 }
 
@@ -689,8 +649,6 @@ unsafe extern "system" fn tray_on_menu_item(this: *mut IAvnShellTrayHandler, id:
     )
 }
 
-/// Number of methods `IAvnApplication7` publishes after `IUnknown`.
-pub const IAVN_APPLICATION7_METHOD_COUNT: usize = 2;
 /// Number of methods `IAvnShellTray` publishes after `IUnknown`.
 pub const IAVN_SHELL_TRAY_METHOD_COUNT: usize = 7;
 /// Number of methods `IAvnShellTrayHandler` publishes after `IUnknown`.
@@ -711,10 +669,6 @@ mod tests {
 
     #[test]
     fn vtables_have_expected_slot_counts() {
-        assert_eq!(
-            3 + IAVN_APPLICATION7_METHOD_COUNT,
-            slots::<IAvnApplication7Vtbl>()
-        );
         assert_eq!(
             3 + IAVN_PIXEL_SURFACE_METHOD_COUNT,
             slots::<IAvnPixelSurfaceVtbl>()
@@ -751,12 +705,6 @@ mod tests {
             vec![TrayInput::Activate, TrayInput::MenuItem(7)],
             *seen.lock().unwrap()
         );
-    }
-
-    #[test]
-    fn iids_are_in_the_stage_34_slot() {
-        assert_eq!(0x90, IAVN_APPLICATION7_IID.data4[7]);
-        assert_ne!(crate::shell::IAvnApplication6::IID, IAVN_APPLICATION7_IID);
     }
 
     #[test]

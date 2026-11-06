@@ -7,7 +7,7 @@ using System.Runtime.InteropServices.Marshalling;
 namespace Avalonia.Host.Com;
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("135352FD-917A-577E-A428-D1B608274411")]
+[Guid("D2D5FE9B-8776-5D85-85D2-E056EF8C09D5")]
 public partial interface IAvnGridSplitter : IAvnThumb
 {
     [PreserveSig]

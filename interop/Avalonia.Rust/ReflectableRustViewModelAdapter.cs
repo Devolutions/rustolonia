@@ -227,8 +227,6 @@ public sealed class RustViewModelDescriptor(
 [GeneratedComClass]
 public sealed partial class ReflectableRustViewModelAdapter :
     IAvnRustVmSink,
-    IAvnRustVmSink2,
-    IAvnRustVmSink3,
     IRustVmBatchTarget,
     IRustVmTableSelectionBatchTarget,
     INotifyPropertyChanged,
@@ -237,6 +235,7 @@ public sealed partial class ReflectableRustViewModelAdapter :
     IDisposable
 {
     private const int InvalidArgument = unchecked((int)0x80070057);
+    private const int NotImplemented = unchecked((int)0x80004001);
     private readonly IAvnRustViewModel _model;
     private readonly Action<Action> _dispatch;
     private readonly Dictionary<int, RuntimeProperty> _propertiesById = [];
@@ -536,6 +535,48 @@ public sealed partial class ReflectableRustViewModelAdapter :
     /// synchronous only for ABI compatibility.
     /// </summary>
     public int SubmitBatch(IAvnRustVmUpdateBatch? batch) => _batch.Submit(batch);
+
+    // The dynamic-binding adapter applies neither the richer shapes nor
+    // scalar-number collections; GetCapabilities reports that up front.
+    public int MapSetString(int mapId, string? stringKey, long integerKey, string? value) => NotImplemented;
+
+    public int MapSetInteger(int mapId, string? stringKey, long integerKey, long value) => NotImplemented;
+
+    public int MapSetBoolean(int mapId, string? stringKey, long integerKey, int value) => NotImplemented;
+
+    public int MapSetDouble(int mapId, string? stringKey, long integerKey, double value) => NotImplemented;
+
+    public int MapSetModel(int mapId, string? stringKey, long integerKey, IAvnRustViewModel? value) => NotImplemented;
+
+    public int MapRemove(int mapId, string? stringKey, long integerKey) => NotImplemented;
+
+    public int MapClear(int mapId) => NotImplemented;
+
+    public int SetCommandProgress(int commandId, int hasValue, double value, string? message) => NotImplemented;
+
+    public int SetCommandResult(int commandId, IAvnRustViewModel? result) => NotImplemented;
+
+    public int SetCommandRunning(int commandId, int running) => NotImplemented;
+
+    public int PublishRange(IAvnRustVmRangeBatch? batch) => NotImplemented;
+
+    public int AddInteger(int collectionId, long value) => NotImplemented;
+
+    public int InsertInteger(int collectionId, int index, long value) => NotImplemented;
+
+    public int ReplaceInteger(int collectionId, int index, long value) => NotImplemented;
+
+    public int AddDouble(int collectionId, double value) => NotImplemented;
+
+    public int InsertDouble(int collectionId, int index, double value) => NotImplemented;
+
+    public int ReplaceDouble(int collectionId, int index, double value) => NotImplemented;
+
+    public int GetCapabilities(out int capabilities)
+    {
+        capabilities = 0;
+        return 0;
+    }
 
     /// <summary>
     /// Detaches the model and disposes every nested adapter exactly once. When a

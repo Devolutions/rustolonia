@@ -16,19 +16,7 @@ public class PopupHostingTests
         var application = new AvnApplication();
         Assert.Equal(HResults.E_POINTER, application.SetNativePopupGate(null, null));
         Assert.Equal(HResults.E_INVALIDARG, application.AcknowledgeNativePopup(42));
-        Assert.Equal(System.Guid.Parse("6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DA2"),
-            typeof(IAvnApplication10).GUID);
-        Assert.Equal(2, typeof(IAvnApplication10).GetMethods().Length);
         Assert.Equal(2, typeof(IAvnNativePopupHandler).GetMethods().Length);
-    }
-
-    [Fact]
-    public void Popup_hosting_is_a_separate_single_method_capability()
-    {
-        Assert.Equal(System.Guid.Parse("6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DA1"),
-            typeof(IAvnApplication9).GUID);
-        Assert.Equal(nameof(IAvnApplication9.SetWindowOverlayPopups),
-            Assert.Single(typeof(IAvnApplication9).GetMethods()).Name);
     }
 
     [Fact]

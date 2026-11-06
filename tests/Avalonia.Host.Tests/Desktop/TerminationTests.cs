@@ -19,12 +19,10 @@ public class TerminationTests
     }
 
     [Fact]
-    public void Termination_capability_is_additive_and_rejects_invalid_tokens()
+    public void Termination_rejects_invalid_tokens()
     {
         using var app = UnitTestApplication.Start(TestServices.StyledWindow);
         var application = new AvnApplication();
-        Assert.Equal(Guid.Parse("6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DA4"), typeof(IAvnApplication11).GUID);
-        Assert.Equal(2, typeof(IAvnApplication11).GetMethods().Length);
         Assert.Single(typeof(IAvnTerminationHandler).GetMethods());
         Assert.Equal(OperatingSystem.IsMacOS() ? HResults.E_INVALIDARG : HResults.E_NOTIMPL,
             application.CompleteTermination(42, 1));

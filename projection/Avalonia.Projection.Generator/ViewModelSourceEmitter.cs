@@ -257,16 +257,9 @@ public static class ViewModelSourceEmitter
         var progressCommands = model.Commands.Where(command => command.SupportsProgress).ToArray();
         var cancellableCommands = model.Commands.Where(command => command.SupportsCancellation).ToArray();
         var trackedCommands = model.Commands.Where(command => command.SupportsCancellation || command.SupportsProgress).ToArray();
-        var shapes = maps.Count > 0 || windowedCollections.Length > 0 ||
-            resultCommands.Length > 0 || progressCommands.Length > 0 || cancellableCommands.Length > 0;
-        // A scalar-number collection is the only shape that needs the v5 sink,
-        // so a model without one keeps exactly the interface set it already
-        // published.
         var numberCollections = materializedCollections.Where(IsNumberCollection).ToArray();
         sb.AppendLine("[GeneratedComClass]");
-        var interfaces = "IAvnRustVmSink, IAvnRustVmSink2, IAvnRustVmSink3, " +
-            (shapes ? "IAvnRustVmSink4, " : "") +
-            (numberCollections.Length > 0 ? "IAvnRustVmSink5, " : "") +
+        var interfaces = "IAvnRustVmSink, " +
             "IRustVmStringSnapshotSink, IRustVmModelSnapshotSink, IRustVmBatchTarget, IRustVmTableSelectionBatchTarget, INotifyPropertyChanged, INotifyDataErrorInfo, IDisposable";
         sb.AppendLine($"public sealed partial class {model.Name}Adapter : {interfaces}");
         sb.AppendLine("{");
@@ -276,8 +269,6 @@ public static class ViewModelSourceEmitter
         sb.AppendLine("    private readonly RustVmBatchCoordinator _batch;");
         sb.AppendLine("    private readonly Dictionary<string, string> _errors = new(StringComparer.Ordinal);");
         sb.AppendLine("    private readonly RustVmInboundWriteTracker _inboundWrites = new();");
-        if (trackedCommands.Length > 0)
-            sb.AppendLine("    private readonly IAvnRustViewModel2? _tracked;");
         if (windowedCollections.Length > 0)
             sb.AppendLine("    private readonly RustRangeCoordinator _ranges;");
         foreach (var command in trackedCommands)
@@ -298,15 +289,14 @@ public static class ViewModelSourceEmitter
         sb.AppendLine($"    public {model.Name}Adapter(IAvnRustViewModel model) : this(model, null, null) {{ }}");
         sb.AppendLine();
         sb.AppendLine("    /// <summary>");
-        sb.AppendLine("    /// Creates an adapter with a custom synchronous dispatch for the legacy v1/v2");
-        sb.AppendLine("    /// sink path. Kept as a distinct CLR signature (not an optional parameter) so");
-        sb.AppendLine("    /// already-compiled callers keep binding to it.");
+        sb.AppendLine("    /// Creates an adapter with a custom synchronous dispatch for the per-call");
+        sb.AppendLine("    /// sink path.");
         sb.AppendLine("    /// </summary>");
         sb.AppendLine($"    public {model.Name}Adapter(IAvnRustViewModel model, Action<Action>? dispatch) : this(model, dispatch, null) {{ }}");
         sb.AppendLine();
         sb.AppendLine("    /// <summary>");
         sb.AppendLine("    /// Creates an adapter with a custom synchronous <paramref name=\"dispatch\"/> for the");
-        sb.AppendLine("    /// legacy v1/v2 sink path and a custom nonblocking <paramref name=\"post\"/> for");
+        sb.AppendLine("    /// per-call sink path and a custom nonblocking <paramref name=\"post\"/> for");
         sb.AppendLine("    /// batch submission.");
         sb.AppendLine("    /// </summary>");
         sb.AppendLine($"    public {model.Name}Adapter(IAvnRustViewModel model, Action<Action>? dispatch, Action<Action>? post)");
@@ -315,8 +305,6 @@ public static class ViewModelSourceEmitter
         sb.AppendLine("        _dispatch = dispatch ?? Dispatch;");
         sb.AppendLine("        _post = post;");
         sb.AppendLine("        _batch = new RustVmBatchCoordinator(this, post);");
-        if (trackedCommands.Length > 0)
-            sb.AppendLine("        _tracked = RustAsyncCommands.TryResolve(model);");
         if (windowedCollections.Length > 0)
         {
             sb.AppendLine("        _ranges = new RustRangeCoordinator(ResolveWindow, post);");
@@ -340,7 +328,7 @@ public static class ViewModelSourceEmitter
             if (command.IsAsync && (command.SupportsCancellation || command.SupportsProgress))
             {
                 sb.AppendLine(
-                    $"        {command.Name}Command = new DelegateCommand(parameter => _{Lower(command.Name)}Operation = RustAsyncCommands.Begin(_model, _tracked, {command.Id}, {parameter}));");
+                    $"        {command.Name}Command = new DelegateCommand(parameter => _{Lower(command.Name)}Operation = RustAsyncCommands.Begin(_model, {command.Id}, {parameter}));");
             }
             else
             {
@@ -349,7 +337,7 @@ public static class ViewModelSourceEmitter
             if (command.SupportsCancellation)
             {
                 sb.AppendLine(
-                    $"        Cancel{command.Name}Command = new DelegateCommand(_ => RustAsyncCommands.Cancel(_tracked, {command.Id}, _{Lower(command.Name)}Operation));");
+                    $"        Cancel{command.Name}Command = new DelegateCommand(_ => RustAsyncCommands.Cancel(_model, {command.Id}, _{Lower(command.Name)}Operation));");
                 sb.AppendLine($"        Cancel{command.Name}Command.SetEnabledCore(false);");
             }
         }
@@ -462,10 +450,14 @@ public static class ViewModelSourceEmitter
         sb.AppendLine("            : Array.Empty<string>();");
         sb.AppendLine();
         EmitCSharpSinkMethods(sb, ir, model);
-        if (shapes)
-            EmitCSharpShapeSinkMethods(sb, ir, model, maps, windowedCollections, resultCommands, progressCommands, trackedCommands);
-        if (numberCollections.Length > 0)
-            EmitCSharpNumberSinkMethods(sb, numberCollections);
+        EmitCSharpShapeSinkMethods(sb, ir, model, maps, windowedCollections, resultCommands, progressCommands, trackedCommands);
+        EmitCSharpNumberSinkMethods(sb, numberCollections);
+        sb.AppendLine("    public int GetCapabilities(out int capabilities)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        capabilities = RustVmSinkCapabilities.All;");
+        sb.AppendLine("        return 0;");
+        sb.AppendLine("    }");
+        sb.AppendLine();
         sb.AppendLine("    public int ReplaceStringSnapshot(int collectionId, IReadOnlyList<string> values) => collectionId switch");
         sb.AppendLine("    {");
         foreach (var collection in materializedCollections.Where(collection => collection.ElementKind == ViewModelValueKind.String))
@@ -800,10 +792,10 @@ public static class ViewModelSourceEmitter
     }
 
     /// <summary>
-    /// Emits the adapter's <c>IAvnRustVmSink5</c> implementation: appending,
-    /// inserting and replacing elements of a scalar-number collection. Each
-    /// entry point is a pure switch over a schema ID that dispatches onto the
-    /// UI thread through the same <c>Apply</c> the v1/v2 sinks use, and an ID
+    /// Emits the adapter's scalar-number collection sink members: appending,
+    /// inserting and replacing elements. Each entry point is a pure switch over
+    /// a schema ID that dispatches onto the UI thread through the same
+    /// <c>Apply</c> as the other per-call sink members, and an ID
     /// whose declared element kind does not match the call is rejected rather
     /// than coerced.
     /// </summary>
@@ -847,11 +839,11 @@ public static class ViewModelSourceEmitter
     ];
 
     /// <summary>
-    /// Emits the adapter's <c>IAvnRustVmSink4</c> implementation: observable
-    /// keyed maps, structured command results, async progress and windowed
-    /// range publication. Every entry point is a pure switch over a schema ID
-    /// that dispatches onto the UI thread through the same <c>Apply</c> used by
-    /// the v1/v2 sinks, except <c>PublishRange</c>, which must not decode on the
+    /// Emits the adapter's richer-shape sink members: observable keyed maps,
+    /// structured command results, async progress and windowed range
+    /// publication. Every entry point is a pure switch over a schema ID that
+    /// dispatches onto the UI thread through the same <c>Apply</c> as the other
+    /// per-call sink members, except <c>PublishRange</c>, which must not decode on the
     /// submitting stack and therefore goes through the range coordinator.
     /// </summary>
     private static void EmitCSharpShapeSinkMethods(
@@ -1132,13 +1124,13 @@ public static class ViewModelSourceEmitter
 
         // A windowed collection is deliberately excluded from every
         // materializing path: it has no managed element list to insert into,
-        // and its pages arrive through IAvnRustVmSink4.PublishRange instead.
+        // and its pages arrive through IAvnRustVmSink.PublishRange instead.
         var materialized = model.Collections.Where(collection => collection.Window is null).ToArray();
         var modelCollections = materialized.Where(collection => collection.ElementKind == ViewModelValueKind.Model).ToArray();
         var stringCollections = materialized.Where(collection => collection.ElementKind == ViewModelValueKind.String).ToArray();
         // Removal, movement and clearing carry no element value, so a
-        // scalar-number collection rides the same already-published v2 calls
-        // as a string one instead of duplicating them on the v5 sink.
+        // scalar-number collection shares RemoveAt/MoveItem/ClearCollection
+        // with string and model collections instead of duplicating them.
         var numberCollections = materialized.Where(IsNumberCollection).ToArray();
 
         sb.AppendLine("    public int AddModel(int collectionId, IAvnRustViewModel? model) => collectionId switch");
@@ -2012,7 +2004,7 @@ public static class ViewModelSourceEmitter
         }
         if (numberCollections.Length > 0)
         {
-            sb.AppendLine("    /// True when the attached host implements the scalar-number sink capability.");
+            sb.AppendLine("    /// True when the attached sink reports the scalar-number capability.");
             sb.AppendLine("    /// The reflectable (dynamic-binding) adapter deliberately does not.");
             sb.AppendLine("    pub fn supports_number_collections(&self) -> bool { self.0.supports_number_collections() }");
         }
@@ -2499,7 +2491,7 @@ public static class ViewModelSourceEmitter
         if (model.Maps.Count > 0 || windowedCollections.Count > 0 || trackedCommands.Count > 0 ||
             model.Commands.Any(command => command.ResultModelName is not null))
         {
-            sb.AppendLine("    /// True when the attached host implements the stage 30 sink capability.");
+            sb.AppendLine("    /// True when the attached sink reports the richer-shape capability.");
             sb.AppendLine("    /// The reflectable (dynamic-binding) adapter deliberately does not.");
             sb.AppendLine("    pub fn supports_richer_shapes(&self) -> bool { self.0.supports_richer_shapes() }");
         }
@@ -2622,9 +2614,8 @@ public static class ViewModelSourceEmitter
     };
 
     /// <summary>
-    /// Whether a collection projects a scalar number list, which is the shape
-    /// carried by <c>IAvnRustVmSink5</c>. Strings keep riding the already
-    /// published v1/v2 transport and nested models the v2 model transport.
+    /// Whether a collection projects a scalar number list, which is carried by
+    /// the integer and double element members of <c>IAvnRustVmSink</c>.
     /// </summary>
     private static bool IsNumberCollection(ViewModelCollection collection) =>
         collection.ElementKind is ViewModelValueKind.Integer or ViewModelValueKind.Double;

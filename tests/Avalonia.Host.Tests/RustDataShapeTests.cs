@@ -11,7 +11,7 @@ using Xunit;
 namespace Avalonia.Host.Tests;
 
 /// <summary>
-/// Stage 30 tests. The load-bearing assertions here are the *counts*: a
+/// Richer data shape tests. The load-bearing assertions here are the *counts*: a
 /// 100,000-row window must report 100,000 while keeping the number of live
 /// managed row adapters bounded, and every rejected range must release exactly
 /// the adapters it staged.
@@ -189,24 +189,36 @@ public class RustDataShapeTests
     }
 
     [Fact]
-    public void Stage_thirty_interfaces_have_their_published_slot_counts()
+    public void View_model_interfaces_have_their_published_slot_counts()
     {
         // Managed [GeneratedComInterface] dispatch is purely positional, so a
         // method added on one side only would silently shift every later slot
         // and corrupt arguments. The Rust vtable structs assert the same
-        // counts in `rust_vm::tests::stage_thirty_vtables_have_their_published_slot_counts`.
-        Assert.Equal(11, typeof(IAvnRustVmSink4).GetMethods().Length);
+        // counts in `rust_vm::tests::view_model_vtables_have_matching_slot_counts`.
+        Assert.Equal(10, typeof(IAvnRustViewModel).GetMethods().Length);
+        Assert.Equal(36, typeof(IAvnRustVmSink).GetMethods().Length);
+        Assert.Equal(9, typeof(IAvnRustVmUpdateBatch).GetMethods().Length);
         Assert.Equal(10, typeof(IAvnRustVmRangeBatch).GetMethods().Length);
         Assert.Equal(2, typeof(IAvnRustRangeSource).GetMethods().Length);
-        Assert.Equal(2, typeof(IAvnRustViewModel2).GetMethods().Length);
-        Assert.Equal(6, typeof(IAvnRustVmSink5).GetMethods().Length);
 
         // Slot order is ABI: GetKind must stay first on the range batch, as it
-        // is on IAvnRustVmUpdateOperation.
+        // is on IAvnRustVmUpdateOperation, and GetCapabilities last on the sink.
         Assert.Equal("GetKind", typeof(IAvnRustVmRangeBatch).GetMethods()[0].Name);
         Assert.Equal("Complete", typeof(IAvnRustVmRangeBatch).GetMethods()[^1].Name);
-        Assert.Equal("AddInteger", typeof(IAvnRustVmSink5).GetMethods()[0].Name);
-        Assert.Equal("ReplaceDouble", typeof(IAvnRustVmSink5).GetMethods()[^1].Name);
+        Assert.Equal("SetString", typeof(IAvnRustVmSink).GetMethods()[0].Name);
+        Assert.Equal("GetCapabilities", typeof(IAvnRustVmSink).GetMethods()[^1].Name);
+        Assert.Equal("CommitOwnership", typeof(IAvnRustVmUpdateBatch).GetMethods()[^1].Name);
+        Assert.Equal("CancelAsync", typeof(IAvnRustViewModel).GetMethods()[^1].Name);
+    }
+
+    [Fact]
+    public void Generated_adapter_reports_every_sink_capability()
+    {
+        var model = new ShapeModel();
+        using var adapter = new SampleViewModelAdapter(model, action => action(), action => action());
+
+        Assert.Equal(0, model.Sink.GetCapabilities(out var capabilities));
+        Assert.Equal(RustVmSinkCapabilities.All, capabilities);
     }
 
     [Fact]
@@ -217,7 +229,7 @@ public class RustDataShapeTests
         var changed = new List<NotifyCollectionChangedAction>();
         adapter.CoreLoads.CollectionChanged += (_, e) => changed.Add(e.Action);
 
-        var sink = model.Sink5;
+        var sink = model.Sink;
         Assert.Equal(0, sink.AddDouble(8, 0.25));
         Assert.Equal(0, sink.AddDouble(8, 0.75));
         Assert.Equal(0, sink.InsertDouble(8, 1, 0.5));
@@ -234,15 +246,14 @@ public class RustDataShapeTests
         Assert.Equal(InvalidArgument, sink.AddDouble(1, 1.0));
         Assert.Equal([1.5, 0.5, 0.75], adapter.CoreLoads.ToArray());
 
-        // Removal, movement and clearing carry no element value, so they ride
-        // the already-published v2 sink.
-        var v2 = model.Sink2;
-        Assert.Equal(0, v2.MoveItem(8, 0, 2));
+        // Removal, movement and clearing carry no element value, so they share
+        // the untyped collection methods.
+        Assert.Equal(0, sink.MoveItem(8, 0, 2));
         Assert.Equal([0.5, 0.75, 1.5], adapter.CoreLoads.ToArray());
-        Assert.Equal(0, v2.RemoveAt(8, 1));
+        Assert.Equal(0, sink.RemoveAt(8, 1));
         Assert.Equal([0.5, 1.5], adapter.CoreLoads.ToArray());
-        Assert.Equal(InvalidArgument, v2.RemoveAt(8, 5));
-        Assert.Equal(0, v2.ClearCollection(8));
+        Assert.Equal(InvalidArgument, sink.RemoveAt(8, 5));
+        Assert.Equal(0, sink.ClearCollection(8));
         Assert.Empty(adapter.CoreLoads);
         Assert.Equal(NotifyCollectionChangedAction.Reset, changed[^1]);
     }
@@ -252,7 +263,7 @@ public class RustDataShapeTests
     {
         var model = new ShapeModel();
         using var adapter = new SampleViewModelAdapter(model, action => action(), action => action());
-        var sink = model.Sink5;
+        var sink = model.Sink;
 
         Assert.Equal(0, sink.AddInteger(9, 10));
         Assert.Equal(0, sink.AddInteger(9, 30));
@@ -271,7 +282,7 @@ public class RustDataShapeTests
         Assert.Equal([10L, 20L, 99L], adapter.CoreTicks.ToArray());
         Assert.Empty(adapter.CoreLoads);
 
-        Assert.Equal(0, model.Sink2.ClearCollection(9));
+        Assert.Equal(0, model.Sink.ClearCollection(9));
         Assert.Empty(adapter.CoreTicks);
     }
 
@@ -281,12 +292,11 @@ public class RustDataShapeTests
         var model = new ShapeModel();
         using var adapter = new SampleViewModelAdapter(model, action => action(), action => action());
 
-        var numbers = model.Sink5;
-        var v1 = model.Sink;
+        var sink = model.Sink;
 
-        Assert.Equal(InvalidArgument, numbers.AddDouble(1, 1.0));
-        Assert.Equal(InvalidArgument, numbers.AddInteger(1, 1));
-        Assert.Equal(0, v1.AddString(1, "kept"));
+        Assert.Equal(InvalidArgument, sink.AddDouble(1, 1.0));
+        Assert.Equal(InvalidArgument, sink.AddInteger(1, 1));
+        Assert.Equal(0, sink.AddString(1, "kept"));
         Assert.Equal(["kept"], adapter.Items.ToArray());
         Assert.Empty(adapter.CoreLoads);
     }
@@ -602,11 +612,11 @@ public class RustDataShapeTests
         var model = new ShapeModel();
         using var adapter = new SampleViewModelAdapter(model, action => action(), action => action());
 
-        Assert.Equal(2, model.Sink4Queries);
+        Assert.Equal(2, model.ControlQueries);
         Assert.Equal(100, adapter.LogWindow.Count);
         Assert.Equal("Generation 4", adapter.LogWindowStatus);
 
-        var sink = model.Sink4;
+        var sink = model.Sink;
         Assert.Equal(0, sink.MapSetInteger(1, "Error", 0, 12));
         Assert.Equal(12, adapter.SeverityCounts["Error"]);
         Assert.Equal(0, sink.MapSetModel(2, "CMTrace.0", 0, new BareModel()));
@@ -816,24 +826,16 @@ public class RustDataShapeTests
     }
 
     /// <summary>
-    /// A producer implementing the stage 30 capabilities alongside the
-    /// pre-existing view-model interface, exactly as the Rust object does.
+    /// A producer implementing tracked async commands and the range-source
+    /// capability, exactly as the Rust object does.
     /// </summary>
-    private sealed class ShapeModel : IAvnRustViewModel, IAvnRustViewModel2, IAvnRustRangeSource
+    private sealed class ShapeModel : IAvnRustViewModel, IAvnRustRangeSource
     {
         private long _nextOperation = 1;
 
-        public IAvnRustVmSink4 Sink4 { get; private set; } = null!;
-
-        /// <summary>The same adapter, queried for the scalar-number capability.</summary>
-        public IAvnRustVmSink5 Sink5 { get; private set; } = null!;
-
-        /// <summary>The same adapter, on its already-published v1/v2 vtables.</summary>
         public IAvnRustVmSink Sink { get; private set; } = null!;
 
-        public IAvnRustVmSink2 Sink2 { get; private set; } = null!;
-
-        public int Sink4Queries { get; private set; }
+        public int ControlQueries { get; private set; }
 
         public int TrackedStarts { get; private set; }
 
@@ -841,11 +843,8 @@ public class RustDataShapeTests
 
         public int Attach(IAvnRustVmSink? sink)
         {
-            Sink4Queries++;
+            ControlQueries++;
             Sink = sink!;
-            Sink2 = (IAvnRustVmSink2)sink!;
-            Sink4 = (IAvnRustVmSink4)sink!;
-            Sink5 = (IAvnRustVmSink5)sink!;
             sink!.SetString(15, "Generation 4");
             return 0;
         }
@@ -879,7 +878,7 @@ public class RustDataShapeTests
 
         public int GetRangeState(int collectionId, out long generation, out long total)
         {
-            Sink4Queries++;
+            ControlQueries++;
             generation = 4;
             total = collectionId == 5 ? 100 : 0;
             return 0;
@@ -917,6 +916,14 @@ public class RustDataShapeTests
         public int Execute(int commandId, string? parameter) => 0;
 
         public int BeginAsync(int commandId, string? parameter) => 0;
+
+        public int BeginAsyncTracked(int commandId, string? parameter, out long operationId)
+        {
+            operationId = 0;
+            return BeginAsync(commandId, parameter);
+        }
+
+        public int CancelAsync(int commandId, long operationId) => 0;
     }
 }
 

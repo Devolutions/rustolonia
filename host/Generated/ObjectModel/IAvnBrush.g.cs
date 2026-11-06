@@ -13,7 +13,7 @@ namespace Avalonia.Host.Com;
 /// <c>IAvnControlFactory.CreateSolidColorBrush</c>.
 /// </remarks>
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("FC7CCBAE-ED75-5C6D-8516-DF706E137ED3")]
+[Guid("54D19EA0-D69C-5DD0-A4E9-963A49F63CB5")]
 public partial interface IAvnBrush
 {
     [PreserveSig]

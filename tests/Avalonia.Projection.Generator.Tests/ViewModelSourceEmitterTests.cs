@@ -117,7 +117,7 @@ public class ViewModelSourceEmitterTests
         Assert.Contains("pub fn batch(&self, generation: i64) -> SampleViewModelSinkBatch", rust, StringComparison.Ordinal);
         Assert.Contains("pub fn replace_items_snapshot", rust, StringComparison.Ordinal);
         Assert.Contains("pub fn submit_batch(&self, batch: SampleViewModelSinkBatch)", rust, StringComparison.Ordinal);
-        Assert.Contains("IAvnRustVmSink3", csharp, StringComparison.Ordinal);
+        Assert.Contains("public int SubmitBatch(IAvnRustVmUpdateBatch? batch)", csharp, StringComparison.Ordinal);
         Assert.Contains("IRustVmStringSnapshotSink", csharp, StringComparison.Ordinal);
         Assert.Contains("ReplaceStringSnapshot", csharp, StringComparison.Ordinal);
     }
@@ -524,7 +524,7 @@ public class ViewModelSourceEmitterTests
 
         Assert.Contains("public RustObservableMap<string, long> Counters { get; } = new();", adapter, StringComparison.Ordinal);
         Assert.Contains("public RustObservableMap<long, global::Tests.RowViewModelAdapter> Lookup { get; } = new();", adapter, StringComparison.Ordinal);
-        Assert.Contains("IAvnRustVmSink4", adapter, StringComparison.Ordinal);
+        Assert.Contains("capabilities = RustVmSinkCapabilities.All;", adapter, StringComparison.Ordinal);
         Assert.Contains("public int MapClear(int mapId) => mapId switch", adapter, StringComparison.Ordinal);
     }
 
@@ -557,8 +557,8 @@ public class ViewModelSourceEmitterTests
         Assert.Contains("public double? RunProgress => _runProgress;", adapter, StringComparison.Ordinal);
         Assert.Contains("public bool RunIsRunning => _runIsRunning;", adapter, StringComparison.Ordinal);
         Assert.Contains("public global::Tests.ReportViewModelAdapter? RunResult => _runResult;", adapter, StringComparison.Ordinal);
-        Assert.Contains("RustAsyncCommands.Begin(_model, _tracked, 1, null)", adapter, StringComparison.Ordinal);
-        Assert.Contains("RustAsyncCommands.Cancel(_tracked, 1, _runOperation)", adapter, StringComparison.Ordinal);
+        Assert.Contains("RustAsyncCommands.Begin(_model, 1, null)", adapter, StringComparison.Ordinal);
+        Assert.Contains("RustAsyncCommands.Cancel(_model, 1, _runOperation)", adapter, StringComparison.Ordinal);
 
         Assert.Contains("fn run(&mut self, token: crate::CancellationToken) -> crate::Result<()>;", rust, StringComparison.Ordinal);
         Assert.Contains("fn begin_async_tracked(&mut self, command_id: i32, parameter: Option<String>, token: crate::CancellationToken)", rust, StringComparison.Ordinal);
@@ -597,7 +597,6 @@ public class ViewModelSourceEmitterTests
         var adapter = ViewModelSourceEmitter.EmitCSharp(ir)["NumbersViewModelAdapter.g.cs"];
         var rust = ViewModelSourceEmitter.EmitRust(ir);
 
-        Assert.Contains("IAvnRustVmSink5", adapter, StringComparison.Ordinal);
         Assert.Contains("public BatchObservableCollection<long> Counts { get; } = [];", adapter, StringComparison.Ordinal);
         Assert.Contains("public BatchObservableCollection<double> CoreLoads { get; } = [];", adapter, StringComparison.Ordinal);
         Assert.Contains("public int AddInteger(int collectionId, long value) => collectionId switch", adapter, StringComparison.Ordinal);
@@ -607,8 +606,8 @@ public class ViewModelSourceEmitterTests
         Assert.Contains("public int InsertInteger(int collectionId, int index, long value) => collectionId switch", adapter, StringComparison.Ordinal);
         Assert.Contains("public int ReplaceDouble(int collectionId, int index, double value) => collectionId switch", adapter, StringComparison.Ordinal);
 
-        // Remove/move/clear carry no element value, so they stay on the
-        // already-published v2 sink instead of being duplicated on v5.
+        // Remove/move/clear carry no element value, so they share the untyped
+        // collection methods instead of having number-specific twins.
         Assert.Contains("1 => Apply(() => { if ((uint)index >= (uint)Counts.Count) return unchecked((int)0x80070057); Counts.RemoveAt(index); return 0; }),", adapter, StringComparison.Ordinal);
         Assert.Contains("2 => Apply(CoreLoads.Clear),", adapter, StringComparison.Ordinal);
         Assert.Contains("1 => Apply(() => { if ((uint)fromIndex >= (uint)Counts.Count || (uint)toIndex >= (uint)Counts.Count) return unchecked((int)0x80070057); Counts.Move(fromIndex, toIndex); return 0; }),", adapter, StringComparison.Ordinal);
@@ -644,12 +643,14 @@ public class ViewModelSourceEmitterTests
     }
 
     [Fact]
-    public void Does_not_implement_the_number_sink_without_a_scalar_number_collection()
+    public void Rejects_number_elements_without_a_scalar_number_collection()
     {
         var adapter = ViewModelSourceEmitter.EmitCSharp(ShapesIr())["ShapesViewModelAdapter.g.cs"];
 
-        Assert.DoesNotContain("IAvnRustVmSink5", adapter, StringComparison.Ordinal);
-        Assert.DoesNotContain("public int AddInteger(", adapter, StringComparison.Ordinal);
+        // Every adapter implements the whole sink; with no number collection
+        // the typed number methods reject every collection ID.
+        Assert.Contains("public int AddInteger(int collectionId, long value) => collectionId switch", adapter, StringComparison.Ordinal);
+        Assert.DoesNotContain("Apply(() => Counts.Add(value))", adapter, StringComparison.Ordinal);
     }
 
     private static ViewModelIr NumbersIr() => new()

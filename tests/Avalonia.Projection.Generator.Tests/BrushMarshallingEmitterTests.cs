@@ -99,7 +99,7 @@ public class BrushMarshallingEmitterTests
         var header = NativeHeaderEmitter.Emit(Ir.Value);
 
         Assert.Contains("typedef struct IAvnBrush IAvnBrush;", header, StringComparison.Ordinal);
-        Assert.Contains("#define I_AVN_BRUSH_ABI_VERSION 1", header, StringComparison.Ordinal);
+        Assert.DoesNotContain("_ABI_VERSION", header, StringComparison.Ordinal);
         Assert.Contains(
             "*get_color)(IAvnBrush* self, AvnColor* value)",
             header,
@@ -148,18 +148,6 @@ public class BrushMarshallingEmitterTests
             StringComparison.Ordinal);
         Assert.Contains(
             "*create_solid_color_brush)(IAvnControlFactory* self, AvnColor color, double opacity, IAvnBrush** value)",
-            header,
-            StringComparison.Ordinal);
-
-        // Widened interfaces republish at version 4; the ones whose flattened vtable did not
-        // move keep the version they already published.
-        Assert.Contains("#define I_AVN_BORDER_ABI_VERSION 15", header, StringComparison.Ordinal);
-        Assert.Contains("#define I_AVN_PANEL_ABI_VERSION 14", header, StringComparison.Ordinal);
-        Assert.Contains("#define I_AVN_TEXT_BLOCK_ABI_VERSION 17", header, StringComparison.Ordinal);
-        Assert.Contains("#define I_AVN_CONTROL_ABI_VERSION 11", header, StringComparison.Ordinal);
-        Assert.Contains("#define I_AVN_DECORATOR_ABI_VERSION 13", header, StringComparison.Ordinal);
-        Assert.Contains(
-            "#define I_AVN_AVALONIA_OBJECT_ABI_VERSION 2",
             header,
             StringComparison.Ordinal);
     }

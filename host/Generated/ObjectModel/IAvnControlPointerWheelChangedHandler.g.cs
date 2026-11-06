@@ -6,7 +6,7 @@ using System.Runtime.InteropServices.Marshalling;
 namespace Avalonia.Host.Com;
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("4318E60A-86C6-5142-8600-0D61AA20CE93")]
+[Guid("97EF160D-3CB5-5A6A-A6A2-EB09180A2E6A")]
 public partial interface IAvnControlPointerWheelChangedHandler
 {
     [PreserveSig]

@@ -7,7 +7,7 @@ using System.Linq;
 namespace Avalonia.Host.Com;
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("23285627-33AB-5F2A-9461-1B7D17DEED68")]
+[Guid("D905864D-303A-56F8-BE1A-963F2B1305A7")]
 public partial interface IAvnAutoCompleteBoxSelectionChangedArgs
 {
     [PreserveSig]
@@ -96,7 +96,7 @@ public sealed partial class AvnAutoCompleteBoxSelectionChangedArgs : IAvnAutoCom
 }
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("A6B06471-91B1-53F2-9544-06FFF5949E72")]
+[Guid("47CAF41C-70EB-5F50-8DAC-BFC5619F8222")]
 public partial interface IAvnAutoCompleteBoxSelectionChangedHandler
 {
     [PreserveSig]

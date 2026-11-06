@@ -57,13 +57,10 @@ fn main() {
 #[cfg(target_os = "macos")]
 fn file_drag_probe() -> Result<(), Box<dyn std::error::Error>> {
     use rustolonia::{App, AsControl, Button, ShutdownMode, Window};
-    use rustolonia_sys::{FileDragEvent, IAvnApplication12};
+    use rustolonia_sys::FileDragEvent;
     use std::sync::{Arc, Mutex};
     let host = rustolonia_sys::Host::load(rustolonia::discover_host_path()?)?;
-    let application = host
-        .activation_factory()?
-        .create_application()?
-        .query_interface::<IAvnApplication12>()?;
+    let application = host.activation_factory()?.create_application()?;
     let mode = std::env::args()
         .skip(2)
         .next()
@@ -95,7 +92,7 @@ fn file_drag_probe() -> Result<(), Box<dyn std::error::Error>> {
             Ok(())
         });
         application.set_file_drag_handler(&raw, Some(&handler))?;
-        let other = host.activation_factory()?.create_application()?.query_interface::<IAvnApplication12>()?;
+        let other = host.activation_factory()?.create_application()?;
         assert!(other.set_file_drag_handler(&raw, Some(&handler)).is_err(),
             "auxiliary applications must not register the same target twice");
         drop(handler);
@@ -210,17 +207,15 @@ fn file_drag_probe() -> Result<(), Box<dyn std::error::Error>> {
 #[cfg(target_os = "macos")]
 fn termination_probe() -> Result<(), Box<dyn std::error::Error>> {
     use rustolonia::{App, Button, PlacementMode, ShutdownMode, Window};
-    use rustolonia_sys::{IAvnApplication11, NativePopupEvent};
+    use rustolonia_sys::NativePopupEvent;
     use std::sync::{Arc, Mutex};
     let args: Vec<_> = std::env::args().collect();
     let native = args.iter().any(|arg| arg == "--native");
     let with_popup = args.iter().any(|arg| arg == "--popup");
     let os = args.iter().any(|arg| arg == "--os");
     let host = rustolonia_sys::Host::load(rustolonia::discover_host_path()?)?;
-    let auxiliary = host.activation_factory()?.create_application()?;
-    let gate = auxiliary.query_interface::<IAvnApplication11>()?;
-    let popup_gate = auxiliary.popup_gate()?;
-    drop(auxiliary);
+    let gate = host.activation_factory()?.create_application()?;
+    let popup_gate = gate.clone();
     let requests = Arc::new(Mutex::new(Vec::new()));
     App::load_from_env()?.run(move |scope| {
         scope.set_shutdown_mode(if native {
@@ -260,14 +255,14 @@ fn termination_probe() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 Ok(())
             });
-            popup_gate.set(&raw, Some(&handler))?;
+            popup_gate.set_native_popup_gate(&raw, Some(&handler))?;
             let owner = owner.on_unloaded(scope, move |_| {
                 assert!(
                     native_placement::cleanup_done(),
                     "cleanup precedes owner Unloaded"
                 );
                 popup_gate
-                    .set(&raw, None)
+                    .set_native_popup_gate(&raw, None)
                     .expect("clear popup gate in owner Unloaded");
                 println!("termination owner Unloaded after cleanup");
             })?;
@@ -367,10 +362,7 @@ fn teardown_probe() -> Result<(), Box<dyn std::error::Error>> {
     let shutdown = args.iter().any(|arg| arg == "--shutdown");
     let automatic = args.iter().any(|arg| arg == "--automatic");
     let host = rustolonia_sys::Host::load(rustolonia::discover_host_path()?)?;
-    let gate = host
-        .activation_factory()?
-        .create_application()?
-        .popup_gate()?;
+    let gate = host.activation_factory()?.create_application()?;
     let events = Arc::new(Mutex::new(Vec::new()));
     let owner_ref = Arc::new(Mutex::new(None));
     let app = rustolonia::App::load_from_env()?;
@@ -392,7 +384,7 @@ fn teardown_probe() -> Result<(), Box<dyn std::error::Error>> {
                 observed.lock().unwrap().push(event);
                 Ok(())
             });
-            gate.set(&raw, Some(&handler))?;
+            gate.set_native_popup_gate(&raw, Some(&handler))?;
             drop(handler);
             if automatic {
                 let gate_for_unload = gate.clone();
@@ -402,7 +394,7 @@ fn teardown_probe() -> Result<(), Box<dyn std::error::Error>> {
                     let events = events_for_unload.lock().unwrap();
                     assert!(events.iter().any(|event| matches!(event, NativePopupEvent::Closed { .. })),
                         "popup closes before owner Unloaded");
-                    let clear = gate_for_unload.set(&raw_for_unload, None);
+                    let clear = gate_for_unload.set_native_popup_gate(&raw_for_unload, None);
                     println!("owner Unloaded: clear={clear:?}");
                     clear.expect("clear gate during owner Unloaded");
                 })?;
@@ -418,7 +410,7 @@ fn teardown_probe() -> Result<(), Box<dyn std::error::Error>> {
                     let token = events.lock().unwrap().iter().find_map(|event| match event {
                         NativePopupEvent::Preparing { token, .. } => Some(*token), _ => None,
                     }).unwrap();
-                    if revealed { gate.acknowledge(token).unwrap(); }
+                    if revealed { gate.acknowledge_native_popup(token).unwrap(); }
                     owner.close().unwrap();
                     println!("automatic last-window shutdown, no AppScope.shutdown call");
                 });
@@ -441,11 +433,11 @@ fn teardown_probe() -> Result<(), Box<dyn std::error::Error>> {
                     NativePopupEvent::Preparing { token, .. } => Some(*token),
                     _ => None,
                 }).expect("preparing");
-                let early_clear = gate.set(&raw, None);
+                let early_clear = gate.set_native_popup_gate(&raw, None);
                 println!("clear with open popup: {early_clear:?}");
                 assert!(early_clear.is_err(), "must reject clearing an open popup");
                 if revealed {
-                    gate.acknowledge(token).unwrap();
+                    gate.acknowledge_native_popup(token).unwrap();
                 }
                 if shutdown {
                     scope.shutdown().unwrap();
@@ -455,8 +447,8 @@ fn teardown_probe() -> Result<(), Box<dyn std::error::Error>> {
                 let closed = events.lock().unwrap().iter().filter(|event| {
                     matches!(event, NativePopupEvent::Closed { token: value } if *value == token)
                 }).count();
-                let clear = gate.set(&raw, None);
-                let stale = gate.acknowledge(token);
+                let clear = gate.set_native_popup_gate(&raw, None);
+                let stale = gate.acknowledge_native_popup(token);
                 println!("menu={menu}, revealed={revealed}, shutdown={shutdown}: closed={closed}, clear={clear:?}, stale={stale:?}");
                 assert_eq!(closed, 1, "one Closed callback per popup");
                 clear.expect("clear gate with closed owner projection");

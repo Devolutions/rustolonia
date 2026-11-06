@@ -359,5 +359,13 @@ public class RustMenuTests
             AsyncCommands.Add(commandId);
             return 0;
         }
+
+        public int BeginAsyncTracked(int commandId, string? parameter, out long operationId)
+        {
+            operationId = 0;
+            return BeginAsync(commandId, parameter);
+        }
+
+        public int CancelAsync(int commandId, long operationId) => 0;
     }
 }

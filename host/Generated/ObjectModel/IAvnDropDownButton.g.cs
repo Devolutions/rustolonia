@@ -7,7 +7,7 @@ using System.Runtime.InteropServices.Marshalling;
 namespace Avalonia.Host.Com;
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("99F4E9B6-DAAC-55B1-AFDE-75D38A5C2491")]
+[Guid("02AE60F2-40FF-557F-BB0F-8509F7BE1209")]
 public partial interface IAvnDropDownButton : IAvnButton
 {
 }

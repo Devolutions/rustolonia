@@ -9,7 +9,7 @@ using Avalonia.Native;
 
 namespace Avalonia.Host.Com;
 
-public partial class AvnApplication : IAvnApplication11
+public partial class AvnApplication
 {
     private static AvnApplication? s_terminationOwner;
     private IAvnTerminationHandler? _terminationHandler;

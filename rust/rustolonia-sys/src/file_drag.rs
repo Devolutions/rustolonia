@@ -1,39 +1,14 @@
-use crate::{ComInterface, ComPtr, Guid, IAvnControl, IUnknown, Result};
+use crate::{ComInterface, ComPtr, Guid, IAvnApplication, IAvnControl, IUnknown, Result};
 use std::ffi::c_void;
 
-#[repr(C)]
-struct ApplicationVtbl {
-    query: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
-    add: unsafe extern "system" fn(*mut IUnknown) -> u32,
-    release: unsafe extern "system" fn(*mut IUnknown) -> u32,
-    set: unsafe extern "system" fn(
-        *mut IAvnApplication12,
-        *mut IAvnControl,
-        *mut IAvnFileDragHandler,
-    ) -> i32,
-    complete: unsafe extern "system" fn(*mut IAvnApplication12, i64, *const u16) -> i32,
-    cancel: unsafe extern "system" fn(*mut IAvnApplication12, i64) -> i32,
-}
-#[repr(C)]
-pub struct IAvnApplication12 {
-    vtbl: *const ApplicationVtbl,
-}
-unsafe impl ComInterface for IAvnApplication12 {
-    const IID: Guid = Guid {
-        data1: 0x6B2E8F10,
-        data2: 0x4C91,
-        data3: 0x4E3A,
-        data4: [0x9A, 0x77, 0x1F, 0x0C, 0x2B, 0x3A, 0x4D, 0xA6],
-    };
-}
-impl ComPtr<IAvnApplication12> {
+impl ComPtr<IAvnApplication> {
     pub fn set_file_drag_handler(
         &self,
         control: &ComPtr<IAvnControl>,
         handler: Option<&ComPtr<IAvnFileDragHandler>>,
     ) -> Result<()> {
         unsafe {
-            crate::hresult::check(((*(*self.as_raw()).vtbl).set)(
+            crate::hresult::check((self.vtbl().set_file_drag_handler)(
                 self.as_raw(),
                 control.as_raw(),
                 handler.map_or(std::ptr::null_mut(), |value| value.as_raw()),
@@ -43,7 +18,7 @@ impl ComPtr<IAvnApplication12> {
     pub fn complete_file_drag(&self, token: i64, json: &str) -> Result<()> {
         let json: Vec<_> = json.encode_utf16().chain(Some(0)).collect();
         unsafe {
-            crate::hresult::check(((*(*self.as_raw()).vtbl).complete)(
+            crate::hresult::check((self.vtbl().complete_file_drag)(
                 self.as_raw(),
                 token,
                 json.as_ptr(),
@@ -51,7 +26,7 @@ impl ComPtr<IAvnApplication12> {
         }
     }
     pub fn cancel_file_drag(&self, token: i64) -> Result<()> {
-        unsafe { crate::hresult::check(((*(*self.as_raw()).vtbl).cancel)(self.as_raw(), token)) }
+        unsafe { crate::hresult::check((self.vtbl().cancel_file_drag)(self.as_raw(), token)) }
     }
 }
 #[repr(C)]
@@ -138,11 +113,7 @@ pub fn file_drag_handler(
 mod tests {
     use super::*;
     #[test]
-    fn additive_shapes() {
-        assert_eq!(
-            std::mem::size_of::<ApplicationVtbl>(),
-            6 * std::mem::size_of::<usize>()
-        );
+    fn handler_vtable_shape() {
         assert_eq!(
             std::mem::size_of::<HandlerVtbl>(),
             5 * std::mem::size_of::<usize>()

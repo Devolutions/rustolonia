@@ -71,7 +71,7 @@ public class RustVmBatchTests
         batch.SetCommandEnabled(1, 0);
         batch.SetPropertyError(1, "bad");
 
-        Assert.Equal(0, host.Sink3.SubmitBatch(batch));
+        Assert.Equal(0, host.Sink.SubmitBatch(batch));
         Assert.Equal(0, batch.CompletionCount);
         host.Drain();
 
@@ -96,9 +96,9 @@ public class RustVmBatchTests
     {
         using var app = UnitTestApplication.Start(TestServices.MockPlatformRenderInterface);
         using var host = GeneratedHost();
-        var sink2 = (IAvnRustVmSink2)host.Model.Sink;
-        Assert.Equal(0, sink2.AddModel(3, new FakeNested()));
-        Assert.Equal(0, sink2.AddModel(3, new FakeNested()));
+        var sink = host.Model.Sink;
+        Assert.Equal(0, sink.AddModel(3, new FakeNested()));
+        Assert.Equal(0, sink.AddModel(3, new FakeNested()));
         Assert.Equal(0, host.Model.Sink.SetInteger(9, 1));
         Assert.Equal(0, host.Model.Sink.SetString(10, "trace-selected"));
         var table = new TableView
@@ -124,7 +124,7 @@ public class RustVmBatchTests
         batch.SetInteger(9, 0);
         batch.SetString(10, "trace-selected");
 
-        Assert.Equal(0, host.Sink3.SubmitBatch(batch));
+        Assert.Equal(0, host.Sink.SubmitBatch(batch));
         host.Drain();
         root.Measure(new Size(300, 100));
         root.Arrange(new Rect(0, 0, 300, 100));
@@ -153,7 +153,7 @@ public class RustVmBatchTests
         // Valid target, valid wire kind, but the index is past the simulated end.
         batch.ReplaceString(1, 5, "out of range");
 
-        Assert.Equal(0, host.Sink3.SubmitBatch(batch));
+        Assert.Equal(0, host.Sink.SubmitBatch(batch));
         host.Drain();
 
         Assert.Equal(RustVmBatchOutcome.Error, batch.Outcome);
@@ -175,7 +175,7 @@ public class RustVmBatchTests
         batch.SetString(1, "Should not apply");
         batch.SetInteger(6, value);
 
-        Assert.Equal(0, host.Sink3.SubmitBatch(batch));
+        Assert.Equal(0, host.Sink.SubmitBatch(batch));
         host.Drain();
 
         Assert.Equal(RustVmBatchOutcome.Error, batch.Outcome);
@@ -208,7 +208,7 @@ public class RustVmBatchTests
                      Build(batch => batch.MoveItem(1, 0, 1)),   // past the end
                  })
         {
-            Assert.Equal(0, host.Sink3.SubmitBatch(invalid));
+            Assert.Equal(0, host.Sink.SubmitBatch(invalid));
             host.Drain();
             Assert.Equal(RustVmBatchOutcome.Error, invalid.Outcome);
             Assert.Equal(InvalidArgument, invalid.Error);
@@ -238,7 +238,7 @@ public class RustVmBatchTests
         var first = new FakeBatch(1);
         first.SetString(5, "Nick");
         first.SetModel(7, nestedModel);
-        Assert.Equal(0, host.Sink3.SubmitBatch(first));
+        Assert.Equal(0, host.Sink.SubmitBatch(first));
         host.Drain();
         Assert.Equal(RustVmBatchOutcome.Applied, first.Outcome);
         Assert.Equal("Nick", host.Adapter.Nickname);
@@ -248,7 +248,7 @@ public class RustVmBatchTests
         var second = new FakeBatch(2);
         second.SetNull(5);
         second.SetNull(7);
-        Assert.Equal(0, host.Sink3.SubmitBatch(second));
+        Assert.Equal(0, host.Sink.SubmitBatch(second));
         host.Drain();
 
         Assert.Equal(RustVmBatchOutcome.Applied, second.Outcome);
@@ -281,7 +281,7 @@ public class RustVmBatchTests
         // The last add is dropped again, so its model is never attached at all.
         batch.RemoveAt(2, 2);
 
-        Assert.Equal(0, host.Sink3.SubmitBatch(batch));
+        Assert.Equal(0, host.Sink.SubmitBatch(batch));
         host.Drain();
 
         Assert.Equal(RustVmBatchOutcome.Error, batch.Outcome);
@@ -310,14 +310,14 @@ public class RustVmBatchTests
         var seed = new FakeBatch(1);
         seed.AddModel(2, kept);
         seed.AddModel(2, removed);
-        Assert.Equal(0, host.Sink3.SubmitBatch(seed));
+        Assert.Equal(0, host.Sink.SubmitBatch(seed));
         host.Drain();
         Assert.Equal(2, host.Adapter.Tasks.Count);
         var keptAdapter = host.Adapter.Tasks[0];
 
         var batch = new FakeBatch(2);
         batch.RemoveAt(2, 1);
-        Assert.Equal(0, host.Sink3.SubmitBatch(batch));
+        Assert.Equal(0, host.Sink.SubmitBatch(batch));
         host.Drain();
 
         Assert.Equal(RustVmBatchOutcome.Applied, batch.Outcome);
@@ -345,7 +345,7 @@ public class RustVmBatchTests
         var batch = new FakeBatch(1);
         batch.ReplaceStringSnapshot(1, values);
 
-        Assert.Equal(0, host.Sink3.SubmitBatch(batch));
+        Assert.Equal(0, host.Sink.SubmitBatch(batch));
         host.Drain();
 
         Assert.Equal(RustVmBatchOutcome.Applied, batch.Outcome);
@@ -363,7 +363,7 @@ public class RustVmBatchTests
 
         var first = new FakeBatch(5);
         first.SetString(1, "Fifth");
-        Assert.Equal(0, host.Sink3.SubmitBatch(first));
+        Assert.Equal(0, host.Sink.SubmitBatch(first));
         host.Drain();
         Assert.Equal(RustVmBatchOutcome.Applied, first.Outcome);
 
@@ -371,7 +371,7 @@ public class RustVmBatchTests
         {
             var stale = new FakeBatch(generation);
             stale.SetString(1, "Stale");
-            Assert.Equal(0, host.Sink3.SubmitBatch(stale));
+            Assert.Equal(0, host.Sink.SubmitBatch(stale));
             host.Drain();
             Assert.Equal(RustVmBatchOutcome.Stale, stale.Outcome);
             Assert.Equal("Fifth", host.Adapter.Name);
@@ -379,7 +379,7 @@ public class RustVmBatchTests
 
         var newer = new FakeBatch(6);
         newer.SetString(1, "Sixth");
-        Assert.Equal(0, host.Sink3.SubmitBatch(newer));
+        Assert.Equal(0, host.Sink.SubmitBatch(newer));
         host.Drain();
         Assert.Equal(RustVmBatchOutcome.Applied, newer.Outcome);
         Assert.Equal("Sixth", host.Adapter.Name);
@@ -395,7 +395,7 @@ public class RustVmBatchTests
         batch.SetInteger(2, 42);
         batch.FailGetterAt = 1;
 
-        Assert.Equal(0, host.Sink3.SubmitBatch(batch));
+        Assert.Equal(0, host.Sink.SubmitBatch(batch));
         host.Drain();
 
         Assert.Equal(RustVmBatchOutcome.Error, batch.Outcome);
@@ -411,7 +411,7 @@ public class RustVmBatchTests
         var batch = new FakeBatch(1);
         batch.SetString(1, "Worker");
 
-        var result = await Task.Run(() => host.Sink3.SubmitBatch(batch));
+        var result = await Task.Run(() => host.Sink.SubmitBatch(batch));
 
         Assert.Equal(0, result);
         Assert.Equal(0, batch.CompletionCount);
@@ -423,7 +423,7 @@ public class RustVmBatchTests
         Assert.Equal(1, batch.CompletionCount);
         Assert.Equal("Worker", host.Adapter.Name);
         // The completion ran from the posted work item, not SubmitBatch.
-        Assert.DoesNotContain(nameof(IAvnRustVmSink3.SubmitBatch), batch.CompletionStacks[0], StringComparison.Ordinal);
+        Assert.DoesNotContain(nameof(IAvnRustVmSink.SubmitBatch), batch.CompletionStacks[0], StringComparison.Ordinal);
     }
 
     [Fact]
@@ -432,7 +432,7 @@ public class RustVmBatchTests
         var host = GeneratedHost();
         var queued = new FakeBatch(1);
         queued.SetString(1, "Never");
-        Assert.Equal(0, host.Sink3.SubmitBatch(queued));
+        Assert.Equal(0, host.Sink.SubmitBatch(queued));
 
         host.Adapter.Dispose();
         host.Drain();
@@ -442,7 +442,7 @@ public class RustVmBatchTests
 
         var afterDispose = new FakeBatch(2);
         afterDispose.SetString(1, "Also never");
-        Assert.Equal(0, host.Sink3.SubmitBatch(afterDispose));
+        Assert.Equal(0, host.Sink.SubmitBatch(afterDispose));
         host.Drain();
         Assert.Equal(RustVmBatchOutcome.Cancelled, afterDispose.Outcome);
         Assert.Equal("Initial", host.Adapter.Name);
@@ -455,7 +455,7 @@ public class RustVmBatchTests
         var nested = new FakeNested();
         var seed = new FakeBatch(1);
         seed.AddModel(2, nested);
-        Assert.Equal(0, host.Sink3.SubmitBatch(seed));
+        Assert.Equal(0, host.Sink.SubmitBatch(seed));
         host.Drain();
         Assert.Single(host.Adapter.Tasks);
 
@@ -479,7 +479,7 @@ public class RustVmBatchTests
         batch.SetString(1, "Reentrant");
         batch.SetInteger(2, 11);
         batch.AddString(1, "still published");
-        Assert.Equal(0, host.Sink3.SubmitBatch(batch));
+        Assert.Equal(0, host.Sink.SubmitBatch(batch));
         host.Drain();
 
         Assert.Equal(RustVmBatchOutcome.Applied, batch.Outcome);
@@ -510,7 +510,7 @@ public class RustVmBatchTests
         batch.SetString(1, "Committed");
         batch.SetInteger(2, 3);
 
-        Assert.Equal(0, host.Sink3.SubmitBatch(batch));
+        Assert.Equal(0, host.Sink.SubmitBatch(batch));
         host.Drain();
 
         Assert.Equal(RustVmBatchOutcome.Applied, batch.Outcome);
@@ -562,7 +562,7 @@ public class RustVmBatchTests
         seed.AddString(1, "second");
         seed.AddString(1, "third");
         seed.AddModel(2, nested);
-        Assert.Equal(0, host.Sink3.SubmitBatch(seed));
+        Assert.Equal(0, host.Sink.SubmitBatch(seed));
         host.Drain();
         Assert.Equal(RustVmBatchOutcome.Applied, seed.Outcome);
         Assert.Equal(new object?[] { "First", "second", "third" }, items);
@@ -573,7 +573,7 @@ public class RustVmBatchTests
         var clear = new FakeBatch(2);
         clear.ClearCollection(1);
         clear.ClearCollection(2);
-        Assert.Equal(0, host.Sink3.SubmitBatch(clear));
+        Assert.Equal(0, host.Sink.SubmitBatch(clear));
         host.Drain();
 
         Assert.Equal(RustVmBatchOutcome.Applied, clear.Outcome);
@@ -606,7 +606,7 @@ public class RustVmBatchTests
             var batch = new FakeBatch(generation++);
             batch.SetString(1, "Should not apply");
             configure(batch);
-            Assert.Equal(0, host.Sink3.SubmitBatch(batch));
+            Assert.Equal(0, host.Sink.SubmitBatch(batch));
             host.Drain();
             Assert.Equal(RustVmBatchOutcome.Error, batch.Outcome);
             Assert.Equal(InvalidArgument, batch.Error);
@@ -629,7 +629,7 @@ public class RustVmBatchTests
         batch.AddModel(2, good);
         batch.AddModel(2, new FailingNested());
 
-        Assert.Equal(0, host.Sink3.SubmitBatch(batch));
+        Assert.Equal(0, host.Sink.SubmitBatch(batch));
         host.Drain();
 
         Assert.Equal(RustVmBatchOutcome.Error, batch.Outcome);
@@ -653,7 +653,7 @@ public class RustVmBatchTests
         var batch = new FakeBatch(1);
         batch.ReplaceStringSnapshot(1, Enumerable.Range(0, 100_000).Select(index => $"item-{index}").ToArray());
 
-        Assert.Equal(0, host.Sink3.SubmitBatch(batch));
+        Assert.Equal(0, host.Sink.SubmitBatch(batch));
         host.Drain();
 
         Assert.Equal(RustVmBatchOutcome.Applied, batch.Outcome);
@@ -669,7 +669,7 @@ public class RustVmBatchTests
         var nested = new FakeNested();
         var seed = new FakeBatch(1);
         seed.AddModel(2, nested);
-        Assert.Equal(0, host.Sink3.SubmitBatch(seed));
+        Assert.Equal(0, host.Sink.SubmitBatch(seed));
         host.Drain();
 
         ((INotifyPropertyChanged)host.Adapter).PropertyChanged += (_, e) =>
@@ -683,7 +683,7 @@ public class RustVmBatchTests
 
         var batch = new FakeBatch(2);
         batch.SetString(1, "Reentrant");
-        Assert.Equal(0, host.Sink3.SubmitBatch(batch));
+        Assert.Equal(0, host.Sink.SubmitBatch(batch));
         host.Drain();
 
         Assert.Equal(RustVmBatchOutcome.Applied, batch.Outcome);
@@ -693,7 +693,7 @@ public class RustVmBatchTests
 
         var queued = new FakeBatch(3);
         queued.SetString(1, "Never");
-        Assert.Equal(0, host.Sink3.SubmitBatch(queued));
+        Assert.Equal(0, host.Sink.SubmitBatch(queued));
         host.Drain();
         Assert.Equal(RustVmBatchOutcome.Cancelled, queued.Outcome);
     }
@@ -798,7 +798,7 @@ public class RustVmBatchTests
         host.Adapter.IncrementCommand.CanExecuteChanged += (_, _) => batch.Trace.Add("command");
         host.Adapter.ErrorsChanged += (_, e) => batch.Trace.Add($"errors:{e.PropertyName}");
 
-        Assert.Equal(0, host.Sink3.SubmitBatch(batch));
+        Assert.Equal(0, host.Sink.SubmitBatch(batch));
         host.Drain();
 
         Assert.Equal(RustVmBatchOutcome.Applied, batch.Outcome);
@@ -823,13 +823,13 @@ public class RustVmBatchTests
 
         var applied = new FakeBatch(5);
         applied.SetString(1, "Fifth");
-        Assert.Equal(0, host.Sink3.SubmitBatch(applied));
+        Assert.Equal(0, host.Sink.SubmitBatch(applied));
         host.Drain();
         Assert.Equal(1, applied.OwnershipCommits);
 
         var stale = new FakeBatch(5);
         stale.SetString(1, "Stale");
-        Assert.Equal(0, host.Sink3.SubmitBatch(stale));
+        Assert.Equal(0, host.Sink.SubmitBatch(stale));
         host.Drain();
         Assert.Equal(RustVmBatchOutcome.Stale, stale.Outcome);
         Assert.Equal(0, stale.OwnershipCommits);
@@ -837,57 +837,27 @@ public class RustVmBatchTests
         var invalid = new FakeBatch(6);
         invalid.SetString(1, "Invalid");
         invalid.ReplaceString(1, 9, "out of range");
-        Assert.Equal(0, host.Sink3.SubmitBatch(invalid));
+        Assert.Equal(0, host.Sink.SubmitBatch(invalid));
         host.Drain();
         Assert.Equal(RustVmBatchOutcome.Error, invalid.Outcome);
         Assert.Equal(0, invalid.OwnershipCommits);
 
         var failedStaging = new FakeBatch(7);
         failedStaging.AddModel(2, new FailingNested());
-        Assert.Equal(0, host.Sink3.SubmitBatch(failedStaging));
+        Assert.Equal(0, host.Sink.SubmitBatch(failedStaging));
         host.Drain();
         Assert.Equal(RustVmBatchOutcome.Error, failedStaging.Outcome);
         Assert.Equal(0, failedStaging.OwnershipCommits);
 
         var cancelled = new FakeBatch(8);
         cancelled.SetString(1, "Never");
-        Assert.Equal(0, host.Sink3.SubmitBatch(cancelled));
+        Assert.Equal(0, host.Sink.SubmitBatch(cancelled));
         host.Adapter.Dispose();
         host.Drain();
         Assert.Equal(RustVmBatchOutcome.Cancelled, cancelled.Outcome);
         Assert.Equal(0, cancelled.OwnershipCommits);
 
         Assert.Equal("Fifth", host.Adapter.Name);
-    }
-
-    [Fact]
-    public void A_batch_without_the_ownership_capability_is_rejected_with_zero_mutation()
-    {
-        using var host = GeneratedHost();
-        var changed = 0;
-        host.Adapter.PropertyChanged += (_, _) => changed++;
-        var collectionChanges = 0;
-        host.Adapter.Items.CollectionChanged += (_, _) => collectionChanges++;
-
-        var batch = new LegacyBatch(1);
-        Assert.Equal(0, host.Sink3.SubmitBatch(batch));
-        host.Drain();
-
-        Assert.Equal(RustVmBatchOutcome.Error, batch.Outcome);
-        Assert.Equal(unchecked((int)0x80004002), batch.Error);
-        Assert.Equal("Initial", host.Adapter.Name);
-        Assert.Equal(["First"], host.Adapter.Items);
-        Assert.Equal(0, changed);
-        Assert.Equal(0, collectionChanges);
-        // A rejected batch does not advance the generation.
-        Assert.Equal(0, batch.OperationReads);
-
-        var next = new FakeBatch(1);
-        next.SetString(1, "Applies");
-        Assert.Equal(0, host.Sink3.SubmitBatch(next));
-        host.Drain();
-        Assert.Equal(RustVmBatchOutcome.Applied, next.Outcome);
-        Assert.Equal("Applies", host.Adapter.Name);
     }
 
     [Fact]
@@ -898,7 +868,7 @@ public class RustVmBatchTests
         batch.SetString(1, "Batched");
         batch.AddModel(2, new FakeNested());
 
-        var sink2 = (IAvnRustVmSink2)host.Model.Sink;
+        var sink = host.Model.Sink;
         var reentrant = new FakeNested();
         var published = false;
         host.Adapter.PropertyChanged += (_, _) =>
@@ -909,11 +879,11 @@ public class RustVmBatchTests
             // A reentrant synchronous nested publish from an observer: the
             // batch's own ownership must already be committed.
             Assert.Equal(1, batch.OwnershipCommits);
-            Assert.Equal(0, sink2.AddModel(2, reentrant));
+            Assert.Equal(0, sink.AddModel(2, reentrant));
             batch.Trace.Add("reentrant-add");
         };
 
-        Assert.Equal(0, host.Sink3.SubmitBatch(batch));
+        Assert.Equal(0, host.Sink.SubmitBatch(batch));
         host.Drain();
 
         Assert.Equal(RustVmBatchOutcome.Applied, batch.Outcome);
@@ -930,7 +900,7 @@ public class RustVmBatchTests
         var batch = new FakeBatch(1) { OwnershipResult = unchecked((int)0x80004005) };
         batch.SetString(1, "Committed");
 
-        Assert.Equal(0, host.Sink3.SubmitBatch(batch));
+        Assert.Equal(0, host.Sink.SubmitBatch(batch));
         host.Drain();
 
         Assert.Equal(RustVmBatchOutcome.Applied, batch.Outcome);
@@ -953,7 +923,7 @@ public class RustVmBatchTests
         };
         Items(host.Adapter, "Items").CollectionChanged += (_, _) => batch.Trace.Add("collection");
 
-        Assert.Equal(0, host.Sink3.SubmitBatch(batch));
+        Assert.Equal(0, host.Sink.SubmitBatch(batch));
         host.Drain();
 
         Assert.Equal(RustVmBatchOutcome.Applied, batch.Outcome);
@@ -1065,7 +1035,7 @@ public class RustVmBatchTests
         public BatchModel Model { get; } = model;
         public SampleViewModelAdapter Adapter { get; } = adapter;
         public Queue<Action> Pending { get; } = pending;
-        public IAvnRustVmSink3 Sink3 => (IAvnRustVmSink3)Model.Sink;
+        public IAvnRustVmSink Sink => Model.Sink;
 
         public void Drain()
         {
@@ -1084,7 +1054,7 @@ public class RustVmBatchTests
         public BatchModel Model { get; } = model;
         public ReflectableRustViewModelAdapter Adapter { get; } = adapter;
         public Queue<Action> Pending { get; } = pending;
-        public IAvnRustVmSink3 Sink3 => (IAvnRustVmSink3)Model.Sink;
+        public IAvnRustVmSink Sink => Model.Sink;
 
         public void Drain()
         {
@@ -1136,6 +1106,14 @@ public class RustVmBatchTests
         public int SetDouble(int propertyId, double value) => 0;
         public int Execute(int commandId, string? parameter) => 0;
         public int BeginAsync(int commandId, string? parameter) => 0;
+
+        public int BeginAsyncTracked(int commandId, string? parameter, out long operationId)
+        {
+            operationId = 0;
+            return BeginAsync(commandId, parameter);
+        }
+
+        public int CancelAsync(int commandId, long operationId) => 0;
     }
 
     private sealed class FakeNested : IAvnRustViewModel
@@ -1150,6 +1128,14 @@ public class RustVmBatchTests
         public int SetDouble(int propertyId, double value) => 0;
         public int Execute(int commandId, string? parameter) => 0;
         public int BeginAsync(int commandId, string? parameter) => 0;
+
+        public int BeginAsyncTracked(int commandId, string? parameter, out long operationId)
+        {
+            operationId = 0;
+            return BeginAsync(commandId, parameter);
+        }
+
+        public int CancelAsync(int commandId, long operationId) => 0;
     }
 
     private sealed class FailingNested : IAvnRustViewModel
@@ -1164,6 +1150,14 @@ public class RustVmBatchTests
         public int SetDouble(int propertyId, double value) => 0;
         public int Execute(int commandId, string? parameter) => 0;
         public int BeginAsync(int commandId, string? parameter) => 0;
+
+        public int BeginAsyncTracked(int commandId, string? parameter, out long operationId)
+        {
+            operationId = 0;
+            return BeginAsync(commandId, parameter);
+        }
+
+        public int CancelAsync(int commandId, long operationId) => 0;
     }
 
     /// <summary>
@@ -1171,7 +1165,7 @@ public class RustVmBatchTests
     /// completion (count, outcome, error and the completing call stack) so tests
     /// can assert that nothing completes on the submitting stack.
     /// </summary>
-    private sealed class FakeBatch(long generation) : IAvnRustVmUpdateBatch, IAvnRustVmUpdateBatch2
+    private sealed class FakeBatch(long generation) : IAvnRustVmUpdateBatch
     {
         private readonly List<Operation> _operations = [];
 
@@ -1327,74 +1321,6 @@ public class RustVmBatchTests
             IAvnRustViewModel? Model,
             IReadOnlyList<string>? Strings,
             IReadOnlyList<IAvnRustViewModel>? Models);
-    }
-
-    /// <summary>
-    /// A batch that implements only the original immutable-batch contract. It
-    /// stands in for a producer that has not been rebuilt against the
-    /// ownership-commit capability.
-    /// </summary>
-    private sealed class LegacyBatch(long generation) : IAvnRustVmUpdateBatch
-    {
-        public RustVmBatchOutcome Outcome { get; private set; }
-        public int Error { get; private set; }
-
-        /// <summary>Counts reads the coordinator must never perform.</summary>
-        public int OperationReads { get; private set; }
-
-        public int GetGeneration(out long value)
-        {
-            value = generation;
-            return 0;
-        }
-
-        public int GetOperationCount(out int count)
-        {
-            OperationReads++;
-            count = 0;
-            return 0;
-        }
-
-        public int GetOperation(int index, out IAvnRustVmUpdateOperation? operation)
-        {
-            OperationReads++;
-            operation = null;
-            return InvalidArgument;
-        }
-
-        public int GetSnapshotItemCount(int operationIndex, out int count)
-        {
-            OperationReads++;
-            count = 0;
-            return InvalidArgument;
-        }
-
-        public int GetSnapshotStringLength(int operationIndex, int itemIndex, out int length)
-        {
-            OperationReads++;
-            length = 0;
-            return InvalidArgument;
-        }
-
-        public unsafe int CopySnapshotString(int operationIndex, int itemIndex, char* destination, int capacity)
-        {
-            OperationReads++;
-            return InvalidArgument;
-        }
-
-        public int GetSnapshotModel(int operationIndex, int itemIndex, out IAvnRustViewModel? model)
-        {
-            OperationReads++;
-            model = null;
-            return InvalidArgument;
-        }
-
-        public int Complete(int outcome, int error)
-        {
-            Outcome = (RustVmBatchOutcome)outcome;
-            Error = error;
-            return 0;
-        }
     }
 
     private sealed class FakeOperation(FakeBatch.Operation operation, bool fail) : IAvnRustVmUpdateOperation

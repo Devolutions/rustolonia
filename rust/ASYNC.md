@@ -42,7 +42,7 @@ synchronous clipboard API would be a UI-thread hazard. See
 
 Storage pickers are the second. They reuse the same operation
 registry (so `CancelAsyncOperation` and shutdown cancellation behave
-identically) but complete through their own separately versioned
+identically) but complete through their own
 `IAvnStorageCompletion` interface, because a picker result is a list of storage
 items rather than one tagged primitive. A dismissed dialog is reported as a
 successful completion with a `Cancelled` outcome tag, which keeps "the user

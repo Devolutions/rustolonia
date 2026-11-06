@@ -14,7 +14,7 @@ namespace Avalonia.Host.Com;
 /// when the brush is minted for the ABI.
 /// </remarks>
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("FDAA2353-BC44-5012-A5BE-A17C7C01F41A")]
+[Guid("E9B42A47-BED1-59D7-9B2F-81670377103F")]
 public partial interface IAvnGradientBrush
 {
     [PreserveSig]
@@ -33,7 +33,7 @@ public partial interface IAvnGradientBrush
 
 /// <summary>A brush that draws with a linear gradient.</summary>
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("40B3D53D-330E-5D63-A040-37F1FF717FF8")]
+[Guid("88C3E021-1FD6-5FE9-8F74-A0503DC7E641")]
 public partial interface IAvnLinearGradientBrush : IAvnGradientBrush
 {
     [PreserveSig]
@@ -45,7 +45,7 @@ public partial interface IAvnLinearGradientBrush : IAvnGradientBrush
 
 /// <summary>A brush that draws with a radial gradient.</summary>
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("AEC23FCE-9FEA-506C-ABC4-774143BE80C8")]
+[Guid("0E8FE4F6-9848-514A-A020-746364FE3023")]
 public partial interface IAvnRadialGradientBrush : IAvnGradientBrush
 {
     [PreserveSig]

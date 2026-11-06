@@ -1,33 +1,13 @@
-use crate::{ComInterface, ComPtr, Guid, IUnknown, Result};
+use crate::{ComInterface, ComPtr, Guid, IAvnApplication, IUnknown, Result};
 use std::ffi::c_void;
 
-#[repr(C)]
-struct ApplicationVtbl {
-    query: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
-    add: unsafe extern "system" fn(*mut IUnknown) -> u32,
-    release: unsafe extern "system" fn(*mut IUnknown) -> u32,
-    set: unsafe extern "system" fn(*mut IAvnApplication11, *mut IAvnTerminationHandler) -> i32,
-    complete: unsafe extern "system" fn(*mut IAvnApplication11, i64, i32) -> i32,
-}
-#[repr(C)]
-pub struct IAvnApplication11 {
-    vtbl: *const ApplicationVtbl,
-}
-unsafe impl ComInterface for IAvnApplication11 {
-    const IID: Guid = Guid {
-        data1: 0x6B2E8F10,
-        data2: 0x4C91,
-        data3: 0x4E3A,
-        data4: [0x9A, 0x77, 0x1F, 0x0C, 0x2B, 0x3A, 0x4D, 0xA4],
-    };
-}
-impl ComPtr<IAvnApplication11> {
+impl ComPtr<IAvnApplication> {
     pub fn set_termination_handler(
         &self,
         handler: Option<&ComPtr<IAvnTerminationHandler>>,
     ) -> Result<()> {
         unsafe {
-            crate::hresult::check(((*(*self.as_raw()).vtbl).set)(
+            crate::hresult::check((self.vtbl().set_termination_handler)(
                 self.as_raw(),
                 handler.map_or(std::ptr::null_mut(), |handler| handler.as_raw()),
             ))
@@ -35,7 +15,7 @@ impl ComPtr<IAvnApplication11> {
     }
     pub fn complete_termination(&self, token: i64, accept: bool) -> Result<()> {
         unsafe {
-            crate::hresult::check(((*(*self.as_raw()).vtbl).complete)(
+            crate::hresult::check((self.vtbl().complete_termination)(
                 self.as_raw(),
                 token,
                 accept as i32,
@@ -111,11 +91,7 @@ pub fn termination_handler(
 mod tests {
     use super::*;
     #[test]
-    fn additive_vtable_shapes() {
-        assert_eq!(
-            std::mem::size_of::<ApplicationVtbl>(),
-            5 * std::mem::size_of::<usize>()
-        );
+    fn handler_vtable_shape() {
         assert_eq!(
             std::mem::size_of::<HandlerVtbl>(),
             4 * std::mem::size_of::<usize>()

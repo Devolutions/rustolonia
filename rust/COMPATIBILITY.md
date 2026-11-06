@@ -13,8 +13,8 @@ release.
 machine-readable record tying that lockstep release together: the Rustolonia
 version, the exact pinned producer commit, the additive producer patch set
 (by file and content hash), and every independently-versioned schema this
-repository publishes (`projection.ir.json`, the view-model IR, the released
-ABI baseline, and the external consumer manifest). A test
+repository publishes (`projection.ir.json`, the view-model IR, and the
+external consumer manifest). A test
 (`ReleaseManifestTests`) fails closed if the manifest drifts from any of
 those actual sources of truth, so bumping one schema or patch without
 updating the manifest is caught rather than silently accepted.
@@ -45,13 +45,15 @@ and property surface and recent files ride the published string-collection
 transport, so version 5 introduces no view-model ABI.
 
 `projection.ir.json` version 12 adds the optional `brushInterfaceName`,
-`brushInterfaceIid` and `brushAbiVersion` members, present only when a projected
+`brushInterfaceIid` and `brushAbiVersion` members (the version was removed in
+version 18), present only when a projected
 member marshals as `Brush`. `MarshallingKind.Brush` was appended after the
 geometry kinds rather than grouped with the interface kinds, so every previously
 published ordinal is unmoved.
 
 Version 14 adds optional `commandInterfaceName`, `commandInterfaceIid` and
-`commandAbiVersion`, present only when a member marshals as `Command`.
+`commandAbiVersion` (the version was removed in version 18), present only when
+a member marshals as `Command`.
 `MarshallingKind.Command` was appended after CharUtf16, so every previously
 published ordinal is unmoved.
 
@@ -71,6 +73,14 @@ vtable are unchanged — and no `MarshallingKind` ordinal moves. A reader that
 ignores the six new fields sees the same IR it always did; only a generator
 that projects gradient brushes needs them.
 
+Version 18 removes every per-interface ABI version field: `abiVersion`,
+`interfaceAbiVersion`, `handlerInterfaceAbiVersion`,
+`staticsInterfaceAbiVersion`, `factoryAbiVersion`, `brushAbiVersion` and
+`commandAbiVersion`. Interfaces are unversioned (see [Native ABI](#native-abi)):
+each generated IID is now derived from the projected type name alone, so every
+generated IID changed once in this version and the generated header no longer
+defines `*_ABI_VERSION` macros.
+
 Version 13 adds two optional members, both host-side only. A projected property
 and an attached property may carry `stringConverterTypeName`, naming the host
 type that converts the member between its CLR type and the UTF-16 string in its
@@ -87,329 +97,293 @@ with a host from another.
 
 ## Native ABI
 
-`rustolonia-sys` refuses to load a host built against a different ABI. The
-host's `avn_get_host_info` export reports the SHA-256 of
+The native ABI is not a stable contract between independently released
+components. A Rust application always loads the prebuilt host of the exact
+release its `rustolonia-sys` was built for (see
+[Crates.io and prebuilt hosts](#cratesio-and-prebuilt-hosts)), so the vtables
+on both sides of every call come from the same source revision. Interfaces are
+therefore not versioned: each one has a single identity that is changed in
+place whenever it needs to change.
+
+`rustolonia-sys` refuses to load a host built against a different generated
+ABI. The host's `avn_get_host_info` export reports the SHA-256 of
 `rustolonia-sys/include/avalonia-rust-abi.h` it was built with, and
 `Host::load` compares it with the hash `rustolonia-sys` computed at build
 time. Any change to the generated header therefore requires a matching host;
 a mismatch (or a host without `avn_get_host_info`) fails with
-`HostLoadError::IncompatibleHost` instead of reaching a stale vtable.
+`HostLoadError::IncompatibleHost` instead of reaching a stale vtable. The
+hand-written interfaces (`IAvnApplication` in `host/Com` and the view-model
+interfaces in `interop/Avalonia.Rust.Interop`) are not in that header; the
+exact `=X.Y.Z` crate requirement and the checksum-pinned host download keep
+them matched instead.
 
-The overlay-chrome pass widens the leaf `IAvnWindow` ABI from 7 to 8 to expose only the safe, non-nullable window work-area and dialog members. This stays local to the window leaf: `IAvnContentControl` remains at 6 and the factory remained at 13 as of this wave (the later gradient-brush pass below moves it again), while blockers such as `Icon`, `Position`, nullable geometry, and cancelable `Closing` payloads stay out of scope.
+### One identity per interface
+
+- Never extend an interface by adding a numbered successor (`IAvnFoo2`,
+  `IAvnApplication16`, `IAvnRustVmSink6`). Add, remove or reorder members of
+  the existing interface and update the C# definition, the Rust vtable and
+  every implementation in the same change.
+- Never change an IID to signal a change, and never put a version number in
+  an interface name, an IID seed or the projection IR. Generated IIDs are
+  derived from the projected type name alone
+  (`ClrTypeExtractor.CreateDeterministicIid`); hand-written IIDs stay as they
+  are. A new IID is only for a genuinely new interface with a new name.
+- `UnversionedInterfaceTests` fails if a COM interface in `Avalonia.Host` or
+  `Avalonia.Rust.Interop` has a name ending in a digit.
+
+A changed vtable is still a breaking change for Rust source when the safe API
+it backs changes, and it follows the semver rule in
+[Crates.io and prebuilt hosts](#cratesio-and-prebuilt-hosts): every release
+ships its own host whatever the bump.
+
+### Optional functionality
+
+When an implementation may legitimately lack a feature, say so on the same
+interface rather than through a separate interface version:
+
+- return `E_NOTIMPL` from the slot, as `IAvnApplication::SetApplicationName`
+  does for platform-owned Android/iOS startup; or
+- report capability flags from a method on the interface and return
+  `E_NOTIMPL` from the slots a missing flag covers, as
+  `IAvnRustVmSink::GetCapabilities` does with `RustVmSinkCapabilities`
+  (`RicherShapes` for maps, command results/progress and windowed ranges;
+  `NumberCollections` for integer and double collection elements).
+
+Silently dropping the request is not an acceptable degradation; the caller
+must see the failure. A distinct role that some objects implement and others
+do not, such as `IAvnRustRangeSource` on a view model, may be its own
+interface discovered through `QueryInterface`, under a descriptive name and
+never as a numbered variant of an existing interface.
+
+### Application services
+
+`IAvnApplication` is the single host-implemented application interface. Beyond
+startup and windows it carries:
+
+- desktop file integration (see [DESKTOP_FILES.md](DESKTOP_FILES.md));
+- clipboard commands, with the host-owned `IAvnClipboardData` payload builder;
+- the desktop shell: shutdown mode, schema-declared tray icons, and window
+  handle, topmost, transparency and capture-exclusion operations;
+- code-first desktop objects: pixel surfaces (`IAvnPixelSurface` with its
+  Rust-implemented `IAvnPixelSurfaceHandler`) and Rust-built tray icons
+  (`IAvnShellTray`, `IAvnShellTrayHandler`);
+- typed native-window descriptors, AppKit window-number and
+  mouse-event-passthrough operations, and explicit show versus activate
+  behavior. The macOS window number is for ScreenCaptureKit matching and does
+  not promise capture exclusion;
+- pre-initialization application naming through `SetApplicationName`, used by
+  `App::with_application_name`. The host stages the name for its application
+  factory, before Avalonia registers native application services; late
+  changes fail and platform-owned Android/iOS startup returns `E_NOTIMPL`. The
+  hash-pinned `avalonia-application-name.patch` also names Avalonia's default
+  application-menu holder before export; setting the process name alone
+  otherwise leaves its native item/submenu titles empty;
+- code-first native menus: create a Rust-numbered `NativeMenu`
+  (`IAvnNativeMenu`, with the Rust-implemented `IAvnNativeMenuHandler`), set
+  it as a window's or the application's menu, query `IsNativeMenuExported`,
+  and create a `NativeMenuBar` control.
+
+### Projection history
+
+What each projection wave added to the generated object model, in order.
+Because nano-COM vtables are flattened, a member added to a base interface
+appears in every derived interface's vtable.
+
+The layout, chrome and control-completeness waves added the members described
+in [MARSHALLING.md](MARSHALLING.md), and `IAvnControlFactory` gained
+`create_solid_color_brush` alongside the read-only `IAvnBrush`. The definitions
+wave added `column_definitions`/`row_definitions` to `IAvnGrid`: the
+definitions cross as ordinary UTF-16 strings rather than as a new interface,
+and the factory gained no slot.
+
+The overlay-chrome pass adds only the safe, non-nullable window work-area and
+dialog members to the leaf `IAvnWindow`, while blockers such as `Icon`,
+`Position`, nullable geometry, and cancelable `Closing` payloads stay out of
+scope (later waves below project them).
 
 The wave P event-payload pass grows `IAvnControl` with `KeyUp`, `GotFocus`
-and `LostFocus`, so `IAvnControl` and every interface below it republish on
-fresh IIDs. Three previously payload-less handlers change their `Invoke`
-shape and therefore mint new identities at version 2:
-`IAvnSelectingItemsControlSelectionChangedHandler` and
+and `LostFocus`. Three previously payload-less handlers change their `Invoke`
+shape: `IAvnSelectingItemsControlSelectionChangedHandler` and
 `IAvnTreeViewSelectionChangedHandler` now receive a host-implemented
 `*SelectionChangedArgs` interface exposing the added/removed items as Variant
 count/getter slots, and `IAvnRangeBaseValueChangedHandler` now carries the
 old/new value pair as fields. The advise/unadvise slots on the control
-interfaces keep their signatures throughout; only the handler identities move.
-Consumers compiled against the version 1 handlers fail `QueryInterface`
-loudly (`E_NOINTERFACE`) rather than being called through a stale vtable.
+interfaces keep their signatures throughout.
 
-The gradient-brush pass adds three brand-new interfaces —
-`IAvnGradientBrush`, `IAvnLinearGradientBrush` and `IAvnRadialGradientBrush`,
-each publishing at version 1 — and grows `IAvnControlFactory` with
-`create_linear_gradient_brush`/`create_radial_gradient_brush`, so the factory
-republishes on a fresh IID (from 13). `IAvnBrush` itself is untouched: it
-keeps its published IID and vtable, and every gradient object also answers
-`QueryInterface` for it. No other interface moves.
-
-After an intentional ABI wave, regenerate the frozen snapshot with
-`pwsh ./rust/regenerate-and-build.ps1 -UpdateAbiBaseline` in the same change
-so `abi-baseline.json` stays the reviewed record of what is released.
-
-Published interface IIDs, vtable slot order, method signatures, calling
-conventions, ownership rules, and error semantics are immutable. Never reuse an
-IID for a changed interface and never insert a slot into an existing vtable.
-Add a separately named, separately versioned interface with a new IID (for
-example `IAvnRustVmSink2`, stage 29's `IAvnApplication3` desktop file
-integration capability, stage 30's `IAvnRustVmSink4` richer data shapes,
-`IAvnRustVmRangeBatch` windowed range payload, `IAvnRustRangeSource` and
-`IAvnRustViewModel2`, or stage 31's `IAvnApplication4` clipboard command
-capability and its host-owned `IAvnClipboardData` payload builder,
-`IAvnRustVmSink5` for scalar-number collection elements, stage 33's
-`IAvnApplication6` desktop shell capability: shutdown mode, schema-declared
-tray icons and window handle/topmost/transparency/capture exclusion, or
-stage 34's `IAvnApplication7` code-first desktop capability: pixel surfaces
-(`IAvnPixelSurface` with its Rust-implemented `IAvnPixelSurfaceHandler`) and
-Rust-built tray icons (`IAvnShellTray`, `IAvnShellTrayHandler`)), then
-negotiate/query it as optional capability.
-A producer or host that predates an optional capability must report
-`E_NOINTERFACE` explicitly; silently dropping the affected updates is not an
-acceptable degradation.
-
-Stage 35's `IAvnApplication8` adds typed native-window descriptors, AppKit
-window-number and mouse-event-passthrough operations, and explicit show versus
-activate behavior. It is an optional capability; its macOS window number is for
-ScreenCaptureKit matching and does not promise capture exclusion. Existing
-`IAvnApplication6` topmost and capture-exclusion behavior remains unchanged.
-Any unavoidable incompatible ABI change requires a new host ABI generation and
-a coordinated major release.
-
-`IAvnApplication14` adds pre-initialization application naming with a new IID
-and a single `SetApplicationName` slot. It leaves all existing identities
-unchanged. `App::with_application_name` queries this capability explicitly;
-missing support is `E_NOINTERFACE`, not a silently ignored name. The host
-stages the name for its application factory, before Avalonia registers native
-application services. Late changes fail; platform-owned Android/iOS startup
-returns `E_NOTIMPL`. The hash-pinned `avalonia-application-name.patch` also
-names Avalonia's default application-menu holder before export; setting the
-process name alone otherwise leaves its native item/submenu titles empty.
-This host/crate addition must ship in a matching lockstep
-release before consumers can remove native naming workarounds.
-
-`IAvnApplication15` adds code-first native menus with new IIDs
-(`IAvnApplication15` `…4DAA`, `IAvnNativeMenu` `…4DAB` and the Rust-implemented
-`IAvnNativeMenuHandler` `…4DAC`): create a Rust-numbered `NativeMenu`, set it
-as a window's or the application's menu, query `IsNativeMenuExported`, and
-create a `NativeMenuBar` control. It is an optional capability; hosts that
-predate it report `E_NOINTERFACE` from `AppContext::create_native_menu` and
-the other native-menu calls. No existing vtable changes.
-
-The frozen released C ABI snapshot is [`abi-baseline.json`](abi-baseline.json)
-(`kind: released`, schema version 3). It records producer pin, ABI typedef and
-macro expansions (`AvnHResult` → `int32_t`, `AVN_CALL` → `__stdcall` on
-Windows and empty elsewhere, struct packing default), interned callable slot
-templates, value-struct layouts, and flattened IR lineage fingerprints for each
-released identity. New current identities are allowed; the gate only requires
-every released IID to keep its contract. `projectionIrVersion` in the snapshot
-is provenance, not a live lock against `ProjectionIr.CurrentVersion`.
-The snapshot's `producerPin` likewise records the producer used for that
-baseline; the current release manifest's pin must instead match the
-`avalonia-src` gitlink and checkout.
-
-The pointer spelling in a slot (`const T*`, `T**`) is indirection and
-constness only. It does not encode COM lifetime, free-ownership, or
-allocator contracts; those remain outside this gate. Duplicate value-type
-records, duplicate IIDs, and IID-constant/vtable-name mismatches fail closed
-instead of associating the next marker.
-
-The current header plus IR are an appendable inventory. Changing a resolved
-typedef/macro, a parameter type, a flattened IR kind/direction/nullability
-including inherited members, a value-struct layout, `abiVersion`, or name
-under an unchanged IID is a break.
-
-Intentional ABI-generation transitions retire identities instead of reusing
-them: add the old IID to `retiredIdentities` with the replacement name/reason,
-publish the successor under a new IID, and never reuse the retired GUID.
-Missing a retired IID is expected; seeing it again on a live interface is a
-reuse break. Update the released snapshot in the same change that adds a new
-identity or completes a documented retirement.
-
-The generated object model (`IAvnControl` and friends) is versioned by the
-`abiVersion` recorded per interface in `projection.ir.json`, which is hashed
-into the IID. Nano-COM vtables are flattened, so allowlisting a member on a base
-type moves every derived interface's slots; every affected interface bumps its
-`abiVersion` together and republishes under a fresh IID, and the previous IIDs
-are retired rather than reused. An interface whose flattened vtable is
-byte-identical keeps its IID, so a stale consumer that queries for it still
-receives exactly the contract it compiled against. The layout wave took
-`IAvnStyledElement`, `IAvnControl` and everything below them to version 3 while
-`IAvnAvaloniaObject` stayed at version 2. The chrome wave then took
-`IAvnBorder`, `IAvnPanel`, `IAvnTemplatedControl`, `IAvnTextBlock` and everything
-below them to version 4, while `IAvnAvaloniaObject` stayed at 2 and
-`IAvnStyledElement`, `IAvnControl` and `IAvnDecorator` stayed at 3 because their
-own flattened vtables did not move. `IAvnControlFactory` gained
-`create_solid_color_brush` and moved from version 1 to 2, and the new read-only
-`IAvnBrush` starts at version 1. The completeness wave then took
-`IAvnContentControl`, `IAvnButton`, `IAvnToggleButton`, `IAvnListBox`,
-`IAvnComboBox` and everything below them to version 5; `IAvnControlFactory`
-gained no slot and stays at 2, and every interface outside those subtrees —
-including `IAvnItemsControl` and `IAvnSelectingItemsControl` — keeps the version
-whose flattened vtable it still matches. The definitions wave then took
-`IAvnGrid` alone from 4 to 5 for `column_definitions`/`row_definitions`: nothing
-in the object model derives from `Grid`, the definitions cross as ordinary UTF-16
-strings rather than as a new interface, and `IAvnControlFactory` again gained no
-slot. All four IIDs `IAvnGrid` published at versions 1–4 are retired.
+The gradient-brush pass adds three new interfaces, `IAvnGradientBrush`,
+`IAvnLinearGradientBrush` and `IAvnRadialGradientBrush`, and grows
+`IAvnControlFactory` with `create_linear_gradient_brush`/
+`create_radial_gradient_brush`. `IAvnBrush` itself is untouched, and every
+gradient object also answers `QueryInterface` for it.
 
 The new-controls wave A is the first that widens nothing: `IAvnImage`,
 `IAvnHeaderedItemsControl`, `IAvnTabControl`, `IAvnTabItem`, `IAvnTreeView`,
-`IAvnTreeViewItem`, `IAvnToolTip` and `IAvnToolTipStatics` are all brand new and
-publish at version 1, and every interface that shipped before keeps the exact IID
-it last published. The one thing that moves is `IAvnControlFactory`, which gains
-a creator per new control plus `get_tool_tip_statics` and goes from 2 to 3. A
-consumer compiled against the definitions wave therefore only has to requery the
-factory; every control interface pointer it already holds stays valid.
+`IAvnTreeViewItem`, `IAvnToolTip` and `IAvnToolTipStatics` are all brand new.
+The only existing interface that changes is `IAvnControlFactory`, which gains
+a creator per new control plus `get_tool_tip_statics`.
 
 Wave B is the same shape. `IAvnFlyoutBase`, `IAvnPopupFlyoutBase`, `IAvnFlyout`,
 `IAvnMenuBase`, `IAvnMenu`, `IAvnHeaderedSelectingItemsControl`, `IAvnMenuItem`,
-`IAvnSplitView`, `IAvnDatePicker` and `IAvnTimePicker` are all brand new and
-publish at version 1; a flyout is an `AvaloniaObject` rather than a `Control`, so
-`IAvnFlyoutBase` sits directly under `IAvnAvaloniaObject` and cannot move a control
-interface. `IAvnControlFactory` gains a creator per constructible wave B type and
-goes from 3 to 4; the abstract bases get no creator and are reachable by
-`query_interface` only. Again, only the factory has to be requeried.
+`IAvnSplitView`, `IAvnDatePicker` and `IAvnTimePicker` are all brand new; a
+flyout is an `AvaloniaObject` rather than a `Control`, so `IAvnFlyoutBase` sits
+directly under `IAvnAvaloniaObject` and cannot change a control interface.
+`IAvnControlFactory` gains a creator per constructible wave B type; the
+abstract bases get no creator and are reachable by `query_interface` only.
 
 Wave C is the same shape again. `IAvnWrapPanel`, `IAvnUniformGrid`,
-`IAvnRelativePanel`, `IAvnViewbox`, `IAvnThumb` and
-`IAvnGridSplitter` are all brand new and publish at version 1.
-`IAvnControlFactory` gains a creator per constructible wave C type plus
-`get_relative_panel_statics` and goes from 4 to 5. RelativePanel's object-valued
-attached properties (`Above`, `LeftOf`, …) stay gaps: a COM-valued attached
-property has no ABI shape. The `Align*WithPanel` bools do cross. Flex attached
+`IAvnRelativePanel`, `IAvnViewbox`, `IAvnThumb` and `IAvnGridSplitter` are all
+brand new. `IAvnControlFactory` gains a creator per constructible wave C type
+plus `get_relative_panel_statics`. RelativePanel's object-valued attached
+properties (`Above`, `LeftOf`, …) stay gaps: a COM-valued attached property
+has no ABI shape. The `Align*WithPanel` bools do cross. Flex attached
 properties live on the static `Flex` class, which is not an `AvaloniaObject`, so
 `Order`/`Grow`/`Shrink`/`Basis`/`AlignSelf` stay gaps too.
 
 Wave D is the same shape. `IAvnRepeatButton`, `IAvnDropDownButton`,
 `IAvnSplitButton`, `IAvnToggleSplitButton`, `IAvnHyperlinkButton`,
-`IAvnContextMenu` and `IAvnMenuFlyout` publish at version 1.
-`IAvnControlFactory` moves from 5 to 6. `SplitButton.Flyout` and `Command` stay
-gaps. `HyperlinkButton.NavigateUri` crosses as a URI string through `AvnUri`.
+`IAvnContextMenu` and `IAvnMenuFlyout` are brand new. `SplitButton.Flyout` and
+`Command` stay gaps. `HyperlinkButton.NavigateUri` crosses as a URI string
+through `AvnUri`.
 
 Wave E is the same shape. `IAvnSpinner` (abstract), `IAvnButtonSpinner`,
 `IAvnNumericUpDown`, `IAvnAutoCompleteBox`, `IAvnMaskedTextBox` and
-`IAvnSelectableTextBlock` publish at version 1. `IAvnControlFactory` moves from
-6 to 7. `NumericUpDown` decimals cross as invariant strings through `AvnDecimal`.
-`PromptChar` is a `char` and stays a gap.
+`IAvnSelectableTextBlock` are brand new. `NumericUpDown` decimals cross as
+invariant strings through `AvnDecimal`. `PromptChar` is a `char` and stays a
+gap.
 
-Wave F is the same shape. `IAvnCalendar` and `IAvnCalendarDatePicker` publish at
-version 1. `IAvnControlFactory` moves from 7 to 8. Calendar days are `DateTime`,
-not `DateTimeOffset`, so they cross as `yyyy-MM-dd` through `AvnCalendarDate`
-rather than the picker `"o"` form. `SelectedDates` stays a gap.
+Wave F is the same shape. `IAvnCalendar` and `IAvnCalendarDatePicker` are brand
+new. Calendar days are `DateTime`, not `DateTimeOffset`, so they cross as
+`yyyy-MM-dd` through `AvnCalendarDate` rather than the picker `"o"` form.
+`SelectedDates` stays a gap.
 
 Wave G is the same shape. `IAvnCarousel`, `IAvnTransitioningContentControl`,
 `IAvnLabel`, `IAvnSeparator`, `IAvnGroupBox`, `IAvnUserControl` and
-`IAvnLayoutTransformControl` publish at version 1. `IAvnControlFactory` moves
-from 8 to 9. `PageTransition`, `LayoutTransform` and `Label.Target` stay gaps.
+`IAvnLayoutTransformControl` are brand new. `PageTransition`, `LayoutTransform`
+and `Label.Target` stay gaps.
 
 Wave H is the same shape. `IAvnShape` (abstract) plus Rectangle, Ellipse, Line,
-Path, Polygon, Polyline, Arc and Sector publish at version 1.
-`IAvnControlFactory` moves from 9 to 10. Fill/Stroke are brushes. Line points
-are `AvnPoint`. `Path.Data` is the path mini-language through `AvnGeometry`.
-`Points` collections stay gaps.
+Path, Polygon, Polyline, Arc and Sector are brand new. Fill/Stroke are brushes.
+Line points are `AvnPoint`. `Path.Data` is the path mini-language through
+`AvnGeometry`. `Points` collections stay gaps.
 
 Wave I is the same shape. `IAvnPopup`, `IAvnTrayIcon`, `IAvnWindowNotificationManager`,
-`IAvnNotificationCard` and `IAvnRefreshContainer` publish at version 1.
-`IAvnControlFactory` moves from 10 to 11. TrayIcon hangs off `IAvnAvaloniaObject`.
-`NativeMenu`, `WindowIcon` and `ICommand` stay gaps.
+`IAvnNotificationCard` and `IAvnRefreshContainer` are brand new. TrayIcon hangs
+off `IAvnAvaloniaObject`. `NativeMenu`, `WindowIcon` and `ICommand` stay gaps.
 
 Wave J is the same shape. `IAvnCommandBar`, `IAvnCommandBarButton`,
 `IAvnCommandBarToggleButton`, `IAvnCommandBarSeparator`, `IAvnPipsPager` and
-`IAvnThemeVariantScope` publish at version 1. `IAvnControlFactory` moves from
-11 to 12. Command lists, Icon and ThemeVariant stay gaps.
+`IAvnThemeVariantScope` are brand new. Command lists, Icon and ThemeVariant
+stay gaps.
 
 Wave K is the same shape. `IAvnIconElement` (abstract), `IAvnPathIcon`,
 `IAvnTableView`, `IAvnTableViewColumn`, `IAvnTableViewRow` and `IAvnTableViewCell`
-publish at version 1. `IAvnControlFactory` moves from 12 to 13. PathIcon.Data
-reuses `AvnGeometry`. Column Width is a GridLength string. `TableView.Columns`
-stays a gap: a generic `AvaloniaList<T>` cannot be assigned from the collection
-wrapper. Inlines stay a gap.
+are brand new. PathIcon.Data reuses `AvnGeometry`. Column Width is a GridLength
+string. `TableView.Columns` stays a gap: a generic `AvaloniaList<T>` cannot be
+assigned from the collection wrapper. Inlines stay a gap.
 
 Wave L widens an existing leaf. `IAvnWindow` grows Hide plus SizeToContent,
 ShowActivated, ShowInTaskbar, CanMinimize, CanMaximize, WindowStartupLocation,
-WindowDecorations and ClosingBehavior, and moves from 5 to 6. Nothing derives
-from Window, so no other interface and no factory slot move. Icon, PixelPoint
-Position and ShowDialog stay gaps. The obsolete SystemDecorations alias is not
-projected; WindowDecorations is the live property.
+WindowDecorations and ClosingBehavior. Nothing derives from Window, so no other
+interface changes and the factory gains no slot. Icon, PixelPoint Position and ShowDialog
+stay gaps. The obsolete SystemDecorations alias is not projected;
+WindowDecorations is the live property.
 
 Wave M widens a base. `IAvnTemplatedControl` grows FontFamily (UTF-16 via
 `FontFamily.Parse`/`ToString`), FontStyle, FontWeight, FontStretch,
-LetterSpacing and Padding, and moves from 4 to 5. Every descendant republishes:
-chrome-era types at 4 go to 5, completeness-era types at 5 go to 6, Window goes
-from 6 to 7, and previously version-1 templated types go to 2. Independently,
-`IAvnTextBlock` grows the same fonts plus Background, LineSpacing, MaxLines and
-TextWrapping, and moves from 4 to 5; `IAvnSelectableTextBlock` goes from 1 to 2.
-`TextTrimming` is an abstract class without `ToString` and stays a gap. The
-factory is unmoved at 13. Panels, Border, Image, shapes and flyouts are not
-under TemplatedControl and keep their IIDs.
+LetterSpacing and Padding, so every descendant's flattened vtable grows.
+Independently, `IAvnTextBlock` grows the same fonts plus Background,
+LineSpacing, MaxLines and TextWrapping, which `IAvnSelectableTextBlock`
+inherits. `TextTrimming` is an abstract class without `ToString` and stays a
+gap. Panels, Border, Image, shapes and flyouts are not under TemplatedControl
+and are unaffected.
 
 Wave N widens the TextBox leaf. `IAvnTextBox` grows SelectedText, content
 alignments, selection/caret brushes, floating placeholder, inner left/right
-content as `IAvnControl`, SelectAll/ClearSelection, and clipboard events, and
-moves from 5 to 6. `IAvnMaskedTextBox` grows MaskCompleted/MaskFull and moves
-from 2 to 3. PasswordChar, PromptChar, CaretBlinkInterval, GetLineCount and
-the obsolete Watermark aliases stay gaps. The factory is unmoved.
+content as `IAvnControl`, SelectAll/ClearSelection, and clipboard events.
+`IAvnMaskedTextBox` grows MaskCompleted/MaskFull. PasswordChar, PromptChar,
+CaretBlinkInterval, GetLineCount and the obsolete Watermark aliases stay gaps.
 
 Wave O adds `AvnVector` (`MarshallingKind.Vector`, ordinal 18 after Brush) as
 two doubles identical in layout to `AvnPoint`. `IAvnComboBox` grows Text,
-PlaceholderForeground, Clear, DropDownOpened and DropDownClosed, and moves
-from 6 to 7. `IAvnScrollViewer` grows Extent/Viewport (`AvnSize`), Offset
-(`AvnVector`), LargeChange/SmallChange and snap-point enums, and moves from
-6 to 7. ComboBoxItem is unchanged. SelectionBoxItem, templates and
-PasswordChar stay gaps. The factory is unmoved at 13.
+PlaceholderForeground, Clear, DropDownOpened and DropDownClosed.
+`IAvnScrollViewer` grows Extent/Viewport (`AvnSize`), Offset (`AvnVector`),
+LargeChange/SmallChange and snap-point enums. ComboBoxItem is unchanged.
+SelectionBoxItem, templates and PasswordChar stay gaps.
 
 Wave P projects instance Flyout on `IAvnButton`/`IAvnSplitButton` as
-`IAvnFlyoutBase` (nullable COM). Button and every descendant move one version
-(Button 6 to 7). SplitButton/MenuItem move from 2 to 3 and MenuItem gains
-HasSubMenu, IsTopLevel, Open and Close. Control.ContextMenu, ContextFlyout,
-IsLoaded and Loaded/Unloaded stay gaps: putting them on Control would
-republish every control interface and is a wave of its own. ICommand and
-HotKey stay gaps. The factory is unmoved at 13.
+`IAvnFlyoutBase` (nullable COM), so every Button descendant's flattened vtable
+grows. MenuItem gains HasSubMenu, IsTopLevel, Open and Close.
+Control.ContextMenu, ContextFlyout, IsLoaded and Loaded/Unloaded stay gaps:
+putting them on Control would grow every control interface and is a wave of
+its own. ICommand and HotKey stay gaps.
 
-Wave overlay chrome grows `IAvnPopup` from 1 to 2 with Open/Close, Opened/Closed,
+Wave overlay chrome grows `IAvnPopup` with Open/Close, Opened/Closed,
 InheritsTransform, PlacementTarget, overlay-layer bools and IsPointerOverPopup.
-`IAvnPopupFlyoutBase` (and Flyout/MenuFlyout) grow a read-only Popup COM slot
-and move from 1 to 2. `IAvnContextMenu` grows PlacementTarget and moves from
-2 to 3. PlacementRect is nullable geometry; PlacementAnchor/Gravity/ConstraintAdjustment
-are flags enums whose combined values have no name — both stay gaps. Factory 13.
+`IAvnPopupFlyoutBase` (and Flyout/MenuFlyout) grow a read-only Popup COM slot.
+`IAvnContextMenu` grows PlacementTarget. PlacementRect is nullable geometry;
+PlacementAnchor/Gravity/ConstraintAdjustment are flags enums whose combined
+values have no name — both stay gaps.
 
 ItemsControl leftovers keep `Items`, `SelectedIndex` and `SelectionChanged` and
-append `ItemCount` plus `ScrollIntoView(int)` on `IAvnItemsControl` (5 to 6).
+append `ItemCount` plus `ScrollIntoView(int)` on `IAvnItemsControl`.
 `IAvnSelectingItemsControl` grows AutoScrollToSelectedItem, IsTextSearchEnabled
-and WrapSelection (5 to 6). Every ItemsControl descendant republishes:
-ComboBox 7 to 8, ListBox 6 to 7, ContextMenu 3 to 4, MenuItem 3 to 4,
-Menu/MenuBase/Headered* 2 to 3, TabControl/TableView/TreeView/TreeViewItem/
-Carousel 2 to 3. ContentControl and Window are unchanged. The object overload
-of ScrollIntoView, templates and ItemsSource stay gaps. Factory 13.
+and WrapSelection. Every ItemsControl descendant inherits the new slots;
+ContentControl and Window are unchanged. The object overload of
+ScrollIntoView, templates and ItemsSource stay gaps.
 Safe bindgen keeps the `is_` prefix on a bool builder when stripping it would
 collide with a method on the same type (`Popup.IsOpen` vs `Open()`).
 
-Text leftovers grow `IAvnTextBlock` from 5 to 6 with LineHeight and
-BaselineOffset, `IAvnSelectableTextBlock` from 2 to 3 with selection brushes,
-SelectAll, ClearSelection and CopyingToClipboard, and `IAvnTextBox` from 6 to 7
-with ScrollToLine. MaskedTextBox republishes 3 to 4. GetLineCount returns int
-so it stays a gap, as do PasswordChar, TextTrimming and Inlines. Factory 13.
+Text leftovers grow `IAvnTextBlock` with LineHeight and BaselineOffset,
+`IAvnSelectableTextBlock` with selection brushes, SelectAll, ClearSelection and
+CopyingToClipboard, and `IAvnTextBox` with ScrollToLine, which MaskedTextBox
+inherits. GetLineCount returns int so it stays a gap, as do PasswordChar,
+TextTrimming and Inlines.
 
 Leaf leftovers close marshallable commands and scalars on existing types without
-widening TemplatedControl or Panel. Carousel gains Next/Previous (3 to 4),
-CommandBar overflow bools (2 to 3), DatePicker/TimePicker VerticalContentAlignment (2 to 3), NotificationCard
-IsClosing/Close (2 to 3), ProgressBar Percentage (5 to 6), RefreshContainer
-RequestRefresh (2 to 3), StackPanel snap bools and Border ClipToBoundsRadius
-(4 to 5), TableViewColumn ActualWidth (1 to 2), PipsPager SelectedIndexChanged
-(2 to 3). ComboBox content alignments stay off ComboBox because it redeclares
-them with `new`. Label.Target is IInputElement. Factory 13.
+widening TemplatedControl or Panel. Carousel gains Next/Previous, CommandBar
+overflow bools, DatePicker/TimePicker VerticalContentAlignment, NotificationCard
+IsClosing/Close, ProgressBar Percentage, RefreshContainer RequestRefresh,
+StackPanel snap bools and Border ClipToBoundsRadius, TableViewColumn
+ActualWidth, and PipsPager SelectedIndexChanged. ComboBox content alignments
+stay off ComboBox because it redeclares them with `new`. Label.Target is
+IInputElement.
 
-Control leftovers grow `IAvnControl` from 3 to 4 with ContextMenu
-(`IAvnContextMenu`), ContextFlyout (`IAvnFlyoutBase`), IsLoaded, Loaded and
-Unloaded. Every Control descendant republishes, including previously unpinned
-v1 types now at 2 (Image, layout panels, shapes). StyledElement, FlyoutBase,
-MenuFlyout and TableViewColumn are unchanged. Factory 13.
+Control leftovers grow `IAvnControl` with ContextMenu (`IAvnContextMenu`),
+ContextFlyout (`IAvnFlyoutBase`), IsLoaded, Loaded and Unloaded, so every
+Control descendant's flattened vtable grows, including Image, layout panels and
+shapes. StyledElement, FlyoutBase, MenuFlyout and TableViewColumn are
+unchanged.
 
 Non-void methods project as HRESULT plus an `out` slot. `GetLineCount` is the
-first: `IAvnTextBox` 8 to 9, `IAvnMaskedTextBox` 5 to 6. Factory 13.
+first, on `IAvnTextBox` and its descendant `IAvnMaskedTextBox`.
 
 `MarshallingKind.CharUtf16` is a UTF-16 code unit (`uint16_t`). PasswordChar and
-PromptChar project on TextBox (9 to 10) and MaskedTextBox (6 to 7). Factory 13.
+PromptChar project on TextBox and MaskedTextBox.
 
 `[Flags]` enums project as `I32` bitmasks with named constants, not closed Rust
 enums. PlacementAnchor, PlacementGravity and PlacementConstraintAdjustment
-append on Popup (3 to 4), ContextMenu (5 to 6), and PopupFlyoutBase plus
-descendants Flyout and MenuFlyout (2 to 3). Factory 13.
+append on Popup, ContextMenu, and PopupFlyoutBase plus descendants Flyout and
+MenuFlyout.
 
 Nullable geometry crosses as `AvnOptional{Kind}` (`has_value` plus the existing
-blittable struct). PlacementRect appends on Popup (4 to 5) and ContextMenu
-(6 to 7). Factory 13. Non-nullable geometry slots stay `AvnRect` by value.
+blittable struct). PlacementRect appends on Popup and ContextMenu. Non-nullable
+geometry slots stay `AvnRect` by value.
 
 Window.Closing projects as a field payload: Cancel is in/out, CloseReason and
-IsProgrammatic are inbound. `IAvnWindow` 9 to 10. Factory 13.
+IsProgrammatic are inbound.
 
-Thumb drag events carry `AvnVector` by value. `IAvnThumb` and `IAvnGridSplitter`
-3 to 4. Factory 13.
+Thumb drag events carry `AvnVector` by value on `IAvnThumb` and
+`IAvnGridSplitter`.
 
-TextTrimming crosses as a UTF-16 name via a host converter. `IAvnTextBlock` 7
-to 8, `IAvnSelectableTextBlock` 4 to 5. Factory 13.
+TextTrimming crosses as a UTF-16 name via a host converter on `IAvnTextBlock`
+and `IAvnSelectableTextBlock`.
 
 Label.Target projects as nullable `IAvnControl` (`IInputElement` values that
-are Controls). `IAvnLabel` 3 to 4. Factory 13.
+are Controls) on `IAvnLabel`.
 
 `IAvnCommand` wraps `System.Windows.Input.ICommand` (`Execute` / `CanExecute`,
-no CommandParameter). Button and descendants 8 to 9 (or 4 to 5 for the wave D
-leaves), MenuItem 5 to 6, SplitButton/ToggleSplitButton 4 to 5, TrayIcon 1 to 2.
-Factory 13.
+no CommandParameter). Command crosses on Button and its descendants (including
+the wave D leaves), MenuItem, SplitButton/ToggleSplitButton and TrayIcon.
 
 Inbound commands close the loop: `rustolonia_sys::command(execute, can_execute)`
 builds a Rust CCW implementing `IAvnCommand` (ref-counted, panic-safe closures,
@@ -433,14 +407,12 @@ narrowing to i32. Getters return the struct with a host-allocated string
 borrowed pointer the host reads synchronously. The safe crate exposes
 `Variant` with `From` conversions and `button.command_parameter("save")`
 ergonomics; a `VariantAbi` guard releases the UTF-16 allocation on drop.
-Button family 9 to 10 (Button/ToggleButton/CheckBox/RadioButton/ToggleSwitch),
-MenuItem 6 to 7, SplitButton and ToggleSplitButton 5 to 6, TrayIcon 2 to 3,
-each republished under its fresh deterministic IID. Factory stays 13.
+The Button family (Button/ToggleButton/CheckBox/RadioButton/ToggleSwitch),
+MenuItem, SplitButton, ToggleSplitButton and TrayIcon carry it.
 
-`IAvnCommand` moves to ABI version 2 so the parameter reaches the command:
+`IAvnCommand` carries the parameter to the command:
 `execute(AvnVariant parameter)` and `can_execute(AvnVariant parameter,
-int32_t* value)` replace their parameterless v1 shapes, and the IID is
-republished accordingly. The host's `AvnCommand` frees a UTF-16 payload
+int32_t* value)`. The host's `AvnCommand` frees a UTF-16 payload
 after converting it to the managed parameter; the Rust CCW does the same
 after the closure returns. The Rust `command(execute, can_execute)`
 closures now take the raw `AvnVariant`, and `CommandParameter` set on the
@@ -448,15 +420,15 @@ control flows end to end: `Button.CommandParameter` → managed
 `ICommand.Execute(parameter)` → Rust closure argument.
 
 Wave U13 closes CommandBar lifecycle and ScrollViewer anchoring.
-CommandBar Opening/Opened/Closing/Closed cross as no-payload events
-(CommandBar 4 to 5). ScrollViewer gains `ScrollBarMaximum` (a Vector,
-read-only direct property), `CurrentAnchor` (a nullable `IAvnControl`),
-and `RegisterAnchorCandidateWithControl`/`UnregisterAnchorCandidateWithControl`
-taking an `IAvnControl` (ScrollViewer 8 to 9). TabItem.TabStripPlacement
+CommandBar Opening/Opened/Closing/Closed cross as no-payload events.
+ScrollViewer gains `ScrollBarMaximum` (a Vector, read-only direct property),
+`CurrentAnchor` (a nullable `IAvnControl`), and
+`RegisterAnchorCandidateWithControl`/`UnregisterAnchorCandidateWithControl`
+taking an `IAvnControl`. TabItem.TabStripPlacement
 stays a gap: `Dock?` is a nullable enum and the ABI has no nullable-int
 shape yet; a future `NullableI32` kind would unblock it.
 
-Wave U14 closes ContextMenu's open lifecycle (ContextMenu 7 to 8).
+Wave U14 closes ContextMenu's open lifecycle.
 `Open(Control?)` crosses as `OpenWithControl` — the safe layer takes
 `Option<&impl AsControl>` — and Opening/Closing cross with the Cancel
 write-back payload, the same `ref int Cancel` shape as PopupFlyoutBase and
@@ -466,8 +438,8 @@ reported as a gap with that reason instead of duplicating the base slot),
 and the safe layer honors nullable `ComInterface` method parameters in
 both directions.
 
-Wave U15 closes AutoCompleteBox's populate lifecycle (AutoCompleteBox 4 to
-5). `MinimumPopulateDelay` introduces `MarshallingKind.TimeSpanI64`
+Wave U15 closes AutoCompleteBox's populate lifecycle.
+`MinimumPopulateDelay` introduces `MarshallingKind.TimeSpanI64`
 (ordinal 22): a `TimeSpan` crosses as its int64 tick count, and the safe
 layer exposes `std::time::Duration` (100ns per tick). TextChanged crosses
 with no payload, and Populating crosses with the Cancel write-back plus
@@ -476,33 +448,29 @@ write-back. ItemTemplate, ValueMemberBinding, SelectedItem, the filter
 and selector delegates, AsyncPopulator and ItemsSource stay gaps: they
 are templates, bindings, delegates and an untyped object collection.
 
-Wave U16 grows the base interfaces, so every control republishes.
-StyledElement 3 to 4 adds DataContextChanged (no payload); Control 4 to 5
-adds SizeChanged, whose handler carries NewSize and PreviousSize as
-`AvnSize` values — resize feedback reaches Rust on every control.
-SplitView 3 to 4 adds PaneOpening/PaneClosing (Cancel write-back) beside
-its existing PaneOpened/PaneClosed; Calendar 4 to 5 adds DisplayModeChanged
-(OldMode/NewMode as i32); NotificationCard 4 to 5 adds NotificationClosed
-(no payload). Every StyledElement and Control descendant — all 100+
-control interfaces — bumps once and republishes under a fresh
-deterministic IID; Popup, TrayIcon and the flyout family do not derive
-from Control and keep their versions. Factory stays 13.
+Wave U16 grows the base interfaces. StyledElement adds DataContextChanged (no
+payload); Control adds SizeChanged, whose handler carries NewSize and
+PreviousSize as `AvnSize` values — resize feedback reaches Rust on every
+control. SplitView adds PaneOpening/PaneClosing (Cancel write-back) beside its
+existing PaneOpened/PaneClosed; Calendar adds DisplayModeChanged
+(OldMode/NewMode as i32); NotificationCard adds NotificationClosed (no
+payload). Every StyledElement and Control descendant — all 100+ control
+interfaces — inherits the new slots; Popup, TrayIcon and the flyout family do
+not derive from Control and are unaffected.
 
 Wave U17 widens the scalar and container surface. Two new kinds:
 `DateTimeI64` (ordinal 23) carries a DateTime as its int64 tick count,
 nullable as `AvnOptionalDateTime { has_value, ticks }` (SystemTime in the
 sys crate, with the .NET epoch offset); `PixelPointI32` (ordinal 24)
 carries an `Avalonia.PixelPoint` as the blittable `AvnPixelPoint { x, y }`
-(a `PixelPoint` safe struct). Window gains Position (Window 11 to 12);
-TextBox gains CaretBlinkInterval via the TimeSpan shape (TextBox 11 to
-12, MaskedTextBox and AutoCompleteBox republish); Calendar gains
-DisplayDateChanged carrying RemovedDate/AddedDate (Calendar 5 to 6).
+(a `PixelPoint` safe struct). Window gains Position; TextBox gains
+CaretBlinkInterval via the TimeSpan shape; Calendar gains
+DisplayDateChanged carrying RemovedDate/AddedDate.
 Methods may now return a COM interface: ItemsControl gains
 `ContainerFromIndexWithInt32` (returns a nullable `IAvnControl` as
 `Result<Option<Control>>`) and `IndexFromContainerWithControl` taking
-`&impl AsControl` (ItemsControl and every items descendant 8 to 9). The
-object-keyed lookups stay gaps with the rest of the untyped-collection
-family. Factory stays 13.
+`&impl AsControl`. The object-keyed lookups stay gaps with the rest of the
+untyped-collection family.
 
 Wave U18 projects the object surface through the Variant kind. `object`
 and `object?` members map to Variant everywhere, so SelectedItem and
@@ -519,10 +487,6 @@ list back through the setter persists it. `SelectedItems` uses a second
 collection interface, `IAvnSelectedVariantList`, over an `IList` rather
 than `IEnumerable` (SelectingItemsControl and TreeView). WindowNotification-
 Manager gains CloseAll plus the object-based Show/Close overloads.
-Versions: the whole items lineage moves once more (ItemsControl 9 to 10
-with every descendant), AutoCompleteBox 7 to 8, MenuFlyout 3 to 4,
-TabControl 6 to 7, TreeView 6 to 7, Window 12 to 13, WindowNotification-
-Manager 4 to 5. Factory stays 13.
 
 Wave U19 projects data templates, closing the templating family.
 `MarshallingKind.DataTemplate` (ordinal 25) wraps
@@ -537,31 +501,27 @@ and ComboBox (SelectionBoxItemTemplate); HeaderTemplate on
 HeaderedContentControl, HeaderedItemsControl, HeaderedSelectingItemsControl
 and TableViewColumn; ContentTemplate on ContentControl, TabControl and
 Flyout; ToggleSwitch gains On/OffContentTemplate. IR schema moves 15 to 16
-for the paired `templateInterfaceName`/`templateInterfaceIid`. The control
-tree republishes once more (ContentControl 8 to 9 cascades everywhere; the
-items lineage reaches 11), Flyout 3 to 4, MenuFlyout 4 to 5, Window 13 to
-14. Control.DataTemplates (the default-template list),
-TemplatedControl.Template (the control template, not a data template) and
-the TemplateSettings getters stay gaps by design. Factory stays 13.
+for the paired `templateInterfaceName`/`templateInterfaceIid`.
+Control.DataTemplates (the default-template list), TemplatedControl.Template
+(the control template, not a data template) and the TemplateSettings getters
+stay gaps by design.
 
 Wave U20 projects the styled-element lifecycle and the payload events.
 StyledElement gains IsInitialized, Parent, DataContext and TemplatedParent
 (as a Variant) plus Initialized, ActualThemeVariantChanged, ResourcesChanged
-and Attached/DetachedFromLogicalTree as no-payload events (StyledElement 4
-to 5, cascading the whole control tree once more). NumericUpDown gains
-Spinned carrying Direction/UsingMouseWheel; CalendarDatePicker gains
-DateValidationError carrying Text and the ThrowException write-back
-(both at their republished versions). TabItem gains Icon (Variant) and
-IconTemplate (DataTemplate); TabControl gains IndicatorTemplate and
+and Attached/DetachedFromLogicalTree as no-payload events, which the whole
+control tree inherits. NumericUpDown gains Spinned carrying
+Direction/UsingMouseWheel; CalendarDatePicker gains DateValidationError
+carrying Text and the ThrowException write-back. TabItem gains Icon (Variant)
+and IconTemplate (DataTemplate); TabControl gains IndicatorTemplate and
 SelectedContentTemplate; ComboBox gains SelectionBoxItem (Variant).
 Nullable event string fields now read as Option<String> with a
-null-tolerant clone. Factory stays 13.
+null-tolerant clone.
 
 Wave U21 projects icons as write-oriented path strings. Window.Icon and
 TrayIcon.Icon cross as UTF-16 paths through the host-side `AvnWindowIcon`
 converter, which loads a `WindowIcon` from the path; reading yields null
-because an icon carries no source path to return (Window 15 to 16,
-TrayIcon 4 to 5). Factory stays 13.
+because an icon carries no source path to return.
 
 Wave U22 projects the shape and typography scalar lists as text. Polygon
 and Polyline Points cross as a UTF-16 "x,y x,y" list through the
@@ -569,19 +529,17 @@ host-side `AvnPointList` converter; Shape.StrokeDashArray crosses as
 comma-separated doubles through `AvnDoubleList`; TextBlock and
 TemplatedControl FontFeatures cross through `AvnFontFeatures` (the
 collection's Parse exists but its ToString is inherited, so the converter
-owns both halves). The templated-control tree and the shape family
-republish under their fresh IIDs. Factory stays 13.
+owns both halves).
 
 Wave U23 projects the calendar date collections. Calendar.SelectedDates
 and BlackoutDates, and CalendarDatePicker.BlackoutDates, cross as the
 host-implemented `IAvnDateTimeList` whose elements are int64 DateTime
 tick counts: the `AvnDateList` adapter reads the live collection and
-writes through to it because the calendar owns the storage (Calendar 9
-to 10, CalendarDatePicker 8 to 9). The safe crate exposes
-SystemTime elements with the .NET epoch offset. The
+writes through to it because the calendar owns the storage. The safe
+crate exposes SystemTime elements with the .NET epoch offset. The
 SelectedDatesChanged/SelectedDateChanged events stay gaps: their
 SelectionChangedEventArgs carry added/removed collections the event
-payload cannot carry yet. Factory stays 13.
+payload cannot carry yet.
 
 Wave U24 projects AutoCompleteBox's filter delegates. Two kinds:
 `ItemFilter` (ordinal 26) wraps the object predicate as `IAvnItemFilter`
@@ -590,10 +548,9 @@ whose invoke takes the search text and the item variant; `TextFilter`
 borrowed UTF-16 buffers. The host's `AvnItemFilter`/`AvnTextFilter` wrap
 managed delegates; a foreign interface converts back into the delegate, so
 the Rust CCWs — `rustolonia_sys::item_filter`/`text_filter` — really filter
-items (AutoCompleteBox 11 to 12). The selector delegates and the async
-populator stay gaps: selectors add another callback shape and the
-populator needs the async-completion transport. CCWs now free variant
-payloads only when a host is loaded. Factory stays 13.
+items. The selector delegates and the async populator stay gaps: selectors
+add another callback shape and the populator needs the async-completion
+transport. CCWs now free variant payloads only when a host is loaded.
 
 Wave U25 sweeps the last closable members and separates by-design gaps.
 Expander gains the vetoable Expanding/Collapsing pair, RefreshContainer
@@ -607,14 +564,12 @@ buttons gain Icon as a Variant. The gap report now distinguishes
 aliases, the suppressed ContextMenu.Open override) — from the few
 remaining marshalling boundaries: the INotification content overloads and
 the Show overload with Action callbacks, which need a typed notification
-ABI and a callback transport. The templated-control tree and the shape
-family republish under their fresh IIDs. Factory stays 13.
+ABI and a callback transport.
 
-Wave Q sweeps leftover marshallable scalars on leaf input types.
+Wave Q sweeps leftover marshallable scalars on leaf input types:
 `IAvnAutoCompleteBox`, `IAvnCalendar`, `IAvnCalendarDatePicker` and
-`IAvnNumericUpDown` each move from 2 to 3. Templates, filters, ItemsSource,
-SelectedDates, NumberFormat and obsolete Watermark aliases stay gaps.
-The factory is unmoved at 13.
+`IAvnNumericUpDown`. Templates, filters, ItemsSource, SelectedDates,
+NumberFormat and obsolete Watermark aliases stay gaps.
 
 Wave U26 projects typed notifications, closing the last pending gaps.
 `Notification` (ordinal 28) maps `INotification` to `IAvnNotification`
@@ -628,7 +583,7 @@ Rust side grows a ref-counted `rustolonia_sys::notification` CCW whose
 string getters allocate through the host's UTF-16 provider. The INotification
 content overloads and the Action-carrying Show overload cross through
 the notification CCW's handler slots; every remaining gap in the report
-is now by-design with its rationale. Factory stays 13.
+is now by-design with its rationale.
 
 Wave U27 projects the scalar value models. KeyGesture crosses through its
 own Parse/ToString round-trip as an ordinary UTF-16 string — Button.HotKey,
@@ -640,9 +595,8 @@ and StyledElement.ActualThemeVariant; Border.BoxShadow crosses through
 AvnBoxShadows (the comma-separated list BoxShadows prints, split on
 top-level commas); TabItem.TabStripPlacement crosses through AvnDock as a
 nullable dock name (read-only, the CLR setter is internal). StyledElement
-grows a slot, so it and all 97 descendants republish under fresh IIDs.
-The gap report drops from 190 to 182 entries, every one by-design. Factory
-stays 13.
+grows a slot, which all 97 descendants inherit. The gap report drops from
+190 to 182 entries, every one by-design.
 
 Wave U28 crosses the scalar event payloads. The Fields payload grows two
 nullable wrappers: `AvnOptionalTimeSpan` (has_value + ticks, converting
@@ -651,12 +605,10 @@ DateTimeOffset event fields convert through `.UtcDateTime` so the wire form
 stays UTC ticks. DatePicker.SelectedDateChanged crosses with the
 old/new date pair, TimePicker.SelectedTimeChanged with the old/new time
 pair, and TextBox.TextChanging crosses as a plain notification because
-TextChangingEventArgs carries no payload members. TextBox (17) and its
-MaskedTextBox descendant (14) republish, and the pickers move to 10.
+TextChangingEventArgs carries no payload members.
 CalendarDatePicker.SelectedDateChanged stays by-design: it carries
 SelectionChangedEventArgs, whose added/removed collection payload needs the
-variant-list event shape. The gap report drops to 179 entries. Factory
-stays 13.
+variant-list event shape. The gap report drops to 179 entries.
 
 Wave U29 projects AutoCompleteBox's selector delegates. Two kinds:
 `ItemSelector` (ordinal 29) wraps the object selector as `IAvnItemSelector`
@@ -665,11 +617,10 @@ display text as a host-allocated UTF-16 buffer; `TextSelector` (ordinal 30)
 wraps the string selector as `IAvnTextSelector` over two borrowed buffers.
 The host's `AvnItemSelector`/`AvnTextSelector` wrap managed delegates; a
 foreign interface converts back into the delegate, so the Rust CCWs —
-`rustolonia_sys::item_selector`/`text_selector` — really format items
-(AutoCompleteBox 13 to 14). The CCWs allocate their returned string through
-the host's UTF-16 provider and report E_NOTIMPL without a host, exactly as
-the notification CCW's string getters do. The gap report drops to 177
-entries. Factory stays 13.
+`rustolonia_sys::item_selector`/`text_selector` — really format items. The
+CCWs allocate their returned string through the host's UTF-16 provider and
+report E_NOTIMPL without a host, exactly as the notification CCW's string
+getters do. The gap report drops to 177 entries.
 
 Wave U30 projects the object lists and pass-through members. CommandBar's
 PrimaryCommands and SecondaryCommands cross as a new IAvnControlList — a
@@ -677,10 +628,9 @@ host-implemented live adapter (AvnControlList) working through the
 non-generic IList the observable command collections implement, so reads
 observe the bar and mutations persist into it; VisiblePrimaryCommands and
 OverflowItems ride the same adapter as read-only views. Control.Tag crosses
-as a Variant, which grows Control's vtable, so Control and all 95
-descendants republish under fresh IIDs. Popup and PopupFlyoutBase's
-OverlayInputPassThroughElement cross as a control reference. The gap
-report drops to 170 entries. Factory stays 13.
+as a Variant, which grows Control's vtable and those of all 95 descendants.
+Popup and PopupFlyoutBase's OverlayInputPassThroughElement cross as a
+control reference. The gap report drops to 170 entries.
 
 Wave U31 crosses the transition payload. TransitioningContentControl's
 TransitionCompleted rides the Fields machinery with two Variants (From/To)
@@ -689,8 +639,7 @@ on both the C# side (AvnVariant.FromObject) and the bindgen
 (event_argument_type), so any future object?-valued event field crosses the
 same way. A transition never runs in the headless host, so the payload is
 validated by the advise/unadvise pair and the generated slot signature.
-TransitioningContentControl republishes at 10. The gap report drops to 169
-entries. Factory stays 13.
+The gap report drops to 169 entries.
 
 Wave U32 crosses the collection event payloads with a new
 `EventPayloadKind.Args`: the handler receives a host-implemented args
@@ -700,17 +649,15 @@ cross — AutoCompleteBox.SelectionChanged and Populated,
 Calendar.SelectedDatesChanged, CalendarDatePicker.SelectedDateChanged —
 and the bindgen emits the args interface with safe count/getter methods on
 the Rust side (`subscribe_selection_changed` receives a
-`ComPtr<IAvnSelectionChangedArgs>`-shaped wrapper). AutoCompleteBox (15),
-Calendar (12) and CalendarDatePicker (11) republish. The gap report drops
-to 165 entries. Factory stays 13.
+`ComPtr<IAvnSelectionChangedArgs>`-shaped wrapper). The gap report drops
+to 165 entries.
 
 Wave U33 sweeps the column list and reason hygiene. TableView.Columns
 crosses through the same IAvnControlList live adapter as the command-bar
-lists — AvaloniaList<TableViewColumn> is an IList of projected controls
-(TableView 12 to 13). The stale "INotification content" reasons on
-ContextMenu/Menu's Close overwrites are corrected to name the real cause:
-they suppress the projected base slot. The gap report drops to 164
-entries. Factory stays 13.
+lists — AvaloniaList<TableViewColumn> is an IList of projected controls.
+The stale "INotification content" reasons on ContextMenu/Menu's Close
+overwrites are corrected to name the real cause: they suppress the
+projected base slot. The gap report drops to 164 entries.
 
 Wave U34 crosses the pointer-tracking flyout overload. The insight:
 `showAtPointer` is only a placement-mode switch, not pointer state, so
@@ -719,10 +666,9 @@ PopupFlyoutBase.ShowAt(Control, Boolean) crosses as an ordinary method
 ShowAt(Control) and Hide overrides of the projected base slots stay
 suppressed, now with accurate reasons ("overrides the projected base
 slot" / "the sealed override of the projected base Hide slot") instead of
-the stale pointer-event wording. PopupFlyoutBase republishes at 5; a
-stale wave-B forbidden pin that banned MenuItem's gesture setters is
-flipped to require them now that U27 projects the gestures. The gap
-report drops to 163 entries. Factory stays 13.
+the stale pointer-event wording. A stale wave-B forbidden pin that banned
+MenuItem's gesture setters is flipped to require them now that U27
+projects the gestures. The gap report drops to 163 entries.
 
 Wave U35 crosses the custom popup placement callback. `PopupPlacement`
 (ordinal 31) maps `CustomPopupPlacementCallback` to
@@ -733,11 +679,9 @@ constraint adjustment — back through out-parameters. The host's
 foreign CCW converts into the delegate (the host constructs the
 placement record through the new Avalonia.Host InternalsVisibleTo entry,
 calls it, and reads the mutations back), and Popup, ContextMenu and
-PopupFlyoutBase's CustomPopupPlacementCallback properties cross (the
-flyout base republishes at 6, Popup at 8, ContextMenu at 15). The Rust
+PopupFlyoutBase's CustomPopupPlacementCallback properties cross. The Rust
 CCW — `rustolonia_sys::popup_placement` — returns a
-`PopupPlacementResult`. The gap report drops to 160 entries. Factory
-stays 13.
+`PopupPlacementResult`. The gap report drops to 160 entries.
 
 Wave U36 crosses the async populator. `AsyncPopulator` (ordinal 32) maps
 AutoCompleteBox's `Func<string?, CancellationToken,
@@ -748,12 +692,12 @@ launches, and the CCW reports through the completion's
 bridges both directions: a managed delegate runs under
 `AvnPopulatorBridge` and reports through a host-built completion CCW,
 while a foreign CCW converts into the delegate through a
-`TaskCompletionSource` the completion resolves (AutoCompleteBox 15 to
-16). The Rust CCW — `rustolonia_sys::async_populator` — hands the closure a
+`TaskCompletionSource` the completion resolves. The Rust CCW —
+`rustolonia_sys::async_populator` — hands the closure a
 `PopulateCompletion` reporter. ShowDialog stays by-design with an
 accurate reason: its modal completion needs the dialog-owner lifetime the
 projected Show overloads do not carry. The gap report drops to 159
-entries. Factory stays 13.
+entries.
 
 `projection.ir.json` needs no schema change to carry a member whose CLR type is
 not `string` but whose ABI slot is: the existing `kind` and `managedTypeName`

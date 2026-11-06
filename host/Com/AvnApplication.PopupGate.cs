@@ -7,7 +7,7 @@ using Avalonia.Threading;
 
 namespace Avalonia.Host.Com;
 
-public partial class AvnApplication : IAvnApplication10
+public partial class AvnApplication
 {
     private long _nextPopupToken;
     private readonly Dictionary<long, (Window Owner, Action Show)> _pendingPopups = new();

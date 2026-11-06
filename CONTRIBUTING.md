@@ -89,9 +89,12 @@ their normal positional arguments. This compares outputs without creating or
 rewriting them. `--check --normalize` is rejected rather than silently modifying
 the view-model input.
 
-Published IIDs, vtable order, calling conventions and ownership semantics must
-not change under an existing identity. Follow `rust/COMPATIBILITY.md`; preserve
-regression coverage when reorganizing old wave-named tests.
+COM interfaces are unversioned. The host and the crates ship together, so change
+an interface in place: update its C# definition, Rust vtable and every
+implementation in the same change. Never add a numbered successor (`IFoo2`) or
+change an IID to signal a change. Follow
+[rust/COMPATIBILITY.md](rust/COMPATIBILITY.md#native-abi); preserve regression
+coverage when reorganizing old wave-named tests.
 
 Application-specific schema, presentation and generated registry changes must
 remain compatible with the explicit external-consumer path. Exercise both the

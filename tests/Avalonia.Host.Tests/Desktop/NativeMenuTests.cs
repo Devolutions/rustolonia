@@ -18,21 +18,10 @@ public unsafe partial class NativeMenuTests
     private const int Checked = 1, Disabled = 2, Hidden = 4;
 
     [Fact]
-    public void Native_menu_capability_is_additive()
+    public void Native_menu_interfaces_have_a_stable_shape()
     {
-        Assert.Equal(Guid.Parse("6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DAA"), typeof(IAvnApplication15).GUID);
         Assert.Equal(Guid.Parse("6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DAB"), typeof(IAvnNativeMenu).GUID);
         Assert.Equal(Guid.Parse("6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DAC"), typeof(IAvnNativeMenuHandler).GUID);
-        Assert.Equal(
-            new[]
-            {
-                nameof(IAvnApplication15.CreateNativeMenu),
-                nameof(IAvnApplication15.SetApplicationMenu),
-                nameof(IAvnApplication15.SetWindowMenu),
-                nameof(IAvnApplication15.IsNativeMenuExported),
-                nameof(IAvnApplication15.CreateNativeMenuBar),
-            },
-            typeof(IAvnApplication15).GetMethods().Select(m => m.Name));
         Assert.Equal(
             new[]
             {
@@ -41,7 +30,6 @@ public unsafe partial class NativeMenuTests
                 nameof(IAvnNativeMenu.UpdateMenuItem),
             },
             typeof(IAvnNativeMenu).GetMethods().Select(m => m.Name));
-        Assert.IsAssignableFrom<IAvnApplication15>(new AvnApplication());
     }
 
     [Fact]
@@ -125,7 +113,7 @@ public unsafe partial class NativeMenuTests
         Assert.Equal(0, new AvnControlFactory().CreateWindow(out var projected));
         var window = (Window)ProjectionRuntime.Unwrap(projected)!;
 
-        Through<IAvnApplication15>(wrappers, host, application =>
+        Through<IAvnApplication>(wrappers, host, application =>
         {
             Assert.Equal(HResults.S_OK, application.CreateNativeMenu(handler, out var menu));
             Assert.NotNull(menu);

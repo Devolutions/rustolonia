@@ -3,7 +3,7 @@
   "files": [
     {
       "path": "MainViewModelAdapter.g.cs",
-      "sha256": "a08c1189a689594e440c9f3ee1a44a22c25a44570edbc8cdb56db95007427422"
+      "sha256": "390783e457e426d2ac6e8389ed608b8780b926a7f7744214361a45bc73f5aaca"
     },
     {
       "path": "MainViewModelMenus.g.cs",
@@ -15,7 +15,7 @@
     },
     {
       "path": "OutlineItemViewModelAdapter.g.cs",
-      "sha256": "8d925dd9abe563750b161fd653e026bc7d410ad7e2047488ff267a040042428e"
+      "sha256": "2cd8eca5f32790b711b765b1d1241f237cba9563fe594c0a03300ad525eed69f"
     },
     {
       "path": "OutlineItemViewModelMetadata.g.cs",

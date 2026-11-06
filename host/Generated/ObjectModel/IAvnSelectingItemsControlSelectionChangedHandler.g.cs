@@ -7,7 +7,7 @@ using System.Linq;
 namespace Avalonia.Host.Com;
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("A5A998E3-805F-5BB9-BE35-4ACCDA82BD37")]
+[Guid("919B61CA-5489-5B45-92F8-AC690D219D4E")]
 public partial interface IAvnSelectingItemsControlSelectionChangedArgs
 {
     [PreserveSig]
@@ -96,7 +96,7 @@ public sealed partial class AvnSelectingItemsControlSelectionChangedArgs : IAvnS
 }
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("D9AAACF6-E516-52AC-ABBE-3E0210379161")]
+[Guid("DC5E0144-B02E-56B3-96AE-5AB393E0047E")]
 public partial interface IAvnSelectingItemsControlSelectionChangedHandler
 {
     [PreserveSig]

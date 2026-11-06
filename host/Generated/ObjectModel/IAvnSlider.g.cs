@@ -7,7 +7,7 @@ using System.Runtime.InteropServices.Marshalling;
 namespace Avalonia.Host.Com;
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("87C098D1-E3D8-5297-8EFB-B039EF2C9CB5")]
+[Guid("34D48506-20AB-5076-B7E4-A62AF2DEDBE9")]
 public partial interface IAvnSlider : IAvnRangeBase
 {
     [PreserveSig]

@@ -17,7 +17,7 @@ public class ApplicationNameTests
         var unknown = wrappers.GetOrCreateComInterfaceForObject(host, CreateComInterfaceFlags.None);
         try
         {
-            var application = (IAvnApplication14)wrappers.GetOrCreateObjectForComInstance(
+            var application = (IAvnApplication)wrappers.GetOrCreateObjectForComInstance(
                 unknown, CreateObjectFlags.None);
             const string name = "Jiffshot \ud83d\udcf7";
             Assert.Equal(HResults.S_OK, application.SetApplicationName(name));
@@ -27,16 +27,6 @@ public class ApplicationNameTests
         {
             Marshal.Release(unknown);
         }
-    }
-
-    [Fact]
-    public void Naming_capability_is_additive()
-    {
-        Assert.Equal(Guid.Parse("6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DA9"),
-            typeof(IAvnApplication14).GUID);
-        Assert.Equal(nameof(IAvnApplication14.SetApplicationName),
-            Assert.Single(typeof(IAvnApplication14).GetMethods()).Name);
-        Assert.IsAssignableFrom<IAvnApplication14>(new AvnApplication());
     }
 
     [Fact]

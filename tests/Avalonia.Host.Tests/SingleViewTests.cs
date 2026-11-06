@@ -34,15 +34,6 @@ public class SingleViewTests
     }
 
     [Fact]
-    public void Single_view_capability_is_additive()
-    {
-        Assert.Equal(Guid.Parse("6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DA8"),
-            typeof(IAvnApplication13).GUID);
-        Assert.Equal(nameof(IAvnApplication13.SetMainView),
-            Assert.Single(typeof(IAvnApplication13).GetMethods()).Name);
-    }
-
-    [Fact]
     public void Single_view_lifetime_accepts_and_clears_a_control()
     {
         using var app = UnitTestApplication.Start(TestServices.StyledWindow);

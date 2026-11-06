@@ -2,14 +2,7 @@
 //!
 //! The definitions cross as the comma-separated length list that `ColumnDefinitions` and
 //! `RowDefinitions` already parse and print, so they occupy ordinary UTF-16 string slots
-//! rather than a projected collection of definition objects. `Grid` is the only interface
-//! that grew, and nothing in the object model derives from it, so it is also the only one
-//! that republishes.
-
-use rustolonia_sys::{
-    I_AVN_AVALONIA_OBJECT_IID, I_AVN_CANVAS_IID, I_AVN_CONTROL_IID, I_AVN_DOCK_PANEL_IID,
-    I_AVN_GRID_IID, I_AVN_PANEL_IID, I_AVN_STACK_PANEL_IID,
-};
+//! rather than a projected collection of definition objects.
 
 const HEADER: &str = include_str!("../include/avalonia-rust-abi.h");
 
@@ -42,99 +35,4 @@ fn definitions_are_published_as_utf16_string_slots_on_grid() {
             "header must not declare `{forbidden}`"
         );
     }
-}
-
-#[test]
-fn only_grid_moved_to_abi_version_five_for_the_definitions() {
-    for expected in [
-        "#define I_AVN_GRID_ABI_VERSION 15",
-        // Grid's base and its sibling panels gained nothing, so their flattened vtables are
-        // byte-identical and they keep the version they already published.
-        "#define I_AVN_PANEL_ABI_VERSION 14",
-        "#define I_AVN_CANVAS_ABI_VERSION 14",
-        "#define I_AVN_DOCK_PANEL_ABI_VERSION 14",
-        "#define I_AVN_STACK_PANEL_ABI_VERSION 15",
-        "#define I_AVN_CONTROL_ABI_VERSION 11",
-        "#define I_AVN_AVALONIA_OBJECT_ABI_VERSION 2",
-        // The factory mints no definition object, but wave A gave it a creator per new control
-        // and get_tool_tip_statics and wave B gave it seven more, so it now publishes at
-        // version 4.
-        "#define I_AVN_CONTROL_FACTORY_ABI_VERSION 14",
-    ] {
-        assert!(HEADER.contains(expected), "header is missing `{expected}`");
-    }
-}
-
-#[test]
-fn grid_republishes_under_a_fresh_iid_and_never_reuses_a_retired_one() {
-    assert_eq!(
-        format_iid(&I_AVN_GRID_IID),
-        "028C589C-2C52-5505-9CD2-36A25B4F43A6"
-    );
-
-    // Every IID Grid has ever published is retired for good: reusing one for a longer vtable
-    // would let a stale consumer call through slots its contract never declared.
-    for retired in [
-        "C6A7C566-BD63-537E-88BD-88A47515F1A7",
-        "63B055A6-7C40-5F6D-9A36-4430CB8FED95",
-        "B383BDBC-D6E0-500D-AEE5-50363B62912D",
-        "240199CD-F2BD-55CD-BE4D-8DA83F228D71",
-        // Wave P: the version 12 identity retired when Control grew input events.
-        "55E75D4C-FC75-51A9-BA87-6D28704EAFC8",
-        // Wave Q: the version 13 identity retired when Control grew pointer payloads.
-        "63034BE5-179A-5196-8338-F10785C6DDDD",
-        // Wave S: the version 14 identity retired when Control grew Focus/Focusable.
-        "887286EA-8097-52EB-9CEF-FA1DA7828D0F",
-    ] {
-        assert_ne!(
-            format_iid(&I_AVN_GRID_IID),
-            retired,
-            "IAvnGrid reused a retired IID"
-        );
-        assert!(
-            !HEADER.contains(&format!("0x{}", &retired[..8])),
-            "header still declares the retired IAvnGrid IID `{retired}`"
-        );
-    }
-
-    // Nothing else changed identity.
-    for (name, expected, current) in [
-        (
-            "IAvnAvaloniaObject",
-            "FA7F2E03-0BFA-5422-840B-18AE1D9695C0",
-            I_AVN_AVALONIA_OBJECT_IID,
-        ),
-        (
-            "IAvnControl",
-            "8B272500-09E4-535F-ABF1-14992E90E778",
-            I_AVN_CONTROL_IID,
-        ),
-        (
-            "IAvnPanel",
-            "FE37643D-BDE5-511B-AB66-CB66B73F685F",
-            I_AVN_PANEL_IID,
-        ),
-    ] {
-        assert_eq!(format_iid(&current), expected, "{name} changed its IID");
-    }
-
-    // The sibling panels are distinct interfaces that did not move with Grid.
-    for sibling in [
-        I_AVN_CANVAS_IID,
-        I_AVN_DOCK_PANEL_IID,
-        I_AVN_STACK_PANEL_IID,
-    ] {
-        assert_ne!(format_iid(&sibling), format_iid(&I_AVN_GRID_IID));
-    }
-}
-
-fn format_iid(iid: &rustolonia_sys::Guid) -> String {
-    let mut out = format!("{:08X}-{:04X}-{:04X}-", iid.data1, iid.data2, iid.data3);
-    for (index, byte) in iid.data4.iter().enumerate() {
-        if index == 2 {
-            out.push('-');
-        }
-        out.push_str(&format!("{byte:02X}"));
-    }
-    out
 }

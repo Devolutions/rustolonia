@@ -1,25 +1,18 @@
 //! Stage 29 desktop file integration ABI.
 //!
-//! These interfaces form a separately versioned capability that is queried from
-//! `IAvnApplication`; nothing here is ever added to an already published
-//! vtable. Host-implemented interfaces (`IAvnApplication3`,
-//! `IAvnFilePickerOptions`, `IAvnStorageItem`, `IAvnStorageItemList`) are
-//! called from Rust; Rust-implemented interfaces (`IAvnStorageCompletion`,
+//! The pickers, file drops and startup/activation operations live on
+//! `IAvnApplication`. Host-implemented interfaces (`IAvnFilePickerOptions`,
+//! `IAvnStorageItem`, `IAvnStorageItemList`) are called from Rust;
+//! Rust-implemented interfaces (`IAvnStorageCompletion`,
 //! `IAvnFileDropHandler`, `IAvnActivationHandler`) are called by the host.
 
+use crate::application::IAvnApplication;
 use crate::com::{ComInterface, ComPtr, IUnknown};
 use crate::generated::{IAvnControl, IAvnWindow};
 use crate::guid::Guid;
 use crate::hresult::{self, Result};
 use std::ffi::c_void;
 use std::ptr;
-
-const IAVN_APPLICATION3_IID: Guid = Guid {
-    data1: 0x6B2E8F10,
-    data2: 0x4C91,
-    data3: 0x4E3A,
-    data4: [0x9A, 0x77, 0x1F, 0x0C, 0x2B, 0x3A, 0x4D, 0x50],
-};
 
 const IAVN_FILE_PICKER_OPTIONS_IID: Guid = Guid {
     data1: 0x6B2E8F10,
@@ -630,77 +623,11 @@ unsafe extern "system" fn activation_on_activated(
     crate::event_callback::invoke::<IAvnActivationHandler, ActivationArgs>(this, &mut arguments)
 }
 
-#[repr(C)]
-struct IAvnApplication3Vtbl {
-    query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
-    add_ref: unsafe extern "system" fn(*mut IUnknown) -> u32,
-    release: unsafe extern "system" fn(*mut IUnknown) -> u32,
-    create_picker_options:
-        unsafe extern "system" fn(*mut IAvnApplication3, *mut *mut IAvnFilePickerOptions) -> i32,
-    get_storage_capabilities:
-        unsafe extern "system" fn(*mut IAvnApplication3, *mut IAvnWindow, *mut i32) -> i32,
-    start_open_file_picker: unsafe extern "system" fn(
-        *mut IAvnApplication3,
-        *mut IAvnWindow,
-        *mut IAvnFilePickerOptions,
-        *mut IAvnStorageCompletion,
-        *mut i64,
-    ) -> i32,
-    start_open_folder_picker: unsafe extern "system" fn(
-        *mut IAvnApplication3,
-        *mut IAvnWindow,
-        *mut IAvnFilePickerOptions,
-        *mut IAvnStorageCompletion,
-        *mut i64,
-    ) -> i32,
-    start_save_file_picker: unsafe extern "system" fn(
-        *mut IAvnApplication3,
-        *mut IAvnWindow,
-        *mut IAvnFilePickerOptions,
-        *mut IAvnStorageCompletion,
-        *mut i64,
-    ) -> i32,
-    subscribe_file_drop: unsafe extern "system" fn(
-        *mut IAvnApplication3,
-        *mut IAvnControl,
-        i32,
-        *mut IAvnFileDropHandler,
-        *mut i64,
-    ) -> i32,
-    unsubscribe_file_drop: unsafe extern "system" fn(*mut IAvnApplication3, i64) -> i32,
-    clear_startup_arguments: unsafe extern "system" fn(*mut IAvnApplication3) -> i32,
-    add_startup_argument: unsafe extern "system" fn(*mut IAvnApplication3, *const u16) -> i32,
-    get_startup_argument_count: unsafe extern "system" fn(*mut IAvnApplication3, *mut i32) -> i32,
-    get_startup_argument:
-        unsafe extern "system" fn(*mut IAvnApplication3, i32, *mut *mut u16) -> i32,
-    get_activation_items:
-        unsafe extern "system" fn(*mut IAvnApplication3, *mut *mut IAvnStorageItemList) -> i32,
-    advise_activation: unsafe extern "system" fn(
-        *mut IAvnApplication3,
-        *mut IAvnActivationHandler,
-        *mut i64,
-    ) -> i32,
-    unadvise_activation: unsafe extern "system" fn(*mut IAvnApplication3, i64) -> i32,
-}
-
-#[repr(C)]
-pub struct IAvnApplication3 {
-    vtbl: *const IAvnApplication3Vtbl,
-}
-
-unsafe impl ComInterface for IAvnApplication3 {
-    const IID: Guid = IAVN_APPLICATION3_IID;
-}
-
-impl ComPtr<IAvnApplication3> {
+impl ComPtr<IAvnApplication> {
     pub fn create_picker_options(&self) -> Result<ComPtr<IAvnFilePickerOptions>> {
         unsafe {
             let mut value = ptr::null_mut();
-            let hr = ((*self.as_raw())
-                .vtbl
-                .as_ref()
-                .unwrap()
-                .create_picker_options)(self.as_raw(), &mut value);
+            let hr = (self.vtbl().create_picker_options)(self.as_raw(), &mut value);
             hresult::check(hr)?;
             ComPtr::from_raw(value).ok_or(crate::Error(hresult::E_POINTER))
         }
@@ -709,12 +636,10 @@ impl ComPtr<IAvnApplication3> {
     pub fn storage_capabilities(&self, window: Option<&ComPtr<IAvnWindow>>) -> Result<i32> {
         unsafe {
             let mut value = 0;
-            let hr = ((*self.as_raw())
-                .vtbl
-                .as_ref()
-                .unwrap()
-                .get_storage_capabilities)(
-                self.as_raw(), optional_raw(window), &mut value
+            let hr = (self.vtbl().get_storage_capabilities)(
+                self.as_raw(),
+                optional_raw(window),
+                &mut value,
             );
             hresult::check(hr).map(|_| value)
         }
@@ -727,11 +652,7 @@ impl ComPtr<IAvnApplication3> {
         completion: Option<&ComPtr<IAvnStorageCompletion>>,
     ) -> Result<i64> {
         unsafe {
-            let start = (*self.as_raw())
-                .vtbl
-                .as_ref()
-                .unwrap()
-                .start_open_file_picker;
+            let start = self.vtbl().start_open_file_picker;
             self.start_picker(start, window, options, completion)
         }
     }
@@ -743,11 +664,7 @@ impl ComPtr<IAvnApplication3> {
         completion: Option<&ComPtr<IAvnStorageCompletion>>,
     ) -> Result<i64> {
         unsafe {
-            let start = (*self.as_raw())
-                .vtbl
-                .as_ref()
-                .unwrap()
-                .start_open_folder_picker;
+            let start = self.vtbl().start_open_folder_picker;
             self.start_picker(start, window, options, completion)
         }
     }
@@ -759,24 +676,14 @@ impl ComPtr<IAvnApplication3> {
         completion: Option<&ComPtr<IAvnStorageCompletion>>,
     ) -> Result<i64> {
         unsafe {
-            let start = (*self.as_raw())
-                .vtbl
-                .as_ref()
-                .unwrap()
-                .start_save_file_picker;
+            let start = self.vtbl().start_save_file_picker;
             self.start_picker(start, window, options, completion)
         }
     }
 
     unsafe fn start_picker(
         &self,
-        start: unsafe extern "system" fn(
-            *mut IAvnApplication3,
-            *mut IAvnWindow,
-            *mut IAvnFilePickerOptions,
-            *mut IAvnStorageCompletion,
-            *mut i64,
-        ) -> i32,
+        start: crate::application::StartPicker,
         window: Option<&ComPtr<IAvnWindow>>,
         options: Option<&ComPtr<IAvnFilePickerOptions>>,
         completion: Option<&ComPtr<IAvnStorageCompletion>>,
@@ -800,7 +707,7 @@ impl ComPtr<IAvnApplication3> {
     ) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
-            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().subscribe_file_drop)(
+            let hr = (self.vtbl().subscribe_file_drop)(
                 self.as_raw(),
                 optional_raw(target),
                 accepted_effects,
@@ -813,35 +720,23 @@ impl ComPtr<IAvnApplication3> {
 
     pub fn unsubscribe_file_drop(&self, subscription_id: i64) -> Result<()> {
         unsafe {
-            hresult::check(((*self.as_raw())
-                .vtbl
-                .as_ref()
-                .unwrap()
-                .unsubscribe_file_drop)(
-                self.as_raw(), subscription_id
+            hresult::check((self.vtbl().unsubscribe_file_drop)(
+                self.as_raw(),
+                subscription_id,
             ))
         }
     }
 
     pub fn clear_startup_arguments(&self) -> Result<()> {
-        unsafe {
-            hresult::check(((*self.as_raw())
-                .vtbl
-                .as_ref()
-                .unwrap()
-                .clear_startup_arguments)(self.as_raw()))
-        }
+        unsafe { hresult::check((self.vtbl().clear_startup_arguments)(self.as_raw())) }
     }
 
     pub fn add_startup_argument(&self, value: Option<&[u16]>) -> Result<()> {
         let value = value.map(crate::terminated_utf16);
         unsafe {
-            hresult::check(((*self.as_raw())
-                .vtbl
-                .as_ref()
-                .unwrap()
-                .add_startup_argument)(
-                self.as_raw(), optional_utf16(value.as_deref())
+            hresult::check((self.vtbl().add_startup_argument)(
+                self.as_raw(),
+                optional_utf16(value.as_deref()),
             ))
         }
     }
@@ -849,11 +744,7 @@ impl ComPtr<IAvnApplication3> {
     pub fn startup_argument_count(&self) -> Result<i32> {
         unsafe {
             let mut value = 0;
-            let hr = ((*self.as_raw())
-                .vtbl
-                .as_ref()
-                .unwrap()
-                .get_startup_argument_count)(self.as_raw(), &mut value);
+            let hr = (self.vtbl().get_startup_argument_count)(self.as_raw(), &mut value);
             hresult::check(hr).map(|_| value)
         }
     }
@@ -861,11 +752,7 @@ impl ComPtr<IAvnApplication3> {
     pub fn startup_argument(&self, index: i32) -> Result<Option<String>> {
         unsafe {
             let mut value = ptr::null_mut();
-            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_startup_argument)(
-                self.as_raw(),
-                index,
-                &mut value,
-            );
+            let hr = (self.vtbl().get_startup_argument)(self.as_raw(), index, &mut value);
             hresult::check(hr)?;
             Ok(crate::take_utf16(value))
         }
@@ -874,10 +761,7 @@ impl ComPtr<IAvnApplication3> {
     pub fn activation_items(&self) -> Result<Vec<StorageItemData>> {
         unsafe {
             let mut value = ptr::null_mut();
-            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_activation_items)(
-                self.as_raw(),
-                &mut value,
-            );
+            let hr = (self.vtbl().get_activation_items)(self.as_raw(), &mut value);
             hresult::check(hr)?;
             let list = ComPtr::from_raw(value).ok_or(crate::Error(hresult::E_POINTER))?;
             list.read_all()
@@ -890,7 +774,7 @@ impl ComPtr<IAvnApplication3> {
     ) -> Result<i64> {
         unsafe {
             let mut subscription_id = 0;
-            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_activation)(
+            let hr = (self.vtbl().advise_activation)(
                 self.as_raw(),
                 optional_raw(handler),
                 &mut subscription_id,
@@ -901,20 +785,10 @@ impl ComPtr<IAvnApplication3> {
 
     pub fn unadvise_activation(&self, subscription_id: i64) -> Result<()> {
         unsafe {
-            hresult::check(((*self.as_raw())
-                .vtbl
-                .as_ref()
-                .unwrap()
-                .unadvise_activation)(
-                self.as_raw(), subscription_id
+            hresult::check((self.vtbl().unadvise_activation)(
+                self.as_raw(),
+                subscription_id,
             ))
         }
-    }
-}
-
-impl ComPtr<crate::application::IAvnApplication> {
-    /// Queries the optional stage 29 desktop file integration capability.
-    pub fn desktop_files(&self) -> Result<ComPtr<IAvnApplication3>> {
-        self.query_interface::<IAvnApplication3>()
     }
 }

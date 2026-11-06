@@ -8,15 +8,13 @@ activation. Everything goes through Avalonia's own abstractions --
 routed events, and the desktop lifetime -- so nothing here is a platform dialog
 call and nothing is application specific.
 
-## Capability, not a vtable extension
+## Interfaces
 
-The published `IAvnApplication` and `IAvnApplication2` vtables are unchanged.
-The whole feature is a separately versioned optional capability that Rust
-queries:
+The pickers, drop subscription and activation subscription are slots on
+`IAvnApplication`. They use these interfaces:
 
 | Interface | IID suffix | Implemented by |
 | --- | --- | --- |
-| `IAvnApplication3` | `...4D50` | host |
 | `IAvnFilePickerOptions` | `...4D51` | host |
 | `IAvnStorageItem` | `...4D52` | host |
 | `IAvnStorageItemList` | `...4D53` | host |

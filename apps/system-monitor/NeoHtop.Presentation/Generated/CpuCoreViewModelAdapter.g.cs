@@ -18,7 +18,7 @@ using Avalonia.Threading;
 namespace NeoHtop.Presentation.Generated;
 
 [GeneratedComClass]
-public sealed partial class CpuCoreViewModelAdapter : IAvnRustVmSink, IAvnRustVmSink2, IAvnRustVmSink3, IRustVmStringSnapshotSink, IRustVmModelSnapshotSink, IRustVmBatchTarget, IRustVmTableSelectionBatchTarget, INotifyPropertyChanged, INotifyDataErrorInfo, IDisposable
+public sealed partial class CpuCoreViewModelAdapter : IAvnRustVmSink, IRustVmStringSnapshotSink, IRustVmModelSnapshotSink, IRustVmBatchTarget, IRustVmTableSelectionBatchTarget, INotifyPropertyChanged, INotifyDataErrorInfo, IDisposable
 {
     private readonly IAvnRustViewModel _model;
     private readonly Action<Action> _dispatch;
@@ -33,15 +33,14 @@ public sealed partial class CpuCoreViewModelAdapter : IAvnRustVmSink, IAvnRustVm
     public CpuCoreViewModelAdapter(IAvnRustViewModel model) : this(model, null, null) { }
 
     /// <summary>
-    /// Creates an adapter with a custom synchronous dispatch for the legacy v1/v2
-    /// sink path. Kept as a distinct CLR signature (not an optional parameter) so
-    /// already-compiled callers keep binding to it.
+    /// Creates an adapter with a custom synchronous dispatch for the per-call
+    /// sink path.
     /// </summary>
     public CpuCoreViewModelAdapter(IAvnRustViewModel model, Action<Action>? dispatch) : this(model, dispatch, null) { }
 
     /// <summary>
     /// Creates an adapter with a custom synchronous <paramref name="dispatch"/> for the
-    /// legacy v1/v2 sink path and a custom nonblocking <paramref name="post"/> for
+    /// per-call sink path and a custom nonblocking <paramref name="post"/> for
     /// batch submission.
     /// </summary>
     public CpuCoreViewModelAdapter(IAvnRustViewModel model, Action<Action>? dispatch, Action<Action>? post)
@@ -199,6 +198,98 @@ public sealed partial class CpuCoreViewModelAdapter : IAvnRustVmSink, IAvnRustVm
     {
         _ => unchecked((int)0x80070057),
     };
+
+    public int MapSetString(int mapId, string? stringKey, long integerKey, string? value) => mapId switch
+    {
+        _ => unchecked((int)0x80070057),
+    };
+
+    public int MapSetInteger(int mapId, string? stringKey, long integerKey, long value) => mapId switch
+    {
+        _ => unchecked((int)0x80070057),
+    };
+
+    public int MapSetBoolean(int mapId, string? stringKey, long integerKey, int value) => mapId switch
+    {
+        _ => unchecked((int)0x80070057),
+    };
+
+    public int MapSetDouble(int mapId, string? stringKey, long integerKey, double value) => mapId switch
+    {
+        _ => unchecked((int)0x80070057),
+    };
+
+    public int MapSetModel(int mapId, string? stringKey, long integerKey, IAvnRustViewModel? value) => mapId switch
+    {
+        _ => unchecked((int)0x80070057),
+    };
+
+    public int MapRemove(int mapId, string? stringKey, long integerKey) => mapId switch
+    {
+        _ => unchecked((int)0x80070057),
+    };
+
+    public int MapClear(int mapId) => mapId switch
+    {
+        _ => unchecked((int)0x80070057),
+    };
+
+    public int SetCommandProgress(int commandId, int hasValue, double value, string? message) => commandId switch
+    {
+        _ => unchecked((int)0x80070057),
+    };
+
+    public int SetCommandResult(int commandId, IAvnRustViewModel? result) => commandId switch
+    {
+        _ => unchecked((int)0x80070057),
+    };
+
+    public int SetCommandRunning(int commandId, int running) => commandId switch
+    {
+        _ => unchecked((int)0x80070057),
+    };
+
+    /// <summary>
+    /// Enqueues one range batch. Like <see cref="SubmitBatch"/> this never reads,
+    /// applies or completes the batch on the submitting (Rust worker) stack.
+    /// </summary>
+    public int PublishRange(IAvnRustVmRangeBatch? batch) => unchecked((int)0x80070057);
+
+    public int AddInteger(int collectionId, long value) => collectionId switch
+    {
+        _ => unchecked((int)0x80070057),
+    };
+
+    public int InsertInteger(int collectionId, int index, long value) => collectionId switch
+    {
+        _ => unchecked((int)0x80070057),
+    };
+
+    public int ReplaceInteger(int collectionId, int index, long value) => collectionId switch
+    {
+        _ => unchecked((int)0x80070057),
+    };
+
+    public int AddDouble(int collectionId, double value) => collectionId switch
+    {
+        _ => unchecked((int)0x80070057),
+    };
+
+    public int InsertDouble(int collectionId, int index, double value) => collectionId switch
+    {
+        _ => unchecked((int)0x80070057),
+    };
+
+    public int ReplaceDouble(int collectionId, int index, double value) => collectionId switch
+    {
+        _ => unchecked((int)0x80070057),
+    };
+
+    public int GetCapabilities(out int capabilities)
+    {
+        capabilities = RustVmSinkCapabilities.All;
+        return 0;
+    }
 
     public int ReplaceStringSnapshot(int collectionId, IReadOnlyList<string> values) => collectionId switch
     {

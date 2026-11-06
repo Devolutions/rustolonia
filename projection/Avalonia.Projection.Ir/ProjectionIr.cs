@@ -6,12 +6,11 @@ namespace Avalonia.Projection.Ir;
 public sealed partial class ProjectionIr
 {
     public const int MinimumVersion = 1;
-    public const int CurrentVersion = 17;
+    public const int CurrentVersion = 18;
 
     public int Version { get; init; } = CurrentVersion;
     public string? SourceAssembly { get; init; }
     public string? FactoryIid { get; init; }
-    public int FactoryAbiVersion { get; init; } = 1;
 
     /// <summary>
     /// The projected solid-brush interface, present only when a member marshals as
@@ -19,7 +18,6 @@ public sealed partial class ProjectionIr
     /// </summary>
     public string? BrushInterfaceName { get; init; }
     public string? BrushInterfaceIid { get; init; }
-    public int BrushAbiVersion { get; init; } = 1;
 
     /// <summary>
     /// The projected gradient-brush capability interfaces (version 17), present only when a
@@ -39,7 +37,6 @@ public sealed partial class ProjectionIr
     /// </summary>
     public string? CommandInterfaceName { get; init; }
     public string? CommandInterfaceIid { get; init; }
-    public int CommandAbiVersion { get; init; } = 1;
 
     /// <summary>
     /// The CanExecuteChanged handler interface paired with the projected command,

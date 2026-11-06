@@ -7,7 +7,7 @@ using Avalonia.Threading;
 
 namespace Avalonia.Host.Com;
 
-public partial class AvnApplication : IAvnApplication13
+public partial class AvnApplication
 {
     public int SetMainView(IAvnControl? view)
     {

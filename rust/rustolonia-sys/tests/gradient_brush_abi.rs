@@ -3,9 +3,8 @@
 //! Gradients follow the sibling-interface pattern rather than widening `IAvnBrush`:
 //! `IAvnGradientBrush` carries the members every gradient shares, and
 //! `IAvnLinearGradientBrush`/`IAvnRadialGradientBrush` each derive from it and add their own
-//! geometry. `IAvnBrush` itself keeps the IID and vtable it published with in the solid-brush
-//! wave (see `brush_abi.rs`); only `IAvnControlFactory` republishes, to gain the two new
-//! creator slots.
+//! geometry. `IAvnBrush` itself is unchanged (see `brush_abi.rs`); `IAvnControlFactory` gains
+//! the two new creator slots.
 
 use rustolonia_sys::{
     I_AVN_BRUSH_IID, I_AVN_GRADIENT_BRUSH_IID, I_AVN_LINEAR_GRADIENT_BRUSH_IID,
@@ -23,7 +22,6 @@ fn gradient_brush_publishes_the_shared_read_only_members() {
         "*get_stop_count)(IAvnGradientBrush* self, int32_t* value)",
         "*get_stops)(IAvnGradientBrush* self, AvnGradientStopBuffer* value)",
         "#define I_AVN_GRADIENT_BRUSH_VTABLE_SLOTS 7",
-        "#define I_AVN_GRADIENT_BRUSH_ABI_VERSION 1",
     ] {
         assert!(HEADER.contains(expected), "header is missing `{expected}`");
     }
@@ -36,7 +34,6 @@ fn linear_gradient_brush_adds_its_start_and_end_point() {
         "*get_start_point)(IAvnLinearGradientBrush* self, AvnRelativePoint* value)",
         "*get_end_point)(IAvnLinearGradientBrush* self, AvnRelativePoint* value)",
         "#define I_AVN_LINEAR_GRADIENT_BRUSH_VTABLE_SLOTS 9",
-        "#define I_AVN_LINEAR_GRADIENT_BRUSH_ABI_VERSION 1",
     ] {
         assert!(HEADER.contains(expected), "header is missing `{expected}`");
     }
@@ -51,7 +48,6 @@ fn radial_gradient_brush_adds_its_ellipse_geometry() {
         "*get_radius_x)(IAvnRadialGradientBrush* self, AvnRelativeScalar* value)",
         "*get_radius_y)(IAvnRadialGradientBrush* self, AvnRelativeScalar* value)",
         "#define I_AVN_RADIAL_GRADIENT_BRUSH_VTABLE_SLOTS 11",
-        "#define I_AVN_RADIAL_GRADIENT_BRUSH_ABI_VERSION 1",
     ] {
         assert!(HEADER.contains(expected), "header is missing `{expected}`");
     }

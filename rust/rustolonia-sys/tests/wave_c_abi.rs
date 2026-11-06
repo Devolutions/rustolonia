@@ -1,10 +1,8 @@
 //! ABI guarantees for the wave C layout panels: `WrapPanel`, `UniformGrid`,
 //! `RelativePanel`, `Viewbox`, `Thumb` and `GridSplitter`.
 //!
-//! Wave C only *adds* interfaces. Nothing above or beside the new types gained a slot, so every
-//! interface that shipped before keeps the exact IID it last published and the six new ones
-//! publish at version 1. The one thing that does move is the factory, which gains a creator per
-//! constructible wave C type plus `get_relative_panel_statics`.
+//! Wave C only *adds* interfaces; the factory gains a creator per constructible wave C type plus
+//! `get_relative_panel_statics`.
 
 use rustolonia_sys::{
     I_AVN_CONTROL_IID, I_AVN_GRID_SPLITTER_IID, I_AVN_PANEL_IID, I_AVN_RELATIVE_PANEL_IID,
@@ -23,7 +21,6 @@ fn wrap_panel_carries_spacing_orientation_and_item_size() {
         "*set_items_alignment)(IAvnWrapPanel* self, int32_t value)",
         "*set_item_width)(IAvnWrapPanel* self, double value)",
         "*set_item_height)(IAvnWrapPanel* self, double value)",
-        "#define I_AVN_WRAP_PANEL_ABI_VERSION 11",
     ] {
         assert!(HEADER.contains(expected), "header is missing `{expected}`");
     }
@@ -35,7 +32,6 @@ fn relative_panel_exposes_bool_align_with_panel_attached_properties_only() {
         "*set_align_left_with_panel)(IAvnRelativePanelStatics* self, IAvnControl* target, int32_t value)",
         "*set_align_top_with_panel)(IAvnRelativePanelStatics* self, IAvnControl* target, int32_t value)",
         "*get_relative_panel_statics)(IAvnControlFactory* self, IAvnRelativePanelStatics** value)",
-        "#define I_AVN_RELATIVE_PANEL_STATICS_ABI_VERSION 1",
     ] {
         assert!(HEADER.contains(expected), "header is missing `{expected}`");
     }
@@ -72,7 +68,6 @@ fn viewbox_child_is_a_control_and_grid_splitter_sits_on_thumb() {
         "*advise_drag_delta)(IAvnThumb* self, IAvnThumbDragDeltaHandler* handler, int64_t* subscription_id)",
         "*create_thumb)(IAvnControlFactory* self, IAvnThumb** value)",
         "*create_grid_splitter)(IAvnControlFactory* self, IAvnGridSplitter** value)",
-        "#define I_AVN_CONTROL_FACTORY_ABI_VERSION 14",
     ] {
         assert!(HEADER.contains(expected), "header is missing `{expected}`");
     }
@@ -81,26 +76,6 @@ fn viewbox_child_is_a_control_and_grid_splitter_sits_on_thumb() {
         !HEADER.contains("set_preview_content"),
         "ITemplate has no ABI shape"
     );
-}
-
-#[test]
-fn wave_c_interfaces_publish_abi_version_one_and_nothing_else_moved() {
-    for expected in [
-        "#define I_AVN_WRAP_PANEL_ABI_VERSION 11",
-        "#define I_AVN_UNIFORM_GRID_ABI_VERSION 11",
-        "#define I_AVN_RELATIVE_PANEL_ABI_VERSION 11",
-        "#define I_AVN_VIEWBOX_ABI_VERSION 11",
-        "#define I_AVN_THUMB_ABI_VERSION 13",
-        "#define I_AVN_GRID_SPLITTER_ABI_VERSION 13",
-        "#define I_AVN_AVALONIA_OBJECT_ABI_VERSION 2",
-        "#define I_AVN_CONTROL_ABI_VERSION 11",
-        "#define I_AVN_PANEL_ABI_VERSION 14",
-        "#define I_AVN_TEMPLATED_CONTROL_ABI_VERSION 15",
-        "#define I_AVN_CONTENT_CONTROL_ABI_VERSION 16",
-        "#define I_AVN_FLYOUT_ABI_VERSION 4",
-    ] {
-        assert!(HEADER.contains(expected), "header is missing `{expected}`");
-    }
 }
 
 #[test]

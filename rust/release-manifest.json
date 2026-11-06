@@ -26,9 +26,8 @@
     }
   ],
   "schemas": {
-    "projectionIr": 17,
+    "projectionIr": 18,
     "viewModelIr": 5,
-    "abiBaseline": 3,
     "consumerAppManifest": 1
   }
 }

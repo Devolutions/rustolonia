@@ -58,8 +58,7 @@ Avalonia uses it for the running-process name, application-menu title and
 and packaged app metadata (`CFBundleName` / `CFBundleDisplayName`) remain
 separate; set those consistently when packaging. Omitting the option preserves
 Avalonia's default name. The name must not be empty, whitespace-only or contain
-NUL. The call is fallible: older hosts without the naming capability report
-`E_NOINTERFACE`, and Android/iOS hosts report `E_NOTIMPL` because their platform
+NUL. The call is fallible: Android/iOS hosts report `E_NOTIMPL` because their platform
 initializes Avalonia before Rust starts. Desktop, browser and Linux DRM hosts
 accept the option before `run`; do not call it inside the startup callback.
 

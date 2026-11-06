@@ -43,15 +43,13 @@ mod storage;
 mod value_converter;
 
 pub use app_handler::{app_handler, IAvnAppHandler};
-pub use application::{IAvnApplication, IAvnResourceValue};
-pub use application_name::IAvnApplication14;
+pub use application::{IAvnApplication, IAvnResourceValue, IAVN_APPLICATION_METHOD_COUNT};
 pub use async_completion::{async_completion, AsyncCompletionArgs, IAvnAsyncCompletion};
 pub use async_populator::{async_populator, AsyncPopulator, PopulateCompletion};
-pub use clipboard::{IAvnApplication4, IAvnClipboardData, IAVN_APPLICATION4_METHOD_COUNT};
+pub use clipboard::IAvnClipboardData;
 pub use com::{ComInterface, ComPtr, IUnknown};
 pub use command::{command, Command};
 pub use data_template::{data_template, DataTemplate};
-pub use dialogs::IAvnApplication5;
 pub use dispatcher::{action, IAvnAction, IAvnDispatcher};
 pub use echo::IAvnEcho;
 pub use factory::IAvnActivationFactory;
@@ -63,40 +61,34 @@ pub use hresult::{
     E_NOTIMPL, E_POINTER, S_OK,
 };
 pub use native_menu::{
-    native_menu_handler, IAvnApplication15, IAvnNativeMenu, IAvnNativeMenuHandler,
-    IAVN_APPLICATION15_METHOD_COUNT, IAVN_NATIVE_MENU_HANDLER_METHOD_COUNT,
-    IAVN_NATIVE_MENU_METHOD_COUNT, NATIVE_MENU_FLAG_CHECKED, NATIVE_MENU_FLAG_DISABLED,
-    NATIVE_MENU_FLAG_HIDDEN, NATIVE_MENU_KIND_CHECK_BOX, NATIVE_MENU_KIND_COMMAND,
-    NATIVE_MENU_KIND_RADIO, NATIVE_MENU_KIND_SEPARATOR, NATIVE_MENU_KIND_SUBMENU,
+    native_menu_handler, IAvnNativeMenu, IAvnNativeMenuHandler,
+    IAVN_NATIVE_MENU_HANDLER_METHOD_COUNT, IAVN_NATIVE_MENU_METHOD_COUNT, NATIVE_MENU_FLAG_CHECKED,
+    NATIVE_MENU_FLAG_DISABLED, NATIVE_MENU_FLAG_HIDDEN, NATIVE_MENU_KIND_CHECK_BOX,
+    NATIVE_MENU_KIND_COMMAND, NATIVE_MENU_KIND_RADIO, NATIVE_MENU_KIND_SEPARATOR,
+    NATIVE_MENU_KIND_SUBMENU,
 };
 pub use notification::{notification, Notification, NotificationSpec};
 pub use pixel_surface::{
-    pixel_surface_handler, tray_handler, IAvnApplication7, IAvnPixelSurface,
-    IAvnPixelSurfaceHandler, IAvnShellTray, IAvnShellTrayHandler, PixelSurfaceInput, TrayInput,
-    IAVN_APPLICATION7_METHOD_COUNT, IAVN_PIXEL_SURFACE_HANDLER_METHOD_COUNT,
+    pixel_surface_handler, tray_handler, IAvnPixelSurface, IAvnPixelSurfaceHandler, IAvnShellTray,
+    IAvnShellTrayHandler, PixelSurfaceInput, TrayInput, IAVN_PIXEL_SURFACE_HANDLER_METHOD_COUNT,
     IAVN_PIXEL_SURFACE_METHOD_COUNT, IAVN_SHELL_TRAY_HANDLER_METHOD_COUNT,
     IAVN_SHELL_TRAY_METHOD_COUNT,
 };
 pub use popup_placement::{popup_placement, PopupPlacement, PopupPlacementResult};
 pub use rust_vm::{
     rust_view_model, rust_view_model_with_control, rust_vm_range_batch, rust_vm_update_batch,
-    IAvnRustRangeSource, IAvnRustViewModel, IAvnRustViewModel2, IAvnRustVmRangeBatch,
-    IAvnRustVmSink, IAvnRustVmSink2, IAvnRustVmSink3, IAvnRustVmSink4, IAvnRustVmSink5,
-    IAvnRustVmUpdateBatch, IAvnRustVmUpdateBatch2, IAvnRustVmUpdateOperation, MapKey,
-    RustViewModelBeginTracked, RustViewModelCallbacks, RustViewModelControlCallbacks,
-    RustVmBatchCompletion, RustVmBatchOwnershipCommit, RustVmDroppedRange, RustVmRangeItem,
-    RustVmUpdate, RUST_VM_RANGE_FILL, RUST_VM_RANGE_INVALIDATE, RUST_VM_RANGE_RESET,
+    IAvnRustRangeSource, IAvnRustViewModel, IAvnRustVmRangeBatch, IAvnRustVmSink,
+    IAvnRustVmUpdateBatch, IAvnRustVmUpdateOperation, MapKey, RustViewModelBeginTracked,
+    RustViewModelCallbacks, RustViewModelControlCallbacks, RustVmBatchCompletion,
+    RustVmBatchOwnershipCommit, RustVmDroppedRange, RustVmRangeItem, RustVmUpdate,
+    RUST_VM_RANGE_FILL, RUST_VM_RANGE_INVALIDATE, RUST_VM_RANGE_RESET,
+    RUST_VM_SINK_NUMBER_COLLECTIONS, RUST_VM_SINK_RICHER_SHAPES,
 };
 pub use selectors::{item_selector, text_selector, ItemSelector, TextSelector};
-pub use shell::{
-    IAvnApplication6, IAvnApplication8, IAvnApplication9, IAVN_APPLICATION6_METHOD_COUNT,
-    IAVN_APPLICATION8_METHOD_COUNT,
-};
 pub use storage::{
     activation_handler, file_drop_handler, storage_completion, ActivationArgs, FileDropArgs,
-    IAvnActivationHandler, IAvnApplication3, IAvnFileDropHandler, IAvnFilePickerOptions,
-    IAvnStorageCompletion, IAvnStorageItem, IAvnStorageItemList, StorageCompletionArgs,
-    StorageItemData,
+    IAvnActivationHandler, IAvnFileDropHandler, IAvnFilePickerOptions, IAvnStorageCompletion,
+    IAvnStorageItem, IAvnStorageItemList, StorageCompletionArgs, StorageItemData,
 };
 pub use value_converter::{
     rust_value_converter_provider, ConversionDirection, ConvertFn, ConverterAbiError,
@@ -109,20 +101,15 @@ mod file_drag;
 mod main_view;
 mod popup_gate;
 mod termination;
-pub use file_drag::{file_drag_handler, FileDragEvent, IAvnApplication12, IAvnFileDragHandler};
-pub use main_view::IAvnApplication13;
-pub use popup_gate::{
-    native_popup_handler, IAvnApplication10, IAvnNativePopupHandler, NativePopupEvent,
-};
+pub use file_drag::{file_drag_handler, FileDragEvent, IAvnFileDragHandler};
+pub use popup_gate::{native_popup_handler, IAvnNativePopupHandler, NativePopupEvent};
 use std::ffi::c_void;
 #[cfg(not(target_os = "emscripten"))]
 use std::mem::ManuallyDrop;
 use std::path::Path;
 use std::ptr;
 use std::sync::{Mutex, OnceLock};
-pub use termination::{
-    termination_handler, IAvnApplication11, IAvnTerminationHandler, TerminationRequest,
-};
+pub use termination::{termination_handler, IAvnTerminationHandler, TerminationRequest};
 
 pub type GetActivationFactoryFn = unsafe extern "C" fn(*mut *mut c_void) -> i32;
 pub type FreeFn = unsafe extern "C" fn(*mut c_void);

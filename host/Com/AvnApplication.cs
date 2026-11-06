@@ -15,7 +15,7 @@ using Avalonia.Threading;
 namespace Avalonia.Host.Com;
 
 [GeneratedComClass]
-public partial class AvnApplication : IAvnApplication, IAvnApplication2
+public partial class AvnApplication : IAvnApplication
 {
 #if AVN_HOST_BROWSER || AVN_HOST_ANDROID || AVN_HOST_LINUX_DRM
     // Single-view hosts never set the desktop lifetime.
@@ -126,12 +126,12 @@ public partial class AvnApplication : IAvnApplication, IAvnApplication2
             using var platformThread = RustHostPlatform.EnterThread();
 
             // Startup/open-with arguments are supplied by the Rust entry point
-            // through IAvnApplication3 before Run, because a Rust executable
+            // through IAvnApplication before Run, because a Rust executable
             // owns argv and the managed host never sees it.
             var startupArguments = SnapshotStartupArguments();
             var lifetime = new ClassicDesktopStyleApplicationLifetime
             {
-                // OnLastWindowClose unless IAvnApplication6.SetShutdownMode said otherwise.
+                // OnLastWindowClose unless SetShutdownMode said otherwise.
                 ShutdownMode = _shutdownMode,
                 Args = startupArguments,
             };

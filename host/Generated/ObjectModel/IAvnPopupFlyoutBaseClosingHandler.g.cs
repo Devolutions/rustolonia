@@ -6,7 +6,7 @@ using System.Runtime.InteropServices.Marshalling;
 namespace Avalonia.Host.Com;
 
 [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16)]
-[Guid("EAE8EE53-8398-5DF1-AC68-38F30C7FC848")]
+[Guid("11A1FA12-265E-55C5-83F2-B6A11D307079")]
 public partial interface IAvnPopupFlyoutBaseClosingHandler
 {
     [PreserveSig]

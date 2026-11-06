@@ -1159,7 +1159,7 @@ public sealed class ViewModelProperty
     /// support nullability in this stage; a <see cref="ViewModelValueKind.Model"/>
     /// property is always nullable (there may be no nested view model yet).
     /// A nullable property is published outbound-only through a dedicated
-    /// "became null" transport signal (see <c>IAvnRustVmSink2.SetNull</c>);
+    /// "became null" transport signal (see <c>IAvnRustVmSink.SetNull</c>);
     /// inbound writes always carry a concrete value.
     /// </summary>
     public bool Nullable { get; init; }
