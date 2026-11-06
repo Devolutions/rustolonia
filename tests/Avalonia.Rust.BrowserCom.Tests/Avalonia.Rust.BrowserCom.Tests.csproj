@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <EnableBrowserCom>true</EnableBrowserCom>
+    <BrowserComHostOnlyFamilies>BrowserCom.Testing.IHostOnly</BrowserComHostOnlyFamilies>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Avalonia.Rust.BrowserCom.TestFixtures\Avalonia.Rust.BrowserCom.TestFixtures.csproj" />

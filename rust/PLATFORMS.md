@@ -820,9 +820,13 @@ reflection is not part of the browser app.
 The ABI seen by Rust is identical on both platforms. Optional casts between
 versioned interfaces continue to follow `QueryInterface`: the generator emits
 a proxy for each possible combination of supported interfaces in a family.
-This has an exponential build-time and size cost (the 13-interface application
-family needs 8,191 proxy types); families are currently limited to 16
-interfaces and produce a build error beyond that limit. Projects that implement
+This has an exponential build-time and size cost (a 13-interface family needs
+8,191 proxy types, and each extra version doubles it); families are limited to
+12 interfaces and produce a build error beyond that limit. Families only
+managed code implements, such as the application family, are listed in
+`BrowserComHostOnlyFamilies` (`host/Browser/Avalonia.Host.Browser.csproj`):
+their objects return to managed code as CCWs and unwrap, so they get no proxy
+types and wrapping a native object of such a family throws. Projects that implement
 or consume Rustolonia COM interfaces must multi-target
 `$(AvsCurrentBrowserTargetFramework)` and import `BrowserCom.targets`, so their
 registrations and all referenced interface families are available at build time.

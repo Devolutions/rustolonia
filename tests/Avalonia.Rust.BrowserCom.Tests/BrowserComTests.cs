@@ -20,6 +20,8 @@ public unsafe class BrowserComTests
     private const int LocalDerived = 32;
     private const int Nested = 64;
     private const int Calculator4 = 128;
+    private const int HostOnly = 256;
+    private static readonly Guid s_hostOnly = new("52863C1B-A5D6-405A-B7C5-20F1CBAD0109");
     private static readonly Guid s_unknown = new("00000000-0000-0000-C000-000000000046");
     private static readonly nint s_vtable = CreateVtable();
 
@@ -291,6 +293,35 @@ public unsafe class BrowserComTests
         }
     }
 
+    [Fact]
+    public void Host_only_family_unwraps_managed_objects_and_rejects_native_ones()
+    {
+        var target = new HostOnlyService();
+        var unknown = ComRuntime.GetOrCreateComInterfaceForObject(target);
+        var bridge = CreateBridge(target, HostOnly);
+        try
+        {
+            Assert.Equal(0, ComRuntime.QueryInterface(unknown, s_hostOnly, out var hostOnly));
+            try
+            {
+                Assert.Same(target, ComRuntime.GetOrCreateObjectForComInstance(hostOnly, typeof(IHostOnly)));
+            }
+            finally
+            {
+                ComRuntime.Release(hostOnly);
+            }
+
+            var error = Assert.Throws<InvalidOperationException>(
+                () => ComRuntime.GetOrCreateObjectForComInstance((nint)bridge, typeof(IHostOnly)));
+            Assert.Contains("BrowserComHostOnlyFamilies", error.Message);
+        }
+        finally
+        {
+            Assert.Equal(0u, ComRuntime.Release((nint)bridge));
+            Assert.Equal(0u, ComRuntime.Release(unknown));
+        }
+    }
+
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static WeakReference UseProxy(nint bridge)
     {
@@ -337,6 +368,7 @@ public unsafe class BrowserComTests
             : *iid == InterfaceIds.Derived ? Derived
             : *iid == InterfaceIds.LocalDerived ? LocalDerived
             : *iid == InterfaceIds.Nested ? Nested
+            : *iid == s_hostOnly ? HostOnly
             : 0;
         if ((self->Supported & flag) != 0)
             return ComRuntime.QueryInterface(self->Inner, *iid, out *result);

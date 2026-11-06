@@ -39,6 +39,9 @@
     <AvaloniaRustHostPlatform>Browser</AvaloniaRustHostPlatform>
     <DefineConstants>$(DefineConstants);AVN_HOST_BROWSER</DefineConstants>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <!-- Rust never implements IAvnApplication*, and each of its versions would
+         double the generated browser COM proxies (2^n subsets). -->
+    <BrowserComHostOnlyFamilies>Avalonia.Host.Com.IAvnApplication</BrowserComHostOnlyFamilies>
     <!-- Rust staticlib (.a) linked into dotnet.native.wasm; the file name must be rustolonia_app.a. -->
     <RustoloniaBrowserApp Condition="'$(RustoloniaBrowserApp)' == ''">$(MSBuildThisFileDirectory)..\..\rust\target\browser\rustolonia_app.a</RustoloniaBrowserApp>
   </PropertyGroup>

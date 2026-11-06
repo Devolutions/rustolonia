@@ -27,7 +27,9 @@ public sealed class BrowserComGenerator : ISourceGenerator
     private const string BrowserAssemblyAttribute = "Avalonia.Rust.BrowserCom.BrowserComAssemblyAttribute";
     private const string OriginalProvider = "global::System.Runtime.InteropServices.Marshalling.IUnmanagedVirtualMethodTableProvider";
     private const string BrowserProvider = "global::Avalonia.Rust.BrowserCom.IComVirtualMethodTableProvider";
-    private const int MaximumFamilySize = 16;
+    // A family's proxies cover every subset of its interfaces (2^n types), so
+    // compile time and memory double with each member.
+    private const int MaximumFamilySize = 12;
     private static readonly object s_loadGate = new();
     private static readonly DiagnosticDescriptor s_failure = new(
         "BRCOM001",
@@ -145,7 +147,22 @@ public sealed class BrowserComGenerator : ISourceGenerator
 
         context.AddSource(
             "BrowserCom.Registrations.g.cs",
-            SourceText.From(GenerateRegistrations(context.Compilation, interfaces, classes, referencedRegistrations), Encoding.UTF8));
+            SourceText.From(GenerateRegistrations(context.Compilation, interfaces, classes, referencedRegistrations, HostOnlyFamilies(context)), Encoding.UTF8));
+    }
+
+    /// <summary>
+    /// Families listed in <c>BrowserComHostOnlyFamilies</c>: implemented only by
+    /// managed objects, which reach managed code again as CCWs and are unwrapped,
+    /// so they never need a native-object proxy.
+    /// </summary>
+    private static HashSet<string> HostOnlyFamilies(GeneratorExecutionContext context)
+    {
+        context.AnalyzerConfigOptions.GlobalOptions.TryGetValue("build_property.BrowserComHostOnlyFamilies", out var value);
+        return new HashSet<string>(
+            (value ?? "").Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(static family => family.Trim())
+                .Where(static family => family.Length != 0),
+            StringComparer.Ordinal);
     }
 
     private static ISourceGenerator[] LoadSdkGenerators(GeneratorExecutionContext context)
@@ -317,7 +334,8 @@ public sealed class BrowserComGenerator : ISourceGenerator
         Compilation compilation,
         List<InterfaceInfo> interfaces,
         List<ClassInfo> classes,
-        List<string> referencedRegistrations)
+        List<string> referencedRegistrations,
+        HashSet<string> hostOnlyFamilies)
     {
         var registrationName = "__RustoloniaBrowserComRegistration_" + StableId(compilation.AssemblyName ?? "");
         var builder = new StringBuilder();
@@ -352,8 +370,8 @@ public sealed class BrowserComGenerator : ISourceGenerator
             .ToArray();
         foreach (var family in families)
         {
-            if (family.Length > MaximumFamilySize)
-                throw new InvalidOperationException($"Browser COM family '{family[0].Family}' has {family.Length} interfaces; the static proxy generator supports at most {MaximumFamilySize}.");
+            if (family.Length > MaximumFamilySize && !hostOnlyFamilies.Contains(family[0].Family))
+                throw new InvalidOperationException($"Browser COM family '{family[0].Family}' has {family.Length} interfaces; the static proxy generator supports at most {MaximumFamilySize}. List it in BrowserComHostOnlyFamilies if native code never implements it.");
             var id = StableId(family[0].Family);
             builder.Append("        global::Avalonia.Rust.BrowserCom.ComRuntime.RegisterFamily(")
                 .Append(Literal(family[0].Family)).Append(", new global::System.Type[] { ");
@@ -366,7 +384,12 @@ public sealed class BrowserComGenerator : ISourceGenerator
         builder.AppendLine("    internal static void Initialize() => Touch();");
         builder.AppendLine("    public static void Touch() { }");
         foreach (var family in families)
-            AppendFamily(builder, family);
+        {
+            if (hostOnlyFamilies.Contains(family[0].Family))
+                AppendHostOnlyFamily(builder, family);
+            else
+                AppendFamily(builder, family);
+        }
         builder.AppendLine("}");
         return builder.ToString();
     }
@@ -393,6 +416,14 @@ public sealed class BrowserComGenerator : ISourceGenerator
             }
             builder.AppendLine(" { }");
         }
+    }
+
+    private static void AppendHostOnlyFamily(StringBuilder builder, InterfaceInfo[] family)
+    {
+        var message = $"Browser COM family '{family[0].Family}' is implemented only by managed objects (BrowserComHostOnlyFamilies); native objects cannot be wrapped.";
+        builder.Append("    private static global::Avalonia.Rust.BrowserCom.ComObjectBase Create_")
+            .Append(StableId(family[0].Family)).Append("(ulong mask) => throw new global::System.InvalidOperationException(")
+            .Append(Literal(message)).AppendLine(");");
     }
 
     private static string Literal(string value) => SymbolDisplay.FormatLiteral(value, quote: true);
