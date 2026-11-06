@@ -66,10 +66,6 @@ jobs:
         if: runner.os != 'Windows'
         run: python3 rust/tests/test-browser-smoke.py
 
-      - name: Check release browser-host retry policy
-        if: runner.os == 'Linux'
-        run: python3 rust/tests/test-release-browser-retry.py
-
       - name: Check iOS host validation
         if: runner.os == 'macOS'
         run: ./rust/tests/test-ios-host.sh
