@@ -116,6 +116,14 @@ and keys to a Rust closure, for canvases, overlays and custom charts (see
 menu Rust builds, with no schema compiled into the host. Both need a host with
 the stage 34 capability.
 
+`native_menu::NativeMenu` is Avalonia's
+[`NativeMenu`](https://docs.avaloniaui.net/controls/menus/nativemenu) built from
+Rust: window menus (the macOS menu bar, or an in-window `NativeMenuBar`
+elsewhere) and the macOS application menu, with shortcuts and check/radio
+items whose state Rust owns (see `examples/native_menu.rs` and
+[MENUS.md](https://github.com/Devolutions/rustolonia/blob/master/rust/MENUS.md#code-first-native-menus)). It needs a host with the
+`IAvnApplication15` capability.
+
 Application view-model schemas are owned by the consuming crate. In this
 repository the flagship sample is [`../avalonia-sample`](../avalonia-sample),
 and [`../templates/avalonia-app`](../templates/avalonia-app) (or

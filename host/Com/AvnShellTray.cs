@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices.Marshalling;
 using Avalonia.Controls;
 using Avalonia.Rust;
@@ -39,16 +38,11 @@ public partial class AvnApplication
 [GeneratedComClass]
 internal sealed partial class AvnShellTray : IAvnShellTray, IDisposable
 {
-    private const int KindCommand = 0;
-    private const int KindCheckBox = 1;
-    private const int KindSeparator = 2;
-    private const int KindSubmenu = 3;
-    private const int FlagChecked = 1;
-    private const int FlagDisabled = 2;
+    // The published stage 34 contract: kinds 0-3 and flag bits 0-1 only.
+    private const int TrayFlags = NativeMenuTree.FlagChecked | NativeMenuTree.FlagDisabled;
 
     private readonly Application _application;
-    private readonly Dictionary<int, NativeMenuItemBase> _items = new();
-    private readonly NativeMenu _menu = new();
+    private readonly NativeMenuTree _menu;
     private IAvnShellTrayHandler? _handler;
     private TrayIcon? _icon;
 
@@ -56,8 +50,9 @@ internal sealed partial class AvnShellTray : IAvnShellTray, IDisposable
     {
         _application = application;
         _handler = handler;
+        _menu = new NativeMenuTree(id => _handler?.OnMenuItem(id));
         // Avalonia.Native's UTF-8 tooltip marshaller does not accept null.
-        _icon = new TrayIcon { Menu = _menu, ToolTipText = string.Empty, IsVisible = true };
+        _icon = new TrayIcon { Menu = _menu.Menu, ToolTipText = string.Empty, IsVisible = true };
         _icon.Clicked += (_, _) => _handler?.OnActivate();
         var icons = TrayIcon.GetIcons(application);
         if (icons is null)
@@ -74,67 +69,17 @@ internal sealed partial class AvnShellTray : IAvnShellTray, IDisposable
 
     public int SetVisible(int visible) => Run(icon => icon.IsVisible = visible != 0);
 
-    public int ClearMenu() => Run(_ =>
-    {
-        _menu.Items.Clear();
-        _items.Clear();
-    });
+    public int ClearMenu() => Run(_ => _menu.Clear());
 
     public int AddMenuItem(int parent, int id, int kind, string? header, int flags)
     {
-        if (id <= 0 || kind is < KindCommand or > KindSubmenu)
+        if (id <= 0 || kind is < NativeMenuTree.KindCommand or > NativeMenuTree.KindSubmenu)
             return HResults.E_INVALIDARG;
-        return Run(_ =>
-        {
-            if (_items.ContainsKey(id))
-                throw new ArgumentException($"Menu item {id} already exists.", nameof(id));
-            NativeMenu target;
-            if (parent == 0)
-                target = _menu;
-            else if (_items.TryGetValue(parent, out var owner) && owner is NativeMenuItem { Menu: { } submenu })
-                target = submenu;
-            else
-                throw new ArgumentException($"Menu item {parent} is not a submenu.", nameof(parent));
-
-            NativeMenuItemBase item;
-            if (kind == KindSeparator)
-            {
-                item = new NativeMenuItemSeparator();
-            }
-            else
-            {
-                var menuItem = new NativeMenuItem(header ?? string.Empty);
-                if (kind == KindSubmenu)
-                    menuItem.Menu = new NativeMenu();
-                else
-                    menuItem.Click += (_, _) => _handler?.OnMenuItem(id);
-                if (kind == KindCheckBox)
-                    menuItem.ToggleType = MenuItemToggleType.CheckBox;
-                Apply(menuItem, flags);
-                item = menuItem;
-            }
-            target.Items.Add(item);
-            _items.Add(id, item);
-        });
+        return Run(_ => _menu.Add(parent, id, kind, header, null, flags & TrayFlags));
     }
 
-    public int UpdateMenuItem(int id, string? header, int flags) => Run(_ =>
-    {
-        if (!_items.TryGetValue(id, out var item))
-            throw new ArgumentException($"Menu item {id} does not exist.", nameof(id));
-        if (item is NativeMenuItem menuItem)
-        {
-            if (header is not null)
-                menuItem.Header = header;
-            Apply(menuItem, flags);
-        }
-    });
-
-    private static void Apply(NativeMenuItem item, int flags)
-    {
-        item.IsChecked = (flags & FlagChecked) != 0;
-        item.IsEnabled = (flags & FlagDisabled) == 0;
-    }
+    public int UpdateMenuItem(int id, string? header, int flags) =>
+        Run(_ => _menu.Update(id, header, flags & TrayFlags));
 
     public int Remove() => Run(_ => Dispose());
 

@@ -3,7 +3,8 @@
 //! Menus themselves are presentation: the declared menu model is projected into
 //! generated managed factories that build real Avalonia `NativeMenu`,
 //! `ContextMenu` and `KeyBinding` objects bound to already generated commands
-//! and properties. Nothing about a menu crosses the ABI.
+//! and properties. Nothing about a schema menu crosses the ABI; code-first
+//! menus built from Rust live in [`crate::native_menu`].
 //!
 //! What *is* state, and therefore lives here, is the recent-file list. It is a
 //! most-recently-used list of stage 29 storage URIs - the only member a storage

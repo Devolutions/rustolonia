@@ -6,6 +6,7 @@ pub mod clipboard;
 pub mod data_shapes;
 pub mod ios;
 pub mod menu;
+pub mod native_menu;
 pub mod pixel_surface;
 pub mod reactive;
 mod runtime;
@@ -20,6 +21,7 @@ pub use clipboard::{ClipboardCapabilities, ClipboardData, ClipboardFilesOperatio
 pub use data_shapes::{CancellationToken, MapKey, RangeBatch, RangeRequest};
 pub use generated::*;
 pub use menu::{RecentFileList, RecentFilesChange};
+pub use native_menu::{MenuItemState, NativeMenu, NativeMenuItem, NativeMenuItemKind};
 pub use pixel_surface::{PixelSurface, SurfaceInput};
 pub use reactive::{
     provide_context, use_context, Effect, Memo, NodeRef, ReactiveScope, Resource, ResourceState,

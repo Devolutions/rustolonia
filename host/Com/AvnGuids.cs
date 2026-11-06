@@ -58,4 +58,11 @@ internal static class AvnGuids
     public const string IAvnFileDragHandler = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DA7";
     public const string IAvnApplication13 = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DA8";
     public const string IAvnApplication14 = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DA9";
+
+    // Code-first native menus: Rust-built window and application menus.
+    // Another separately versioned capability; the tray's published
+    // IAvnShellTray is unchanged.
+    public const string IAvnApplication15 = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DAA";
+    public const string IAvnNativeMenu = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DAB";
+    public const string IAvnNativeMenuHandler = "6B2E8F10-4C91-4E3A-9A77-1F0C2B3A4DAC";
 }

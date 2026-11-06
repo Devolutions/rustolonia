@@ -262,6 +262,43 @@ it. Two additive changes fix it:
 mode and to interactive resizing, so the schema's declared `minWidth` is now
 honoured by compiled AXAML instead of being metadata-only.
 
+## Code-first native menus
+
+Apps without a view-model schema build the same Avalonia
+[`NativeMenu`](https://docs.avaloniaui.net/controls/menus/nativemenu) from Rust
+through the optional `IAvnApplication15` capability (`examples/native_menu.rs`).
+Like `ShellTray`, Rust numbers the items and receives one callback per click;
+no schema is compiled into the host.
+
+```rust
+let menu = scope.create_native_menu(move |id| { /* dispatch on id */ Ok(()) })?;
+menu.set_items(&[NativeMenuItem::submenu("File", vec![
+    NativeMenuItem::command(OPEN, "Open…").gesture("Primary+O"),
+    NativeMenuItem::separator(),
+    NativeMenuItem::check(WRAP, "Word wrap").checked(true),
+])])?;
+scope.set_window_menu(&window, Some(&menu))?;      // the window's menu bar
+scope.set_application_menu(Some(&about_menu))?;    // macOS application menu
+dock.children()?.add(scope.create_native_menu_bar()?)?; // in-window bar elsewhere
+```
+
+- **Ids** are app-chosen, in `1..2^30`; separators and submenus take none. `Primary` in a gesture is
+  Cmd on macOS/iOS and Ctrl elsewhere.
+- **State** stays in Rust: clicking a check or radio item reports the click
+  without toggling it; write the new state back with `update_item`. Disabled
+  or hidden items (or items under a disabled/hidden submenu) never invoke.
+- **Window menus** are shown on macOS as the menu bar while the window is key,
+  and elsewhere by a `NativeMenuBar` placed in the window, which hides itself
+  when the platform exports the menu (`is_native_menu_exported`). Shortcuts
+  are always installed as window key bindings too; on macOS a shortcut still
+  fires once. One menu can serve several windows; switching or removing a
+  window's menu is supported (macOS keeps a stable per-window menu and swaps
+  its items, because its exporter binds to the first menu it exports).
+- **The application menu** is the macOS app menu: its items replace Avalonia's
+  default "About Avalonia" item, ahead of Services/Hide/Quit; `None` restores
+  the default. Elsewhere it is only set as the application's `NativeMenu`.
+  A menu cannot be both the application menu and a window menu.
+
 ## Honest platform limits
 
 - **Native menu bar**: only macOS has one. Elsewhere the same `NativeMenu` is
