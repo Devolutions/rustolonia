@@ -24,6 +24,10 @@
                       OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all"
                       GlobalPropertiesToRemove="PublishAot;PublishTrimmed;SelfContained;RuntimeIdentifier;RuntimeFrameworkVersion" />
     <CompilerVisibleProperty Include="BrowserComSdkGeneratorPath" />
+    <!-- Semicolon-separated families (interface name without its version
+         digits, e.g. Avalonia.Host.Com.IAvnApplication) that only managed
+         objects implement; they get no native-object proxies. -->
+    <CompilerVisibleProperty Include="BrowserComHostOnlyFamilies" />
   </ItemGroup>
   <Target Name="SetBrowserComSdkGeneratorPath"
           BeforeTargets="GenerateMSBuildEditorConfigFileCore"
