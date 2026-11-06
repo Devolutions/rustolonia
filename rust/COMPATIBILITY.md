@@ -162,6 +162,14 @@ process name alone otherwise leaves its native item/submenu titles empty.
 This host/crate addition must ship in a matching lockstep
 release before consumers can remove native naming workarounds.
 
+`IAvnApplication15` adds code-first native menus with new IIDs
+(`IAvnApplication15` `…4DAA`, `IAvnNativeMenu` `…4DAB` and the Rust-implemented
+`IAvnNativeMenuHandler` `…4DAC`): create a Rust-numbered `NativeMenu`, set it
+as a window's or the application's menu, query `IsNativeMenuExported`, and
+create a `NativeMenuBar` control. It is an optional capability; hosts that
+predate it report `E_NOINTERFACE` from `AppContext::create_native_menu` and
+the other native-menu calls. No existing vtable changes.
+
 The frozen released C ABI snapshot is [`abi-baseline.json`](abi-baseline.json)
 (`kind: released`, schema version 3). It records producer pin, ABI typedef and
 macro expansions (`AvnHResult` → `int32_t`, `AVN_CALL` → `__stdcall` on

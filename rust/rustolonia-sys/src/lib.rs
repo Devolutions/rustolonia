@@ -28,6 +28,7 @@ mod echo;
 mod event_callback;
 mod factory;
 mod filters;
+mod native_menu;
 mod notification;
 mod pixel_surface;
 mod popup_placement;
@@ -60,6 +61,13 @@ pub use guid::Guid;
 pub use hresult::{
     Error, Result, AVN_E_FIXTURE, AVN_E_NONSOLIDBRUSH, E_FAIL, E_INVALIDARG, E_NOINTERFACE,
     E_NOTIMPL, E_POINTER, S_OK,
+};
+pub use native_menu::{
+    native_menu_handler, IAvnApplication15, IAvnNativeMenu, IAvnNativeMenuHandler,
+    IAVN_APPLICATION15_METHOD_COUNT, IAVN_NATIVE_MENU_HANDLER_METHOD_COUNT,
+    IAVN_NATIVE_MENU_METHOD_COUNT, NATIVE_MENU_FLAG_CHECKED, NATIVE_MENU_FLAG_DISABLED,
+    NATIVE_MENU_FLAG_HIDDEN, NATIVE_MENU_KIND_CHECK_BOX, NATIVE_MENU_KIND_COMMAND,
+    NATIVE_MENU_KIND_RADIO, NATIVE_MENU_KIND_SEPARATOR, NATIVE_MENU_KIND_SUBMENU,
 };
 pub use notification::{notification, Notification, NotificationSpec};
 pub use pixel_surface::{

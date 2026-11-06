@@ -86,6 +86,7 @@ public partial class AvnApplication : IAvnApplication, IAvnApplication2
         finally
         {
             _asyncOperations.CancelAll();
+            ReleaseNativeMenus();
             ReleaseTrays();
             ReleaseDesktopFileIntegration();
         }
@@ -155,6 +156,7 @@ public partial class AvnApplication : IAvnApplication, IAvnApplication2
         }
         finally
         {
+            ReleaseNativeMenus();
             ReleaseTrays();
             ReleaseDesktopFileIntegration();
             // Avalonia.Native owns a process-static dispatcher callback. Release

@@ -519,8 +519,8 @@ flyout.subscribe_closing(|arguments| arguments.cancel = !ready_to_close())?;
 
 ## Menus as controls
 
-This is the **imperative** menu, distinct from the view-model `NativeMenu` in
-[MENUS.md](MENUS.md). A `Menu` is an `ItemsControl` whose items are real projected
+This is the **imperative** menu, distinct from the `NativeMenu` (view-model or
+code-first, via `IAvnApplication15`) in [MENUS.md](MENUS.md). A `Menu` is an `ItemsControl` whose items are real projected
 controls, built and driven from Rust:
 
 | Projected interface                 | Base                                | Members it declares |
