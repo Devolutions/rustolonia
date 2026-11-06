@@ -3,7 +3,7 @@
 Additive patches against the [Avalonia UI framework](https://github.com/AvaloniaUI/Avalonia)
 that rustolonia's NativeAOT host and projected TableView surface depend on.
 They are meant to be applied to the `avalonia-src` submodule checkout pinned at
-the upstream `12.1.3` tag (`8eeda4f6f546165b3f72e63c9f42247abb306905`) by
+the upstream `12.1.5` tag (`5825bf8c66fba0c11e67c980d8ece6444576bffa`) by
 `apply-avalonia-patches.ps1`.
 
 | Patch | Contents |
@@ -25,14 +25,14 @@ pwsh ./apply-avalonia-patches.ps1 -AvaloniaRoot ../avalonia-src -Check
 Applying is idempotent: an already-patched checkout is detected and skipped.
 
 Validated producer: the patch applies cleanly to the pinned checkout at
-`8eeda4f6f546165b3f72e63c9f42247abb306905`; the patched producer build and the
+`5825bf8c66fba0c11e67c980d8ece6444576bffa`; the patched producer build and the
 relevant `Avalonia.Controls.UnitTests` suite remain the expected baseline for
 Rustolonia's compatibility work.
 
 ## Maintenance
 
 - Track upstream stable releases: pin the submodule to an Avalonia release tag
-  (`release/X.Y` line, currently `12.1.3`), not `main`. Bump on each upstream
+  (`release/X.Y` line, currently `12.1.5`), not `main`. Bump on each upstream
   patch release, run with `-Check` first, and rebuild/re-release.
 - If a patch stops applying (typically because upstream shipped an equivalent
   change), apply with `git apply --3way`, drop the parts upstream now provides,

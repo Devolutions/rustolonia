@@ -3,14 +3,14 @@
 First-class Rust bindings for [Avalonia](https://avaloniaui.net/), projected
 over a nano-COM ABI served by a NativeAOT host. This repository contains the
 complete bindings effort; the Avalonia framework itself is consumed from the
-pinned `avalonia-src` producer submodule at upstream Avalonia `12.1.3` (commit
-`8eeda4f6f546165b3f72e63c9f42247abb306905`).
+pinned `avalonia-src` producer submodule at upstream Avalonia `12.1.5` (commit
+`5825bf8c66fba0c11e67c980d8ece6444576bffa`).
 
 ## Layout
 
 | Directory | Contents |
 |---|---|
-| `avalonia-src/` | Avalonia producer pinned to the upstream `12.1.3` tag (`8eeda4f6f546165b3f72e63c9f42247abb306905`), cloned from `AvaloniaUI/Avalonia` |
+| `avalonia-src/` | Avalonia producer pinned to the upstream `12.1.5` tag (`5825bf8c66fba0c11e67c980d8ece6444576bffa`), cloned from `AvaloniaUI/Avalonia` |
 | `avalonia-patches/` | Additive framework patches applied onto the pinned checkout (see its README + UPSTREAM.md) |
 | `rust/` | The Rust workspace: `rustolonia` (safe bindings), `rustolonia-sys` (ABI bindings), `rustolonia-bindgen` (IR to Rust generator), `rustolonia-apk` (Cargo-only Android APK packager), `avalonia-sample` (flagship sample's application-owned view-model API), templates, build scripts, and the checked-in IR |
 | `host/` | `Avalonia.Host` - the C# NativeAOT host that serves the ABI, plus its generated object model |
@@ -42,6 +42,8 @@ or `[patch.crates-io]` is needed. Rust 1.88 or newer is required. Version
 `12.1.0` is the first Rustolonia release, backed by Avalonia `12.1.3`.
 The major/minor identify the Avalonia line; the patch counts Rustolonia
 releases independently and does not identify the upstream patch.
+This checkout prepares Rustolonia `12.1.5` against Avalonia `12.1.5`; the
+matching patch numbers are coincidental.
 
 On the first build, `rustolonia-sys` downloads the prebuilt NativeAOT host for
 your target (Windows, macOS and Linux glibc, x64 and arm64) from the matching
