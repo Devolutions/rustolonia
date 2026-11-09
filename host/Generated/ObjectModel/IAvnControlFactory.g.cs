@@ -311,6 +311,9 @@ public partial interface IAvnControlFactory
     int GetRelativePanelStatics(out IAvnRelativePanelStatics? value);
 
     [PreserveSig]
+    int GetScrollViewerStatics(out IAvnScrollViewerStatics? value);
+
+    [PreserveSig]
     int GetToolTipStatics(out IAvnToolTipStatics? value);
 
     [PreserveSig]
@@ -1788,6 +1791,12 @@ public sealed partial class AvnControlFactory : IAvnControlFactory
     public int GetRelativePanelStatics(out IAvnRelativePanelStatics? value)
     {
         value = new AvnRelativePanelStatics();
+        return global::Avalonia.Host.HResults.S_OK;
+    }
+
+    public int GetScrollViewerStatics(out IAvnScrollViewerStatics? value)
+    {
+        value = new AvnScrollViewerStatics();
         return global::Avalonia.Host.HResults.S_OK;
     }
 

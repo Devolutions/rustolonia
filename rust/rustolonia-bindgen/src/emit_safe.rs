@@ -821,6 +821,7 @@ fn emit_type(
         let owner_type = &property.owner_name;
         let owner = to_snake(owner_type);
         let name = to_snake(&property.name);
+        let accessor = attached_accessor_name(property, ir);
         if property.kind == "StringUtf16" {
             let get_type = if property.is_nullable {
                 "Option<String>"
@@ -829,13 +830,13 @@ fn emit_type(
             };
             return format!(
                 "    pub fn get_{owner}_{name}(&self) -> Result<{get_type}> {{\n\
-                 \x20       {owner_type}::get_{name}(self)\n\
+                 \x20       {owner_type}::get_{accessor}(self)\n\
                  \x20   }}\n\
                  \x20   pub fn set_{owner}_{name}(&self, value: impl AsRef<str>) -> Result<()> {{\n\
-                 \x20       {owner_type}::set_{name}(self, value)\n\
+                 \x20       {owner_type}::set_{accessor}(self, value)\n\
                  \x20   }}\n\
                  \x20   pub fn {owner}_{name}(self, value: impl AsRef<str>) -> Result<Self> {{\n\
-                 \x20       {owner_type}::set_{name}(&self, value)?;\n\
+                 \x20       {owner_type}::set_{accessor}(&self, value)?;\n\
                  \x20       Ok(self)\n\
                  \x20   }}\n"
             );
@@ -877,13 +878,13 @@ fn emit_type(
         };
         format!(
             "    pub fn get_{owner}_{name}(&self) -> Result<{get_type}> {{\n\
-             \x20       {owner_type}::get_{name}(self)\n\
+             \x20       {owner_type}::get_{accessor}(self)\n\
              \x20   }}\n\
              \x20   pub fn set_{owner}_{name}(&self, value: {set_arg}) -> Result<()> {{\n\
-             \x20       {owner_type}::set_{name}(self, {set_forward})\n\
+             \x20       {owner_type}::set_{accessor}(self, {set_forward})\n\
              \x20   }}\n\
              \x20   pub fn {owner}_{name}(self, value: {set_arg}) -> Result<Self> {{\n\
-             \x20       {owner_type}::set_{name}(&self, {set_forward})?;\n\
+             \x20       {owner_type}::set_{accessor}(&self, {set_forward})?;\n\
              \x20       Ok(self)\n\
              \x20   }}\n"
         )
@@ -895,6 +896,7 @@ fn emit_type(
     ) -> String {
         let owner = to_snake(&property.owner_name);
         let name = to_snake(&property.name);
+        let accessor = attached_accessor_name(property, ir);
         if property.kind == "StringUtf16" {
             // A string attached property is owned by the caller after the get, so it is taken
             // rather than borrowed. A nullable one reports an absent value as None instead of
@@ -911,12 +913,12 @@ fn emit_type(
                 )
             };
             return format!(
-                "    pub fn get_{name}(target: &impl AsControl) -> Result<{get_type}> {{\n\
+                "    pub fn get_{accessor}(target: &impl AsControl) -> Result<{get_type}> {{\n\
                  \x20       let target = target.as_control()?;\n\
                  \x20       let value = with_factory(|factory| factory.get_{owner}_statics()?.get_{name}(&target))?;\n\
                  {get_body}\n\
                  \x20   }}\n\
-                 \x20   pub fn set_{name}(target: &impl AsControl, value: impl AsRef<str>) -> Result<()> {{\n\
+                 \x20   pub fn set_{accessor}(target: &impl AsControl, value: impl AsRef<str>) -> Result<()> {{\n\
                  \x20       let target = target.as_control()?;\n\
                  \x20       let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();\n\
                  \x20       with_factory(|factory| factory.get_{owner}_statics()?.set_{name}(&target, &value))\n\
@@ -969,18 +971,47 @@ fn emit_type(
             "value".to_string()
         };
         format!(
-            "    pub fn get_{name}(target: &impl AsControl) -> Result<{safe_type}> {{\n\
+            "    pub fn get_{accessor}(target: &impl AsControl) -> Result<{safe_type}> {{\n\
              \x20       let target = target.as_control()?;\n\
              \x20       let value = with_factory(|factory| factory.get_{owner}_statics()?.get_{name}(&target))?;\n\
              \x20       {raw_get}\n\
              \x20   }}\n\
-             \x20   pub fn set_{name}(target: &impl AsControl, value: {safe_type}) -> Result<()> {{\n\
+             \x20   pub fn set_{accessor}(target: &impl AsControl, value: {safe_type}) -> Result<()> {{\n\
              \x20       let target = target.as_control()?;\n\
              \x20       with_factory(|factory| factory.get_{owner}_statics()?.set_{name}(&target, {raw_set}))\n\
              \x20   }}\n"
         )
     }
     out
+}
+
+fn attached_accessor_name(
+    property: &crate::ir::ProjectedAttachedProperty,
+    ir: &ProjectionIr,
+) -> String {
+    let name = to_snake(&property.name);
+    let owner = format!("IAvn{}", property.owner_name);
+    let collision = ir
+        .types
+        .iter()
+        .find(|ty| ty.name == owner)
+        .is_some_and(|ty| {
+            lineage(ir, ty).iter().any(|ancestor| {
+                ancestor
+                    .properties
+                    .iter()
+                    .any(|candidate| candidate.name == property.name)
+                    || ancestor.methods.iter().any(|method| {
+                        let method = to_snake(&method.name);
+                        method == format!("get_{name}") || method == format!("set_{name}")
+                    })
+            })
+        });
+    if collision {
+        format!("attached_{name}")
+    } else {
+        name
+    }
 }
 
 fn emit_el_type(
@@ -1140,11 +1171,13 @@ fn emit_el_type(
                         safe_scalar_type(property, flags_enums)
                     };
 
-                    if property.name == "Text"
-                        && property.kind == "StringUtf16"
-                        && property.can_read
-                        && has_event("TextChanged")
-                    {
+                    let supports_two_way = supports_two_way_property(property, has_event);
+                    if supports_two_way && property.name == "Text" {
+                        let event = if has_event("TextChanging") {
+                            "text_changing"
+                        } else {
+                            "text_changed"
+                        };
                         let get_expr = if property.is_nullable {
                             "|c: &_| c.get_text().map(|v| v.unwrap_or_default())"
                         } else {
@@ -1160,16 +1193,12 @@ fn emit_el_type(
                              \x20               binding,\n\
                              \x20               |c, v| c.set_{builder}(v),\n\
                              \x20               {get_expr},\n\
-                             \x20               |c, mut cb| c.subscribe_text_changed(move |_| cb()),\n\
+                             \x20               |c, mut cb| c.subscribe_{event}(move |_| cb()),\n\
                              \x20           )\n\
                              \x20       }})\n\
                              \x20   }}\n"
                         ));
-                    } else if property.name == "IsChecked"
-                        && property.kind == "NullableBool"
-                        && property.can_read
-                        && has_event("IsCheckedChanged")
-                    {
+                    } else if supports_two_way && property.name == "IsChecked" {
                         out.push_str(&format!(
                             "    pub fn {builder}<M>(self, value: impl crate::view::IntoProp<{prop_type}, M> + 'static) -> Self {{\n\
                              \x20       let binding = value.into_prop();\n\
@@ -1185,11 +1214,7 @@ fn emit_el_type(
                              \x20       }})\n\
                              \x20   }}\n"
                         ));
-                    } else if property.name == "Value"
-                        && property.kind == "F64"
-                        && property.can_read
-                        && has_event("ValueChanged")
-                    {
+                    } else if supports_two_way && property.name == "Value" {
                         out.push_str(&format!(
                             "    pub fn {builder}<M>(self, value: impl crate::view::IntoProp<{prop_type}, M> + 'static) -> Self {{\n\
                              \x20       let binding = value.into_prop();\n\
@@ -1205,11 +1230,7 @@ fn emit_el_type(
                              \x20       }})\n\
                              \x20   }}\n"
                         ));
-                    } else if property.name == "SelectedIndex"
-                        && property.kind == "I32"
-                        && property.can_read
-                        && has_event("SelectionChanged")
-                    {
+                    } else if supports_two_way && property.name == "SelectedIndex" {
                         out.push_str(&format!(
                             "    pub fn {builder}<M>(self, value: impl crate::view::IntoProp<{prop_type}, M> + 'static) -> Self {{\n\
                              \x20       let binding = value.into_prop();\n\
@@ -1916,6 +1937,20 @@ fn safe_property_input(
     }
 }
 
+pub(crate) fn supports_two_way_property(
+    property: &ProjectedProperty,
+    has_event: impl Fn(&str) -> bool,
+) -> bool {
+    property.can_read
+        && match (property.name.as_str(), property.kind.as_str()) {
+            ("Text", "StringUtf16") => has_event("TextChanging") || has_event("TextChanged"),
+            ("IsChecked", "NullableBool") => has_event("IsCheckedChanged"),
+            ("Value", "F64") => has_event("ValueChanged"),
+            ("SelectedIndex", "I32") => has_event("SelectionChanged"),
+            _ => false,
+        }
+}
+
 fn safe_scalar_type(
     property: &ProjectedProperty,
     flags_enums: &std::collections::HashSet<&str>,
@@ -2010,6 +2045,37 @@ fn simple_name(full_name: &str) -> &str {
 mod tests {
     use super::*;
     use std::{fs, path::PathBuf, process::Command, time::SystemTime};
+
+    #[test]
+    fn two_way_text_prefers_synchronous_event_when_projected() {
+        let ir: ProjectionIr =
+            serde_json::from_str(include_str!("../../projection.ir.json")).unwrap();
+        let generated = emit_safe_module(&ir);
+        let builder = |name: &str| {
+            generated
+                .split(&format!("impl crate::view::El<{name}> {{"))
+                .nth(1)
+                .unwrap()
+                .split("\nimpl ")
+                .next()
+                .unwrap()
+        };
+        assert!(builder("TextBox").contains("c.subscribe_text_changing(move |_| cb())"));
+        assert!(builder("AutoCompleteBox").contains("c.subscribe_text_changed(move |_| cb())"));
+    }
+
+    #[test]
+    fn attached_accessors_do_not_collide_with_instance_properties() {
+        let ir: ProjectionIr =
+            serde_json::from_str(include_str!("../../projection.ir.json")).unwrap();
+        let generated = emit_safe_module(&ir);
+        assert!(generated.contains(
+            "pub fn get_attached_horizontal_scroll_bar_visibility(target: &impl AsControl)"
+        ));
+        assert!(generated
+            .contains("ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)"));
+        assert!(generated.contains("pub fn get_column(target: &impl AsControl)"));
+    }
 
     #[test]
     fn safe_string_methods_and_interface_setters_compile_and_preserve_nulls() {

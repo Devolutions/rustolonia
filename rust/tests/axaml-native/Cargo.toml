@@ -1,0 +1,11 @@
+[package]
+name = "axaml-native-fixture"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+rustolonia = { path = "../../rustolonia" }
+
+[build-dependencies]
+rustolonia-bindgen = { path = "../../rustolonia-bindgen" }

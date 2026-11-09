@@ -5,11 +5,12 @@
 use rustolonia::{
     prop, provide_context, reactive_view_model, rsx, theme_brush, use_context, when_any, AsControl,
     AvaloniaObject, Border, Brush, Button, CheckBox, Color, Command, ContentControl, Control,
-    ControlSlot, CornerRadius, Dock, Downcast, Effect, El, For, IntoProp, IntoValue,
+    ControlSlot, CornerRadius, Dock, Downcast, Effect, El, For, IntoProp, IntoValue, ItemsView,
     KeyedListReconciler, ListBox, ListBoxItem, Memo, NodeRef, NonOwningRef, Orientation, Paint,
-    PixelPoint, PlacementMode, Point, PropBinding, ReactiveScope, Rect, Resource, ResourceState,
-    Result, Show, Signal, Size, Slider, StackPanel, StyledElement, TemplatedControl, TextBlock,
-    TextBox, ThemeVariant, Thickness, ToggleSwitch, Upcast, Vector, Window,
+    PixelPoint, PlacementMode, Point, PropBinding, PropertyPath, ReactiveScope, Rect, Resource,
+    ResourceState, Result, Show, Signal, Size, Slider, StackPanel, StyledElement, TemplatedControl,
+    TextBlock, TextBox, ThemeVariant, Thickness, ToggleSwitch, Upcast, Vector, ViewRegistry,
+    Window,
 };
 use std::cell::RefCell;
 use std::ops::Deref;
@@ -191,6 +192,73 @@ fn signals_memos_and_effects_track_dependencies_and_deduplicate_updates() {
     effect.dispose();
     show_doubled.set(true);
     assert_eq!(*observed.borrow(), vec![0, 6, -1]);
+}
+
+#[test]
+fn nested_property_paths_follow_replacements_and_write_to_the_current_model() {
+    #[derive(Clone)]
+    struct Person {
+        name: Signal<String>,
+    }
+
+    let first = Signal::new("First".to_string());
+    let second = Signal::new("Second".to_string());
+    let selected = Signal::new(Some(Person { name: first }));
+    let path = PropertyPath::writable(
+        move || {
+            let person = selected
+                .get()
+                .ok_or_else(|| rustolonia::Error::Binding("no selected person".into()))?;
+            Ok(person.name.get())
+        },
+        move |value| {
+            let person = selected
+                .get_untracked()
+                .ok_or_else(|| rustolonia::Error::Binding("no selected person".into()))?;
+            person.name.set_if_changed(value);
+            Ok(())
+        },
+    );
+    let observed = Rc::new(RefCell::new(Vec::new()));
+    let lifetime = ReactiveScope::new();
+    lifetime.run(|| {
+        let path = path.clone();
+        let observed = observed.clone();
+        Effect::new(move || {
+            observed.borrow_mut().push(path.get()?);
+            Ok(())
+        })
+        .unwrap();
+    });
+
+    first.set("First updated".to_string());
+    selected.set(Some(Person { name: second }));
+    first.set("Old model".to_string());
+    second.set("Second updated".to_string());
+    path.set("Written".to_string()).unwrap();
+    assert_eq!(
+        *observed.borrow(),
+        [
+            "First",
+            "First updated",
+            "Second",
+            "Second updated",
+            "Written"
+        ]
+    );
+    assert_eq!(first.get(), "Old model");
+    assert_eq!(second.get(), "Written");
+
+    selected.set(None);
+    assert!(matches!(
+        path.set("Rejected".into()),
+        Err(rustolonia::Error::Binding(_))
+    ));
+    selected.set(Some(Person { name: first }));
+    assert_eq!(observed.borrow().last().unwrap(), "Old model");
+    lifetime.dispose();
+    first.set("After disposal".into());
+    assert_eq!(observed.borrow().last().unwrap(), "Old model");
 }
 
 #[test]
@@ -533,6 +601,42 @@ fn show_for_control_slot_and_theme_brush_compose_in_rsx() {
     assert!(slot.host_control().is_none());
 }
 
+#[test]
+fn view_registry_selects_factories_and_reports_missing_or_duplicate_keys() {
+    let registry = ViewRegistry::new(|item: &TodoItem| item.id % 2);
+    let created = Rc::new(RefCell::new(Vec::new()));
+    let created_for_factory = created.clone();
+    registry
+        .register(0, move |item| {
+            created_for_factory
+                .borrow_mut()
+                .push(item.get_untracked().id);
+            TextBlock::el().text(move || item.get().label)
+        })
+        .unwrap();
+    assert!(registry
+        .register(0, |_| TextBlock::el().text("duplicate"))
+        .is_err());
+    let even = Signal::new(TodoItem {
+        id: 2,
+        label: "Even".into(),
+    });
+    let odd = Signal::new(TodoItem {
+        id: 3,
+        label: "Odd".into(),
+    });
+    let _view = registry.create(even).unwrap();
+    assert_eq!(*created.borrow(), vec![2]);
+    assert!(registry.create(odd).is_err());
+
+    let rows = Signal::new(vec![even.get()]);
+    let _items = ItemsView::from_registry(rows, |item| item.id, registry);
+    assert!(matches!(
+        ControlSlot::new().clear(),
+        Err(rustolonia::Error::ControlSlotNotMounted)
+    ));
+}
+
 impl MockSink {
     fn set_summary(&self, value: &str) -> Result<()> {
         self.events.borrow_mut().push(format!("summary={value}"));
@@ -728,6 +832,183 @@ fn keyed_reconciler_disposes_removed_item_scopes_automatically() {
         vec![0, 1],
         "removed item's effect must not run after reconciliation removes its key"
     );
+}
+
+#[test]
+fn keyed_reconciler_releases_removed_models_and_scoped_memo_values() {
+    let value = Rc::new(String::from("owned by one item"));
+    let weak = Rc::downgrade(&value);
+    let mut reconciler = KeyedListReconciler::<(u32, Rc<String>), u32, ()>::new();
+    reconciler
+        .reconcile(
+            vec![(1, value)],
+            &mut |item| item.0,
+            &mut |item| {
+                let _label = Memo::new_scoped(move || item.get().1);
+                Ok(())
+            },
+            |_| Ok(()),
+        )
+        .unwrap();
+    assert!(weak.upgrade().is_some());
+    reconciler
+        .reconcile(Vec::new(), &mut |item| item.0, &mut |_| Ok(()), |_| Ok(()))
+        .unwrap();
+    assert!(weak.upgrade().is_none());
+}
+
+#[test]
+fn keyed_reconciler_rejects_duplicate_keys_and_rolls_back_failed_builds() {
+    let tick = Signal::new(0);
+    let built_ticks = Rc::new(RefCell::new(Vec::new()));
+    let mut reconciler = KeyedListReconciler::<TodoItem, u32, Signal<TodoItem>>::new();
+    let mut original = None;
+    reconciler
+        .reconcile(
+            vec![TodoItem {
+                id: 1,
+                label: "Original".into(),
+            }],
+            &mut |item| item.id,
+            &mut Ok,
+            |views| {
+                original = Some(views[0]);
+                Ok(())
+            },
+        )
+        .unwrap();
+    let original = original.unwrap();
+
+    let duplicate = reconciler.reconcile(
+        vec![
+            TodoItem {
+                id: 1,
+                label: "Changed".into(),
+            },
+            TodoItem {
+                id: 1,
+                label: "Duplicate".into(),
+            },
+        ],
+        &mut |item| item.id,
+        &mut Ok,
+        |_| Ok(()),
+    );
+    assert!(matches!(
+        duplicate,
+        Err(rustolonia::Error::DuplicateItemKey)
+    ));
+    assert_eq!(original.get().label, "Original");
+
+    let ticks = built_ticks.clone();
+    let failed = reconciler.reconcile(
+        vec![
+            TodoItem {
+                id: 1,
+                label: "Changed".into(),
+            },
+            TodoItem {
+                id: 2,
+                label: "New".into(),
+            },
+            TodoItem {
+                id: 3,
+                label: "Fails".into(),
+            },
+        ],
+        &mut |item| item.id,
+        &mut |item| {
+            if item.get_untracked().id == 3 {
+                return Err(rustolonia::Error::InvalidAsyncValue);
+            }
+            let ticks = ticks.clone();
+            Effect::new(move || {
+                ticks.borrow_mut().push(tick.get());
+                Ok(())
+            })?;
+            Ok(item)
+        },
+        |_| Ok(()),
+    );
+    assert!(failed.is_err());
+    assert_eq!(reconciler.len(), 1);
+    assert_eq!(original.get().label, "Original");
+    tick.set(1);
+    assert_eq!(*built_ticks.borrow(), vec![0]);
+
+    let failed_apply = reconciler.reconcile(
+        vec![TodoItem {
+            id: 2,
+            label: "New".into(),
+        }],
+        &mut |item| item.id,
+        &mut Ok,
+        |_| Err(rustolonia::Error::InvalidAsyncValue),
+    );
+    assert!(failed_apply.is_err());
+    assert_eq!(reconciler.len(), 1);
+    assert_eq!(original.get().label, "Original");
+}
+
+#[test]
+fn item_scopes_created_on_later_updates_follow_the_parent_scope() {
+    let rows = Signal::new(vec![TodoItem {
+        id: 1,
+        label: "One".into(),
+    }]);
+    let tick = Signal::new(0);
+    let seen = Rc::new(RefCell::new(Vec::new()));
+    let context_seen = Rc::new(RefCell::new(Vec::new()));
+    let parent = ReactiveScope::new();
+    parent.run(|| {
+        provide_context(String::from("parent"));
+        let reconciler = Rc::new(RefCell::new(
+            KeyedListReconciler::<TodoItem, u32, u32>::new(),
+        ));
+        let seen = seen.clone();
+        let context_seen = context_seen.clone();
+        Effect::new(move || {
+            context_seen
+                .borrow_mut()
+                .push(use_context::<String>().unwrap());
+            reconciler.borrow_mut().reconcile(
+                rows.get(),
+                &mut |item| item.id,
+                &mut |item| {
+                    let id = item.get_untracked().id;
+                    if id == 2 {
+                        let seen = seen.clone();
+                        Effect::new(move || {
+                            seen.borrow_mut().push(tick.get());
+                            Ok(())
+                        })?;
+                    }
+                    Ok(id)
+                },
+                |_| Ok(()),
+            )?;
+            Ok(())
+        })
+        .unwrap();
+    });
+
+    rows.set(vec![
+        TodoItem {
+            id: 1,
+            label: "One".into(),
+        },
+        TodoItem {
+            id: 2,
+            label: "Two".into(),
+        },
+    ]);
+    tick.set(1);
+    assert_eq!(*seen.borrow(), vec![0, 1]);
+    assert_eq!(*context_seen.borrow(), vec!["parent", "parent"]);
+
+    parent.dispose();
+    tick.set(2);
+    assert_eq!(*seen.borrow(), vec![0, 1]);
 }
 
 #[test]

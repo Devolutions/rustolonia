@@ -21,7 +21,8 @@ Write-Host '==> [1/4] Regenerating object-model projection IR, C# COM sources, a
 dotnet run --project (Join-Path $repositoryRoot 'projection' 'Avalonia.Projection.Tool') -c $Configuration -- `
     (Join-Path $repositoryRoot 'rust' 'projection.ir.json') `
     (Join-Path $repositoryRoot 'host' 'Generated' 'ObjectModel') `
-    (Join-Path $repositoryRoot 'rust' 'rustolonia-sys' 'include' 'avalonia-rust-abi.h')
+    (Join-Path $repositoryRoot 'rust' 'rustolonia-sys' 'include' 'avalonia-rust-abi.h') `
+    (Join-Path $repositoryRoot 'templates' 'axaml' 'projection.ir.json')
 if ($LASTEXITCODE -ne 0)
 {
     exit $LASTEXITCODE

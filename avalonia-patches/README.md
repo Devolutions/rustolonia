@@ -11,6 +11,7 @@ the upstream `12.1.5` tag (`5825bf8c66fba0c11e67c980d8ece6444576bffa`) by
 | `avalonia-controls.patch` | `IViewportRangeSource` (new viewport-range interface), `TableViewColumn.MinWidth/MaxWidth` + `ClampWidth`, `TableViewRowAutomationPeer` (new), TableView layout/row/column-header hooks, and their unit tests. `TableViewColumn.IsVisible` is upstream since 12.1.3 (AvaloniaUI/Avalonia#22162) and is no longer patched. |
 | `avalonia-overlay-popups.patch` | Per-top-level `UseOverlayPopups` policy and optional `NativePopupShowRequested` continuation gate. Supports embedded popups or deferred native show without affecting other windows. |
 | `avalonia-application-name.patch` | Names the default macOS application-menu holder from `Application.Name` before export, so both the menu item and submenu retain the application name when windows become key. |
+| `avalonia-grid-invalidation.patch` | Invalidates Grid's cell cache and measure when row or column definitions are replaced or changed. |
 
 ## Usage
 
@@ -56,4 +57,5 @@ Rustolonia's compatibility work.
 | `TableViewRowAutomationPeer` | candidate PR — accessibility, follows existing peer patterns |
 | Column/row unit tests | rides with the PRs above |
 | Default macOS application-menu holder uses `Application.Name` | candidate upstream fix; covered by Rustolonia's standalone and bundled native multi-window naming regression |
+| Grid row/column definition changes invalidate cached cells | candidate upstream fix; covered by managed layout and native AXAML regressions |
 | `InternalsVisibleTo` for `Avalonia.Host` (+ tests) in `Avalonia.Controls.csproj` | rustolonia-specific; preferred fix is a public `CustomPopupPlacement` factory, after which this line disappears |

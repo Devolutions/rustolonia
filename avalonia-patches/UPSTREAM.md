@@ -45,6 +45,14 @@ public and its mutability is the point of the callback. If that lands, the
 these two lines stay a local patch (they are not a reasonable upstream ask
 as-is).
 
+## 6. Grid definition changes invalidate cached cells
+
+Replacing or mutating row/column definitions must invalidate the grid's cell
+structure as well as measure. Otherwise a previously measured child can retain
+an index into a removed track and the next layout can throw. The separate
+`avalonia-grid-invalidation.patch` uses the existing Grid invalidation method;
+managed and native layout regressions cover the change.
+
 ## Patch set
 
 `avalonia-patches/avalonia-controls.patch` carries items 1–4 today

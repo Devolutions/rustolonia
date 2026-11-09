@@ -7,7 +7,12 @@ mod ir;
 mod owned;
 mod validate;
 mod variant;
-pub use axaml::{compile_axaml_from_json, compile_axaml_to_rust};
+pub use axaml::{
+    compile_axaml_from_json, compile_axaml_from_json_with_options, compile_axaml_to_rust,
+    compile_axaml_to_rust_with_options, AxamlBindingDefault, AxamlBindingMode, AxamlCompileOptions,
+    AxamlComponent, AxamlComponentProperty, AxamlComponentValueType, AxamlRootAlias,
+    AxamlTypeMapping,
+};
 pub use error::GenerationError;
 pub use ir::ProjectionIr;
 pub use owned::{check_outputs, write_outputs, BINDGEN_GENERATOR_ID};

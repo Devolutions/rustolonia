@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Host.Com;
 using Avalonia.UnitTests;
 using Xunit;
@@ -44,6 +45,27 @@ public unsafe class WaveOComboScrollComTests
         Assert.Equal("typed", combo.Text);
 
         Assert.NotNull(Target<ScrollViewer>(projectedScroll));
+    }
+
+    [Fact]
+    public void Attached_horizontal_scroll_visibility_reaches_a_text_box()
+    {
+        using var app = UnitTestApplication.Start(TestServices.StyledWindow);
+        var factory = new AvnControlFactory();
+        Assert.Equal(0, factory.CreateTextBox(out var projected));
+        Assert.Equal(0, factory.GetScrollViewerStatics(out var projectedStatics));
+        Assert.NotNull(projected);
+        Assert.NotNull(projectedStatics);
+
+        Through<IAvnScrollViewerStatics>(projectedStatics, statics =>
+            Through<IAvnControl>(projected, target =>
+            {
+                Assert.Equal(0, statics.SetHorizontalScrollBarVisibility(target, (int)ScrollBarVisibility.Hidden));
+                Assert.Equal(0, statics.GetHorizontalScrollBarVisibility(target, out var value));
+                Assert.Equal((int)ScrollBarVisibility.Hidden, value);
+            }));
+
+        Assert.Equal(ScrollBarVisibility.Hidden, ScrollViewer.GetHorizontalScrollBarVisibility(Target<TextBox>(projected)));
     }
 
     private static void Through<T>(object wrapper, Action<T> body) where T : class

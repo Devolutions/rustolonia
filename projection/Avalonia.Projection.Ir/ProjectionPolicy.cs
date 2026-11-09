@@ -13,6 +13,8 @@ public sealed class ProjectionPolicy
         new Dictionary<string, MarshallingOverride>(StringComparer.Ordinal);
     public IReadOnlyDictionary<string, EventProjection> EventOverrides { get; init; } =
         new Dictionary<string, EventProjection>(StringComparer.Ordinal);
+    public IReadOnlyDictionary<string, IReadOnlyList<NestedEventProjection>> NestedEvents { get; init; } =
+        new Dictionary<string, IReadOnlyList<NestedEventProjection>>(StringComparer.Ordinal);
     public IReadOnlyDictionary<string, IReadOnlyList<string>> AttachedProperties { get; init; } =
         new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
 
@@ -106,6 +108,16 @@ public sealed class ProjectionPolicy
         AttachedPropertyOverrides.TryGetValue(
             $"{owner.FullName}.{attachedPropertyName}",
             out value!);
+}
+
+/// <summary>
+/// A payload-free event on a readable property of the projected object.
+/// </summary>
+public sealed class NestedEventProjection
+{
+    public required string Name { get; init; }
+    public required string SourceProperty { get; init; }
+    public required string EventName { get; init; }
 }
 
 public sealed class EventProjection

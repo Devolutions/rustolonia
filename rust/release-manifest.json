@@ -23,6 +23,10 @@
     {
       "path": "avalonia-patches/avalonia-application-name.patch",
       "sha256": "126eac76c265d29f5296eb3e112ff283830c7d56348aeebc093845b5a579bb3b"
+    },
+    {
+      "path": "avalonia-patches/avalonia-grid-invalidation.patch",
+      "sha256": "078d9f4d8e4a11ed3abe3702913895463d785bb36155686b2d8ea61fb6d7ceb9"
     }
   ],
   "schemas": {

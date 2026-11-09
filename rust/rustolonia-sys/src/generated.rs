@@ -3434,6 +3434,116 @@ unsafe extern "system" fn i_avn_expander_expanding_handler_invoke(this: *mut IAv
     hr
 }
 
+pub const I_AVN_GRID_LAYOUT_UPDATED_HANDLER_IID: Guid = Guid { data1: 0x403C4FD0, data2: 0x1CFA, data3: 0x5C01, data4: [0x8F, 0x58, 0x74, 0x89, 0x97, 0x24, 0x07, 0x03] };
+
+#[repr(C)]
+struct IAvnGridLayoutUpdatedHandlerVtbl {
+    query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
+    add_ref: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    release: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    invoke: unsafe extern "system" fn(*mut IAvnGridLayoutUpdatedHandler) -> i32,
+}
+
+#[repr(C)]
+pub struct IAvnGridLayoutUpdatedHandler {
+    vtbl: *const IAvnGridLayoutUpdatedHandlerVtbl,
+}
+
+unsafe impl ComInterface for IAvnGridLayoutUpdatedHandler {
+    const IID: Guid = I_AVN_GRID_LAYOUT_UPDATED_HANDLER_IID;
+}
+
+impl ComPtr<IAvnGridLayoutUpdatedHandler> {
+    pub fn invoke(&self) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().invoke)(self.as_raw());
+            hresult::check(hr)
+        }
+    }
+}
+
+static I_AVN_GRID_LAYOUT_UPDATED_HANDLER_VTBL: IAvnGridLayoutUpdatedHandlerVtbl = IAvnGridLayoutUpdatedHandlerVtbl {
+    query_interface: i_avn_grid_layout_updated_handler_query_interface,
+    add_ref: i_avn_grid_layout_updated_handler_add_ref,
+    release: i_avn_grid_layout_updated_handler_release,
+    invoke: i_avn_grid_layout_updated_handler_invoke,
+};
+
+pub fn grid_layout_updated_handler(mut callback: impl FnMut() -> Result<()> + Send + 'static) -> ComPtr<IAvnGridLayoutUpdatedHandler> {
+    crate::event_callback::create::<IAvnGridLayoutUpdatedHandler, ()>(IAvnGridLayoutUpdatedHandler { vtbl: &I_AVN_GRID_LAYOUT_UPDATED_HANDLER_VTBL }, move |_| callback())
+}
+
+unsafe extern "system" fn i_avn_grid_layout_updated_handler_query_interface(this: *mut IUnknown, iid: *const Guid, result: *mut *mut c_void) -> i32 {
+    crate::event_callback::query_interface::<IAvnGridLayoutUpdatedHandler, ()>(this, iid, result)
+}
+
+unsafe extern "system" fn i_avn_grid_layout_updated_handler_add_ref(this: *mut IUnknown) -> u32 {
+    crate::event_callback::add_ref::<IAvnGridLayoutUpdatedHandler, ()>(this)
+}
+
+unsafe extern "system" fn i_avn_grid_layout_updated_handler_release(this: *mut IUnknown) -> u32 {
+    crate::event_callback::release::<IAvnGridLayoutUpdatedHandler, ()>(this)
+}
+
+unsafe extern "system" fn i_avn_grid_layout_updated_handler_invoke(this: *mut IAvnGridLayoutUpdatedHandler) -> i32 {
+    crate::event_callback::invoke::<IAvnGridLayoutUpdatedHandler, ()>(this, &mut ())
+}
+
+pub const I_AVN_GRID_CHILDREN_CHANGED_HANDLER_IID: Guid = Guid { data1: 0x77F512D9, data2: 0x27B4, data3: 0x551F, data4: [0xAA, 0xC7, 0xF9, 0x2D, 0xB8, 0xF9, 0xDB, 0x0E] };
+
+#[repr(C)]
+struct IAvnGridChildrenChangedHandlerVtbl {
+    query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
+    add_ref: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    release: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    invoke: unsafe extern "system" fn(*mut IAvnGridChildrenChangedHandler) -> i32,
+}
+
+#[repr(C)]
+pub struct IAvnGridChildrenChangedHandler {
+    vtbl: *const IAvnGridChildrenChangedHandlerVtbl,
+}
+
+unsafe impl ComInterface for IAvnGridChildrenChangedHandler {
+    const IID: Guid = I_AVN_GRID_CHILDREN_CHANGED_HANDLER_IID;
+}
+
+impl ComPtr<IAvnGridChildrenChangedHandler> {
+    pub fn invoke(&self) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().invoke)(self.as_raw());
+            hresult::check(hr)
+        }
+    }
+}
+
+static I_AVN_GRID_CHILDREN_CHANGED_HANDLER_VTBL: IAvnGridChildrenChangedHandlerVtbl = IAvnGridChildrenChangedHandlerVtbl {
+    query_interface: i_avn_grid_children_changed_handler_query_interface,
+    add_ref: i_avn_grid_children_changed_handler_add_ref,
+    release: i_avn_grid_children_changed_handler_release,
+    invoke: i_avn_grid_children_changed_handler_invoke,
+};
+
+pub fn grid_children_changed_handler(mut callback: impl FnMut() -> Result<()> + Send + 'static) -> ComPtr<IAvnGridChildrenChangedHandler> {
+    crate::event_callback::create::<IAvnGridChildrenChangedHandler, ()>(IAvnGridChildrenChangedHandler { vtbl: &I_AVN_GRID_CHILDREN_CHANGED_HANDLER_VTBL }, move |_| callback())
+}
+
+unsafe extern "system" fn i_avn_grid_children_changed_handler_query_interface(this: *mut IUnknown, iid: *const Guid, result: *mut *mut c_void) -> i32 {
+    crate::event_callback::query_interface::<IAvnGridChildrenChangedHandler, ()>(this, iid, result)
+}
+
+unsafe extern "system" fn i_avn_grid_children_changed_handler_add_ref(this: *mut IUnknown) -> u32 {
+    crate::event_callback::add_ref::<IAvnGridChildrenChangedHandler, ()>(this)
+}
+
+unsafe extern "system" fn i_avn_grid_children_changed_handler_release(this: *mut IUnknown) -> u32 {
+    crate::event_callback::release::<IAvnGridChildrenChangedHandler, ()>(this)
+}
+
+unsafe extern "system" fn i_avn_grid_children_changed_handler_invoke(this: *mut IAvnGridChildrenChangedHandler) -> i32 {
+    crate::event_callback::invoke::<IAvnGridChildrenChangedHandler, ()>(this, &mut ())
+}
+
 pub const I_AVN_MENU_BASE_OPENED_HANDLER_IID: Guid = Guid { data1: 0xC59AFF55, data2: 0x605E, data3: 0x522B, data4: [0xB8, 0x6C, 0xFD, 0x0E, 0x2D, 0x44, 0xD7, 0x7A] };
 
 #[repr(C)]
@@ -30848,6 +30958,7 @@ struct IAvnGridVtbl {
     get_children: unsafe extern "system" fn(*mut IAvnGrid, *mut *mut IAvnControlList) -> i32,
     get_background: unsafe extern "system" fn(*mut IAvnGrid, *mut *mut IAvnBrush) -> i32,
     set_background: unsafe extern "system" fn(*mut IAvnGrid, *mut IAvnBrush) -> i32,
+    get_is_effectively_visible: unsafe extern "system" fn(*mut IAvnGrid, *mut i32) -> i32,
     get_show_grid_lines: unsafe extern "system" fn(*mut IAvnGrid, *mut i32) -> i32,
     set_show_grid_lines: unsafe extern "system" fn(*mut IAvnGrid, i32) -> i32,
     get_row_spacing: unsafe extern "system" fn(*mut IAvnGrid, *mut f64) -> i32,
@@ -30858,6 +30969,11 @@ struct IAvnGridVtbl {
     set_column_definitions: unsafe extern "system" fn(*mut IAvnGrid, *mut u16) -> i32,
     get_row_definitions: unsafe extern "system" fn(*mut IAvnGrid, *mut *mut u16) -> i32,
     set_row_definitions: unsafe extern "system" fn(*mut IAvnGrid, *mut u16) -> i32,
+    update_layout: unsafe extern "system" fn(*mut IAvnGrid) -> i32,
+    advise_layout_updated: unsafe extern "system" fn(*mut IAvnGrid, *mut IAvnGridLayoutUpdatedHandler, *mut i64) -> i32,
+    unadvise_layout_updated: unsafe extern "system" fn(*mut IAvnGrid, i64) -> i32,
+    advise_children_changed: unsafe extern "system" fn(*mut IAvnGrid, *mut IAvnGridChildrenChangedHandler, *mut i64) -> i32,
+    unadvise_children_changed: unsafe extern "system" fn(*mut IAvnGrid, i64) -> i32,
 }
 
 #[repr(C)]
@@ -31448,6 +31564,14 @@ impl ComPtr<IAvnGrid> {
             hresult::check(hr)
         }
     }
+    pub fn get_is_effectively_visible(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_is_effectively_visible)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
     pub fn get_show_grid_lines(&self) -> Result<bool> {
         unsafe {
             let mut value: i32 = 0;
@@ -31517,6 +31641,38 @@ impl ComPtr<IAvnGrid> {
         let value = crate::terminated_utf16(value);
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_row_definitions)(self.as_raw(), value.as_ptr().cast_mut());
+            hresult::check(hr)
+        }
+    }
+    pub fn update_layout(&self) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().update_layout)(self.as_raw());
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_layout_updated(&self, handler: &ComPtr<IAvnGridLayoutUpdatedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_layout_updated)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_layout_updated(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_layout_updated)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_children_changed(&self, handler: &ComPtr<IAvnGridChildrenChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_children_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_children_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_children_changed)(self.as_raw(), subscription_id);
             hresult::check(hr)
         }
     }
@@ -104096,6 +104252,42 @@ impl ComPtr<IAvnRelativePanelStatics> {
     }
 }
 
+pub const I_AVN_SCROLL_VIEWER_STATICS_IID: Guid = Guid { data1: 0x98B05BF7, data2: 0xD536, data3: 0x5DE3, data4: [0x87, 0x80, 0x66, 0x3E, 0x8E, 0x71, 0x5B, 0xC8] };
+
+#[repr(C)]
+struct IAvnScrollViewerStaticsVtbl {
+    query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
+    add_ref: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    release: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    get_horizontal_scroll_bar_visibility: unsafe extern "system" fn(*mut IAvnScrollViewerStatics, *mut IAvnControl, *mut i32) -> i32,
+    set_horizontal_scroll_bar_visibility: unsafe extern "system" fn(*mut IAvnScrollViewerStatics, *mut IAvnControl, i32) -> i32,
+}
+
+#[repr(C)]
+pub struct IAvnScrollViewerStatics {
+    vtbl: *const IAvnScrollViewerStaticsVtbl,
+}
+
+unsafe impl ComInterface for IAvnScrollViewerStatics {
+    const IID: Guid = I_AVN_SCROLL_VIEWER_STATICS_IID;
+}
+
+impl ComPtr<IAvnScrollViewerStatics> {
+    pub fn get_horizontal_scroll_bar_visibility(&self, target: &ComPtr<IAvnControl>) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_horizontal_scroll_bar_visibility)(self.as_raw(), target.as_raw(), &mut value);
+            hresult::check(hr).map(|_| value)
+        }
+    }
+    pub fn set_horizontal_scroll_bar_visibility(&self, target: &ComPtr<IAvnControl>, value: i32) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_horizontal_scroll_bar_visibility)(self.as_raw(), target.as_raw(), value);
+            hresult::check(hr)
+        }
+    }
+}
+
 pub const I_AVN_TOOL_TIP_STATICS_IID: Guid = Guid { data1: 0x5C660EB0, data2: 0xDE37, data3: 0x57B3, data4: [0x99, 0x61, 0xB3, 0x8D, 0x4A, 0xC1, 0xCD, 0xB2] };
 
 #[repr(C)]
@@ -104360,6 +104552,7 @@ struct IAvnControlFactoryVtbl {
     get_dock_panel_statics: unsafe extern "system" fn(*mut IAvnControlFactory, *mut *mut IAvnDockPanelStatics) -> i32,
     get_grid_statics: unsafe extern "system" fn(*mut IAvnControlFactory, *mut *mut IAvnGridStatics) -> i32,
     get_relative_panel_statics: unsafe extern "system" fn(*mut IAvnControlFactory, *mut *mut IAvnRelativePanelStatics) -> i32,
+    get_scroll_viewer_statics: unsafe extern "system" fn(*mut IAvnControlFactory, *mut *mut IAvnScrollViewerStatics) -> i32,
     get_tool_tip_statics: unsafe extern "system" fn(*mut IAvnControlFactory, *mut *mut IAvnToolTipStatics) -> i32,
     create_solid_color_brush: unsafe extern "system" fn(*mut IAvnControlFactory, AvnColor, f64, *mut *mut IAvnBrush) -> i32,
     create_linear_gradient_brush: unsafe extern "system" fn(*mut IAvnControlFactory, f64, i32, i32, AvnGradientStopBuffer, AvnRelativePoint, AvnRelativePoint, *mut *mut IAvnLinearGradientBrush) -> i32,
@@ -105172,6 +105365,14 @@ impl ComPtr<IAvnControlFactory> {
         unsafe {
             let mut value = ptr::null_mut();
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_relative_panel_statics)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            ComPtr::from_raw(value).ok_or(Error(hresult::E_POINTER))
+        }
+    }
+    pub fn get_scroll_viewer_statics(&self) -> Result<ComPtr<IAvnScrollViewerStatics>> {
+        unsafe {
+            let mut value = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_scroll_viewer_statics)(self.as_raw(), &mut value);
             hresult::check(hr)?;
             ComPtr::from_raw(value).ok_or(Error(hresult::E_POINTER))
         }

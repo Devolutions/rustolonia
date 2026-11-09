@@ -4,6 +4,8 @@
 
 #include <stdint.h>
 
+/* Grid definition strings accept an optional @SharedSizeGroup per track. */
+
 #if defined(_WIN32)
 #define AVN_CALL __stdcall
 #else
@@ -328,6 +330,10 @@ typedef struct IAvnGradientBrush IAvnGradientBrush;
 typedef struct IAvnGradientBrushVtbl IAvnGradientBrushVtbl;
 typedef struct IAvnGrid IAvnGrid;
 typedef struct IAvnGridVtbl IAvnGridVtbl;
+typedef struct IAvnGridChildrenChangedHandler IAvnGridChildrenChangedHandler;
+typedef struct IAvnGridChildrenChangedHandlerVtbl IAvnGridChildrenChangedHandlerVtbl;
+typedef struct IAvnGridLayoutUpdatedHandler IAvnGridLayoutUpdatedHandler;
+typedef struct IAvnGridLayoutUpdatedHandlerVtbl IAvnGridLayoutUpdatedHandlerVtbl;
 typedef struct IAvnGridSplitter IAvnGridSplitter;
 typedef struct IAvnGridSplitterVtbl IAvnGridSplitterVtbl;
 typedef struct IAvnGridStatics IAvnGridStatics;
@@ -442,6 +448,8 @@ typedef struct IAvnScrollViewer IAvnScrollViewer;
 typedef struct IAvnScrollViewerVtbl IAvnScrollViewerVtbl;
 typedef struct IAvnScrollViewerScrollChangedHandler IAvnScrollViewerScrollChangedHandler;
 typedef struct IAvnScrollViewerScrollChangedHandlerVtbl IAvnScrollViewerScrollChangedHandlerVtbl;
+typedef struct IAvnScrollViewerStatics IAvnScrollViewerStatics;
+typedef struct IAvnScrollViewerStaticsVtbl IAvnScrollViewerStaticsVtbl;
 typedef struct IAvnSector IAvnSector;
 typedef struct IAvnSectorVtbl IAvnSectorVtbl;
 typedef struct IAvnSelectableTextBlock IAvnSelectableTextBlock;
@@ -1305,6 +1313,36 @@ struct IAvnFlyoutBaseOpenedHandlerVtbl {
 };
 struct IAvnFlyoutBaseOpenedHandler { const IAvnFlyoutBaseOpenedHandlerVtbl* vtbl; };
 #define I_AVN_FLYOUT_BASE_OPENED_HANDLER_VTABLE_SLOTS 4
+
+static const AvnGuid I_AVN_GRID_CHILDREN_CHANGED_HANDLER_IID = {
+    0x77F512D9,
+    0x27B4,
+    0x551F,
+    { 0xAA, 0xC7, 0xF9, 0x2D, 0xB8, 0xF9, 0xDB, 0x0E }
+};
+struct IAvnGridChildrenChangedHandlerVtbl {
+    AvnHResult (AVN_CALL *query_interface)(IAvnGridChildrenChangedHandler* self, const AvnGuid* iid, void** result); /* slot 0 */
+    uint32_t (AVN_CALL *add_ref)(IAvnGridChildrenChangedHandler* self); /* slot 1 */
+    uint32_t (AVN_CALL *release)(IAvnGridChildrenChangedHandler* self); /* slot 2 */
+    AvnHResult (AVN_CALL *invoke)(IAvnGridChildrenChangedHandler* self); /* slot 3 */
+};
+struct IAvnGridChildrenChangedHandler { const IAvnGridChildrenChangedHandlerVtbl* vtbl; };
+#define I_AVN_GRID_CHILDREN_CHANGED_HANDLER_VTABLE_SLOTS 4
+
+static const AvnGuid I_AVN_GRID_LAYOUT_UPDATED_HANDLER_IID = {
+    0x403C4FD0,
+    0x1CFA,
+    0x5C01,
+    { 0x8F, 0x58, 0x74, 0x89, 0x97, 0x24, 0x07, 0x03 }
+};
+struct IAvnGridLayoutUpdatedHandlerVtbl {
+    AvnHResult (AVN_CALL *query_interface)(IAvnGridLayoutUpdatedHandler* self, const AvnGuid* iid, void** result); /* slot 0 */
+    uint32_t (AVN_CALL *add_ref)(IAvnGridLayoutUpdatedHandler* self); /* slot 1 */
+    uint32_t (AVN_CALL *release)(IAvnGridLayoutUpdatedHandler* self); /* slot 2 */
+    AvnHResult (AVN_CALL *invoke)(IAvnGridLayoutUpdatedHandler* self); /* slot 3 */
+};
+struct IAvnGridLayoutUpdatedHandler { const IAvnGridLayoutUpdatedHandlerVtbl* vtbl; };
+#define I_AVN_GRID_LAYOUT_UPDATED_HANDLER_VTABLE_SLOTS 4
 
 static const AvnGuid I_AVN_MENU_BASE_CLOSED_HANDLER_IID = {
     0x46335738,
@@ -6108,19 +6146,25 @@ struct IAvnGridVtbl {
     AvnHResult (AVN_CALL *get_children)(IAvnGrid* self, IAvnControlList** value); /* slot 84 */
     AvnHResult (AVN_CALL *get_background)(IAvnGrid* self, IAvnBrush** value); /* slot 85 */
     AvnHResult (AVN_CALL *set_background)(IAvnGrid* self, IAvnBrush* value); /* slot 86 */
-    AvnHResult (AVN_CALL *get_show_grid_lines)(IAvnGrid* self, int32_t* value); /* slot 87 */
-    AvnHResult (AVN_CALL *set_show_grid_lines)(IAvnGrid* self, int32_t value); /* slot 88 */
-    AvnHResult (AVN_CALL *get_row_spacing)(IAvnGrid* self, double* value); /* slot 89 */
-    AvnHResult (AVN_CALL *set_row_spacing)(IAvnGrid* self, double value); /* slot 90 */
-    AvnHResult (AVN_CALL *get_column_spacing)(IAvnGrid* self, double* value); /* slot 91 */
-    AvnHResult (AVN_CALL *set_column_spacing)(IAvnGrid* self, double value); /* slot 92 */
-    AvnHResult (AVN_CALL *get_column_definitions)(IAvnGrid* self, uint16_t** value); /* slot 93 */
-    AvnHResult (AVN_CALL *set_column_definitions)(IAvnGrid* self, const uint16_t* value); /* slot 94 */
-    AvnHResult (AVN_CALL *get_row_definitions)(IAvnGrid* self, uint16_t** value); /* slot 95 */
-    AvnHResult (AVN_CALL *set_row_definitions)(IAvnGrid* self, const uint16_t* value); /* slot 96 */
+    AvnHResult (AVN_CALL *get_is_effectively_visible)(IAvnGrid* self, int32_t* value); /* slot 87 */
+    AvnHResult (AVN_CALL *get_show_grid_lines)(IAvnGrid* self, int32_t* value); /* slot 88 */
+    AvnHResult (AVN_CALL *set_show_grid_lines)(IAvnGrid* self, int32_t value); /* slot 89 */
+    AvnHResult (AVN_CALL *get_row_spacing)(IAvnGrid* self, double* value); /* slot 90 */
+    AvnHResult (AVN_CALL *set_row_spacing)(IAvnGrid* self, double value); /* slot 91 */
+    AvnHResult (AVN_CALL *get_column_spacing)(IAvnGrid* self, double* value); /* slot 92 */
+    AvnHResult (AVN_CALL *set_column_spacing)(IAvnGrid* self, double value); /* slot 93 */
+    AvnHResult (AVN_CALL *get_column_definitions)(IAvnGrid* self, uint16_t** value); /* slot 94 */
+    AvnHResult (AVN_CALL *set_column_definitions)(IAvnGrid* self, const uint16_t* value); /* slot 95 */
+    AvnHResult (AVN_CALL *get_row_definitions)(IAvnGrid* self, uint16_t** value); /* slot 96 */
+    AvnHResult (AVN_CALL *set_row_definitions)(IAvnGrid* self, const uint16_t* value); /* slot 97 */
+    AvnHResult (AVN_CALL *update_layout)(IAvnGrid* self); /* slot 98 */
+    AvnHResult (AVN_CALL *advise_layout_updated)(IAvnGrid* self, IAvnGridLayoutUpdatedHandler* handler, int64_t* subscription_id); /* slot 99 */
+    AvnHResult (AVN_CALL *unadvise_layout_updated)(IAvnGrid* self, int64_t subscription_id); /* slot 100 */
+    AvnHResult (AVN_CALL *advise_children_changed)(IAvnGrid* self, IAvnGridChildrenChangedHandler* handler, int64_t* subscription_id); /* slot 101 */
+    AvnHResult (AVN_CALL *unadvise_children_changed)(IAvnGrid* self, int64_t subscription_id); /* slot 102 */
 };
 struct IAvnGrid { const IAvnGridVtbl* vtbl; };
-#define I_AVN_GRID_VTABLE_SLOTS 97
+#define I_AVN_GRID_VTABLE_SLOTS 103
 
 static const AvnGuid I_AVN_GRID_SPLITTER_IID = {
     0xD2D5FE9B,
@@ -15951,6 +15995,22 @@ struct IAvnRelativePanelStaticsVtbl {
 struct IAvnRelativePanelStatics { const IAvnRelativePanelStaticsVtbl* vtbl; };
 #define I_AVN_RELATIVE_PANEL_STATICS_VTABLE_SLOTS 15
 
+static const AvnGuid I_AVN_SCROLL_VIEWER_STATICS_IID = {
+    0x98B05BF7,
+    0xD536,
+    0x5DE3,
+    { 0x87, 0x80, 0x66, 0x3E, 0x8E, 0x71, 0x5B, 0xC8 }
+};
+struct IAvnScrollViewerStaticsVtbl {
+    AvnHResult (AVN_CALL *query_interface)(IAvnScrollViewerStatics* self, const AvnGuid* iid, void** result); /* slot 0 */
+    uint32_t (AVN_CALL *add_ref)(IAvnScrollViewerStatics* self); /* slot 1 */
+    uint32_t (AVN_CALL *release)(IAvnScrollViewerStatics* self); /* slot 2 */
+    AvnHResult (AVN_CALL *get_horizontal_scroll_bar_visibility)(IAvnScrollViewerStatics* self, IAvnControl* target, int32_t* value); /* slot 3 */
+    AvnHResult (AVN_CALL *set_horizontal_scroll_bar_visibility)(IAvnScrollViewerStatics* self, IAvnControl* target, int32_t value); /* slot 4 */
+};
+struct IAvnScrollViewerStatics { const IAvnScrollViewerStaticsVtbl* vtbl; };
+#define I_AVN_SCROLL_VIEWER_STATICS_VTABLE_SLOTS 5
+
 static const AvnGuid I_AVN_TOOL_TIP_STATICS_IID = {
     0x5C660EB0,
     0xDE37,
@@ -16093,12 +16153,13 @@ struct IAvnControlFactoryVtbl {
     AvnHResult (AVN_CALL *get_dock_panel_statics)(IAvnControlFactory* self, IAvnDockPanelStatics** value); /* slot 100 */
     AvnHResult (AVN_CALL *get_grid_statics)(IAvnControlFactory* self, IAvnGridStatics** value); /* slot 101 */
     AvnHResult (AVN_CALL *get_relative_panel_statics)(IAvnControlFactory* self, IAvnRelativePanelStatics** value); /* slot 102 */
-    AvnHResult (AVN_CALL *get_tool_tip_statics)(IAvnControlFactory* self, IAvnToolTipStatics** value); /* slot 103 */
-    AvnHResult (AVN_CALL *create_solid_color_brush)(IAvnControlFactory* self, AvnColor color, double opacity, IAvnBrush** value); /* slot 104 */
-    AvnHResult (AVN_CALL *create_linear_gradient_brush)(IAvnControlFactory* self, double opacity, int32_t spread_method, int32_t stop_count, AvnGradientStopBuffer stops, AvnRelativePoint start_point, AvnRelativePoint end_point, IAvnLinearGradientBrush** value); /* slot 105 */
-    AvnHResult (AVN_CALL *create_radial_gradient_brush)(IAvnControlFactory* self, double opacity, int32_t spread_method, int32_t stop_count, AvnGradientStopBuffer stops, AvnRelativePoint center, AvnRelativePoint gradient_origin, AvnRelativeScalar radius_x, AvnRelativeScalar radius_y, IAvnRadialGradientBrush** value); /* slot 106 */
+    AvnHResult (AVN_CALL *get_scroll_viewer_statics)(IAvnControlFactory* self, IAvnScrollViewerStatics** value); /* slot 103 */
+    AvnHResult (AVN_CALL *get_tool_tip_statics)(IAvnControlFactory* self, IAvnToolTipStatics** value); /* slot 104 */
+    AvnHResult (AVN_CALL *create_solid_color_brush)(IAvnControlFactory* self, AvnColor color, double opacity, IAvnBrush** value); /* slot 105 */
+    AvnHResult (AVN_CALL *create_linear_gradient_brush)(IAvnControlFactory* self, double opacity, int32_t spread_method, int32_t stop_count, AvnGradientStopBuffer stops, AvnRelativePoint start_point, AvnRelativePoint end_point, IAvnLinearGradientBrush** value); /* slot 106 */
+    AvnHResult (AVN_CALL *create_radial_gradient_brush)(IAvnControlFactory* self, double opacity, int32_t spread_method, int32_t stop_count, AvnGradientStopBuffer stops, AvnRelativePoint center, AvnRelativePoint gradient_origin, AvnRelativeScalar radius_x, AvnRelativeScalar radius_y, IAvnRadialGradientBrush** value); /* slot 107 */
 };
 struct IAvnControlFactory { const IAvnControlFactoryVtbl* vtbl; };
-#define I_AVN_CONTROL_FACTORY_VTABLE_SLOTS 107
+#define I_AVN_CONTROL_FACTORY_VTABLE_SLOTS 108
 
 #endif /* AVALONIA_RUST_ABI_H */

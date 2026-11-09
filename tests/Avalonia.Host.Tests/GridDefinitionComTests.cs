@@ -5,16 +5,15 @@ using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 using Avalonia.Controls;
 using Avalonia.Host.Com;
+using Avalonia.UnitTests;
 using Xunit;
 
 namespace Avalonia.Host.Tests;
 
 /// <summary>
 /// Covers <c>Grid.ColumnDefinitions</c> and <c>Grid.RowDefinitions</c>, which cross the ABI as
-/// the comma-separated length list that <see cref="ColumnDefinitions"/> and
-/// <see cref="RowDefinitions"/> already parse and print rather than as a projected collection of
-/// definition objects. Every assertion goes through a real CCW/RCW round trip, so the conversion
-/// is exercised in the generated marshalling stub rather than read off the managed wrapper.
+/// a length list with optional shared-size groups rather than as a projected collection of
+/// definition objects. Every assertion goes through a real CCW/RCW round trip.
 /// </summary>
 public unsafe class GridDefinitionComTests
 {
@@ -98,6 +97,180 @@ public unsafe class GridDefinitionComTests
             Assert.Equal(0, live.GetColumnDefinitions(out var columns));
             Assert.Equal("Auto,80", columns);
         });
+    }
+
+    [Fact]
+    public void Shared_groups_round_trip_and_participate_in_layout()
+    {
+        using var app = UnitTestApplication.Start(TestServices.StyledWindow);
+        var factory = new AvnControlFactory();
+        Assert.Equal(0, factory.CreateGrid(out var firstProjected));
+        Assert.Equal(0, factory.CreateGrid(out var secondProjected));
+        Assert.NotNull(firstProjected);
+        Assert.NotNull(secondProjected);
+
+        Through<IAvnGrid>(firstProjected, live =>
+        {
+            Assert.Equal(0, live.SetColumnDefinitions("Auto@SharedWidth,*"));
+            Assert.Equal(0, live.SetRowDefinitions("Auto@SharedHeight"));
+            Assert.Equal(0, live.GetColumnDefinitions(out var columns));
+            Assert.Equal("Auto@SharedWidth,1*", columns);
+            Assert.Equal(0, live.GetRowDefinitions(out var rows));
+            Assert.Equal("Auto@SharedHeight", rows);
+            Assert.True(live.SetColumnDefinitions("Auto@1invalid,*") < 0);
+            Assert.True(live.SetColumnDefinitions("Auto@,*") < 0);
+            Assert.True(live.SetColumnDefinitions("Auto@A@B,*") < 0);
+            Assert.Equal(0, live.GetColumnDefinitions(out var unchanged));
+            Assert.Equal(columns, unchanged);
+        });
+        Through<IAvnGrid>(secondProjected, live =>
+            Assert.Equal(0, live.SetColumnDefinitions("Auto@SharedWidth,*")));
+
+        var first = Target<Grid>(firstProjected);
+        var second = Target<Grid>(secondProjected);
+        first.Children.Add(new Border { Width = 25, Height = 10 });
+        second.Children.Add(new Border { Width = 75, Height = 10 });
+        var scope = new StackPanel
+        {
+            [Grid.IsSharedSizeScopeProperty] = true,
+            Children = { first, second },
+        };
+        var root = new TestRoot(scope) { Width = 200, Height = 100 };
+        // Shared-size validation schedules another layout after the first pass.
+        root.ExecuteInitialLayoutPass();
+        root.ExecuteInitialLayoutPass();
+        root.ExecuteInitialLayoutPass();
+        Assert.Equal(75, first.ColumnDefinitions[0].ActualWidth);
+        Assert.Equal(75, second.ColumnDefinitions[0].ActualWidth);
+    }
+
+    [Fact]
+    public void Layout_notifications_and_effective_visibility_follow_the_live_grid()
+    {
+        using var app = UnitTestApplication.Start(TestServices.StyledWindow);
+        var factory = new AvnControlFactory();
+        Assert.Equal(0, factory.CreateGrid(out var projected));
+        Assert.NotNull(projected);
+        var wrapper = Assert.IsType<AvnGrid>(projected);
+        var grid = Target<Grid>(projected);
+        var child = new TextBox();
+        grid.Children.Add(child);
+        var parent = new Border { Child = grid };
+        var root = new TestRoot(parent) { Width = 200, Height = 100 };
+        var handler = new LayoutHandler();
+
+        Assert.Equal(0, wrapper.AdviseLayoutUpdated(handler, out var subscription));
+        root.ExecuteInitialLayoutPass();
+        Assert.True(handler.Count > 0);
+        Assert.Equal(0, wrapper.GetIsEffectivelyVisible(out var visible));
+        Assert.Equal(1, visible);
+        Assert.True(child.IsEffectivelyVisible);
+
+        parent.IsVisible = false;
+        Assert.Equal(0, wrapper.GetIsEffectivelyVisible(out visible));
+        Assert.Equal(0, visible);
+        Assert.False(child.IsEffectivelyVisible);
+        parent.IsVisible = true;
+        child.IsVisible = false;
+        Assert.Equal(0, wrapper.GetIsEffectivelyVisible(out visible));
+        Assert.Equal(1, visible);
+        Assert.False(child.IsEffectivelyVisible);
+
+        Assert.Equal(0, wrapper.UpdateLayout());
+        var count = handler.Count;
+        Assert.Equal(0, wrapper.UnadviseLayoutUpdated(subscription));
+        Assert.True(wrapper.UnadviseLayoutUpdated(subscription) < 0);
+        Assert.Equal(0, wrapper.UpdateLayout());
+        Assert.Equal(count, handler.Count);
+    }
+
+    [Fact]
+    public void Child_collection_notifications_work_without_a_layout_root()
+    {
+        using var app = UnitTestApplication.Start(TestServices.StyledWindow);
+        var factory = new AvnControlFactory();
+        Assert.Equal(0, factory.CreateGrid(out var projected));
+        Assert.NotNull(projected);
+        var wrapper = Assert.IsType<AvnGrid>(projected);
+        var grid = Target<Grid>(projected);
+        var handler = new ChildrenChangedHandler();
+        var child = new Border();
+
+        Assert.Equal(0, wrapper.AdviseChildrenChanged(handler, out var subscription));
+        grid.Children.Add(child);
+        Assert.Equal(1, handler.Count);
+        grid.Children.Remove(child);
+        Assert.Equal(2, handler.Count);
+        Assert.Equal(0, wrapper.UnadviseChildrenChanged(subscription));
+        Assert.True(wrapper.UnadviseChildrenChanged(subscription) < 0);
+        grid.Children.Add(child);
+        Assert.Equal(2, handler.Count);
+    }
+
+    [Fact]
+    public void Replacing_grid_definitions_after_layout_keeps_outlying_children_measurable()
+    {
+        using var app = UnitTestApplication.Start(TestServices.StyledWindow);
+        var factory = new AvnControlFactory();
+        Assert.Equal(0, factory.CreateGrid(out var projected));
+        Assert.NotNull(projected);
+        var wrapper = Assert.IsType<AvnGrid>(projected);
+        var grid = Target<Grid>(projected);
+        Assert.Equal(0, wrapper.SetColumnDefinitions("Auto,Auto,Auto"));
+        Assert.Equal(0, wrapper.SetRowDefinitions("Auto,Auto,Auto"));
+        grid.Children.Add(new Label
+        {
+            [Grid.ColumnProperty] = 2,
+            [Grid.RowProperty] = 2,
+        });
+        var scope = new StackPanel
+        {
+            [Grid.IsSharedSizeScopeProperty] = true,
+            Children = { grid },
+        };
+        var root = new TestRoot(scope) { Width = 200, Height = 100 };
+        root.ExecuteInitialLayoutPass();
+        Assert.Equal(0, wrapper.SetColumnDefinitions("Auto,Auto"));
+        Assert.Equal(0, wrapper.SetRowDefinitions("Auto,Auto"));
+        root.ExecuteInitialLayoutPass();
+        Assert.True(grid.IsMeasureValid);
+
+        grid.ColumnDefinitions.RemoveAt(1);
+        Assert.False(grid.IsMeasureValid);
+        root.ExecuteInitialLayoutPass();
+        grid.RowDefinitions.RemoveAt(1);
+        Assert.False(grid.IsMeasureValid);
+        root.ExecuteInitialLayoutPass();
+        Assert.True(grid.IsMeasureValid);
+
+        Assert.Equal(0, wrapper.SetColumnDefinitions(string.Empty));
+        Assert.Equal(0, wrapper.SetRowDefinitions(string.Empty));
+        root.ExecuteInitialLayoutPass();
+        Assert.Empty(grid.ColumnDefinitions);
+        Assert.Empty(grid.RowDefinitions);
+        Assert.True(grid.IsMeasureValid);
+    }
+
+    private sealed class LayoutHandler : IAvnGridLayoutUpdatedHandler
+    {
+        public int Count { get; private set; }
+
+        public int Invoke()
+        {
+            Count++;
+            return 0;
+        }
+    }
+
+    private sealed class ChildrenChangedHandler : IAvnGridChildrenChangedHandler
+    {
+        public int Count { get; private set; }
+
+        public int Invoke()
+        {
+            Count++;
+            return 0;
+        }
     }
 
     [Fact]

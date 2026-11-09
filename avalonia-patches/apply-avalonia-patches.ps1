@@ -46,6 +46,7 @@ $patches = @(
     'avalonia-termination.patch'
     'avalonia-file-drag.patch'
     'avalonia-application-name.patch'
+    'avalonia-grid-invalidation.patch'
 )
 
 foreach ($patch in $patches) {

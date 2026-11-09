@@ -62,6 +62,10 @@ jobs:
         shell: pwsh
         run: ./rust/tests/test-build-app.ps1
 
+      - name: Build standalone AXAML app without .NET
+        if: runner.os == 'Linux'
+        run: ./rust/tests/test-axaml-template.sh
+
       - name: Check browser smoke-test shutdown
         if: runner.os != 'Windows'
         run: python3 rust/tests/test-browser-smoke.py
@@ -73,7 +77,9 @@ jobs:
       - name: Check the publishable crates package and build standalone
         if: runner.os == 'Linux'
         working-directory: rust
-        run: cargo package --locked -p rustolonia-sys -p rustolonia-bindgen -p rustolonia
+        # Verify against the matching unpublished sys sources, not a released
+        # crate with the same version but an older API.
+        run: cargo package --locked -p rustolonia-sys -p rustolonia-bindgen -p rustolonia --config 'patch.crates-io.rustolonia-sys.path="rustolonia-sys"'
 
   release-gate:
     name: ${{ matrix.rid }}
@@ -227,6 +233,42 @@ jobs:
           $env:CARGO_TARGET_DIR = Join-Path $env:GITHUB_WORKSPACE 'rust/target/cargo-osx-arm64'
           cargo test --manifest-path rust/Cargo.toml -p rustolonia --test application_name --locked -- --ignored
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Verify native Rust AXAML behavior on macOS
+        if: runner.os == 'macOS'
+        shell: pwsh
+        run: |
+          $hostDirectory = (Resolve-Path 'rust/target/dotnet-osx-arm64/publish/Avalonia.Host/release_osx-arm64').Path
+          $env:RUSTOLONIA_HOST_LIB = Join-Path $hostDirectory 'librustolonia_host.dylib'
+          $env:RUSTOLONIA_HOST_DIR = $hostDirectory
+          $env:RUSTOLONIA_NO_DOWNLOAD = '1'
+          $env:CARGO_TARGET_DIR = Join-Path $env:GITHUB_WORKSPACE 'rust/target/cargo-osx-arm64'
+          cargo test --manifest-path rust/Cargo.toml -p axaml-native-fixture --test native --locked -- --ignored
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          bash ./rust/tests/test-axaml-template.sh --native-smoke
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Verify native Rust AXAML behavior on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $hostDirectory = (Resolve-Path 'rust/target/dotnet-win-x64/publish/Avalonia.Host/release_win-x64').Path
+          $env:RUSTOLONIA_HOST_LIB = Join-Path $hostDirectory 'rustolonia_host.dll'
+          $env:RUSTOLONIA_HOST_DIR = $hostDirectory
+          $env:RUSTOLONIA_NO_DOWNLOAD = '1'
+          cargo test --manifest-path rust/Cargo.toml -p axaml-native-fixture --test native --locked -- --ignored
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Verify native Rust AXAML behavior under Xvfb
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          export RUSTOLONIA_HOST_DIR="$GITHUB_WORKSPACE/rust/target/dotnet-linux-x64/publish/Avalonia.Host/release_linux-x64"
+          export RUSTOLONIA_HOST_LIB="$RUSTOLONIA_HOST_DIR/librustolonia_host.so"
+          export RUSTOLONIA_NO_DOWNLOAD=1
+          export CARGO_TARGET_DIR="$GITHUB_WORKSPACE/rust/target/cargo-linux-x64"
+          xvfb-run -a cargo test --manifest-path rust/Cargo.toml -p axaml-native-fixture --test native --locked -- --ignored
+          xvfb-run -a bash ./rust/tests/test-axaml-template.sh --native-smoke
 
       - name: Build and launch a standalone app against the packaged crates and host tarball
         shell: pwsh

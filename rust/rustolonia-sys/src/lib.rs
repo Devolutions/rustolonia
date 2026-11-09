@@ -291,7 +291,11 @@ pub unsafe fn take_utf16(ptr: *mut u16) -> Option<String> {
     Some(value)
 }
 
-pub(crate) unsafe fn clone_utf16(ptr: *const u16) -> Option<String> {
+/// Copies a borrowed, null-terminated UTF-16 string without freeing it.
+///
+/// # Safety
+/// `ptr` must be null or point to a readable null-terminated UTF-16 string.
+pub unsafe fn clone_utf16(ptr: *const u16) -> Option<String> {
     if ptr.is_null() {
         return None;
     }

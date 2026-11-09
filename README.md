@@ -77,9 +77,9 @@ None of these use the desktop host discovery mechanism. The
 [source-built iOS sample](samples/ios/README.md), `rust/build-android.ps1`
 and `rust/build-browser.ps1` build the hosts locally instead.
 
-For complete standalone starting points using the release, see the
-[app templates](templates/README.md): minimal window, input form, and
-multi-window workspace.
+For standalone starting points, see the [app templates](templates/README.md):
+code-first apps use a released host, while the Rust-only AXAML template
+currently needs this Rustolonia source revision.
 
 After the crates are published to crates.io, `rustolonia = "=12.1.0"` is an
 alternative to the git dependency.
@@ -93,10 +93,11 @@ pwsh ./avalonia-patches/apply-avalonia-patches.ps1 -AvaloniaRoot ./avalonia-src
 pwsh ./rust/regenerate-and-build.ps1 -Configuration Release
 ```
 
-The regeneration pipeline (IR, generated C#, native header, Rust bindings) is
-deterministic; CI fails if regenerating changes the checkout. Generated outputs
-have checked-in ownership manifests so stale cleanup does not erase another
-generator's files. Generator CLIs also provide non-mutating `--check` modes.
+The regeneration pipeline (IR, generated C#, native header, Rust bindings, and
+the standalone AXAML template's projection catalog) is deterministic; CI fails
+if regenerating changes the checkout. Generated outputs have checked-in
+ownership manifests so stale cleanup does not erase another generator's files.
+Generator CLIs also provide non-mutating `--check` modes.
 
 Open `Rustolonia.slnx` for the managed projects. See
 [CONTRIBUTING.md](CONTRIBUTING.md) for the contributor workflow and code-generation
@@ -104,11 +105,17 @@ boundaries.
 
 ## Creating a new app
 
-For a standalone code-first app using the latest published release, copy
-one of the [root `templates/`](templates/README.md)
-outside this repository and run `cargo run --locked` from the copied directory.
-Each includes an independent workspace and pinned release dependency, with no
-.NET SDK or local source-checkout requirements.
+For a standalone code-first app, copy one of the code-first
+[root `templates/`](templates/README.md) outside this repository and run
+`cargo run --locked` from the copied directory. They need no .NET SDK or local
+source checkout.
+
+For AXAML authoring without .NET, start from the
+[Rust-only AXAML template](templates/axaml/README.md). It transpiles supported
+markup to Rust during Cargo builds and uses a matching prebuilt host; it is not
+full Avalonia AXAML compatibility. Until a release includes the new APIs, the
+template must point to a checkout of this Rustolonia revision as described in
+its README. Neither the app build nor the checkout requires a .NET SDK.
 
 For compiled AXAML and generated Rust view-models, use the source-build scaffold:
 

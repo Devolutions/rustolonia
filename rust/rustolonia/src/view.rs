@@ -2,7 +2,8 @@
 //! (`IntoValue`, `IntoProp`), and pooled reactive `DataTemplate` support.
 
 use crate::reactive::{
-    provide_context, Effect, Memo, NodeRef, ReactiveScope, Resource, Signal, TwoWay,
+    on_scope_cleanup, provide_context, Effect, Memo, NodeRef, PathTwoWay, PropertyPath,
+    ReactiveScope, Resource, Signal, TwoWay,
 };
 use crate::{
     AppScope, AsControl, Border, Brush, Color, ContentControl, Control, CornerRadius, DataTemplate,
@@ -342,22 +343,47 @@ pub mod markers {
     pub struct MemoMarker;
     pub struct MemoOptionMarker;
     pub struct ClosureMarker;
+    pub struct PathMarker;
+    pub struct PathTwoWayMarker;
+    pub struct ConvertedMarker;
     pub struct TwoWayMarker;
     pub struct TwoWayOptionMarker;
 }
 
 type SetterFn<T> = Box<dyn Fn(T) -> Result<()>>;
 
+struct ResetUpdating<'a>(&'a AtomicBool);
+
+impl Drop for ResetUpdating<'_> {
+    fn drop(&mut self) {
+        self.0.store(false, Ordering::Release);
+    }
+}
+
+pub(crate) fn set_unless_updating<T>(
+    updating: &AtomicBool,
+    setter: &dyn Fn(T) -> Result<()>,
+    value: T,
+) -> Result<()> {
+    if updating.swap(true, Ordering::AcqRel) {
+        return Ok(());
+    }
+    let _guard = ResetUpdating(updating);
+    setter(value)
+}
+
 /// Type-erased adapter for two-way signal bindings.
 pub struct TwoWayAdapter<T> {
     pub(crate) bind_to_control: Box<dyn FnOnce(SetterFn<T>, Arc<AtomicBool>) -> Result<()>>,
-    pub(crate) set_from_control: Box<dyn Fn(T) + Send + 'static>,
+    pub(crate) set_from_control: Box<dyn Fn(T) -> Result<()> + Send + 'static>,
 }
 
 /// A static, reactive, or two-way property binding.
 pub enum PropBinding<T> {
     Static(T),
     Reactive(Box<dyn FnMut() -> T>),
+    Fallible(Box<dyn FnMut() -> Result<T>>),
+    FallibleOptional(Box<dyn FnMut() -> Result<Option<T>>>),
     TwoWay(TwoWayAdapter<T>),
 }
 
@@ -425,6 +451,35 @@ where
     }
 }
 
+impl<T: 'static> IntoProp<T, markers::PathMarker> for PropertyPath<T> {
+    fn into_prop(self) -> PropBinding<T> {
+        PropBinding::Fallible(Box::new(move || self.get()))
+    }
+}
+
+impl<T: 'static> IntoProp<T, markers::PathTwoWayMarker> for PathTwoWay<T> {
+    fn into_prop(self) -> PropBinding<T> {
+        let reader = self.0.read;
+        let writer = self.0.write;
+        let is_writable = writer.is_some();
+        PropBinding::TwoWay(TwoWayAdapter {
+            bind_to_control: Box::new(move |setter, updating| {
+                if !is_writable {
+                    return Err(crate::Error::ReadOnlyBindingPath);
+                }
+                Effect::new(move || {
+                    let value = reader()?;
+                    set_unless_updating(&updating, &*setter, value)
+                })
+                .map(|_| ())
+            }),
+            set_from_control: Box::new(move |value| {
+                writer.as_ref().ok_or(crate::Error::ReadOnlyBindingPath)?(value)
+            }),
+        })
+    }
+}
+
 impl<T: Clone + PartialEq + 'static> IntoProp<T, markers::TwoWayMarker> for TwoWay<T> {
     fn into_prop(self) -> PropBinding<T> {
         let signal = self.signal;
@@ -432,15 +487,13 @@ impl<T: Clone + PartialEq + 'static> IntoProp<T, markers::TwoWayMarker> for TwoW
             bind_to_control: Box::new(move |setter, updating| {
                 Effect::new(move || {
                     let value = signal.get();
-                    if !updating.load(Ordering::Acquire) {
-                        setter(value)?;
-                    }
-                    Ok(())
+                    set_unless_updating(&updating, &*setter, value)
                 })
                 .map(|_| ())
             }),
             set_from_control: Box::new(move |value| {
                 signal.set_if_changed(value);
+                Ok(())
             }),
         })
     }
@@ -453,15 +506,13 @@ impl IntoProp<Option<bool>, markers::TwoWayOptionMarker> for TwoWay<bool> {
             bind_to_control: Box::new(move |setter, updating| {
                 Effect::new(move || {
                     let value = signal.get();
-                    if !updating.load(Ordering::Acquire) {
-                        setter(Some(value))?;
-                    }
-                    Ok(())
+                    set_unless_updating(&updating, &*setter, Some(value))
                 })
                 .map(|_| ())
             }),
             set_from_control: Box::new(move |value: Option<bool>| {
                 signal.set_if_changed(value.unwrap_or(false));
+                Ok(())
             }),
         })
     }
@@ -474,15 +525,13 @@ impl IntoProp<String, markers::TwoWayOptionMarker> for TwoWay<Option<String>> {
             bind_to_control: Box::new(move |setter, updating| {
                 Effect::new(move || {
                     let value = signal.get().unwrap_or_default();
-                    if !updating.load(Ordering::Acquire) {
-                        setter(value)?;
-                    }
-                    Ok(())
+                    set_unless_updating(&updating, &*setter, value)
                 })
                 .map(|_| ())
             }),
             set_from_control: Box::new(move |value: String| {
                 signal.set_if_changed(Some(value));
+                Ok(())
             }),
         })
     }
@@ -502,6 +551,18 @@ where
         PropBinding::Reactive(mut compute) => {
             let control = control.clone();
             Effect::new(move || set(&control, compute())).map(|_| ())
+        }
+        PropBinding::Fallible(mut compute) => {
+            let control = control.clone();
+            Effect::new(move || set(&control, compute()?)).map(|_| ())
+        }
+        PropBinding::FallibleOptional(mut compute) => {
+            let control = control.clone();
+            Effect::new(move || match compute()? {
+                Some(value) => set(&control, value),
+                None => Ok(()),
+            })
+            .map(|_| ())
         }
         PropBinding::TwoWay(adapter) => {
             let control = control.clone();
@@ -529,6 +590,18 @@ where
             let control = control.clone();
             Effect::new(move || set(&control, compute())).map(|_| ())
         }
+        PropBinding::Fallible(mut compute) => {
+            let control = control.clone();
+            Effect::new(move || set(&control, compute()?)).map(|_| ())
+        }
+        PropBinding::FallibleOptional(mut compute) => {
+            let control = control.clone();
+            Effect::new(move || match compute()? {
+                Some(value) => set(&control, value),
+                None => Ok(()),
+            })
+            .map(|_| ())
+        }
         PropBinding::TwoWay(adapter) => {
             let updating = Arc::new(AtomicBool::new(false));
             let control_for_set = control.clone();
@@ -542,10 +615,17 @@ where
             let subscription = subscribe(
                 control,
                 Box::new(move || {
-                    if let Ok(value) = get(&control_for_get) {
-                        updating.store(true, Ordering::Release);
-                        set_from_control(value);
-                        updating.store(false, Ordering::Release);
+                    if updating.swap(true, Ordering::AcqRel) {
+                        return;
+                    }
+                    let _guard = ResetUpdating(&updating);
+                    match get(&control_for_get) {
+                        Ok(value) => {
+                            if let Err(error) = set_from_control(value) {
+                                eprintln!("two-way binding update failed: {error}");
+                            }
+                        }
+                        Err(error) => eprintln!("two-way binding read failed: {error}"),
                     }
                 }),
             )?;
@@ -586,7 +666,7 @@ impl<T: 'static> El<T> {
         T: Clone,
     {
         self.with_op(move |_, control| {
-            slot.set(control.clone());
+            slot.set_scoped(control.clone());
             Ok(())
         })
     }
@@ -631,11 +711,13 @@ impl<T: 'static> El<T> {
     /// Materializes the control and applies all deferred properties, children,
     /// and event subscriptions within `scope`.
     pub fn build(self, scope: &AppScope) -> Result<T> {
-        let instance = (self.create)()?;
-        for op in self.ops {
-            op(scope, &instance)?;
-        }
-        Ok(instance)
+        crate::runtime::with_view_subscription_scope(|| {
+            let instance = (self.create)()?;
+            for op in self.ops {
+                op(scope, &instance)?;
+            }
+            Ok(instance)
+        })
     }
 
     /// Materializes this element and sets it as the content of `host`.
@@ -707,11 +789,15 @@ impl<T: 'static> El<T> {
                         &mut |sig| view_fn(sig).into_child_el().build(&scope_for_build),
                         |controls| {
                             let list = panel_for_apply.children()?;
-                            list.clear()?;
-                            for ctrl in controls {
-                                list.add(ctrl)?;
-                            }
-                            Ok(())
+                            let previous = (0..list.len()?)
+                                .map(|index| list.get(index))
+                                .collect::<Result<Vec<_>>>()?;
+                            replace_collection(
+                                &previous,
+                                controls,
+                                || list.clear(),
+                                |control| list.add(control),
+                            )
                         },
                     )?;
                     Ok(())
@@ -726,6 +812,16 @@ impl<T: 'static> El<T> {
                 PropBinding::Reactive(mut compute) => {
                     Effect::new(move || apply(compute(), &mut key_fn, &mut view_fn)).map(|_| ())
                 }
+                PropBinding::Fallible(mut compute) => {
+                    Effect::new(move || apply(compute()?, &mut key_fn, &mut view_fn)).map(|_| ())
+                }
+                PropBinding::FallibleOptional(mut compute) => Effect::new(move || {
+                    if let Some(items) = compute()? {
+                        apply(items, &mut key_fn, &mut view_fn)?;
+                    }
+                    Ok(())
+                })
+                .map(|_| ()),
                 PropBinding::TwoWay(adapter) => {
                     let updating = Arc::new(AtomicBool::new(false));
                     let mut key_fn = key_fn;
@@ -773,11 +869,15 @@ impl<T: 'static> El<T> {
                         &mut |sig| view_fn(sig).into_child_el().build(&scope_for_build),
                         |controls| {
                             let list = ic_for_apply.items()?;
-                            list.clear()?;
-                            for ctrl in controls {
-                                list.add(ctrl)?;
-                            }
-                            Ok(())
+                            let previous = (0..list.len()?)
+                                .map(|index| list.get(index))
+                                .collect::<Result<Vec<_>>>()?;
+                            replace_collection(
+                                &previous,
+                                controls,
+                                || list.clear(),
+                                |control| list.add(control),
+                            )
                         },
                     )?;
                     Ok(())
@@ -792,6 +892,16 @@ impl<T: 'static> El<T> {
                 PropBinding::Reactive(mut compute) => {
                     Effect::new(move || apply(compute(), &mut key_fn, &mut view_fn)).map(|_| ())
                 }
+                PropBinding::Fallible(mut compute) => {
+                    Effect::new(move || apply(compute()?, &mut key_fn, &mut view_fn)).map(|_| ())
+                }
+                PropBinding::FallibleOptional(mut compute) => Effect::new(move || {
+                    if let Some(items) = compute()? {
+                        apply(items, &mut key_fn, &mut view_fn)?;
+                    }
+                    Ok(())
+                })
+                .map(|_| ()),
                 PropBinding::TwoWay(adapter) => {
                     let updating = Arc::new(AtomicBool::new(false));
                     let mut key_fn = key_fn;
@@ -809,11 +919,101 @@ impl<T: 'static> El<T> {
     }
 }
 
+fn replace_collection<V>(
+    previous: &[V],
+    next: &[V],
+    mut clear: impl FnMut() -> Result<()>,
+    mut add: impl FnMut(&V) -> Result<()>,
+) -> Result<()> {
+    fn apply<V>(
+        values: &[V],
+        clear: &mut impl FnMut() -> Result<()>,
+        add: &mut impl FnMut(&V) -> Result<()>,
+    ) -> Result<()> {
+        clear()?;
+        for value in values {
+            add(value)?;
+        }
+        Ok(())
+    }
+
+    match apply(next, &mut clear, &mut add) {
+        Ok(()) => Ok(()),
+        Err(update) => match apply(previous, &mut clear, &mut add) {
+            Ok(()) => Err(update),
+            Err(rollback) => Err(crate::Error::CollectionUpdateRollback {
+                update: Box::new(update),
+                rollback: Box::new(rollback),
+            }),
+        },
+    }
+}
+
 /// Keyed list reconciler that reuses existing realized view handles `V` and
 /// updates their per-item [`Signal<T>`] in place when items are added, removed,
 /// reordered, or modified.
 pub struct KeyedListReconciler<T: 'static, K, V> {
     entries: Vec<(K, V, Signal<T>, ReactiveScope)>,
+}
+
+/// Rust references for each live instance of a named item template.
+///
+/// Entries are removed when their item scope is disposed. Their order reflects
+/// creation, not the current visual order; use the item signal to identify an
+/// entry. Do not read a saved item signal after that item is removed. This does
+/// not create an Avalonia `NameScope`.
+pub struct ItemNameScope<T: 'static, R: Copy + 'static> {
+    entries: Rc<RefCell<Vec<(Signal<T>, R)>>>,
+}
+
+impl<T: 'static, R: Copy + 'static> Clone for ItemNameScope<T, R> {
+    fn clone(&self) -> Self {
+        Self {
+            entries: self.entries.clone(),
+        }
+    }
+}
+
+impl<T: 'static, R: Copy + 'static> std::fmt::Debug for ItemNameScope<T, R> {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("ItemNameScope")
+            .field("len", &self.entries.borrow().len())
+            .finish()
+    }
+}
+
+impl<T: 'static, R: Copy + 'static> Default for ItemNameScope<T, R> {
+    fn default() -> Self {
+        Self {
+            entries: Rc::new(RefCell::new(Vec::new())),
+        }
+    }
+}
+
+impl<T: 'static, R: Copy + 'static> ItemNameScope<T, R> {
+    /// Returns the currently mounted item signals and their named references.
+    pub fn entries(&self) -> Vec<(Signal<T>, R)> {
+        self.entries.borrow().clone()
+    }
+
+    /// Registers one item instance for the lifetime of the current scope.
+    #[doc(hidden)]
+    pub fn register(&self, item: Signal<T>, refs: R) {
+        let mut entries = self.entries.borrow_mut();
+        assert!(
+            !entries.iter().any(|(registered, _)| *registered == item),
+            "item names were already registered for this signal"
+        );
+        entries.push((item, refs));
+        drop(entries);
+        let entries = self.entries.clone();
+        on_scope_cleanup(move || {
+            entries
+                .borrow_mut()
+                .retain(|(registered, _)| *registered != item)
+        });
+    }
 }
 
 impl<T: 'static, K, V> Default for KeyedListReconciler<T, K, V> {
@@ -849,7 +1049,10 @@ where
     /// Returns `Ok(true)` if the structural key sequence changed (and `apply_list`
     /// was invoked), or `Ok(false)` if all keys remained in the exact same order
     /// (in which case only per-item signals were updated in place). Any removed
-    /// item's [`ReactiveScope`] is automatically disposed.
+    /// item's [`ReactiveScope`] is automatically disposed. Duplicate keys are
+    /// rejected, and a failed build or `apply_list` leaves the reconciler's
+    /// previous entries intact. `apply_list` is responsible for rolling back
+    /// changes to its own collection if it fails.
     pub fn reconcile(
         &mut self,
         next_items: Vec<T>,
@@ -858,42 +1061,271 @@ where
         apply_list: impl FnOnce(&[V]) -> Result<()>,
     ) -> Result<bool> {
         let old_keys: Vec<K> = self.entries.iter().map(|(k, _, _, _)| k.clone()).collect();
-        let mut old_entries: Vec<Option<(K, V, Signal<T>, ReactiveScope)>> =
-            self.entries.drain(..).map(Some).collect();
-        let mut next_entries = Vec::with_capacity(next_items.len());
-        let mut next_keys = Vec::with_capacity(next_items.len());
-
+        let mut desired = Vec::with_capacity(next_items.len());
         for item in next_items {
             let key = key_fn(&item);
-            next_keys.push(key.clone());
-            let found = old_entries
-                .iter_mut()
-                .find(|slot| slot.as_ref().is_some_and(|(k, _, _, _)| *k == key))
-                .and_then(Option::take);
-
-            if let Some((existing_key, view, signal, item_scope)) = found {
-                signal.set_if_changed(item);
-                next_entries.push((existing_key, view, signal, item_scope));
-            } else {
-                let signal = Signal::new(item);
-                let item_scope = ReactiveScope::new();
-                let view = item_scope.run(|| build_view(signal))?;
-                next_entries.push((key, view, signal, item_scope));
+            if desired.iter().any(|(existing, _)| *existing == key) {
+                return Err(crate::Error::DuplicateItemKey);
             }
+            desired.push((key, item));
         }
 
-        // Dispose scopes for any removed items.
-        for (_, _, _, removed_scope) in old_entries.into_iter().flatten() {
-            removed_scope.dispose();
+        let mut next_entries = Vec::with_capacity(desired.len());
+        let mut next_keys = Vec::with_capacity(desired.len());
+        let mut updates = Vec::new();
+        let mut created_scopes = Vec::new();
+
+        for (key, item) in desired {
+            next_keys.push(key.clone());
+            if let Some((existing_key, view, signal, item_scope)) = self
+                .entries
+                .iter()
+                .find(|(existing, _, _, _)| *existing == key)
+            {
+                updates.push((*signal, item));
+                next_entries.push((existing_key.clone(), view.clone(), *signal, *item_scope));
+            } else {
+                let item_scope = ReactiveScope::new();
+                created_scopes.push(item_scope);
+                let (view, signal) = match item_scope.run(|| {
+                    let signal = Signal::new_scoped(item);
+                    build_view(signal).map(|view| (view, signal))
+                }) {
+                    Ok(built) => built,
+                    Err(error) => {
+                        for scope in created_scopes {
+                            scope.dispose();
+                        }
+                        return Err(error);
+                    }
+                };
+                next_entries.push((key, view, signal, item_scope));
+            }
         }
 
         let keys_changed = old_keys != next_keys;
         if keys_changed {
             let views: Vec<V> = next_entries.iter().map(|(_, v, _, _)| v.clone()).collect();
-            apply_list(&views)?;
+            if let Err(error) = apply_list(&views) {
+                for scope in created_scopes {
+                    scope.dispose();
+                }
+                return Err(error);
+            }
+        }
+        for (key, _, _, scope) in &self.entries {
+            if !next_keys.contains(key) {
+                scope.dispose();
+            }
         }
         self.entries = next_entries;
+        for (signal, item) in updates {
+            signal.set_if_changed(item);
+        }
         Ok(keys_changed)
+    }
+}
+
+#[cfg(test)]
+mod collection_tests {
+    use super::*;
+    use std::cell::Cell;
+
+    #[test]
+    fn two_way_update_guard_prevents_reentry_and_resets_after_errors() {
+        let updating = AtomicBool::new(false);
+        let calls = Cell::new(0);
+        set_unless_updating(
+            &updating,
+            &|()| {
+                calls.set(calls.get() + 1);
+                set_unless_updating(
+                    &updating,
+                    &|()| {
+                        calls.set(calls.get() + 1);
+                        Ok(())
+                    },
+                    (),
+                )
+            },
+            (),
+        )
+        .unwrap();
+        assert_eq!(calls.get(), 1);
+        assert!(!updating.load(Ordering::Acquire));
+
+        assert!(set_unless_updating(
+            &updating,
+            &|()| Err(crate::Error::Binding("rejected".into())),
+            ()
+        )
+        .is_err());
+        assert!(!updating.load(Ordering::Acquire));
+
+        assert!(std::panic::catch_unwind(|| {
+            let _ = set_unless_updating(&updating, &|()| panic!("setter panicked"), ());
+        })
+        .is_err());
+        assert!(!updating.load(Ordering::Acquire));
+    }
+
+    #[test]
+    fn two_way_paths_surface_read_only_and_validation_errors() {
+        let read_only = PropertyPath::read_only(|| Ok(String::from("read only")));
+        let binding: PropBinding<String> = read_only.two_way().into_prop();
+        let PropBinding::TwoWay(read_only) = binding else {
+            panic!("expected two-way binding");
+        };
+        assert!(matches!(
+            (read_only.bind_to_control)(Box::new(|_| Ok(())), Arc::new(AtomicBool::new(false))),
+            Err(crate::Error::ReadOnlyBindingPath)
+        ));
+
+        let value = Signal::new(String::from("initial"));
+        let path = PropertyPath::writable(
+            move || Ok(value.get()),
+            move |next: String| {
+                if next.is_empty() {
+                    return Err(crate::Error::Binding("value is required".into()));
+                }
+                value.set_if_changed(next);
+                Ok(())
+            },
+        );
+        let scope = ReactiveScope::new();
+        let seen = Rc::new(RefCell::new(Vec::new()));
+        scope.run(|| {
+            let binding: PropBinding<String> = path.two_way().into_prop();
+            let PropBinding::TwoWay(adapter) = binding else {
+                panic!("expected two-way binding");
+            };
+            let seen = seen.clone();
+            (adapter.bind_to_control)(
+                Box::new(move |next| {
+                    seen.borrow_mut().push(next);
+                    Ok(())
+                }),
+                Arc::new(AtomicBool::new(false)),
+            )
+            .unwrap();
+            assert!((adapter.set_from_control)(String::new()).is_err());
+            (adapter.set_from_control)("accepted".into()).unwrap();
+        });
+        assert_eq!(*seen.borrow(), ["initial", "accepted"]);
+        scope.dispose();
+    }
+
+    #[test]
+    fn named_item_references_are_isolated_and_removed_with_each_scope() {
+        let names = ItemNameScope::<u32, NodeRef<String>>::default();
+        let first = ReactiveScope::new();
+        let first_ref = first.run(|| {
+            let item = Signal::new_scoped(1);
+            let node = NodeRef::new_scoped();
+            node.set("first".to_string());
+            names.register(item, node);
+            node
+        });
+        let second = ReactiveScope::new();
+        let second_ref = second.run(|| {
+            let item = Signal::new_scoped(2);
+            let node = NodeRef::new_scoped();
+            node.set("second".to_string());
+            names.register(item, node);
+            node
+        });
+
+        assert_eq!(names.entries().len(), 2);
+        assert_eq!(first_ref.get().as_deref(), Some("first"));
+        assert_eq!(second_ref.get().as_deref(), Some("second"));
+
+        first.dispose();
+        assert_eq!(names.entries().len(), 1);
+        assert_eq!(names.entries()[0].0.get(), 2);
+        assert_eq!(first_ref.get(), None);
+        assert_eq!(second_ref.get().as_deref(), Some("second"));
+
+        second.dispose();
+        assert!(names.entries().is_empty());
+        assert_eq!(second_ref.get(), None);
+    }
+
+    #[test]
+    fn failed_list_update_removes_names_for_rolled_back_items() {
+        let names = ItemNameScope::<u32, NodeRef<String>>::default();
+        let parent = ReactiveScope::new();
+        parent.run(|| {
+            let mut reconciler = KeyedListReconciler::<u32, u32, ()>::new();
+            let mut key = |item: &u32| *item;
+            let mut build = |item: Signal<u32>| {
+                names.register(item, NodeRef::new_scoped());
+                Ok(())
+            };
+            reconciler
+                .reconcile(vec![1], &mut key, &mut build, |_| Ok(()))
+                .expect("first item should mount");
+            let result = reconciler.reconcile(vec![1, 2], &mut key, &mut build, |_| {
+                Err(crate::Error::Load("update failed".into()))
+            });
+            assert!(result.is_err());
+            assert_eq!(names.entries().len(), 1);
+            assert_eq!(names.entries()[0].0.get(), 1);
+        });
+        parent.dispose();
+        assert!(names.entries().is_empty());
+    }
+
+    #[test]
+    fn failed_collection_update_restores_the_original_entries() {
+        let values = RefCell::new(vec![1, 2]);
+        let fail_once = Cell::new(true);
+        let result = replace_collection(
+            &[1, 2],
+            &[2, 3],
+            || {
+                values.borrow_mut().clear();
+                Ok(())
+            },
+            |value| {
+                if *value == 3 && fail_once.replace(false) {
+                    return Err(crate::Error::Load("update failed".into()));
+                }
+                values.borrow_mut().push(*value);
+                Ok(())
+            },
+        );
+        assert!(result.is_err());
+        assert_eq!(*values.borrow(), vec![1, 2]);
+    }
+
+    #[test]
+    fn collection_update_reports_a_failed_rollback() {
+        let values = RefCell::new(vec![1, 2]);
+        let calls = Cell::new(0);
+        let result = replace_collection(
+            &[1, 2],
+            &[2, 3],
+            || {
+                values.borrow_mut().clear();
+                Ok(())
+            },
+            |value| {
+                let call = calls.get() + 1;
+                calls.set(call);
+                if call == 2 || call == 3 {
+                    return Err(crate::Error::Load(format!("add {call} failed")));
+                }
+                values.borrow_mut().push(*value);
+                Ok(())
+            },
+        );
+        let error = result.expect_err("the update and rollback both fail");
+        assert!(matches!(
+            error,
+            crate::Error::CollectionUpdateRollback { .. }
+        ));
+        assert!(error.to_string().contains("add 2 failed"));
+        assert!(error.to_string().contains("add 3 failed"));
     }
 }
 
@@ -964,6 +1396,16 @@ impl Show {
                 PropBinding::Reactive(mut compute) => {
                     Effect::new(move || update(compute())).map(|_| ())
                 }
+                PropBinding::Fallible(mut compute) => {
+                    Effect::new(move || update(compute()?)).map(|_| ())
+                }
+                PropBinding::FallibleOptional(mut compute) => Effect::new(move || {
+                    if let Some(state) = compute()? {
+                        update(state)?;
+                    }
+                    Ok(())
+                })
+                .map(|_| ()),
                 PropBinding::TwoWay(adapter) => {
                     let updating = Arc::new(AtomicBool::new(false));
                     let update_cell = Rc::new(RefCell::new(update));
@@ -1004,6 +1446,7 @@ impl For {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct ControlSlot {
     host: NodeRef<Border>,
+    owner_scope: NodeRef<ReactiveScope>,
     active_scope: NodeRef<ReactiveScope>,
 }
 
@@ -1011,13 +1454,29 @@ impl ControlSlot {
     pub fn new() -> Self {
         Self {
             host: NodeRef::new(),
+            owner_scope: NodeRef::new(),
             active_scope: NodeRef::new(),
         }
     }
 
     /// Returns the host [`El<Border>`] to place inside a parent `rsx!` or `El` tree.
     pub fn host(&self) -> El<Border> {
-        Border::el().node_ref(self.host)
+        let slot = *self;
+        Border::el()
+            .with_op(move |_, _| {
+                if slot.host.get().is_some() {
+                    return Err(crate::Error::ControlSlotAlreadyMounted);
+                }
+                slot.owner_scope.set_scoped(ReactiveScope::current());
+                on_scope_cleanup(move || {
+                    if let Some(active) = slot.active_scope.get() {
+                        active.dispose();
+                        slot.active_scope.clear();
+                    }
+                });
+                Ok(())
+            })
+            .node_ref(self.host)
     }
 
     /// Returns the underlying host [`Border`] if it has been materialized.
@@ -1028,28 +1487,252 @@ impl ControlSlot {
     /// Materializes `view` inside a new [`ReactiveScope`] and mounts it into this
     /// slot's host container, disposing any previous subtree's scope.
     pub fn mount(&self, scope: &AppScope, view: impl IntoContentEl) -> Result<()> {
+        let border = self.host.get().ok_or(crate::Error::ControlSlotNotMounted)?;
+        let owner = self
+            .owner_scope
+            .get()
+            .ok_or(crate::Error::ControlSlotNotMounted)?;
+        let next_scope = owner.run(ReactiveScope::new);
+        let built =
+            match next_scope.run(|| view.into_content_el().map(|el| el.build(scope)).transpose()) {
+                Ok(built) => built,
+                Err(error) => {
+                    next_scope.dispose();
+                    return Err(error);
+                }
+            };
+        if let Err(error) = border.set_child(built.as_ref().map(|c| c as &dyn AsControl)) {
+            next_scope.dispose();
+            return Err(error);
+        }
         if let Some(prev) = self.active_scope.get() {
             prev.dispose();
         }
-        let next_scope = ReactiveScope::new();
         self.active_scope.set(next_scope);
-        let Some(border) = self.host.get() else {
-            return Ok(());
-        };
-        let built =
-            next_scope.run(|| view.into_content_el().map(|el| el.build(scope)).transpose())?;
-        border.set_child(built.as_ref().map(|c| c as &dyn AsControl))
+        Ok(())
     }
 
     /// Clears any currently mounted child and disposes its [`ReactiveScope`].
     pub fn clear(&self) -> Result<()> {
+        let border = self.host.get().ok_or(crate::Error::ControlSlotNotMounted)?;
+        border.set_child(None)?;
         if let Some(prev) = self.active_scope.get() {
             prev.dispose();
         }
-        let Some(border) = self.host.get() else {
-            return Ok(());
-        };
-        border.set_child(None)
+        self.active_scope.clear();
+        Ok(())
+    }
+
+    /// Reactively selects and mounts a view for an optional Rust model.
+    ///
+    /// A model update with the same registry key updates the existing view's
+    /// signal. A different key replaces the view and disposes its old scope.
+    pub fn bind<T, K>(
+        &self,
+        scope: &AppScope,
+        model: Signal<Option<T>>,
+        registry: ViewRegistry<T, K>,
+    ) -> Result<Effect>
+    where
+        T: Clone + PartialEq + 'static,
+        K: Clone + Eq + 'static,
+    {
+        let owner = self
+            .owner_scope
+            .get()
+            .filter(|_| self.host.get().is_some())
+            .ok_or(crate::Error::ControlSlotNotMounted)?;
+        let slot = *self;
+        let scope = scope.clone();
+        let mut current: Option<(K, Signal<T>, ReactiveScope)> = None;
+        let mut initialized = false;
+        owner.run(|| {
+            Effect::new(move || {
+                match model.get() {
+                    Some(value) => {
+                        let key = registry.key_for(&value);
+                        if let Some((current_key, signal, mounted_scope)) = &current {
+                            if *current_key == key
+                                && slot.active_scope.get() == Some(*mounted_scope)
+                            {
+                                signal.set_if_changed(value);
+                                return Ok(());
+                            }
+                        }
+                        let signal = Signal::new(value);
+                        if let Err(error) = slot.mount(&scope, registry.deferred(signal)) {
+                            signal.dispose_value();
+                            return Err(error);
+                        }
+                        let mounted_scope = slot
+                            .active_scope
+                            .get()
+                            .expect("a successful mount stores its scope");
+                        current = Some((key, signal, mounted_scope));
+                    }
+                    None if !initialized || current.is_some() => {
+                        slot.clear()?;
+                        current = None;
+                    }
+                    None => {}
+                }
+                initialized = true;
+                Ok(())
+            })
+        })
+    }
+}
+
+type ViewBuilder<T> = Rc<dyn Fn(Signal<T>) -> AnyEl>;
+
+/// Selects Rust views for model variants without requiring a managed ViewLocator.
+pub struct ViewRegistry<T: 'static, K> {
+    selector: Rc<dyn Fn(&T) -> K>,
+    builders: Rc<RefCell<Vec<(K, ViewBuilder<T>)>>>,
+}
+
+impl<T: 'static, K> Clone for ViewRegistry<T, K> {
+    fn clone(&self) -> Self {
+        Self {
+            selector: self.selector.clone(),
+            builders: self.builders.clone(),
+        }
+    }
+}
+
+impl<T: 'static, K> std::fmt::Debug for ViewRegistry<T, K> {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("ViewRegistry")
+            .finish_non_exhaustive()
+    }
+}
+
+impl<T: Clone + 'static, K: Clone + Eq + 'static> ViewRegistry<T, K> {
+    /// Creates a registry whose selector identifies the view kind for a model.
+    pub fn new(selector: impl Fn(&T) -> K + 'static) -> Self {
+        Self {
+            selector: Rc::new(selector),
+            builders: Rc::new(RefCell::new(Vec::new())),
+        }
+    }
+
+    /// Registers one view factory for `key`; duplicate registrations are rejected.
+    pub fn register<E: IntoChildEl + 'static>(
+        &self,
+        key: K,
+        factory: impl Fn(Signal<T>) -> E + 'static,
+    ) -> Result<()> {
+        let mut builders = self.builders.borrow_mut();
+        if builders.iter().any(|(existing, _)| *existing == key) {
+            return Err(crate::Error::InvalidViewRegistry(
+                "a view factory is already registered for this key".to_string(),
+            ));
+        }
+        builders.push((key, Rc::new(move |item| factory(item).into_child_el())));
+        Ok(())
+    }
+
+    /// Returns the selector key for a model.
+    pub fn key_for(&self, model: &T) -> K {
+        (self.selector)(model)
+    }
+
+    /// Creates the selected view, reporting an error for an unregistered key.
+    pub fn create(&self, model: Signal<T>) -> Result<AnyEl> {
+        let key = self.key_for(&model.get_untracked());
+        let factory = self
+            .builders
+            .borrow()
+            .iter()
+            .find(|(registered, _)| *registered == key)
+            .map(|(_, factory)| factory.clone())
+            .ok_or_else(|| {
+                crate::Error::InvalidViewRegistry(format!(
+                    "no view factory is registered for model {}",
+                    std::any::type_name::<T>()
+                ))
+            })?;
+        Ok(factory(model))
+    }
+
+    fn deferred(&self, model: Signal<T>) -> AnyEl {
+        let registry = self.clone();
+        AnyEl {
+            build: Box::new(move |scope| {
+                on_scope_cleanup(move || model.dispose_value());
+                registry.create(model)?.build(scope)
+            }),
+        }
+    }
+}
+
+/// A type-erased, reactive item source for an AXAML `ItemsControl`.
+#[derive(Clone)]
+pub struct ItemsView {
+    attach: Rc<dyn Fn(&AppScope, &ItemsControl) -> Result<()>>,
+}
+
+impl std::fmt::Debug for ItemsView {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.debug_struct("ItemsView").finish_non_exhaustive()
+    }
+}
+
+impl ItemsView {
+    /// Creates a keyed item source with an explicit Rust view factory.
+    pub fn new<Item, K, KF, VF, E>(items: Signal<Vec<Item>>, key_fn: KF, view_fn: VF) -> Self
+    where
+        Item: Clone + PartialEq + 'static,
+        K: Eq + Clone + 'static,
+        KF: FnMut(&Item) -> K + 'static,
+        VF: FnMut(Signal<Item>) -> E + 'static,
+        E: IntoChildEl + 'static,
+    {
+        let key_fn = Rc::new(RefCell::new(key_fn));
+        let view_fn = Rc::new(RefCell::new(view_fn));
+        Self {
+            attach: Rc::new(move |scope, owner| {
+                let owner = owner.clone();
+                let key_fn = key_fn.clone();
+                let view_fn = view_fn.clone();
+                El::new(move || Ok(owner))
+                    .items_for(
+                        items,
+                        move |item| (key_fn.borrow_mut())(item),
+                        move |item| (view_fn.borrow_mut())(item),
+                    )
+                    .build(scope)?;
+                Ok(())
+            }),
+        }
+    }
+
+    /// Creates a keyed item source using a Rust view registry.
+    pub fn from_registry<Item, K, Kind>(
+        items: Signal<Vec<Item>>,
+        key_fn: impl FnMut(&Item) -> K + 'static,
+        registry: ViewRegistry<Item, Kind>,
+    ) -> Self
+    where
+        Item: Clone + PartialEq + 'static,
+        K: Eq + Clone + 'static,
+        Kind: Eq + Clone + 'static,
+    {
+        Self::new(items, key_fn, move |item| {
+            let slot = ControlSlot::new();
+            let registry = registry.clone();
+            slot.host().with_op(move |scope, _| {
+                let model = Memo::new_scoped(move || Some(item.get()));
+                slot.bind(scope, model.as_signal(), registry)?;
+                Ok(())
+            })
+        })
+    }
+
+    /// Attaches this source to an already materialized items control.
+    pub fn attach(&self, scope: &AppScope, owner: &impl Upcast<ItemsControl>) -> Result<()> {
+        (self.attach)(scope, owner.upcast_ref())
     }
 }
 
@@ -1063,6 +1746,16 @@ pub struct Command {
     _effect: Option<Effect>,
 }
 
+fn command_callback_error(error: crate::Error) -> sys::Error {
+    match error {
+        crate::Error::Abi(error) => error,
+        error => {
+            eprintln!("command callback failed: {error}");
+            sys::Error(sys::E_FAIL)
+        }
+    }
+}
+
 impl Command {
     /// Creates an always-enabled command that invokes `execute` with the command parameter.
     pub fn new(mut execute: impl FnMut(Variant) -> Result<()> + Send + 'static) -> Self {
@@ -1070,10 +1763,8 @@ impl Command {
         let flag_for_query = can_execute_flag.clone();
         let raw = sys::command(
             move |variant| {
-                execute(Variant::from_abi(variant)).map_err(|error| match error {
-                    crate::Error::Abi(error) => error,
-                    _ => sys::Error(sys::E_FAIL),
-                })
+                let variant = unsafe { Variant::from_borrowed_abi(variant)? };
+                execute(variant).map_err(command_callback_error)
             },
             move |_| Ok(flag_for_query.load(Ordering::Acquire)),
         );
@@ -1089,18 +1780,33 @@ impl Command {
     /// `CanExecuteChanged` when the state changes.
     pub fn with_can_execute<M>(
         can_execute: impl IntoProp<bool, M> + 'static,
+        execute: impl FnMut(Variant) -> Result<()> + Send + 'static,
+    ) -> Result<Self> {
+        Self::with_can_execute_parameter(can_execute, |_| Ok(true), execute)
+    }
+
+    /// Creates a command with a reactive global gate and an additional
+    /// parameter-specific `CanExecute` predicate. Call [`Command::notify`]
+    /// when predicate dependencies other than the global gate change.
+    pub fn with_can_execute_parameter<M>(
+        can_execute: impl IntoProp<bool, M> + 'static,
+        mut predicate: impl FnMut(Variant) -> Result<bool> + Send + 'static,
         mut execute: impl FnMut(Variant) -> Result<()> + Send + 'static,
     ) -> Result<Self> {
         let can_execute_flag = Arc::new(AtomicBool::new(true));
         let flag_for_query = can_execute_flag.clone();
         let raw = sys::command(
             move |variant| {
-                execute(Variant::from_abi(variant)).map_err(|error| match error {
-                    crate::Error::Abi(error) => error,
-                    _ => sys::Error(sys::E_FAIL),
-                })
+                let variant = unsafe { Variant::from_borrowed_abi(variant)? };
+                execute(variant).map_err(command_callback_error)
             },
-            move |_| Ok(flag_for_query.load(Ordering::Acquire)),
+            move |variant| {
+                if !flag_for_query.load(Ordering::Acquire) {
+                    return Ok(false);
+                }
+                let variant = unsafe { Variant::from_borrowed_abi(variant)? };
+                predicate(variant).map_err(command_callback_error)
+            },
         );
 
         let effect = match can_execute.into_prop() {
@@ -1115,7 +1821,32 @@ impl Command {
                     let next = compute();
                     let prev = flag_for_effect.swap(next, Ordering::AcqRel);
                     if prev != next {
-                        raw_for_effect.notify();
+                        raw_for_effect.notify()?;
+                    }
+                    Ok(())
+                })?)
+            }
+            PropBinding::Fallible(mut compute) => {
+                let flag_for_effect = can_execute_flag.clone();
+                let raw_for_effect = raw.clone();
+                Some(Effect::new(move || {
+                    let next = compute()?;
+                    let prev = flag_for_effect.swap(next, Ordering::AcqRel);
+                    if prev != next {
+                        raw_for_effect.notify()?;
+                    }
+                    Ok(())
+                })?)
+            }
+            PropBinding::FallibleOptional(mut compute) => {
+                let flag_for_effect = can_execute_flag.clone();
+                let raw_for_effect = raw.clone();
+                Some(Effect::new(move || {
+                    if let Some(next) = compute()? {
+                        let prev = flag_for_effect.swap(next, Ordering::AcqRel);
+                        if prev != next {
+                            raw_for_effect.notify()?;
+                        }
                     }
                     Ok(())
                 })?)
@@ -1128,7 +1859,7 @@ impl Command {
                     Box::new(move |next| {
                         let prev = flag_for_effect.swap(next, Ordering::AcqRel);
                         if prev != next {
-                            raw_for_effect.notify();
+                            raw_for_effect.notify()?;
                         }
                         Ok(())
                     }),
@@ -1145,20 +1876,43 @@ impl Command {
         })
     }
 
-    /// Returns whether this command is currently enabled.
+    /// Returns the reactive global gate. A parameter-specific predicate may
+    /// further restrict execution; use [`Command::can_execute`] to query it.
     pub fn is_enabled(&self) -> bool {
         self.can_execute_flag.load(Ordering::Acquire)
     }
 
     /// Manually fires `CanExecuteChanged` notifications to all subscribed controls.
-    pub fn notify(&self) {
-        self.raw.notify();
+    pub fn notify(&self) -> Result<()> {
+        Ok(self.raw.notify()?)
     }
 
     /// Invokes the command directly from Rust with `parameter`.
     pub fn execute(&self, parameter: impl Into<Variant>) -> Result<()> {
-        let abi = parameter.into().to_abi()?;
-        Ok(self.raw.as_com_ptr().execute(*abi)?)
+        Self::execute_interface(self.raw.as_com_ptr(), parameter)
+    }
+
+    /// Invokes a command interface obtained from a control property.
+    pub fn execute_interface(
+        command: &sys::ComPtr<sys::IAvnCommand>,
+        parameter: impl Into<Variant>,
+    ) -> Result<()> {
+        let abi = parameter.into().to_abi()?.into_owned_abi();
+        Ok(command.execute(abi)?)
+    }
+
+    /// Queries the command for a particular parameter.
+    pub fn can_execute(&self, parameter: impl Into<Variant>) -> Result<bool> {
+        Self::can_execute_interface(self.raw.as_com_ptr(), parameter)
+    }
+
+    /// Queries a command interface obtained from a control property.
+    pub fn can_execute_interface(
+        command: &sys::ComPtr<sys::IAvnCommand>,
+        parameter: impl Into<Variant>,
+    ) -> Result<bool> {
+        let abi = parameter.into().to_abi()?.into_owned_abi();
+        Ok(command.can_execute(abi)?)
     }
 
     pub fn as_com_ptr(&self) -> &sys::ComPtr<sys::IAvnCommand> {

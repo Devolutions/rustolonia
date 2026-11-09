@@ -11,6 +11,9 @@ namespace Avalonia.Host.Com;
 public partial interface IAvnGrid : IAvnPanel
 {
     [PreserveSig]
+    int GetIsEffectivelyVisible(out int value);
+
+    [PreserveSig]
     int GetShowGridLines(out int value);
 
     [PreserveSig]
@@ -39,6 +42,21 @@ public partial interface IAvnGrid : IAvnPanel
 
     [PreserveSig]
     int SetRowDefinitions(string value);
+
+    [PreserveSig]
+    int UpdateLayout();
+
+    [PreserveSig]
+    int AdviseLayoutUpdated(IAvnGridLayoutUpdatedHandler? handler, out long subscriptionId);
+
+    [PreserveSig]
+    int UnadviseLayoutUpdated(long subscriptionId);
+
+    [PreserveSig]
+    int AdviseChildrenChanged(IAvnGridChildrenChangedHandler? handler, out long subscriptionId);
+
+    [PreserveSig]
+    int UnadviseChildrenChanged(long subscriptionId);
 
 }
 
@@ -83,6 +101,10 @@ public sealed partial class AvnGrid : IAvnGrid
     private long _nextTappedSubscriptionId;
     private readonly global::System.Collections.Generic.Dictionary<long, (IAvnControlDoubleTappedHandler Handler, global::System.Action Unsubscribe)> _doubleTappedSubscriptions = new();
     private long _nextDoubleTappedSubscriptionId;
+    private readonly global::System.Collections.Generic.Dictionary<long, (IAvnGridLayoutUpdatedHandler Handler, global::System.Action Unsubscribe)> _layoutUpdatedSubscriptions = new();
+    private long _nextLayoutUpdatedSubscriptionId;
+    private readonly global::System.Collections.Generic.Dictionary<long, (IAvnGridChildrenChangedHandler Handler, global::System.Action Unsubscribe)> _childrenChangedSubscriptions = new();
+    private long _nextChildrenChangedSubscriptionId;
 
     internal AvnGrid(global::Avalonia.Controls.Grid value)
     {
@@ -1670,6 +1692,22 @@ public sealed partial class AvnGrid : IAvnGrid
         }
     }
 
+    public int GetIsEffectivelyVisible(out int value)
+    {
+        value = default;
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            value = _value.IsEffectivelyVisible ? 1 : 0;
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
     public int GetShowGridLines(out int value)
     {
         value = default;
@@ -1770,7 +1808,7 @@ public sealed partial class AvnGrid : IAvnGrid
         {
             using var call = _state.EnterCall();
             _value.VerifyAccess();
-            value = _value.ColumnDefinitions.ToString();
+            value = global::Avalonia.Host.Com.AvnColumnDefinitions.ToAbi(_value.ColumnDefinitions)!;
             return global::Avalonia.Host.HResults.S_OK;
         }
         catch (global::System.Exception e)
@@ -1785,7 +1823,7 @@ public sealed partial class AvnGrid : IAvnGrid
         {
             using var call = _state.EnterCall();
             _value.VerifyAccess();
-            _value.ColumnDefinitions = global::Avalonia.Controls.ColumnDefinitions.Parse(value);
+            _value.ColumnDefinitions = global::Avalonia.Host.Com.AvnColumnDefinitions.FromAbi(value)!;
             return global::Avalonia.Host.HResults.S_OK;
         }
         catch (global::System.Exception e)
@@ -1801,7 +1839,7 @@ public sealed partial class AvnGrid : IAvnGrid
         {
             using var call = _state.EnterCall();
             _value.VerifyAccess();
-            value = _value.RowDefinitions.ToString();
+            value = global::Avalonia.Host.Com.AvnRowDefinitions.ToAbi(_value.RowDefinitions)!;
             return global::Avalonia.Host.HResults.S_OK;
         }
         catch (global::System.Exception e)
@@ -1816,7 +1854,114 @@ public sealed partial class AvnGrid : IAvnGrid
         {
             using var call = _state.EnterCall();
             _value.VerifyAccess();
-            _value.RowDefinitions = global::Avalonia.Controls.RowDefinitions.Parse(value);
+            _value.RowDefinitions = global::Avalonia.Host.Com.AvnRowDefinitions.FromAbi(value)!;
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int UpdateLayout()
+    {
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            _value.UpdateLayout();
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int AdviseLayoutUpdated(IAvnGridLayoutUpdatedHandler? handler, out long subscriptionId)
+    {
+        subscriptionId = 0;
+        if (handler is null)
+            return global::Avalonia.Host.HResults.E_POINTER;
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            var eventSource = _value;
+            var callback = new global::System.EventHandler((_, eventArgs) =>
+            {
+                var hr = handler.Invoke();
+                if (hr < 0)
+                    global::System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(hr);
+            });
+            eventSource.LayoutUpdated += callback;
+            subscriptionId = global::System.Threading.Interlocked.Increment(ref _nextLayoutUpdatedSubscriptionId);
+            _layoutUpdatedSubscriptions.Add(subscriptionId, (handler, () => eventSource.LayoutUpdated -= callback));
+            global::Avalonia.Host.ProjectionDiagnostics.SubscriptionAdded();
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int UnadviseLayoutUpdated(long subscriptionId)
+    {
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            if (!_layoutUpdatedSubscriptions.Remove(subscriptionId, out var subscription))
+                return global::Avalonia.Host.HResults.E_INVALIDARG;
+            subscription.Unsubscribe();
+            global::Avalonia.Host.ProjectionDiagnostics.SubscriptionRemoved();
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int AdviseChildrenChanged(IAvnGridChildrenChangedHandler? handler, out long subscriptionId)
+    {
+        subscriptionId = 0;
+        if (handler is null)
+            return global::Avalonia.Host.HResults.E_POINTER;
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            var eventSource = _value.Children;
+            var callback = new global::System.Collections.Specialized.NotifyCollectionChangedEventHandler((_, eventArgs) =>
+            {
+                var hr = handler.Invoke();
+                if (hr < 0)
+                    global::System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(hr);
+            });
+            eventSource.CollectionChanged += callback;
+            subscriptionId = global::System.Threading.Interlocked.Increment(ref _nextChildrenChangedSubscriptionId);
+            _childrenChangedSubscriptions.Add(subscriptionId, (handler, () => eventSource.CollectionChanged -= callback));
+            global::Avalonia.Host.ProjectionDiagnostics.SubscriptionAdded();
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int UnadviseChildrenChanged(long subscriptionId)
+    {
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            if (!_childrenChangedSubscriptions.Remove(subscriptionId, out var subscription))
+                return global::Avalonia.Host.HResults.E_INVALIDARG;
+            subscription.Unsubscribe();
+            global::Avalonia.Host.ProjectionDiagnostics.SubscriptionRemoved();
             return global::Avalonia.Host.HResults.S_OK;
         }
         catch (global::System.Exception e)
@@ -1935,5 +2080,17 @@ public sealed partial class AvnGrid : IAvnGrid
             global::Avalonia.Host.ProjectionDiagnostics.SubscriptionRemoved();
         }
         _doubleTappedSubscriptions.Clear();
+        foreach (var subscription in _layoutUpdatedSubscriptions.Values)
+        {
+            subscription.Unsubscribe();
+            global::Avalonia.Host.ProjectionDiagnostics.SubscriptionRemoved();
+        }
+        _layoutUpdatedSubscriptions.Clear();
+        foreach (var subscription in _childrenChangedSubscriptions.Values)
+        {
+            subscription.Unsubscribe();
+            global::Avalonia.Host.ProjectionDiagnostics.SubscriptionRemoved();
+        }
+        _childrenChangedSubscriptions.Clear();
     }
 }

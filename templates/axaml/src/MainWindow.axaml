@@ -1,0 +1,57 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="RustoloniaAxamlApp.MainWindow"
+        Title="Rustolonia AXAML app"
+        Width="480"
+        Height="720">
+  <Border x:Name="surface" Background="{DynamicResource WindowBackground}">
+    <ScrollViewer>
+    <StackPanel Margin="24" Spacing="12" Grid.IsSharedSizeScope="True">
+      <TextBlock FontSize="24">Rust + AXAML</TextBlock>
+      <TextBlock x:Name="instruction" Text="{UIRes GreetingInstruction}" />
+      <TextBox x:Name="name_input"
+               PlaceholderText="Enter your name"
+               Text="{Binding Name, Mode=TwoWay}" />
+      <TextBlock Text="{Binding Greeting}" />
+      <Button Click="on_greet">Say hello</Button>
+      <CheckBox x:Name="optional_flag" IsThreeState="True"
+                IsChecked="{Binding OptionalFlag, Mode=TwoWay}">Optional</CheckBox>
+      <ContentControl Content="{Binding ChildView}" />
+      <ListBox x:Name="contacts_list" ItemsSource="{Binding Contacts}"
+               SelectionChanged="on_contact_selection_changed">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="crate::Contact" x:Key="Id">
+            <TextBlock x:Name="contact_name" Text="{Binding Name}" />
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+      <ListBox x:Name="editable_contacts_list" ItemsSource="{Binding EditableContacts}">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="crate::EditableContact" x:Key="Id">
+            <TextBox Text="{Binding Name, Mode=TwoWay}" />
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+      <TextBlock Text="Contacts selected by a Rust view registry:" />
+      <ItemsControl x:Name="recent_list" ItemsSource="{Binding RecentContacts}" />
+      <TextBlock x:Name="profile_title" Text="{Binding Profile.Title}" />
+      <Border x:Name="profile_detail"
+              IsVisible="{Binding Profile.Message, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+        <TextBlock x:Name="profile_message" Text="{Binding Profile.Message}" />
+      </Border>
+      <StackPanel Orientation="Horizontal" Spacing="4">
+        <Button x:Name="rdp_port" Command="{Binding SetPortsCommand}" CommandParameter="3389">RDP</Button>
+        <Button x:Name="ssh_port" Command="{Binding SetPortsCommand}" CommandParameter="22">SSH</Button>
+        <Button x:Name="web_ports" Command="{Binding SetPortsCommand}" CommandParameter="80,443,8080,8443">Web</Button>
+        <Button x:Name="dynamic_port" Command="{Binding SetPortsCommand}" CommandParameter="{Binding Profile.Port}">Current</Button>
+      </StackPanel>
+      <TextBlock x:Name="selected_port" Text="{Binding PortSpec}" />
+      <TextBox x:Name="number_input"
+               Text="{Binding Number, Mode=TwoWay, Converter={StaticResource IntegerConverter}, ConverterParameter=roundtrip, ConverterCulture=fr-FR}" />
+      <TextBlock Text="Custom Rust-owned editor:" />
+      <ContentControl x:Name="custom_editor" />
+      <Border x:Name="static_swatch" Background="{StaticResource WindowBackground}" Height="8" />
+    </StackPanel>
+    </ScrollViewer>
+  </Border>
+</Window>

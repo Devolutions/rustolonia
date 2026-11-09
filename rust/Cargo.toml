@@ -7,6 +7,7 @@ members = [
     "rustolonia-apk",
     "avalonia-sample",
     "browser-sample",
+    "tests/axaml-native",
 ]
 # templates/avalonia-app is a copyable starting point for new applications
 # (see rust/new-app.ps1), not a member of this workspace: it is meant to be
