@@ -82,7 +82,7 @@ One-way `Command` bindings use an application-supplied
 path. `CommandParameter` accepts a literal string or a one-way `Variant`
 binding; numeric-looking literals such as `3389` stay strings. A `Command`
 can have a reactive global `CanExecute` gate and a parameter-specific
-predicate. Call `command.notify()?` when dependencies of the predicate other
+predicate. Call `command.try_notify()?` when dependencies of the predicate other
 than the reactive gate change. Commands and parameters inside item templates
 are not supported.
 

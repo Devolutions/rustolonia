@@ -58,15 +58,15 @@ fn command_advise_notify_unadvise_round_trip() {
         .expect("advise failed");
     assert_eq!(notifications.load(Ordering::SeqCst), 0);
 
-    handle.notify().expect("notify failed");
+    handle.try_notify().expect("notify failed");
     assert_eq!(notifications.load(Ordering::SeqCst), 1);
 
-    handle.notify().expect("notify failed");
+    handle.try_notify().expect("notify failed");
     assert_eq!(notifications.load(Ordering::SeqCst), 2);
 
     ptr.unadvise_can_execute_changed(subscription)
         .expect("unadvise failed");
-    handle.notify().expect("notify failed");
+    handle.try_notify().expect("notify failed");
     assert_eq!(notifications.load(Ordering::SeqCst), 2);
 }
 
@@ -85,6 +85,24 @@ fn command_notifies_all_handlers_and_reports_failures() {
     let ptr = handle.as_com_ptr();
     ptr.advise_can_execute_changed(&bad).unwrap();
     ptr.advise_can_execute_changed(&good).unwrap();
-    assert!(handle.notify().is_err());
+    assert!(handle.try_notify().is_err());
+    assert_eq!(notifications.load(Ordering::SeqCst), 1);
+}
+
+#[test]
+fn command_notify_preserves_the_infallible_legacy_signature() {
+    let notifications = Arc::new(AtomicI32::new(0));
+    let count = notifications.clone();
+    let handler = rustolonia_sys::command_can_execute_changed_handler(move || {
+        count.fetch_add(1, Ordering::SeqCst);
+        Ok(())
+    });
+    let handle = command(|_: AvnVariant| Ok(()), |_: AvnVariant| Ok(true));
+    handle
+        .as_com_ptr()
+        .advise_can_execute_changed(&handler)
+        .expect("advise failed");
+
+    handle.notify();
     assert_eq!(notifications.load(Ordering::SeqCst), 1);
 }

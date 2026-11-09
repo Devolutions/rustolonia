@@ -86,7 +86,18 @@ pub struct Command {
 impl Command {
     /// Fires every live `CanExecuteChanged` subscription. Call this whenever
     /// the value `can_execute` would return has changed.
-    pub fn notify(&self) -> Result<()> {
+    ///
+    /// Notification failures are written to stderr. Use [`Command::try_notify`]
+    /// to handle them directly.
+    pub fn notify(&self) {
+        if let Err(error) = self.try_notify() {
+            eprintln!("command notification failed: {error}");
+        }
+    }
+
+    /// Fires every live `CanExecuteChanged` subscription and returns the first
+    /// notification failure after attempting all handlers.
+    pub fn try_notify(&self) -> Result<()> {
         let handlers: Vec<ComPtr<IAvnCommandCanExecuteChangedHandler>> = unsafe {
             let object = self.ptr.as_raw().cast::<CommandObject>();
             let subscriptions = (*object)
