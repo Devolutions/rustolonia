@@ -30,6 +30,11 @@ no-download = []
 dev-host-path = []
 # Download the direct-display Linux host instead of the desktop X11 host.
 linux-drm = []
+# Link the prebuilt host into the executable as a static library instead of
+# loading rustolonia_host.dll/.so/.dylib at run time (desktop targets only).
+# The desktop host and its project-native graphics dependencies are linked in.
+# Operating-system libraries and frameworks can still be dynamic.
+static-host = []
 
 # Browser builds (wasm32-unknown-emscripten) link the host statically into
 # the .NET WebAssembly app instead of loading a shared library.

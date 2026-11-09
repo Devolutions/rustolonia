@@ -123,6 +123,84 @@ function Get-CargoPackageComponents {
     $components | Sort-Object { "$($_.name)/$($_.version)" }
 }
 
+function Get-LinuxStaticPackageComponents {
+    param([string]$Path)
+
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return @() }
+    foreach ($line in Get-Content -LiteralPath $Path) {
+        if ([string]::IsNullOrWhiteSpace($line) -or $line.StartsWith('#')) { continue }
+        $fields = $line -split "`t"
+        if ($fields.Count -ne 5 -or $fields[0] -notmatch '^lib[A-Za-z0-9_+.-]+\.a$' -or
+            $fields[1] -notmatch '^[A-Za-z0-9+.-]+:[A-Za-z0-9_-]+$' -or
+            [string]::IsNullOrWhiteSpace($fields[2]) -or $fields[3] -notmatch '^[0-9a-f]{64}$' -or
+            $fields[4] -notin @('debian', 'ubuntu', 'alpine', 'xorg')) {
+            throw "Invalid static Linux package provenance in $Path`: $line"
+        }
+        $package, $architecture = $fields[1] -split ':', 2
+        $packageName = [Uri]::EscapeDataString($package)
+        $version = [Uri]::EscapeDataString($fields[2])
+        $purl = if ($fields[4] -eq 'alpine') {
+            "pkg:apk/alpine/$packageName@$version`?arch=$architecture&distro=3.24"
+        }
+        elseif ($fields[4] -eq 'xorg') {
+            $sourceName = [Uri]::EscapeDataString($package.Substring(5))
+            "pkg:generic/xorg/$sourceName@$version`?arch=$architecture"
+        }
+        else {
+            "pkg:deb/$($fields[4])/$packageName@$version`?arch=$architecture"
+        }
+        [ordered]@{
+            type       = 'library'
+            name       = $fields[0]
+            version    = $fields[2]
+            purl       = $purl
+            hashes     = @([ordered]@{ alg = 'SHA-256'; content = $fields[3] })
+            properties = @([ordered]@{ name = 'avalonia:source-package'; value = $fields[1] })
+        }
+    }
+}
+
+function Get-LinuxStaticGraphicsComponents {
+    param([string]$Path, [string]$Rid)
+
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return @() }
+    $metadata = Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json
+    $musl = $Rid.StartsWith('linux-musl-')
+    $validLibc = if ($musl) {
+        $metadata.PSObject.Properties['libc'] -and $metadata.libc -eq 'musl' -and
+        $metadata.PSObject.Properties['dngPatchSha256'] -and $metadata.dngPatchSha256 -match '^[0-9a-f]{64}$'
+    }
+    else {
+        $metadata.PSObject.Properties['glibcBuild'] -and $metadata.glibcBuild -eq '2.35'
+    }
+    if ($metadata.rid -ne $Rid -or -not $validLibc -or
+        $metadata.skiasharpCommit -notmatch '^[0-9a-f]{40}$' -or $metadata.skiaCommit -notmatch '^[0-9a-f]{40}$') {
+        throw "Invalid static Linux graphics provenance in $Path."
+    }
+    foreach ($archive in @('libSkiaSharp.a', 'libskia.a', 'libHarfBuzzSharp.a')) {
+        $property = $metadata.archives.PSObject.Properties[$archive]
+        if ($null -eq $property -or $property.Value -notmatch '^[0-9a-f]{64}$') {
+            throw "Invalid static Linux graphics hash for $archive in $Path."
+        }
+        $repo = if ($archive -eq 'libskia.a') { 'mono/skia' } else { 'mono/SkiaSharp' }
+        $commit = if ($archive -eq 'libskia.a') { $metadata.skiaCommit } else { $metadata.skiasharpCommit }
+        $libcProperty = if ($musl) {
+            [ordered]@{ name = 'avalonia:libc'; value = 'musl' }
+        }
+        else {
+            [ordered]@{ name = 'avalonia:glibc-build-baseline'; value = $metadata.glibcBuild }
+        }
+        [ordered]@{
+            type       = 'library'
+            name       = $archive
+            version    = $metadata.version
+            purl       = "pkg:github/$repo@$commit"
+            hashes     = @([ordered]@{ alg = 'SHA-256'; content = $property.Value })
+            properties = @($libcProperty)
+        }
+    }
+}
+
 function New-CargoComponent {
     param([string]$Name, [string]$Version, [string]$Source)
 
@@ -142,6 +220,10 @@ function New-CargoComponent {
 
 $nugetComponents = @(Get-NuGetPackageComponents -Path $ProjectAssetsJsonPath)
 $cargoComponents = @(Get-CargoPackageComponents -Path $CargoLockPath | Where-Object { $null -ne $_ })
+$linuxStaticComponents = @(Get-LinuxStaticPackageComponents -Path (Join-Path $bundlePath 'STATIC-LINUX-PROVENANCE.tsv'))
+$linuxGraphicsComponents = if ($Rid.StartsWith('linux-')) {
+    @(Get-LinuxStaticGraphicsComponents -Path (Join-Path $bundlePath 'STATIC-SKIASHARP-PROVENANCE.json') -Rid $Rid)
+} else { @() }
 
 $properties = @(
     [ordered]@{ name = 'avalonia:nuget-dependency-source'; value = Get-DependencySourceDescription -Path $ProjectAssetsJsonPath -FileName 'project.assets.json' -Description 'project.assets.json (offline restore metadata)' }
@@ -160,7 +242,7 @@ $document = [ordered]@{
         component  = [ordered]@{ type = 'application'; name = 'Avalonia Rust bundle'; version = $Rid }
         properties = $properties
     }
-    components   = @($fileComponents) + @($nugetComponents) + @($cargoComponents)
+    components   = @($fileComponents) + @($nugetComponents) + @($cargoComponents) + @($linuxStaticComponents) + @($linuxGraphicsComponents)
 }
 
 $json = $document | ConvertTo-Json -Depth 8

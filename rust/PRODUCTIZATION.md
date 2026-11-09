@@ -378,13 +378,14 @@ cargo package --locked -p rustolonia-sys -p rustolonia-bindgen -p rustolonia
 
 ### Prebuilt host tarballs
 
-`rust/package-host.ps1 -Rid <rid> [-LinuxBackend X11|Drm] [-Flavor default|devtools]` publishes the
+`rust/package-host.ps1 -Rid <rid> [-LinuxBackend X11|Drm] [-Flavor default|devtools] [-Linkage Shared|Static]` publishes the
 NativeAOT host (or packages an existing `-PublishDirectory`) into
 `rust/artifacts/host/`:
 
 | Asset | Contents |
 | --- | --- |
 | `rustolonia-host-<v>-<rid>[-drm][-devtools].tar.gz` | Flat root: host library, native dependencies, notices, `sbom.cdx.json`, `host-manifest.json` |
+| `rustolonia-host-<v>-<rid>[-drm]-static[-devtools].tar.gz` | Static host, NativeAOT runtime and graphics archives, `rustolonia-host-link.txt`, notices, provenance, SBOM, manifest; no project shared libraries |
 | `…tar.gz.sha256` | `sha256sum` sidecar |
 | `rustolonia-host-<v>-<rid>[-drm][-devtools]-symbols.tar.gz` | `.pdb` / `.dbg` / `.dSYM` symbols, never downloaded by `build.rs` |
 
@@ -406,6 +407,105 @@ release CI, including an adjacent-host distributable. Hosted runners cannot
 launch DRM without a display device, so these checks explicitly use
 `-BuildOnly`; `rust/tests/test-embedded-linux.py` exercises presentation,
 input and shutdown in a QEMU guest separately.
+
+Every desktop RID (and both DRM variants) also publishes a `-static` archive,
+built with `-Linkage Static` (`NativeLib=Static`) and selected by the
+`static-host` Cargo feature. `rustolonia-sys` links the host, a whole-archive
+bootstrapper, Avalonia.Native (macOS), SkiaSharp, HarfBuzzSharp and Windows
+ANGLE into the Rust executable. The manifest records `linkage: Static` and
+the archive `hostFile`; native and runtime notices and source provenance are
+included. The Linux bootstrapper retains the NativeAOT module section under
+both GNU ld and LLD section garbage collection. The macOS and Windows graphics
+archives come from the pinned third-party `Summpot.StaticAvalonia` package.
+Linux graphics are built from
+pinned SkiaSharp and Skia source on the supported glibc 2.35 baseline for GNU
+hosts or on Alpine for musl hosts; Linux font and compiler runtime archives
+are staged with their package notices and SBOM records.
+`STATIC-SKIASHARP-SOURCE-NOTICES.txt` includes the notices and
+license files from the pinned Linux graphics sources; its hash is recorded in
+`STATIC-SKIASHARP-PROVENANCE.json`. Static host archives have no separate
+symbols archive. Release checksum pinning requires every static archive.
+
+An application does not ship those host or graphics archives or any project
+DLL, `.so` or `.dylib`: they are link inputs, not runtime companions. On the
+GNU targets, macOS and Windows, the result still has shared system
+dependencies: macOS system dylibs and frameworks, Windows system DLLs, or
+Linux glibc and platform libraries such as X11, GTK and GL/EGL (or DRM/GBM
+and input libraries for the DRM backend). Windows consumers must enable
+Rust's static C runtime with `-C target-feature=+crt-static`; macOS Cargo builds need
+`MACOSX_DEPLOYMENT_TARGET=12.0` or newer so the system Swift runtime resolves
+correctly. `build-app.ps1` sets these when needed. Release CI builds and
+launches a standalone static consumer without companion libraries (DRM is
+build-only on hosted runners). These platforms do not offer the fully static
+system binary described below.
+
+With `build-app.ps1 -Linkage Static`, the consumer Cargo package must declare
+`rustolonia` as a direct dependency; a renamed dependency is supported. The
+script enables `static-host` on that dependency when building the application.
+
+For a Linux GNU source build of either `package-host.ps1 -Linkage Static` or
+`build-app.ps1 -Linkage Static`, use a native-architecture Ubuntu 22.04 build
+environment with Git, Python 3, Clang, GN (`generate-ninja`), Ninja, and the
+fontconfig, FreeType, PNG, expat, zlib, Brotli and UUID development packages.
+Prepare the pinned graphics archives once in a new build directory:
+
+```bash
+sh ./rust/build-linux-static-graphics.sh linux-x64 /tmp/rustolonia-static-graphics
+export RUSTOLONIA_LINUX_STATIC_GRAPHICS_DIR=/tmp/rustolonia-static-graphics/out/linux-x64
+pwsh ./rust/package-host.ps1 -Rid linux-x64 -Linkage Static
+```
+
+Use `linux-arm64` for a native ARM64 build. The same graphics directory works
+for X11 and DRM. Release CI performs this source build before packaging; an
+incompatible or missing graphics directory fails rather than falling back to
+newer-glibc prebuilt archives. Consumers of the finished prebuilt host do not
+need this build toolchain.
+
+#### Fully static Linux musl assets
+
+Release CI also produces these separate X11 assets:
+
+```text
+rustolonia-host-<v>-linux-musl-x64-static.tar.gz
+rustolonia-host-<v>-linux-musl-arm64-static.tar.gz
+```
+
+For `x86_64-unknown-linux-musl` or `aarch64-unknown-linux-musl`, `static-host`
+selects the matching musl archive and requires a static CRT. The cache and
+manifest use the musl RID; the GNU/glibc host is never substituted. The musl
+assets are static-only and do not support DRM. Their X11, font, OpenSSL and
+compiler libraries are included as link inputs; an executable with statically
+linked application dependencies has no ELF interpreter or shared-library
+dependencies. It uses software rendering and still needs an X server, font
+configuration and any external services or data used by the app.
+`build-app.ps1 -Linkage Static` verifies those ELF properties before packaging
+a musl executable.
+See [Fully static Linux executable](PLATFORMS.md#fully-static-linux-executable)
+for a consumer example and runtime limitations.
+
+The release builder runs on matching-architecture Alpine 3.24, pins the .NET
+SDK and the Alpine package versions used for link inputs, and builds Xau,
+Xrandr, SkiaSharp, Skia and HarfBuzz from pinned sources. The archive records
+their hashes, source pins, upstream notices and SBOM entries. Alpine repositories
+are mutable: if a pinned package is no longer available, update the source pins
+and revalidate rather than silently using a different version. To rebuild the
+release host in a disposable Alpine container after initializing and patching
+the producer, mount the checkout at the same absolute path inside and outside
+the container:
+
+```bash
+docker run --rm -v "$PWD:$PWD" -w "$PWD" \
+  alpine:3.24@sha256:3f4d6b32e26703c6082839234f43769d5046b3ac7c910033911d1e71d8cd630a \
+  sh ./rust/build-linux-musl-release-host.sh linux-musl-x64 "$PWD/rust/target/musl-builder-linux-musl-x64"
+pwsh ./rust/package-host.ps1 -Rid linux-musl-x64 -Linkage Static \
+  -PublishDirectory rust/target/musl-builder-linux-musl-x64/dotnet/publish/Avalonia.Host/release_linux-musl-x64
+```
+
+Use the corresponding ARM64 RID on an ARM64 builder. Packaging reads the
+restored NuGet metadata and notices from the same mounted checkout. Release CI
+then builds a standalone packaged-crate consumer, exercises text input, the
+clipboard and the managed file-picker fallback, and checks its ELF metadata and
+shared-object opens.
 
 For experimental iOS, `rust/package-ios-host.ps1 -Rid <rid>` produces a
 separate archive for `ios-arm64`, `iossimulator-arm64`, or
@@ -500,6 +600,21 @@ another organization repository alone does not prove this repository allows it.
 Releases are driven by `.github/workflows/release.yml` and
 `rust/prepare-release.ps1`. After the version bump is on `master`, one
 dispatch with `phase = all` (the default) builds, pins, tags, and publishes.
+
+#### Dry run on a branch
+
+Dispatch `phase = dry-run` against a branch to build the release hosts before
+merging, even if the checked-in version already has a tag:
+
+```powershell
+gh workflow run release.yml --repo Devolutions/rustolonia --ref BRANCH -f phase=dry-run -f version=X.Y.Z
+```
+
+The run stages its tarballs, APK and `SHA256SUMS` in an Actions artifact named
+`rustolonia-dry-run-X.Y.Z`. It does not use the release signing hook, create
+attestations, commit checksums, push tags, create a release, or publish crates.
+Its artifact name is distinct from the release artifact and cannot be passed
+to the publish phase.
 
 #### One-dispatch release
 

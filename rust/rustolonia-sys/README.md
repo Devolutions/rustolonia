@@ -50,8 +50,8 @@ order:
    `CARGO_NET_OFFLINE` forbids the download. Proxies come from the standard
    proxy environment variables.
 
-Prebuilt hosts exist for `x86_64`/`aarch64` `windows-msvc`, `apple-darwin` and
-`linux-gnu`. The staged directory is exported to dependent build scripts as
+Prebuilt hosts exist for `x86_64`/`aarch64` `windows-msvc`, `apple-darwin`,
+`linux-gnu`, and static-only `linux-musl`. The staged directory is exported to dependent build scripts as
 `DEP_RUSTOLONIA_HOST_HOST_DIR`. With the default `dev-host-path` feature it is
 also baked into the binary as a last-resort runtime search path, so `cargo run`
 works without copying files; disable it for distributable builds.
@@ -64,6 +64,40 @@ different backend are rejected. Legacy X11 manifests without this field remain
 supported; an explicit local directory without any manifest remains a developer
 override, with the usual runtime ABI check. A release containing the new DRM
 archives is required; this feature cannot use older X11-only assets.
+
+The `static-host` feature links the NativeAOT host into the executable instead
+of loading a shared library. `rustolonia` forwards it. It stages a
+`-static` archive (`rustolonia-host-<version>-<rid>[-drm]-static.tar.gz`, cached
+as `<rid>[-drm]-static`) containing `rustolonia_host.lib` or
+`librustolonia_host.a`, static NativeAOT and graphics archives, and
+`rustolonia-host-link.txt`, which lists the link inputs `build.rs` passes to
+rustc. Its manifest must record `linkage` as `Static`. If downloads are
+disabled, set `RUSTOLONIA_HOST_DIR` to a matching static host directory.
+`Host::load_static` and `App::load_from_env` bind the linked exports directly. No
+Avalonia.Native, SkiaSharp, HarfBuzzSharp or ANGLE shared library needs to be
+shipped beside the executable. Static assets require a release that includes
+them.
+
+On Windows, static graphics use the static C runtime. Enable it for the target,
+for example with `RUSTFLAGS="-C target-feature=+crt-static"`, or set the
+equivalent target-specific Cargo `rustflags`. On macOS, set
+`MACOSX_DEPLOYMENT_TARGET=12.0` or newer before running Cargo: Rust's older
+default may otherwise produce an executable that cannot locate the system
+Swift runtime. Windows still uses system DLLs, macOS uses system dylibs and
+frameworks, and Linux GNU uses glibc and dynamically loaded desktop or DRM
+services.
+
+For a fully static Linux system binary, build for
+`x86_64-unknown-linux-musl` or `aarch64-unknown-linux-musl` with
+`static-host` and `-C target-feature=+crt-static`. These targets select
+`rustolonia-host-<version>-linux-musl-{x64|arm64}-static.tar.gz` and require
+a matching musl linker. With `musl-gcc`, also use `-C relocation-model=static`
+to avoid its static-PIE interpreter issue; this produces a non-PIE executable.
+They never use the GNU host. The musl host uses X11
+software rendering; it requires an X server, fonts and other application data
+or services, but loads no shared libraries. Runtime-loaded GTK/GL modules and
+the DRM backend are unavailable. Existing releases need a new release with
+the musl assets before this can be used.
 
 On iOS, `build.rs` skips desktop host staging and downloads. The separate
 [standalone iOS app builder](https://github.com/Devolutions/rustolonia/tree/master/samples/ios-standalone)

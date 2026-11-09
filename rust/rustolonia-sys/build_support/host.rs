@@ -32,21 +32,35 @@ pub fn rid_for_target(target: &str) -> Option<&'static str> {
             target.contains("-windows-msvc"),
             target.contains("-apple-darwin"),
             target.contains("-linux-gnu"),
+            target.contains("-linux-musl"),
             arm64,
         ) {
-            (true, _, _, false) => "win-x64",
-            (true, _, _, true) => "win-arm64",
-            (_, true, _, false) => "osx-x64",
-            (_, true, _, true) => "osx-arm64",
-            (_, _, true, false) => "linux-x64",
-            (_, _, true, true) => "linux-arm64",
+            (true, _, _, _, false) => "win-x64",
+            (true, _, _, _, true) => "win-arm64",
+            (_, true, _, _, false) => "osx-x64",
+            (_, true, _, _, true) => "osx-arm64",
+            (_, _, true, _, false) => "linux-x64",
+            (_, _, true, _, true) => "linux-arm64",
+            (_, _, _, true, false) => "linux-musl-x64",
+            (_, _, _, true, true) => "linux-musl-arm64",
             _ => return None,
         },
     )
 }
 
-/// File name of the host library for a RID.
-pub fn host_file_name(rid: &str) -> &'static str {
+/// File listing the link inputs of a static host, one directive per line.
+pub const LINK_FILE: &str = "rustolonia-host-link.txt";
+
+/// File name of the host library for a RID: the shared library, or the
+/// static archive when `static_host` is set.
+pub fn host_file_name(rid: &str, static_host: bool) -> &'static str {
+    if static_host {
+        return if rid.starts_with("win-") {
+            "rustolonia_host.lib"
+        } else {
+            "librustolonia_host.a"
+        };
+    }
     if rid.starts_with("win-") {
         "rustolonia_host.dll"
     } else if rid.starts_with("osx-") {
@@ -65,6 +79,53 @@ pub fn validate_backend(target: &str, linux_drm: bool) -> Result<(), String> {
         return Err(format!(
             "the `linux-drm` feature requires an x86_64/aarch64 linux-gnu target, not {target}"
         ));
+    }
+    Ok(())
+}
+
+pub fn validate_static_crt(
+    target: &str,
+    static_host: bool,
+    target_features: &str,
+) -> Result<(), String> {
+    if static_host
+        && (target.contains("-windows-msvc") || target.contains("-linux-musl"))
+        && !target_features
+            .split(',')
+            .any(|feature| feature == "crt-static")
+    {
+        return Err(format!(
+            "the `static-host` feature on {} requires the static C runtime; \
+             configure Rust with `-C target-feature=+crt-static`",
+            if target.contains("-linux-musl") {
+                "Linux musl"
+            } else {
+                "Windows"
+            }
+        ));
+    }
+    Ok(())
+}
+
+pub fn validate_macos_deployment_target(
+    target: &str,
+    static_host: bool,
+    deployment_target: Option<&str>,
+) -> Result<(), String> {
+    if static_host && target.contains("-apple-darwin") {
+        let valid = deployment_target.is_some_and(|version| {
+            let parts = version.split('.').collect::<Vec<_>>();
+            !parts.is_empty()
+                && parts.len() <= 3
+                && parts.iter().all(|part| part.parse::<u32>().is_ok())
+                && parts[0].parse::<u32>().is_ok_and(|major| major >= 12)
+        });
+        if !valid {
+            return Err("the `static-host` feature on macOS requires \
+                 MACOSX_DEPLOYMENT_TARGET=12.0 or newer; Rust's older default can \
+                 produce an executable that cannot load the system Swift runtime"
+                .to_owned());
+        }
     }
     Ok(())
 }
@@ -110,12 +171,155 @@ pub fn manifest_field<'a>(manifest: &'a str, field: &str) -> Option<&'a str> {
     Some(&rest[..rest.find('"')?])
 }
 
+/// The cache directory and release asset suffix for a host build:
+/// `<rid>[-drm][-static]`.
+pub fn host_variant(rid: &str, linux_drm: bool, static_host: bool) -> String {
+    let mut variant = rid.to_owned();
+    if linux_drm {
+        variant.push_str("-drm");
+    }
+    if static_host {
+        variant.push_str("-static");
+    }
+    variant
+}
+
+/// One line of `rustolonia-host-link.txt`, written by the host project's
+/// `StageRustoloniaStaticHost` target in link order.
+#[derive(Debug, PartialEq, Eq)]
+pub enum LinkDirective {
+    /// A static library file in the host directory.
+    Static(String),
+    /// A static library whose objects must all be kept (the NativeAOT
+    /// bootstrapper, which nothing references by symbol).
+    WholeStatic(String),
+    /// A system library linked by name.
+    System(String),
+    /// An Apple framework.
+    Framework(String),
+    /// An extra native library search directory.
+    Search(String),
+}
+
+/// Parses `rustolonia-host-link.txt`, ignoring blanks and `#` comments.
+pub fn parse_link_file(text: &str) -> Result<Vec<LinkDirective>, String> {
+    text.lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty() && !line.starts_with('#'))
+        .map(|line| {
+            let (kind, value) = line
+                .split_once(char::is_whitespace)
+                .map(|(kind, value)| (kind, value.trim()))
+                .filter(|(_, value)| !value.is_empty())
+                .ok_or_else(|| format!("invalid link directive `{line}`"))?;
+            let value = value.to_owned();
+            match kind {
+                "static" => Ok(LinkDirective::Static(value)),
+                "whole-static" => Ok(LinkDirective::WholeStatic(value)),
+                "system" => Ok(LinkDirective::System(value)),
+                "framework" => Ok(LinkDirective::Framework(value)),
+                "search" => Ok(LinkDirective::Search(value)),
+                _ => Err(format!("unknown link directive `{line}`")),
+            }
+        })
+        .collect()
+}
+
+/// The cargo link name of a static library file: `+verbatim` is not
+/// supported by every linker rustc drives (ld64), so strip the platform
+/// prefix and extension instead.
+pub fn static_link_name(file: &str) -> &str {
+    if let Some(name) = file.strip_suffix(".lib") {
+        name
+    } else {
+        let name = file.strip_suffix(".a").unwrap_or(file);
+        name.strip_prefix("lib").unwrap_or(name)
+    }
+}
+
+fn required_static_native_libraries(rid: &str) -> &'static [&'static str] {
+    if rid.starts_with("win-") {
+        &[
+            "SkiaSharp.lib",
+            "skia.lib",
+            "libHarfBuzzSharp.lib",
+            "libGLESv2_static.lib",
+            "libANGLE_static.lib",
+        ]
+    } else if rid.starts_with("osx-") {
+        &[
+            "libSkiaSharp.a",
+            "libskia.a",
+            "libHarfBuzzSharp.a",
+            "libAvaloniaNative.a",
+        ]
+    } else if rid.starts_with("linux-musl-") {
+        &[
+            "libSkiaSharp.a",
+            "libskia.a",
+            "libHarfBuzzSharp.a",
+            "libfontconfig.a",
+            "libfreetype.a",
+            "libstdc++.a",
+            "libgcc.a",
+            "libgcc_eh.a",
+            "libX11.a",
+            "libXrandr.a",
+            "libXi.a",
+            "libXext.a",
+            "libXcursor.a",
+            "libXfixes.a",
+            "libICE.a",
+            "libSM.a",
+            "libSystem.Security.Cryptography.Native.OpenSsl.a",
+            "libssl.a",
+            "libcrypto.a",
+        ]
+    } else {
+        &[
+            "libSkiaSharp.a",
+            "libskia.a",
+            "libHarfBuzzSharp.a",
+            "libfontconfig.a",
+            "libfreetype.a",
+            "libstdc++.a",
+            "libgcc.a",
+            "libgcc_eh.a",
+        ]
+    }
+}
+
+fn is_shared_graphics_library(rid: &str, file: &str) -> bool {
+    let file = file.to_ascii_lowercase();
+    if rid.starts_with("win-") {
+        matches!(
+            file.as_str(),
+            "libskiasharp.dll" | "libharfbuzzsharp.dll" | "av_libglesv2.dll"
+        )
+    } else if rid.starts_with("osx-") {
+        matches!(
+            file.as_str(),
+            "libskiasharp.dylib" | "libharfbuzzsharp.dylib" | "libavalonianative.dylib"
+        )
+    } else {
+        ["libskiasharp.so", "libharfbuzzsharp.so"]
+            .iter()
+            .any(|base| {
+                file == *base
+                    || file
+                        .strip_prefix(base)
+                        .is_some_and(|tail| tail.starts_with('.'))
+            })
+    }
+}
+
 /// What the staged host must match.
 pub struct Expected<'a> {
     pub version: &'a str,
     pub rid: &'a str,
     pub abi_fingerprint: &'a str,
     pub linux_drm: bool,
+    pub static_host: bool,
 }
 
 /// Checks a staged host directory. `host-manifest.json` is required when
@@ -127,13 +331,77 @@ pub fn validate_host_dir(
     expected: &Expected<'_>,
     require_manifest: bool,
 ) -> Result<(), String> {
-    let host = dir.join(host_file_name(expected.rid));
-    if !host.is_file() {
+    let host_file = host_file_name(expected.rid, expected.static_host);
+    if !dir.join(host_file).is_file() {
+        let hint = if expected.static_host {
+            "; the `static-host` feature needs a host packaged with -Linkage Static"
+        } else {
+            ""
+        };
         return Err(format!(
-            "{} does not contain {}",
-            dir.display(),
-            host_file_name(expected.rid)
+            "{} does not contain {host_file}{hint}",
+            dir.display()
         ));
+    }
+    if expected.static_host {
+        for entry in
+            fs::read_dir(dir).map_err(|error| format!("cannot read {}: {error}", dir.display()))?
+        {
+            let entry = entry.map_err(|error| format!("cannot read {}: {error}", dir.display()))?;
+            let name = entry.file_name();
+            let shared = name.to_str().is_some_and(|name| {
+                is_shared_graphics_library(expected.rid, name)
+                    || (expected.rid.starts_with("linux-musl-")
+                        && (name.ends_with(".so") || name.contains(".so.")))
+            });
+            if entry.path().is_file() && shared {
+                let kind = if expected.rid.starts_with("linux-musl-") {
+                    "shared native library"
+                } else {
+                    "shared native graphics library"
+                };
+                return Err(format!(
+                    "{} contains a {kind} {}; use a clean static host directory",
+                    dir.display(),
+                    name.to_string_lossy()
+                ));
+            }
+        }
+        let link_path = dir.join(LINK_FILE);
+        let link_file = fs::read_to_string(&link_path)
+            .map_err(|error| format!("cannot read {}: {error}", link_path.display()))?;
+        let directives = parse_link_file(&link_file)?;
+        for directive in &directives {
+            if let LinkDirective::Static(file) | LinkDirective::WholeStatic(file) = directive {
+                if !dir.join(file).is_file() {
+                    return Err(format!("{} does not contain {file}", dir.display()));
+                }
+            }
+            let static_musl_directive = match directive {
+                LinkDirective::Static(_) | LinkDirective::WholeStatic(_) => true,
+                LinkDirective::System(name) => {
+                    matches!(name.as_str(), "c" | "dl" | "m" | "pthread" | "rt")
+                }
+                _ => false,
+            };
+            if expected.rid.starts_with("linux-musl-") && !static_musl_directive {
+                return Err(format!(
+                    "{} contains a non-static Linux musl link directive: {directive:?}",
+                    link_path.display()
+                ));
+            }
+        }
+        for &required in required_static_native_libraries(expected.rid) {
+            let linked = directives.iter().any(|directive| {
+                matches!(directive, LinkDirective::Static(file) | LinkDirective::WholeStatic(file) if file == required)
+            });
+            if !linked {
+                return Err(format!(
+                    "{} does not link {required}; rebuild the host with static native dependencies",
+                    link_path.display()
+                ));
+            }
+        }
     }
     let manifest_path = dir.join(MANIFEST_FILE);
     let manifest = match fs::read_to_string(&manifest_path) {
@@ -156,6 +424,20 @@ pub fn validate_host_dir(
                 ))
             }
         }
+    }
+    let want = if expected.static_host {
+        "Static"
+    } else {
+        "Shared"
+    };
+    let found = manifest_field(&manifest, "linkage");
+    // Archives that predate static hosts did not record their linkage.
+    if found != Some(want) && !(found.is_none() && !expected.static_host) {
+        return Err(format!(
+            "{} has linkage {}, expected {want}",
+            manifest_path.display(),
+            found.unwrap_or("<missing>")
+        ));
     }
     if expected.rid.starts_with("linux-") {
         let want = if expected.linux_drm {
@@ -181,11 +463,13 @@ pub struct Config {
     pub version: String,
     pub target: String,
     pub linux_drm: bool,
+    /// Link the static host archive instead of loading a shared library.
+    pub static_host: bool,
     pub abi_fingerprint: String,
     pub host_dir: Option<PathBuf>,
     pub skip_download: bool,
     pub offline: bool,
-    /// Directory holding `<version>/<rid>[-drm]` cache entries.
+    /// Directory holding `<version>/<rid>[-drm][-static]` cache entries.
     pub cache_root: PathBuf,
     pub base_url: String,
     /// Contents of the checksum file to verify downloads against.
@@ -217,7 +501,7 @@ pub fn is_embedded_host_target(target: &str) -> bool {
 pub fn resolve(config: &Config) -> Result<Resolution, String> {
     validate_backend(&config.target, config.linux_drm)?;
     // iOS links the host into the app. Its separate iOS app builder stages
-    // the static-host archive; this resolver handles desktop shared libraries.
+    // the static-host archive; this resolver handles desktop hosts.
     if config.target.contains("-apple-ios") {
         return Ok(Resolution::Skipped("iOS uses an in-process host".into()));
     }
@@ -229,6 +513,17 @@ pub fn resolve(config: &Config) -> Result<Resolution, String> {
     }
 
     let rid = rid_for_target(&config.target);
+    if rid.is_some_and(|rid| rid.starts_with("linux-musl-"))
+        && !config.static_host
+        && config.host_dir.is_none()
+        && !config.skip_download
+    {
+        return Err(
+            "the prebuilt Linux musl host requires the `static-host` feature; \
+             use RUSTOLONIA_HOST_DIR or `no-download` for a custom host"
+                .into(),
+        );
+    }
 
     if let Some(dir) = &config.host_dir {
         let rid = rid.ok_or_else(|| unsupported_target(&config.target))?;
@@ -241,16 +536,20 @@ pub fn resolve(config: &Config) -> Result<Resolution, String> {
     }
 
     if config.skip_download {
+        if config.static_host {
+            return Err(
+                "the `static-host` feature links the host at build time, so it \
+                        needs RUSTOLONIA_HOST_DIR or a host download; it cannot be \
+                        combined with `no-download` or RUSTOLONIA_NO_DOWNLOAD"
+                    .into(),
+            );
+        }
         return Ok(Resolution::Skipped("host download disabled".into()));
     }
 
     let rid = rid.ok_or_else(|| unsupported_target(&config.target))?;
     let expected = expected(config, rid);
-    let variant = if config.linux_drm {
-        format!("{rid}-drm")
-    } else {
-        rid.to_owned()
-    };
+    let variant = host_variant(rid, config.linux_drm, config.static_host);
     let cache_dir = config.cache_root.join(&config.version).join(&variant);
     if validate_host_dir(&cache_dir, &expected, true).is_ok() {
         return Ok(Resolution::Found {
@@ -299,13 +598,14 @@ fn expected<'a>(config: &'a Config, rid: &'a str) -> Expected<'a> {
         rid,
         abi_fingerprint: &config.abi_fingerprint,
         linux_drm: config.linux_drm,
+        static_host: config.static_host,
     }
 }
 
 fn unsupported_target(target: &str) -> String {
     format!(
         "rustolonia has no prebuilt host for target {target}; supported targets are \
-         x86_64/aarch64 windows-msvc, apple-darwin and linux-gnu. Set \
+         x86_64/aarch64 windows-msvc, apple-darwin, linux-gnu and linux-musl (static only). Set \
          RUSTOLONIA_HOST_DIR or enable the `no-download` feature"
     )
 }

@@ -1,10 +1,11 @@
 # Avalonia for Rust
 
 This experimental workspace provides an idiomatic Rust API over an Avalonia
-.NET 10 NativeAOT host. Desktop applications load a shared library; the
-[experimental iOS sample](../samples/ios/README.md) statically links Rust into
-an iOS application. Both the managed nano-COM wrappers and Rust bindings are
-generated from `projection.ir.json`; examples are consumers, not binding
+.NET 10 NativeAOT host. Desktop applications load a shared library by default
+or link an optional static host; Linux musl targets can produce a fully static
+executable. The [experimental iOS sample](../samples/ios/README.md) statically
+links Rust into an iOS application. Both the managed nano-COM wrappers and Rust
+bindings are generated from `projection.ir.json`; examples are consumers, not binding
 specifications.
 
 The native ownership contract and the MicroCom-versus-handle-table decision
@@ -83,7 +84,8 @@ Release compatibility and versioning rules are documented in
 ## Prerequisites
 
 Code-first applications that depend on the published `rustolonia` crate need
-only a Rust toolchain; the prebuilt host is downloaded at build time (see
+a Rust toolchain and, for static musl builds, a matching musl linker; the
+prebuilt host is downloaded at build time (see
 [rustolonia/README.md](rustolonia/README.md)). Working in this repository, or
 building an application with compiled AXAML and view-models, needs:
 

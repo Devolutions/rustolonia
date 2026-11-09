@@ -29,6 +29,7 @@
     <UseMicroComGeneratorRoslyn>true</UseMicroComGeneratorRoslyn>
     <DefineConstants Condition="'$(AvaloniaRustHostPlatform)' == 'Win32'">$(DefineConstants);AVN_HOST_WIN32</DefineConstants>
     <DefineConstants Condition="'$(AvaloniaRustHostPlatform)' == 'X11'">$(DefineConstants);AVN_HOST_X11</DefineConstants>
+    <DefineConstants Condition="'$(AvaloniaRustHostPlatform)' == 'X11' and '$(NativeLib)' == 'Static' and $([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('linux-musl-'))">$(DefineConstants);AVN_HOST_STATIC_MUSL</DefineConstants>
     <DefineConstants Condition="'$(AvaloniaRustHostPlatform)' == 'LinuxDrm'">$(DefineConstants);AVN_HOST_LINUX_DRM</DefineConstants>
     <DefineConstants Condition="'$(AvaloniaRustHostPlatform)' == 'OSX'">$(DefineConstants);AVN_HOST_OSX</DefineConstants>
     <DefineConstants Condition="'$(AvaloniaRustHostPlatform)' == 'iOS'">$(DefineConstants);AVN_HOST_IOS</DefineConstants>
@@ -53,11 +54,142 @@
     <Copy SourceFiles="$(_RustoloniaHostSource)" DestinationFiles="$(_RustoloniaHostFile)" />
     <Delete Files="$(_RustoloniaHostSource)" />
   </Target>
+  <ItemGroup Condition="'$(PublishAot)' == 'true' and '$(NativeLib)' == 'Static' and '$(AvaloniaRustHostPlatform)' != 'iOS'">
+    <PackageReference Include="Summpot.StaticAvalonia" PrivateAssets="all" />
+  </ItemGroup>
+  <PropertyGroup Condition="'$(PublishAot)' == 'true' and '$(NativeLib)' == 'Static' and '$(AvaloniaRustHostPlatform)' == 'OSX'">
+    <_RustoloniaNativeArch Condition="'$(RuntimeIdentifier)' == 'osx-arm64'">arm64</_RustoloniaNativeArch>
+    <_RustoloniaNativeArch Condition="'$(RuntimeIdentifier)' == 'osx-x64'">x86_64</_RustoloniaNativeArch>
+    <_RustoloniaNativeBuildRoot>$([System.IO.Path]::GetFullPath('$(BaseIntermediateOutputPath)rustolonia-native/$(Configuration)/$(RuntimeIdentifier)'))</_RustoloniaNativeBuildRoot>
+    <_RustoloniaNativeArchive>$(_RustoloniaNativeBuildRoot)/products/libAvaloniaNative.a</_RustoloniaNativeArchive>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(PublishAot)' == 'true' and '$(NativeLib)' == 'Static' and '$(AvaloniaRustHostPlatform)' == 'OSX'">
+    <DirectPInvoke Include="libAvaloniaNative;libAvaloniaNative.dylib" />
+    <NativeLibrary Include="$(_RustoloniaNativeArchive)" />
+    <NativeFramework Include="AppKit;Carbon;CoreGraphics;CoreText;Foundation;IOSurface;Metal;OpenGL;QuartzCore;UniformTypeIdentifiers" />
+    <NativeSystemLibrary Include="c++" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(PublishAot)' == 'true' and '$(NativeLib)' == 'Static' and ('$(AvaloniaRustHostPlatform)' == 'X11' or '$(AvaloniaRustHostPlatform)' == 'LinuxDrm')">
+    <NativeSystemLibrary Include="pthread;dl;m" />
+  </ItemGroup>
+  <PropertyGroup Condition="'$(PublishAot)' == 'true' and '$(NativeLib)' == 'Static' and $([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('linux-musl-'))">
+    <StaticOpenSslLinking>true</StaticOpenSslLinking>
+    <LinkStandardCPlusPlusLibrary>true</LinkStandardCPlusPlusLibrary>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(PublishAot)' == 'true' and '$(NativeLib)' == 'Static' and $([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('linux-musl-'))">
+    <DirectPInvoke Include="libX11.so.6;libXrandr.so.2;libXext.so.6;libXi.so.6;libXcursor.so.1;libXfixes.so.3;libICE.so.6;libSM.so.6;libc;System.Security.Cryptography.Native.OpenSsl" />
+    <NativeLibrary Include="$(IntermediateOutputPath)libs/System.Security.Cryptography.Native/build/libSystem.Security.Cryptography.Native.OpenSsl.a" />
+  </ItemGroup>
+  <PropertyGroup Condition="'$(PublishAot)' == 'true' and '$(NativeLib)' == 'Static' and ('$(AvaloniaRustHostPlatform)' == 'X11' or '$(AvaloniaRustHostPlatform)' == 'LinuxDrm')">
+    <RustoloniaLinuxStaticGraphicsDir Condition="'$(RustoloniaLinuxStaticGraphicsDir)' == ''">$(RUSTOLONIA_LINUX_STATIC_GRAPHICS_DIR)</RustoloniaLinuxStaticGraphicsDir>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(PublishAot)' == 'true' and '$(NativeLib)' == 'Static' and '$(AvaloniaRustHostPlatform)' == 'Win32'">
+    <NativeSystemLibrary Include="d3d12;dxgi;d3dcompiler;gdi32;user32;ole32;fontsub;usp10;synchronization;d3d9;d3d11;dxguid;advapi32;version;winmm" />
+  </ItemGroup>
+  <Target Name="BuildRustoloniaStaticAvaloniaNative" BeforeTargets="IlcCompile"
+          Condition="'$(PublishAot)' == 'true' and '$(NativeLib)' == 'Static' and '$(AvaloniaRustHostPlatform)' == 'OSX'">
+    <Error Condition="'$(_RustoloniaNativeArch)' == ''" Text="A supported macOS RuntimeIdentifier is required to build the static Avalonia.Native library." />
+    <MakeDir Directories="$(_RustoloniaNativeBuildRoot)/products;$(_RustoloniaNativeBuildRoot)/objects" />
+    <Exec Command="xcodebuild -quiet -project &quot;$(AvaloniaProducerRoot)/native/Avalonia.Native/src/OSX/Avalonia.Native.OSX.xcodeproj&quot; -target Avalonia.Native.OSX -configuration $(Configuration) -sdk macosx -arch $(_RustoloniaNativeArch) MACH_O_TYPE=staticlib EXECUTABLE_EXTENSION=a EXECUTABLE_PREFIX=lib PRODUCT_NAME=AvaloniaNative CODE_SIGNING_ALLOWED=NO GCC_WARN_INHIBIT_ALL_WARNINGS=YES SYMROOT=&quot;$(_RustoloniaNativeBuildRoot)/build&quot; OBJROOT=&quot;$(_RustoloniaNativeBuildRoot)/objects&quot; CONFIGURATION_BUILD_DIR=&quot;$(_RustoloniaNativeBuildRoot)/products&quot;" />
+    <Error Condition="!Exists('$(_RustoloniaNativeArchive)')" Text="The static Avalonia.Native archive was not produced: $(_RustoloniaNativeArchive)." />
+  </Target>
+  <!--
+    NativeLib=Static publishes the host as librustolonia_host.a (Unix) or
+    rustolonia_host.lib (Windows) for linking into a Rust executable
+    (rustolonia-sys `static-host`). A static NativeAOT library only holds the
+    compiled managed code, so this also stages the NativeAOT runtime libraries
+    NativeAOT itself would have linked, and writes rustolonia-host-link.txt
+    describing how to link them, one directive per line, in link order:
+
+      static <file>        static library in this directory
+      whole-static <file>  static library whose every object must be linked
+      system <name>        platform library (-l<name> or <name>.lib)
+      framework <name>     Apple framework
+      search <dir>         additional system library search directory
+
+    Object files (the NativeAOT bootstrapper) are wrapped in a static library
+    because Cargo only forwards libraries, not objects, from a dependency.
+  -->
+  <Target Name="StageRustoloniaStaticHost" AfterTargets="CopyNativeBinary" Condition="'$(PublishAot)' == 'true' and '$(NativeLib)' == 'Static' and '$(AvaloniaRustHostPlatform)' != 'iOS'">
+    <PropertyGroup>
+      <_RustoloniaStaticWindows Condition="'$(NativeBinaryExt)' == '.lib'">true</_RustoloniaStaticWindows>
+      <_RustoloniaStaticLinux Condition="'$(AvaloniaRustHostPlatform)' == 'X11' or '$(AvaloniaRustHostPlatform)' == 'LinuxDrm'">true</_RustoloniaStaticLinux>
+      <_RustoloniaStaticPrefix Condition="'$(_RustoloniaStaticWindows)' != 'true'">lib</_RustoloniaStaticPrefix>
+      <_RustoloniaStaticSource>$(PublishDir)$(TargetName)$(NativeBinaryExt)</_RustoloniaStaticSource>
+      <_RustoloniaStaticFileName>$(_RustoloniaStaticPrefix)$(RustoloniaHostBaseName)$(NativeBinaryExt)</_RustoloniaStaticFileName>
+      <_RustoloniaBootstrapFileName>$(_RustoloniaStaticPrefix)$(RustoloniaHostBaseName)_bootstrap$(NativeBinaryExt)</_RustoloniaBootstrapFileName>
+      <_RustoloniaLinkFile>$(PublishDir)rustolonia-host-link.txt</_RustoloniaLinkFile>
+      <_RustoloniaModuleAnchorObject>$(IntermediateOutputPath)rustolonia-nativeaot-module-anchor.o</_RustoloniaModuleAnchorObject>
+      <_RustoloniaModuleAnchorTarget Condition="$([System.String]::Copy('$(RuntimeIdentifier)').EndsWith('-x64'))">x86_64-unknown-linux-gnu</_RustoloniaModuleAnchorTarget>
+      <_RustoloniaModuleAnchorTarget Condition="$([System.String]::Copy('$(RuntimeIdentifier)').EndsWith('-arm64'))">aarch64-unknown-linux-gnu</_RustoloniaModuleAnchorTarget>
+    </PropertyGroup>
+    <ItemGroup>
+      <!-- dllmain.obj only matters when NativeAOT itself links a DLL. -->
+      <_RustoloniaStaticObject Include="@(NativeLibrary)" Condition="('%(Extension)' == '.o' or '%(Extension)' == '.obj') and '%(Filename)' != 'dllmain'" />
+      <_RustoloniaNativeWindowing Include="@(NativeLibrary)" Condition="'%(Filename)' == 'libAvaloniaNative' and '%(Extension)' == '.a'" />
+      <_RustoloniaSkiaWrapper Include="@(NativeLibrary)" Condition="'$(_RustoloniaStaticLinux)' != 'true' and ('%(Filename)' == 'libSkiaSharp' or '%(Filename)' == 'SkiaSharp')" />
+      <_RustoloniaSkiaCore Include="@(NativeLibrary)" Condition="'$(_RustoloniaStaticLinux)' != 'true' and ('%(Filename)' == 'libskia' or '%(Filename)' == 'skia')" />
+      <_RustoloniaHarfBuzz Include="@(NativeLibrary)" Condition="'$(_RustoloniaStaticLinux)' != 'true' and '%(Filename)' == 'libHarfBuzzSharp'" />
+      <_RustoloniaSkiaWrapper Include="$(RustoloniaLinuxStaticGraphicsDir)/libSkiaSharp.a" Condition="'$(_RustoloniaStaticLinux)' == 'true'" />
+      <_RustoloniaSkiaCore Include="$(RustoloniaLinuxStaticGraphicsDir)/libskia.a" Condition="'$(_RustoloniaStaticLinux)' == 'true'" />
+      <_RustoloniaHarfBuzz Include="$(RustoloniaLinuxStaticGraphicsDir)/libHarfBuzzSharp.a" Condition="'$(_RustoloniaStaticLinux)' == 'true'" />
+      <_RustoloniaLinuxRuntimeTail Include="@(NativeLibrary)" Condition="'$(_RustoloniaStaticLinux)' == 'true' and ('%(Filename)' == 'libz' or '%(Filename)' == 'libbrotlienc' or '%(Filename)' == 'libbrotlidec' or '%(Filename)' == 'libbrotlicommon')" />
+      <_RustoloniaStaticLibrary Include="@(_RustoloniaSkiaWrapper);@(_RustoloniaSkiaCore);@(_RustoloniaHarfBuzz)" />
+      <_RustoloniaStaticLibrary Include="@(NativeLibrary)"
+          Condition="'%(Extension)' != '.o' and '%(Extension)' != '.obj' and '%(Filename)' != 'libAvaloniaNative' and '%(Filename)' != 'libSkiaSharp' and '%(Filename)' != 'SkiaSharp' and '%(Filename)' != 'libskia' and '%(Filename)' != 'skia' and '%(Filename)' != 'libHarfBuzzSharp' and ('$(_RustoloniaStaticLinux)' != 'true' or ('%(Filename)' != 'libz' and '%(Filename)' != 'libbrotlienc' and '%(Filename)' != 'libbrotlidec' and '%(Filename)' != 'libbrotlicommon'))" />
+      <_RustoloniaSystemLibrary Include="@(NativeSystemLibrary)" Condition="'$(_RustoloniaStaticLinux)' != 'true' or '%(Identity)' != 'stdc++'" />
+    </ItemGroup>
+    <Error Condition="'@(_RustoloniaStaticObject)' == ''" Text="NativeAOT did not report its bootstrapper object for the static host." />
+    <Error Condition="'$(_RustoloniaStaticLinux)' == 'true' and '$(_RustoloniaModuleAnchorTarget)' == ''" Text="A supported Linux RuntimeIdentifier is required to build the static host." />
+    <Error Condition="'$(_RustoloniaStaticLinux)' == 'true' and '$(RustoloniaLinuxStaticGraphicsDir)' == ''" Text="Set RUSTOLONIA_LINUX_STATIC_GRAPHICS_DIR to the output of rust/build-linux-static-graphics.sh." />
+    <Error Condition="'$(_RustoloniaStaticLinux)' == 'true' and !Exists('$(RustoloniaLinuxStaticGraphicsDir)/STATIC-SKIASHARP-PROVENANCE.json')" Text="The static Linux graphics directory is missing its source-build provenance." />
+    <Error Condition="'$(_RustoloniaStaticLinux)' == 'true' and !Exists('$(RustoloniaLinuxStaticGraphicsDir)/STATIC-SKIASHARP-SOURCE-NOTICES.txt')" Text="The static Linux graphics directory is missing its source notices." />
+    <Copy SourceFiles="$(_RustoloniaStaticSource)" DestinationFiles="$(PublishDir)$(_RustoloniaStaticFileName)" />
+    <Copy SourceFiles="$(ProjectAssetsFile)" DestinationFiles="$(PublishDir)rustolonia-project-assets.json" />
+    <Delete Files="$(_RustoloniaStaticSource)" />
+    <Copy SourceFiles="@(_RustoloniaStaticLibrary);@(_RustoloniaNativeWindowing);@(_RustoloniaLinuxRuntimeTail)" DestinationFolder="$(PublishDir)" />
+    <Copy Condition="'$(_RustoloniaStaticLinux)' == 'true'" SourceFiles="$(RustoloniaLinuxStaticGraphicsDir)/STATIC-SKIASHARP-PROVENANCE.json;$(RustoloniaLinuxStaticGraphicsDir)/STATIC-SKIASHARP-SOURCE-NOTICES.txt" DestinationFolder="$(PublishDir)" />
+    <Exec Condition="'$(_RustoloniaStaticLinux)' == 'true' and !$([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('linux-musl-'))" Command="sh &quot;$(MSBuildProjectDirectory)/../rust/stage-linux-static-libs.sh&quot; &quot;$(PublishDir)&quot; &quot;$(RuntimeIdentifier)&quot;" />
+    <Exec Condition="'$(_RustoloniaStaticLinux)' == 'true' and $([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('linux-musl-'))" Command="sh &quot;$(MSBuildProjectDirectory)/../rust/stage-linux-musl-static-libs.sh&quot; &quot;$(PublishDir)&quot; &quot;$(RuntimeIdentifier)&quot;" />
+    <ReadLinesFromFile Condition="'$(_RustoloniaStaticLinux)' == 'true'" File="$(PublishDir)rustolonia-linux-static-link.txt">
+      <Output TaskParameter="Lines" ItemName="_RustoloniaLinuxLinkLine" />
+    </ReadLinesFromFile>
+    <Exec Condition="'$(_RustoloniaStaticLinux)' == 'true'" Command="clang --target=$(_RustoloniaModuleAnchorTarget) -c -O2 -fPIC &quot;$(MSBuildProjectDirectory)/static-nativeaot-module-anchor.c&quot; -o &quot;$(_RustoloniaModuleAnchorObject)&quot;" />
+    <ItemGroup Condition="'$(_RustoloniaStaticLinux)' == 'true'">
+      <_RustoloniaStaticObject Include="$(_RustoloniaModuleAnchorObject)" />
+    </ItemGroup>
+    <ItemGroup>
+      <_RustoloniaLinkLine Include="whole-static $(_RustoloniaBootstrapFileName)" Condition="'$(_RustoloniaStaticLinux)' == 'true'" />
+      <_RustoloniaLinkLine Include="static $(_RustoloniaStaticFileName)" />
+      <_RustoloniaLinkLine Include="whole-static $(_RustoloniaBootstrapFileName)" Condition="'$(_RustoloniaStaticLinux)' != 'true'" />
+      <_RustoloniaLinkLine Include="@(_RustoloniaNativeWindowing->'whole-static %(Filename)%(Extension)')" />
+      <_RustoloniaLinkLine Include="@(_RustoloniaStaticLibrary->'static %(Filename)%(Extension)')" />
+      <_RustoloniaLinkLine Include="@(_RustoloniaLinuxLinkLine)" />
+      <_RustoloniaLinkLine Include="@(_RustoloniaSystemLibrary->'system %(Identity)')" />
+      <_RustoloniaLinkLine Include="@(SdkNativeLibrary->'system %(Filename)')" />
+      <_RustoloniaLinkLine Include="@(NativeFramework->'framework %(Identity)')" />
+      <_RustoloniaLinkLine Include="search /usr/lib/swift" Condition="'$(_IsApplePlatform)' == 'true'" />
+    </ItemGroup>
+    <Delete Files="$(PublishDir)$(_RustoloniaBootstrapFileName)" />
+    <Exec Condition="'$(_RustoloniaStaticWindows)' != 'true'" Command="&quot;$(CppLibCreator)&quot; crs &quot;$(PublishDir)$(_RustoloniaBootstrapFileName)&quot; @(_RustoloniaStaticObject->'&quot;%(Identity)&quot;', ' ')" />
+    <Exec Condition="'$(_RustoloniaStaticWindows)' == 'true'" Command="&quot;$(CppLibCreator)&quot; /NOLOGO /OUT:&quot;$(PublishDir)$(_RustoloniaBootstrapFileName)&quot; @(_RustoloniaStaticObject->'&quot;%(Identity)&quot;', ' ')" />
+    <WriteLinesToFile File="$(_RustoloniaLinkFile)" Lines="@(_RustoloniaLinkLine)" Overwrite="true" Encoding="ascii" />
+  </Target>
+  <Target Name="RemoveRustoloniaStaticSharedGraphics" AfterTargets="Publish"
+          Condition="'$(PublishAot)' == 'true' and '$(NativeLib)' == 'Static' and '$(AvaloniaRustHostPlatform)' != 'iOS'">
+    <ItemGroup>
+      <_RustoloniaSharedGraphics Include="$(PublishDir)libSkiaSharp.dylib;$(PublishDir)libHarfBuzzSharp.dylib;$(PublishDir)libAvaloniaNative.dylib;$(PublishDir)libSkiaSharp.so*;$(PublishDir)libHarfBuzzSharp.so*;$(PublishDir)libSkiaSharp.dll;$(PublishDir)libHarfBuzzSharp.dll;$(PublishDir)av_libGLESv2.dll" />
+    </ItemGroup>
+    <!-- A colocated dylib can be selected instead of the requested static archive. -->
+    <Delete Files="@(_RustoloniaSharedGraphics)" />
+  </Target>
   <Target Name="ValidateAvaloniaRustHostPlatform" BeforeTargets="PrepareForBuild">
     <Error Condition="'$(AvaloniaRustHostPlatform)' != 'Win32' and '$(AvaloniaRustHostPlatform)' != 'X11' and '$(AvaloniaRustHostPlatform)' != 'LinuxDrm' and '$(AvaloniaRustHostPlatform)' != 'OSX' and '$(AvaloniaRustHostPlatform)' != 'iOS'"
            Text="AvaloniaRustHostPlatform must be Win32, X11, LinuxDrm, OSX, or iOS for runtime identifier '$(RuntimeIdentifier)'." />
     <Error Condition="'$(AvaloniaRustHostPlatform)' == 'LinuxDrm' and '$(RuntimeIdentifier)' != '' and '$(RuntimeIdentifier)' != 'linux-x64' and '$(RuntimeIdentifier)' != 'linux-arm64'"
            Text="LinuxDrm requires linux-x64 or linux-arm64." />
+    <Error Condition="'$(PublishAot)' == 'true' and '$(NativeLib)' == 'Static' and $([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('linux-musl-')) and ('$(AvaloniaRustHostPlatform)' != 'X11' or '$(StaticOpenSslLinking)' != 'true' or '$(LinkStandardCPlusPlusLibrary)' != 'true')"
+           Text="A static Linux musl host requires the X11 backend, static OpenSSL, and the static C++ runtime." />
   </Target>
   <Target Name="ValidateAvaloniaRustConsumerInputs" BeforeTargets="PrepareForBuild">
     <Error Condition="'@(AvaloniaRustPresentationProject)' != '' and !Exists('%(AvaloniaRustPresentationProject.Identity)')"
