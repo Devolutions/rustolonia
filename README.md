@@ -3,14 +3,14 @@
 First-class Rust bindings for [Avalonia](https://avaloniaui.net/), projected
 over a nano-COM ABI served by a NativeAOT host. This repository contains the
 complete bindings effort; the Avalonia framework itself is consumed from the
-pinned `avalonia-src` producer submodule at upstream Avalonia `12.1.5` (commit
-`5825bf8c66fba0c11e67c980d8ece6444576bffa`).
+pinned `avalonia-src` producer submodule at upstream Avalonia `12.1.6` (commit
+`cf8e564674700348947e93ab19105f27afe859a9`).
 
 ## Layout
 
 | Directory | Contents |
 |---|---|
-| `avalonia-src/` | Avalonia producer pinned to the upstream `12.1.5` tag (`5825bf8c66fba0c11e67c980d8ece6444576bffa`), cloned from `AvaloniaUI/Avalonia` |
+| `avalonia-src/` | Avalonia producer pinned to the upstream `12.1.6` tag (`cf8e564674700348947e93ab19105f27afe859a9`), cloned from `AvaloniaUI/Avalonia` |
 | `avalonia-patches/` | Additive framework patches applied onto the pinned checkout (see its README + UPSTREAM.md) |
 | `rust/` | The Rust workspace: `rustolonia` (safe bindings), `rustolonia-sys` (ABI bindings), `rustolonia-bindgen` (IR to Rust generator), `rustolonia-apk` (Cargo-only Android APK packager), `avalonia-sample` (flagship sample's application-owned view-model API), templates, build scripts, and the checked-in IR |
 | `host/` | `Avalonia.Host` - the C# NativeAOT host that serves the ABI, plus its generated object model |
@@ -28,7 +28,8 @@ pinned `avalonia-src` producer submodule at upstream Avalonia `12.1.5` (commit
 
 ## Quick start (GitHub release)
 
-Code-first applications need only Cargo; no .NET SDK or source checkout:
+Code-first applications using the default shared host need only Cargo; no .NET
+SDK or source checkout:
 
 ```toml
 [dependencies]
@@ -42,8 +43,10 @@ or `[patch.crates-io]` is needed. Rust 1.88 or newer is required. Version
 `12.1.0` is the first Rustolonia release, backed by Avalonia `12.1.3`.
 The major/minor identify the Avalonia line; the patch counts Rustolonia
 releases independently and does not identify the upstream patch.
-This checkout prepares Rustolonia `12.1.5` against Avalonia `12.1.5`; the
-matching patch numbers are coincidental.
+This checkout prepares Rustolonia `12.1.6` against Avalonia `12.1.6`; the
+matching patch numbers are coincidental. Applications using this checkout need
+a locally built host until the matching release artifacts and checksums are
+published.
 
 On the first build, `rustolonia-sys` downloads the prebuilt NativeAOT host for
 your target (Windows, macOS and Linux glibc, x64 and arm64) from the matching
@@ -52,6 +55,12 @@ its SHA-256, and caches it. See [rust/rustolonia/README.md](rust/rustolonia/READ
 for a hello-world and how to ship the host with your application, and
 [rust/rustolonia-sys/README.md](rust/rustolonia-sys/README.md) for offline,
 mirrored and locally built hosts.
+
+For a fully static Linux X11 executable, releases containing the separate
+musl hosts support the `static-host` feature and a matching musl Rust
+toolchain; see [fully static Linux builds](rust/PLATFORMS.md#fully-static-linux-executable).
+Existing releases do not yet include these assets. Static hosts on macOS and
+Windows still depend on operating-system libraries.
 
 Applications with compiled AXAML and Rust view-models still build their own
 host from a source checkout, as described below.

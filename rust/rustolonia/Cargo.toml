@@ -1,6 +1,6 @@
 [package]
 name = "rustolonia"
-version = "12.1.5"
+version = "12.1.6"
 edition = "2021"
 license = "MIT"
 description = "Idiomatic Rust API for Avalonia"
@@ -35,9 +35,11 @@ no-download = ["rustolonia-sys/no-download"]
 dev-host-path = ["rustolonia-sys/dev-host-path"]
 # Direct DRM/KMS display instead of X11 (Linux GNU targets only).
 linux-drm = ["rustolonia-sys/linux-drm"]
+# See rustolonia-sys: link the host statically instead of loading it.
+static-host = ["rustolonia-sys/static-host"]
 
 [dependencies]
-rustolonia-sys = { version = "=12.1.5", path = "../rustolonia-sys", default-features = false }
+rustolonia-sys = { version = "=12.1.6", path = "../rustolonia-sys", default-features = false }
 
 [dev-dependencies]
 avalonia-sample = { path = "../avalonia-sample" }

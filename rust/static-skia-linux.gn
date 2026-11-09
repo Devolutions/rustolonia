@@ -1,0 +1,38 @@
+# Based on Summpot.StaticAvalonia's Linux configuration at
+# d16d1af5b2b040001c508b7a6a27d27bc90b4689. The build script sets target_cpu.
+target_os = "linux"
+is_official_build = true
+is_static_skiasharp = true
+
+cc = "clang"
+cxx = "clang++"
+
+skia_enable_tools = false
+skia_enable_fontmgr_custom_empty = false
+skia_enable_pdf = true
+skia_enable_skottie = true
+
+skia_use_fontconfig = true
+skia_use_freetype = true
+skia_use_harfbuzz = false
+skia_use_icu = false
+skia_use_piex = true
+skia_use_sfntly = false
+skia_use_system_expat = false
+skia_use_system_freetype2 = false
+skia_use_system_libjpeg_turbo = false
+skia_use_system_libpng = false
+skia_use_system_libwebp = false
+skia_use_system_zlib = false
+skia_use_vulkan = true
+skia_enable_graphite = true
+skia_use_partition_alloc = false
+
+extra_cflags = [
+  "-DSKIA_C_DLL",
+  "-DHAVE_SYSCALL_GETRANDOM",
+  "-DXML_DEV_URANDOM",
+  "-DSK_AVOID_SLOW_RASTER_PIPELINE_BLURS",
+  "-DSK_ENABLE_LEGACY_SHADERCONTEXT",
+  "-fPIC",
+]

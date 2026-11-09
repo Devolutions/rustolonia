@@ -3,16 +3,3 @@
 # cargo-rustolonia-apk refuse to use a downloaded host whose hash is not
 # listed here. rust/prepare-release.ps1 fills this in from the release build
 # before the consumer tag or crates are published.
-fd60040e80a78e9dcc2d499337fe2da2d7dcefc5ddd30ec29496b4c8d1f8c8ca  rustolonia-host-12.1.5-android.apk
-e4f03081c0734c85c1170983c012683c4039d0849c323505c6db4d70f521fceb  rustolonia-host-12.1.5-browser-wasm.tar.gz
-d7f6857f2ea99ef7edc204c79bde76ee50829fde06a4f23ea2dc54edf480d1dc  rustolonia-host-12.1.5-ios-arm64.tar.gz
-9bdc0b2422252f1c7af261735d8607c0ead29c254da551ad1d6e44f4259d1b10  rustolonia-host-12.1.5-iossimulator-arm64.tar.gz
-1324d925fbcafbe5bc515493be8913844851fce1d5762462c5a5ca1bffd98f3d  rustolonia-host-12.1.5-iossimulator-x64.tar.gz
-229e02f5ba2a9a566aab776637ba7a88f84f397f40d8bdf78e84b323ce7c8dbd  rustolonia-host-12.1.5-linux-arm64-drm.tar.gz
-13c070dfec550b34b24e26bac0e7e402ac73ff3584aff970e05c9e49c6920d2e  rustolonia-host-12.1.5-linux-arm64.tar.gz
-aac3ec958f0b722e4059990b41f6336852e4292ee2e1f2425d08b5d1515604d6  rustolonia-host-12.1.5-linux-x64-drm.tar.gz
-3d7d3184b370205499e78af6848ec0c5fad33c0780d53c7cb2f24dd0de0a4419  rustolonia-host-12.1.5-linux-x64.tar.gz
-8ef8c47fd224c960a618389665d198a23b5f64411cdfde4c0f8594ec32e5679f  rustolonia-host-12.1.5-osx-arm64.tar.gz
-9c8b243f902d73ee2579acea4654a37bc2fce32092a4f842c3ebbb14d5a89f44  rustolonia-host-12.1.5-osx-x64.tar.gz
-e0034a9cc5eb83e2251a81f021e782d1c850cbec3867a3ab1c21ad41e1479d07  rustolonia-host-12.1.5-win-arm64.tar.gz
-2cb8301f5bb902378cc8b88041cb814265e2b48e0285050ba5f271b785cbe134  rustolonia-host-12.1.5-win-x64.tar.gz

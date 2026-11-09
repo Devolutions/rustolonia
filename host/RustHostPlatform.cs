@@ -26,7 +26,15 @@ internal static partial class RustHostPlatform
 #if AVN_HOST_WIN32
         builder.UseWin32();
 #elif AVN_HOST_X11
+#if AVN_HOST_STATIC_MUSL
+        // Avoid GLX loading a second, dynamic Xlib beside the statically linked one.
+        builder.UseX11().With(new X11PlatformOptions
+        {
+            RenderingMode = new[] { X11RenderingMode.Software }
+        });
+#else
         builder.UseX11();
+#endif
 #elif AVN_HOST_LINUX_DRM
         // StartLinuxDrm installs the direct-display windowing subsystem.
 #elif AVN_HOST_OSX

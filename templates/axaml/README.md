@@ -26,7 +26,7 @@ rustolonia-sys = { path = "/path/to/rustolonia/rust/rustolonia-sys" }
 
 Install Rust 1.88 or newer and the native linker toolchain. Obtain a prebuilt
 host built from the same revision as the checkout; the published v12.1.5 host
-is too old even though the development crates still have that version. Point
+predates these changes. Point
 `RUSTOLONIA_HOST_DIR` at the directory containing the host library before
 running `cargo run` from the copied directory. For example:
 

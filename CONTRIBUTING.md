@@ -24,8 +24,9 @@ pwsh .\rust\regenerate-and-build.ps1 -Configuration Release
 ```
 
 The Rust build entry points also initialize the in-repository producer at the
-revision recorded by the checkout, so a fresh or reused checkout cannot build
-against a different `avalonia-src` revision.
+revision recorded by the Git index, so a fresh or reused checkout cannot build
+against a different `avalonia-src` revision. When updating the producer, stage
+the new submodule gitlink with `git add avalonia-src` before regeneration.
 
 Open `Rustolonia.slnx` to navigate the eleven Rustolonia-owned managed projects.
 Producer projects remain transitive project references, with their own build

@@ -66,6 +66,18 @@ jobs:
         if: runner.os == 'Linux'
         run: ./rust/tests/test-axaml-template.sh
 
+      - name: Check static NativeAOT module retention
+        if: runner.os == 'Linux'
+        run: sh ./rust/tests/test-static-nativeaot-link.sh
+
+      - name: Check static musl-gcc linking
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes musl-tools
+          rustup target add x86_64-unknown-linux-musl
+          sh ./rust/tests/test-static-musl-link.sh
+
       - name: Check browser smoke-test shutdown
         if: runner.os != 'Windows'
         run: python3 rust/tests/test-browser-smoke.py
@@ -210,9 +222,18 @@ jobs:
         shell: pwsh
         run: ./rust/tests/test-build-app.ps1 -RunNativeSmoke
 
-      - name: Run patched Avalonia control regressions
+      - name: Run upstream and Rustolonia Avalonia control regressions
         shell: pwsh
-        run: dotnet test avalonia-src/tests/Avalonia.Controls.UnitTests/Avalonia.Controls.UnitTests.csproj -c Release --framework net10.0 -- --filter-method '*TableViewRowAutomationPeerTests.*' '*TableViewColumnWidthLimitTests.*' '*TableViewTests.Fixed_height_table_virtualizes_a_100000_item_source_when_scrolling' --minimum-expected-tests 13
+        run: |
+          dotnet test --project avalonia-src/tests/Avalonia.Controls.UnitTests/Avalonia.Controls.UnitTests.csproj `
+            -c Release --framework net10.0 -- --filter-method `
+            '*TableViewRowAutomationPeerTests.*' `
+            '*TableViewColumnWidthLimitTests.*' `
+            '*TableViewTests.Fixed_height_table_virtualizes_a_100000_item_source_when_scrolling' `
+            '*TableViewTests.Windowed_items_source_receives_realized_ranges_when_scrolling' `
+            '*TableViewTests.Empty_windowed_items_source_does_not_request_a_range' `
+            '*TableViewTests.Replacing_a_windowed_items_source_notifies_only_the_current_source' `
+            --minimum-expected-tests 51
 
       - name: Build and launch a fresh external consumer under Xvfb
         if: runner.os == 'Linux'

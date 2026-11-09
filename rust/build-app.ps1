@@ -13,7 +13,12 @@ param(
     [string]$LinuxBackend = 'X11',
     [switch]$SkipGenerate,
     [switch]$UpdateLockFile,
-    [switch]$DeveloperTools
+    [switch]$DeveloperTools,
+    # Static links the consumer host into the executable through the
+    # `rustolonia/static-host` cargo feature instead of shipping the host
+    # shared library beside it.
+    [ValidateSet('Shared', 'Static')]
+    [string]$Linkage = 'Shared'
 )
 
 Set-StrictMode -Version Latest
@@ -115,7 +120,11 @@ function Read-ConsumerManifest {
             # Bundle metadata names stay portable across case-sensitive and
             # case-insensitive destination filesystems.
             $comparison = [StringComparison]::OrdinalIgnoreCase
-            if (@('sbom.cdx.json', 'checksums.sha256') | Where-Object { $noticeName.Equals($_, $comparison) }) {
+            $reserved = @('sbom.cdx.json', 'checksums.sha256')
+            if ($Linkage -eq 'Static') {
+                $reserved += @('STATIC-NATIVE-NOTICES.txt', 'STATIC-SKIASHARP-PROVENANCE.json', 'STATIC-SKIASHARP-SOURCE-NOTICES.txt', 'STATIC-ANGLE-PROVENANCE.json', 'STATIC-LINUX-NOTICES.txt', 'STATIC-LINUX-PROVENANCE.tsv', 'STATIC-LINUX-MUSL-SOURCES.tsv')
+            }
+            if ($reserved | Where-Object { $noticeName.Equals($_, $comparison) }) {
                 throw "Invalid consumer manifest: noticeFiles entry uses a reserved bundle filename: $noticeName"
             }
             if (@($noticePaths | Where-Object { $noticeName.Equals((Split-Path -Leaf $_), $comparison) }).Count -gt 0) {
@@ -148,6 +157,7 @@ function Invoke-ConsumerPackage {
     Assert-ArtifactBundleDestination -BundlePath $paths.outputDirectory
     $rid = [string]$Document.rid
     $target = Get-RidTargetInfo -Rid $rid -LinuxBackend $LinuxBackend
+    Assert-RidLinkage -Rid $rid -Linkage $Linkage
     $rustoloniaRootPath = (Resolve-Path -LiteralPath $RustoloniaRoot).Path
     Assert-ConsumerTools -Rid $rid -RustoloniaRoot $rustoloniaRootPath -ConsumerRoot $Document._manifestDirectory
     Assert-ConsumerSource -ProducerRoot $ProducerRootPath -RustoloniaRoot $rustoloniaRootPath
@@ -156,6 +166,9 @@ function Invoke-ConsumerPackage {
     if (-not $UpdateLockFile) { $metadataCommand += '--locked' }
     $metadata = Invoke-Logged -WorkingDirectory $Document._manifestDirectory -Command $metadataCommand | ConvertFrom-Json -AsHashtable
     $cargoLockPath = Join-Path $metadata.workspace_root 'Cargo.lock'
+    $staticCargoFeatures = if ($Linkage -eq 'Static') {
+        @(Get-StaticHostCargoFeatures -Metadata $metadata -PackageName $Document.packageName)
+    } else { @() }
     $hostProject = Join-Path $rustoloniaRootPath 'host' 'Avalonia.Host.csproj'
     $projectionTool = Join-Path $rustoloniaRootPath 'projection' 'Avalonia.ViewModelProjection.Tool' 'Avalonia.ViewModelProjection.Tool.csproj'
     $licenseFile = Join-Path $ProducerRootPath 'licence.md'
@@ -190,23 +203,42 @@ function Invoke-ConsumerPackage {
         "-p:RustoloniaRoot=$rustoloniaRootPath"
     )
 
+    $static = $Linkage -eq 'Static'
     $cargoTarget = Join-Path $Document._manifestDirectory '.avalonia' 'cargo-target'
-    $previousCargo = [Environment]::GetEnvironmentVariable('CARGO_TARGET_DIR', 'Process')
-    [Environment]::SetEnvironmentVariable('CARGO_TARGET_DIR', $cargoTarget, 'Process')
-    Set-WindowsStaticCrt -Triple $target.Triple
-    try {
-        $cargoArgs = New-CargoBuildCommand -ManifestPath $paths.cargoManifest -PackageName $Document.packageName -BinaryName $Document.binary -TargetTriple $target.Triple -Configuration $Document.configuration
-        $cargoArgs += '--locked'
-        $profile = if ($Document.configuration -eq 'Release') { 'release' } else { 'debug' }
-        Invoke-Logged -WorkingDirectory $Document._manifestDirectory -Command $cargoArgs
-    }
-    finally {
-        if ($null -eq $previousCargo) { Remove-Item Env:CARGO_TARGET_DIR -ErrorAction SilentlyContinue }
-        else { [Environment]::SetEnvironmentVariable('CARGO_TARGET_DIR', $previousCargo, 'Process') }
-    }
+    $profile = if ($Document.configuration -eq 'Release') { 'release' } else { 'debug' }
     $executable = Join-Path $cargoTarget $target.Triple $profile "$($Document.binary)$($target.ExeExtension)"
-    if (-not (Test-Path -LiteralPath $executable -PathType Leaf)) {
-        throw "Cargo did not produce the declared binary: $executable"
+    # A static build links the consumer host, so cargo runs after the host
+    # is published and reads it through RUSTOLONIA_HOST_DIR.
+    $buildCargo = {
+        param([string]$StaticHostDirectory)
+        $previousCargo = [Environment]::GetEnvironmentVariable('CARGO_TARGET_DIR', 'Process')
+        $previousHostDir = [Environment]::GetEnvironmentVariable('RUSTOLONIA_HOST_DIR', 'Process')
+        [Environment]::SetEnvironmentVariable('CARGO_TARGET_DIR', $cargoTarget, 'Process')
+        if ($StaticHostDirectory) {
+            [Environment]::SetEnvironmentVariable('RUSTOLONIA_HOST_DIR', $StaticHostDirectory, 'Process')
+        }
+        Set-WindowsStaticCrt -Triple $target.Triple
+        try {
+            $features = if ($StaticHostDirectory) { $staticCargoFeatures } else { @() }
+            $cargoArgs = New-CargoBuildCommand -ManifestPath $paths.cargoManifest -PackageName $Document.packageName -BinaryName $Document.binary -TargetTriple $target.Triple -Configuration $Document.configuration -Features $features
+            $cargoArgs += '--locked'
+            Invoke-Logged -WorkingDirectory $Document._manifestDirectory -Command $cargoArgs
+        }
+        finally {
+            if ($null -eq $previousCargo) { Remove-Item Env:CARGO_TARGET_DIR -ErrorAction SilentlyContinue }
+            else { [Environment]::SetEnvironmentVariable('CARGO_TARGET_DIR', $previousCargo, 'Process') }
+            if ($null -eq $previousHostDir) { Remove-Item Env:RUSTOLONIA_HOST_DIR -ErrorAction SilentlyContinue }
+            else { [Environment]::SetEnvironmentVariable('RUSTOLONIA_HOST_DIR', $previousHostDir, 'Process') }
+        }
+        if (-not (Test-Path -LiteralPath $executable -PathType Leaf)) {
+            throw "Cargo did not produce the declared binary: $executable"
+        }
+        if ($static -and $rid -cin $script:MuslStaticHostRids) {
+            Assert-StaticMuslExecutable -Path $executable
+        }
+    }
+    if (-not $static) {
+        & $buildCargo $null
     }
 
     $bundle = $paths.outputDirectory
@@ -218,6 +250,7 @@ function Invoke-ConsumerPackage {
             "-p:AvaloniaRustViewRegistryFile=$($paths.generatedRegistryFile)",
             "-p:PublishDir=$staging"
         )
+        if ($static) { $publishProperties += '-p:NativeLib=Static' }
         $publishCommand = @('dotnet', 'publish', $hostProject, '-c', [string]$Document.configuration, '-r', $rid) + $publishProperties
         Invoke-Logged -WorkingDirectory $rustoloniaRootPath -Command $publishCommand
         Push-Location $rustoloniaRootPath
@@ -225,15 +258,23 @@ function Invoke-ConsumerPackage {
             $consumerHostAssets = Get-PublishedProjectAssetsFile -Project $hostProject -Configuration $Document.configuration -Rid $rid -AdditionalProperties $publishProperties
         }
         finally { Pop-Location }
-        $hostFile = Join-Path $staging $target.HostFileName
+        $hostFile = Join-Path $staging $(if ($static) { $target.StaticHostFileName } else { $target.HostFileName })
         if (-not (Test-Path -LiteralPath $hostFile -PathType Leaf)) {
             throw "NativeAOT host was not produced: $hostFile"
         }
+        if ($static) {
+            & $buildCargo $staging
+        }
         Invoke-ArtifactBundleTransaction -BundlePath $bundle -Rid $rid -Build {
         param($bundle)
-        Copy-BundleFiles -SourceDirectory $staging -DestinationDirectory $bundle -HostFile $hostFile -Rid $rid
+        if (-not $static) {
+            Copy-BundleFiles -SourceDirectory $staging -DestinationDirectory $bundle -HostFile $hostFile -Rid $rid
+        }
         Copy-Item -LiteralPath $executable -Destination (Join-Path $bundle (Split-Path -Leaf $executable))
         Copy-BundleNotices -ProducerRoot $ProducerRootPath -RustoloniaRoot $rustoloniaRootPath -DestinationDirectory $bundle
+        if ($static) {
+            Copy-StaticNativeNotices -ProjectAssetsJsonPath $consumerHostAssets -DestinationDirectory $bundle -Rid $rid -StaticPublishDirectory $staging
+        }
         foreach ($notice in $Document._noticeFiles) {
             $noticeDestination = Join-Path $bundle (Split-Path -Leaf $notice)
             if (Test-Path -LiteralPath $noticeDestination) {
@@ -241,10 +282,8 @@ function Invoke-ConsumerPackage {
             }
             Copy-Item -LiteralPath $notice -Destination $noticeDestination
         }
-        $signTargets = @(
-            (Join-Path $bundle (Split-Path -Leaf $executable)),
-            (Join-Path $bundle (Split-Path -Leaf $hostFile))
-        )
+        $signTargets = @(Join-Path $bundle (Split-Path -Leaf $executable))
+        if (-not $static) { $signTargets += Join-Path $bundle (Split-Path -Leaf $hostFile) }
         Invoke-ArtifactSigning -ArtifactDirectory $bundle -SignCommand $env:AVALONIA_RUST_SIGN_COMMAND -ExplicitFiles $signTargets
         $consumerProducerPin = git -C $ProducerRootPath rev-parse HEAD 2>$null
         & (Join-Path $PSScriptRoot 'generate-sbom.ps1') -Rid $rid -Bundle $bundle `
@@ -271,4 +310,18 @@ if ($DeveloperTools) {
 if ($LinuxBackend -eq 'Drm') {
     $document._paths.outputDirectory += '-drm'
 }
-Invoke-ConsumerPackage $producer $document
+if ($Linkage -eq 'Static') {
+    $document._paths.outputDirectory += '-static'
+}
+$previousDeploymentTarget = [Environment]::GetEnvironmentVariable('MACOSX_DEPLOYMENT_TARGET', 'Process')
+$setDeploymentTarget = $Linkage -eq 'Static' -and $IsMacOS -and [string]::IsNullOrWhiteSpace($previousDeploymentTarget)
+try {
+    if ($setDeploymentTarget) { $env:MACOSX_DEPLOYMENT_TARGET = '12.0' }
+    Invoke-ConsumerPackage $producer $document
+}
+finally {
+    if ($setDeploymentTarget) {
+        if ($null -eq $previousDeploymentTarget) { Remove-Item Env:MACOSX_DEPLOYMENT_TARGET -ErrorAction SilentlyContinue }
+        else { $env:MACOSX_DEPLOYMENT_TARGET = $previousDeploymentTarget }
+    }
+}
