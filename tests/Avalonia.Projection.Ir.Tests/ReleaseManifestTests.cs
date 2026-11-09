@@ -43,7 +43,7 @@ public class ReleaseManifestTests
 
         var producerPin = element.GetProperty("producerPin").GetString();
         Assert.False(string.IsNullOrWhiteSpace(producerPin));
-        Assert.Equal(Git(root, "rev-parse", "--verify", "HEAD:avalonia-src"), producerPin);
+        Assert.Equal(Git(root, "rev-parse", "--verify", ":avalonia-src"), producerPin);
         Assert.Equal(producerPin, Git(Path.Combine(root, "avalonia-src"), "rev-parse", "--verify", "HEAD"));
 
         var patches = element.GetProperty("patches").EnumerateArray().ToArray();

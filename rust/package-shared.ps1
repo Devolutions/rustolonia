@@ -515,7 +515,7 @@ function Initialize-LocalProducerSubmodule {
         return
     }
 
-    $expectedRevision = & git -C $rootPath rev-parse 'HEAD:avalonia-src' 2>$null
+    $expectedRevision = & git -C $rootPath rev-parse ':avalonia-src' 2>$null
     if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($expectedRevision)) {
         throw "Cannot determine the pinned avalonia-src revision from $rootPath."
     }

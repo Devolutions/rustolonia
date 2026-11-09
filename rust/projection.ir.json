@@ -1217,7 +1217,7 @@
           "interfaceIid": "6B2CDE5F-ABB3-55A1-AB92-07106DC313E3",
           "elementInterfaceName": "Avalonia.Host.Com.IAvnControl",
           "elementKind": "ComInterface",
-          "managedTypeName": "System.Collections.ObjectModel.ReadOnlyObservableCollection\u00601[[Avalonia.Controls.ICommandBarElement, Avalonia.Controls, Version=12.1.5.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
+          "managedTypeName": "System.Collections.ObjectModel.ReadOnlyObservableCollection\u00601[[Avalonia.Controls.ICommandBarElement, Avalonia.Controls, Version=12.1.6.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
           "isNullable": false,
           "hostImplementationTypeName": "Avalonia.Host.Com.AvnControlList"
         },
@@ -1230,7 +1230,7 @@
           "interfaceIid": "6B2CDE5F-ABB3-55A1-AB92-07106DC313E3",
           "elementInterfaceName": "Avalonia.Host.Com.IAvnControl",
           "elementKind": "ComInterface",
-          "managedTypeName": "System.Collections.ObjectModel.ReadOnlyObservableCollection\u00601[[Avalonia.Controls.ICommandBarElement, Avalonia.Controls, Version=12.1.5.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
+          "managedTypeName": "System.Collections.ObjectModel.ReadOnlyObservableCollection\u00601[[Avalonia.Controls.ICommandBarElement, Avalonia.Controls, Version=12.1.6.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
           "isNullable": false,
           "hostImplementationTypeName": "Avalonia.Host.Com.AvnControlList"
         },
@@ -1243,7 +1243,7 @@
           "interfaceIid": "6B2CDE5F-ABB3-55A1-AB92-07106DC313E3",
           "elementInterfaceName": "Avalonia.Host.Com.IAvnControl",
           "elementKind": "ComInterface",
-          "managedTypeName": "System.Collections.Generic.IList\u00601[[Avalonia.Controls.ICommandBarElement, Avalonia.Controls, Version=12.1.5.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
+          "managedTypeName": "System.Collections.Generic.IList\u00601[[Avalonia.Controls.ICommandBarElement, Avalonia.Controls, Version=12.1.6.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
           "isNullable": false,
           "hostImplementationTypeName": "Avalonia.Host.Com.AvnControlList"
         },
@@ -1256,7 +1256,7 @@
           "interfaceIid": "6B2CDE5F-ABB3-55A1-AB92-07106DC313E3",
           "elementInterfaceName": "Avalonia.Host.Com.IAvnControl",
           "elementKind": "ComInterface",
-          "managedTypeName": "System.Collections.Generic.IList\u00601[[Avalonia.Controls.ICommandBarElement, Avalonia.Controls, Version=12.1.5.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
+          "managedTypeName": "System.Collections.Generic.IList\u00601[[Avalonia.Controls.ICommandBarElement, Avalonia.Controls, Version=12.1.6.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
           "isNullable": false,
           "hostImplementationTypeName": "Avalonia.Host.Com.AvnControlList"
         },
@@ -1671,7 +1671,7 @@
           "kind": "Rect",
           "canRead": true,
           "canWrite": true,
-          "managedTypeName": "System.Nullable\u00601[[Avalonia.Rect, Avalonia.Base, Version=12.1.5.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
+          "managedTypeName": "System.Nullable\u00601[[Avalonia.Rect, Avalonia.Base, Version=12.1.6.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
           "isNullable": true
         },
         {
@@ -4046,7 +4046,7 @@
           "kind": "Rect",
           "canRead": true,
           "canWrite": true,
-          "managedTypeName": "System.Nullable\u00601[[Avalonia.Rect, Avalonia.Base, Version=12.1.5.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
+          "managedTypeName": "System.Nullable\u00601[[Avalonia.Rect, Avalonia.Base, Version=12.1.6.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
           "isNullable": true
         },
         {
@@ -5415,7 +5415,7 @@
           "kind": "StringUtf16",
           "canRead": true,
           "canWrite": true,
-          "managedTypeName": "System.Collections.Generic.IList\u00601[[Avalonia.Point, Avalonia.Base, Version=12.1.5.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
+          "managedTypeName": "System.Collections.Generic.IList\u00601[[Avalonia.Point, Avalonia.Base, Version=12.1.6.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
           "isNullable": false,
           "stringConverterTypeName": "Avalonia.Host.Com.AvnPointList"
         },
@@ -5445,7 +5445,7 @@
           "kind": "StringUtf16",
           "canRead": true,
           "canWrite": true,
-          "managedTypeName": "System.Collections.Generic.IList\u00601[[Avalonia.Point, Avalonia.Base, Version=12.1.5.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
+          "managedTypeName": "System.Collections.Generic.IList\u00601[[Avalonia.Point, Avalonia.Base, Version=12.1.6.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
           "isNullable": false,
           "stringConverterTypeName": "Avalonia.Host.Com.AvnPointList"
         },
@@ -6041,7 +6041,7 @@
           "kind": "StringUtf16",
           "canRead": true,
           "canWrite": false,
-          "managedTypeName": "System.Nullable\u00601[[Avalonia.Controls.Dock, Avalonia.Controls, Version=12.1.5.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
+          "managedTypeName": "System.Nullable\u00601[[Avalonia.Controls.Dock, Avalonia.Controls, Version=12.1.6.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
           "isNullable": true,
           "stringConverterTypeName": "Avalonia.Host.Com.AvnDock"
         },
@@ -6101,7 +6101,7 @@
           "interfaceIid": "6B2CDE5F-ABB3-55A1-AB92-07106DC313E3",
           "elementInterfaceName": "Avalonia.Host.Com.IAvnControl",
           "elementKind": "ComInterface",
-          "managedTypeName": "Avalonia.Collections.AvaloniaList\u00601[[Avalonia.Controls.TableViewColumn, Avalonia.Controls, Version=12.1.5.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
+          "managedTypeName": "Avalonia.Collections.AvaloniaList\u00601[[Avalonia.Controls.TableViewColumn, Avalonia.Controls, Version=12.1.6.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b]]",
           "isNullable": true,
           "hostImplementationTypeName": "Avalonia.Host.Com.AvnControlList"
         },

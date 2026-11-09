@@ -6,8 +6,8 @@ Applies the Avalonia source patches rustolonia needs onto an Avalonia checkout.
 
 .DESCRIPTION
 Rustolonia carries a small set of additive patches against the Avalonia UI
-framework (TableView windowing hooks, column width limits, friend access for
-the NativeAOT host). This script applies them to the Avalonia checkout at
+framework (TableView windowing hooks, friend access for the NativeAOT host,
+and platform integration). This script applies them to the Avalonia checkout at
 -AvaloniaRoot, which is typically the `avalonia-src` submodule pinned to a
 release tag.
 

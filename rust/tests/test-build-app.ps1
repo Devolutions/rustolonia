@@ -158,6 +158,47 @@ try {
         Assert-True ($parseErrors.Count -eq 0) "Invalid script $($scriptFile.FullName): $messages"
     }
 
+    & {
+        $projectRoot = Join-Path $scratch 'producer-pinning'
+        $producerRoot = Join-Path $projectRoot 'avalonia-src'
+        New-Item -ItemType Directory -Path $producerRoot -Force | Out-Null
+        $state = @{ IndexRevision = 'new-revision'; ActualRevision = 'new-revision'; Updates = 0; FailUpdate = $false }
+        function git {
+            $global:LASTEXITCODE = 0
+            if ($args -contains 'rev-parse' -and $args -contains ':avalonia-src') {
+                return $state.IndexRevision
+            }
+            if ($args -contains 'rev-parse' -and $args -contains 'HEAD') {
+                return $state.ActualRevision
+            }
+            if ($args -contains 'submodule') {
+                $state.Updates++
+                if ($state.FailUpdate) {
+                    $global:LASTEXITCODE = 1
+                }
+                else {
+                    $state.ActualRevision = $state.IndexRevision
+                }
+                return
+            }
+            throw "Unexpected git invocation: $args"
+        }
+
+        Initialize-LocalProducerSubmodule -RustoloniaRoot $projectRoot -ProducerRoot $producerRoot
+        Assert-True ($state.Updates -eq 0) 'A producer at the staged gitlink must not be reset to HEAD.'
+
+        $state.ActualRevision = 'old-revision'
+        Initialize-LocalProducerSubmodule -RustoloniaRoot $projectRoot -ProducerRoot $producerRoot
+        Assert-True ($state.Updates -eq 1 -and $state.ActualRevision -eq $state.IndexRevision) 'A stale producer must be initialized at the staged gitlink.'
+
+        $state.ActualRevision = 'old-revision'
+        $state.FailUpdate = $true
+        Assert-Throws { Initialize-LocalProducerSubmodule -RustoloniaRoot $projectRoot -ProducerRoot $producerRoot } 'Cannot initialize avalonia-src'
+
+        $state.IndexRevision = ''
+        Assert-Throws { Initialize-LocalProducerSubmodule -RustoloniaRoot $projectRoot -ProducerRoot $producerRoot } 'Cannot determine the pinned avalonia-src revision'
+    }
+
     if ($IsLinux) {
         $wrongStaticRid = if ((Get-CurrentRuntimeArchitecture) -eq 'arm64') { 'linux-x64' } else { 'linux-arm64' }
         & {
