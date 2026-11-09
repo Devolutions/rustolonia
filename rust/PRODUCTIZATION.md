@@ -414,8 +414,10 @@ built with `-Linkage Static` (`NativeLib=Static`) and selected by the
 bootstrapper, Avalonia.Native (macOS), SkiaSharp, HarfBuzzSharp and Windows
 ANGLE into the Rust executable. The manifest records `linkage: Static` and
 the archive `hostFile`; native and runtime notices and source provenance are
-included. The macOS and Windows graphics archives come from the pinned
-third-party `Summpot.StaticAvalonia` package. Linux graphics are built from
+included. The Linux bootstrapper retains the NativeAOT module section under
+both GNU ld and LLD section garbage collection. The macOS and Windows graphics
+archives come from the pinned third-party `Summpot.StaticAvalonia` package.
+Linux graphics are built from
 pinned SkiaSharp and Skia source on the supported glibc 2.35 baseline for GNU
 hosts or on Alpine for musl hosts; Linux font and compiler runtime archives
 are staged with their package notices and SBOM records.

@@ -119,6 +119,9 @@
       <_RustoloniaStaticFileName>$(_RustoloniaStaticPrefix)$(RustoloniaHostBaseName)$(NativeBinaryExt)</_RustoloniaStaticFileName>
       <_RustoloniaBootstrapFileName>$(_RustoloniaStaticPrefix)$(RustoloniaHostBaseName)_bootstrap$(NativeBinaryExt)</_RustoloniaBootstrapFileName>
       <_RustoloniaLinkFile>$(PublishDir)rustolonia-host-link.txt</_RustoloniaLinkFile>
+      <_RustoloniaModuleAnchorObject>$(IntermediateOutputPath)rustolonia-nativeaot-module-anchor.o</_RustoloniaModuleAnchorObject>
+      <_RustoloniaModuleAnchorTarget Condition="$([System.String]::Copy('$(RuntimeIdentifier)').EndsWith('-x64'))">x86_64-unknown-linux-gnu</_RustoloniaModuleAnchorTarget>
+      <_RustoloniaModuleAnchorTarget Condition="$([System.String]::Copy('$(RuntimeIdentifier)').EndsWith('-arm64'))">aarch64-unknown-linux-gnu</_RustoloniaModuleAnchorTarget>
     </PropertyGroup>
     <ItemGroup>
       <!-- dllmain.obj only matters when NativeAOT itself links a DLL. -->
@@ -137,6 +140,7 @@
       <_RustoloniaSystemLibrary Include="@(NativeSystemLibrary)" Condition="'$(_RustoloniaStaticLinux)' != 'true' or '%(Identity)' != 'stdc++'" />
     </ItemGroup>
     <Error Condition="'@(_RustoloniaStaticObject)' == ''" Text="NativeAOT did not report its bootstrapper object for the static host." />
+    <Error Condition="'$(_RustoloniaStaticLinux)' == 'true' and '$(_RustoloniaModuleAnchorTarget)' == ''" Text="A supported Linux RuntimeIdentifier is required to build the static host." />
     <Error Condition="'$(_RustoloniaStaticLinux)' == 'true' and '$(RustoloniaLinuxStaticGraphicsDir)' == ''" Text="Set RUSTOLONIA_LINUX_STATIC_GRAPHICS_DIR to the output of rust/build-linux-static-graphics.sh." />
     <Error Condition="'$(_RustoloniaStaticLinux)' == 'true' and !Exists('$(RustoloniaLinuxStaticGraphicsDir)/STATIC-SKIASHARP-PROVENANCE.json')" Text="The static Linux graphics directory is missing its source-build provenance." />
     <Error Condition="'$(_RustoloniaStaticLinux)' == 'true' and !Exists('$(RustoloniaLinuxStaticGraphicsDir)/STATIC-SKIASHARP-SOURCE-NOTICES.txt')" Text="The static Linux graphics directory is missing its source notices." />
@@ -150,9 +154,14 @@
     <ReadLinesFromFile Condition="'$(_RustoloniaStaticLinux)' == 'true'" File="$(PublishDir)rustolonia-linux-static-link.txt">
       <Output TaskParameter="Lines" ItemName="_RustoloniaLinuxLinkLine" />
     </ReadLinesFromFile>
+    <Exec Condition="'$(_RustoloniaStaticLinux)' == 'true'" Command="clang --target=$(_RustoloniaModuleAnchorTarget) -c -O2 -fPIC &quot;$(MSBuildProjectDirectory)/static-nativeaot-module-anchor.c&quot; -o &quot;$(_RustoloniaModuleAnchorObject)&quot;" />
+    <ItemGroup Condition="'$(_RustoloniaStaticLinux)' == 'true'">
+      <_RustoloniaStaticObject Include="$(_RustoloniaModuleAnchorObject)" />
+    </ItemGroup>
     <ItemGroup>
+      <_RustoloniaLinkLine Include="whole-static $(_RustoloniaBootstrapFileName)" Condition="'$(_RustoloniaStaticLinux)' == 'true'" />
       <_RustoloniaLinkLine Include="static $(_RustoloniaStaticFileName)" />
-      <_RustoloniaLinkLine Include="whole-static $(_RustoloniaBootstrapFileName)" />
+      <_RustoloniaLinkLine Include="whole-static $(_RustoloniaBootstrapFileName)" Condition="'$(_RustoloniaStaticLinux)' != 'true'" />
       <_RustoloniaLinkLine Include="@(_RustoloniaNativeWindowing->'whole-static %(Filename)%(Extension)')" />
       <_RustoloniaLinkLine Include="@(_RustoloniaStaticLibrary->'static %(Filename)%(Extension)')" />
       <_RustoloniaLinkLine Include="@(_RustoloniaLinuxLinkLine)" />
