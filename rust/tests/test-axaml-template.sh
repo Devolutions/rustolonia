@@ -32,6 +32,7 @@ chmod +x "$scratch/no-dotnet/dotnet"
 export PATH="$scratch/no-dotnet:$HOME/.cargo/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 export RUSTOLONIA_NO_DOWNLOAD=1
 cd "$app"
+cargo update -p rustolonia -p rustolonia-bindgen -p rustolonia-sys
 if [[ "$mode" == "--native-smoke" ]]; then
     : "${RUSTOLONIA_HOST_LIB:?Set RUSTOLONIA_HOST_LIB to the matching native host}"
     cp "$root/rust/tests/axaml-native/src/main.rs" "$app/src/main.rs"

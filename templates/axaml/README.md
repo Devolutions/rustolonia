@@ -24,11 +24,17 @@ rustolonia-bindgen = { path = "/path/to/rustolonia/rust/rustolonia-bindgen" }
 rustolonia-sys = { path = "/path/to/rustolonia/rust/rustolonia-sys" }
 ```
 
-Install Rust 1.88 or newer and the native linker toolchain. Obtain a prebuilt
-host built from the same revision as the checkout; the published v12.1.5 host
-predates these changes. Point
-`RUSTOLONIA_HOST_DIR` at the directory containing the host library before
-running `cargo run` from the copied directory. For example:
+Install Rust 1.88 or newer and the native linker toolchain. In the copied
+directory, update the lockfile to select the checkout's crates:
+
+```sh
+cargo update -p rustolonia -p rustolonia-bindgen -p rustolonia-sys
+```
+
+Obtain a prebuilt host built from the same revision as the checkout; the
+published v12.1.5 host predates these changes. Point `RUSTOLONIA_HOST_DIR` at
+the directory containing the host library before running `cargo run` from the
+copied directory. For example:
 
 ```sh
 export RUSTOLONIA_HOST_DIR=/absolute/path/to/matching-host
@@ -36,10 +42,9 @@ cargo run
 ```
 
 In PowerShell, use `$env:RUSTOLONIA_HOST_DIR = 'C:\path\to\matching-host'`.
-Unset `RUSTOLONIA_HOST_LIB` if it points to an older host. The first run
-refreshes `Cargo.lock` for the overrides; subsequent runs can use
-`cargo run --locked`. Obtaining or building the matching host is separate from
-building the Rust application.
+Unset `RUSTOLONIA_HOST_LIB` if it points to an older host. After updating the
+lockfile, use `cargo run --locked`. Obtaining or building the matching host is
+separate from building the Rust application.
 
 Once a release includes these APIs, replace both git tags in `Cargo.toml` with
 that release, copy its AXAML template's `projection.ir.json`, remove the local
