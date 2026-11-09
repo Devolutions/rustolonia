@@ -607,9 +607,10 @@ gh workflow run release.yml --repo Devolutions/rustolonia --ref BRANCH -f phase=
 ```
 
 The run stages its tarballs, APK and `SHA256SUMS` in an Actions artifact named
-`rustolonia-dry-run-X.Y.Z`. It does not create attestations, commit checksums,
-push tags, create a release, or publish crates. Its artifact name is distinct
-from the release artifact and cannot be passed to the publish phase.
+`rustolonia-dry-run-X.Y.Z`. It does not use the release signing hook, create
+attestations, commit checksums, push tags, create a release, or publish crates.
+Its artifact name is distinct from the release artifact and cannot be passed
+to the publish phase.
 
 #### One-dispatch release
 

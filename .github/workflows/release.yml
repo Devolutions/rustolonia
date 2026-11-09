@@ -193,7 +193,7 @@ jobs:
       - name: Package the host tarball
         shell: pwsh
         env:
-          AVALONIA_RUST_SIGN_COMMAND: ${{ vars.AVALONIA_RUST_SIGN_COMMAND }}
+          AVALONIA_RUST_SIGN_COMMAND: ${{ inputs.phase != 'dry-run' && vars.AVALONIA_RUST_SIGN_COMMAND || '' }}
         run: ./rust/package-host.ps1 -Rid ${{ matrix.rid }} -LinuxBackend ${{ matrix.backend || 'X11' }} -OutputRoot rust/artifacts/host
 
       - name: Build and launch a standalone app against the packaged crates and this tarball
@@ -225,7 +225,7 @@ jobs:
       - name: Package the static host tarball
         shell: pwsh
         env:
-          AVALONIA_RUST_SIGN_COMMAND: ${{ vars.AVALONIA_RUST_SIGN_COMMAND }}
+          AVALONIA_RUST_SIGN_COMMAND: ${{ inputs.phase != 'dry-run' && vars.AVALONIA_RUST_SIGN_COMMAND || '' }}
         run: ./rust/package-host.ps1 -Rid ${{ matrix.rid }} -LinuxBackend ${{ matrix.backend || 'X11' }} -Linkage Static -OutputRoot rust/artifacts/host
 
       - name: Build and launch a standalone app linked against the static host tarball
