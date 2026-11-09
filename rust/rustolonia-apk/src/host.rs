@@ -294,10 +294,10 @@ mod tests {
 
     #[test]
     fn asset_names_follow_the_host_convention() {
-        assert_eq!(asset_name("12.1.5"), "rustolonia-host-12.1.5-android.apk");
+        assert_eq!(asset_name("12.1.6"), "rustolonia-host-12.1.6-android.apk");
         assert_eq!(
-            asset_url("https://example.test/dl/", "12.1.5"),
-            "https://example.test/dl/v12.1.5/rustolonia-host-12.1.5-android.apk"
+            asset_url("https://example.test/dl/", "12.1.6"),
+            "https://example.test/dl/v12.1.6/rustolonia-host-12.1.6-android.apk"
         );
     }
 
