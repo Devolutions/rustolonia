@@ -1821,7 +1821,7 @@ impl Command {
                     let next = compute();
                     let prev = flag_for_effect.swap(next, Ordering::AcqRel);
                     if prev != next {
-                        raw_for_effect.notify()?;
+                        raw_for_effect.try_notify()?;
                     }
                     Ok(())
                 })?)
@@ -1833,7 +1833,7 @@ impl Command {
                     let next = compute()?;
                     let prev = flag_for_effect.swap(next, Ordering::AcqRel);
                     if prev != next {
-                        raw_for_effect.notify()?;
+                        raw_for_effect.try_notify()?;
                     }
                     Ok(())
                 })?)
@@ -1845,7 +1845,7 @@ impl Command {
                     if let Some(next) = compute()? {
                         let prev = flag_for_effect.swap(next, Ordering::AcqRel);
                         if prev != next {
-                            raw_for_effect.notify()?;
+                            raw_for_effect.try_notify()?;
                         }
                     }
                     Ok(())
@@ -1859,7 +1859,7 @@ impl Command {
                     Box::new(move |next| {
                         let prev = flag_for_effect.swap(next, Ordering::AcqRel);
                         if prev != next {
-                            raw_for_effect.notify()?;
+                            raw_for_effect.try_notify()?;
                         }
                         Ok(())
                     }),
@@ -1883,8 +1883,17 @@ impl Command {
     }
 
     /// Manually fires `CanExecuteChanged` notifications to all subscribed controls.
-    pub fn notify(&self) -> Result<()> {
-        Ok(self.raw.notify()?)
+    ///
+    /// Notification failures are written to stderr. Use [`Command::try_notify`]
+    /// to handle them directly.
+    pub fn notify(&self) {
+        self.raw.notify();
+    }
+
+    /// Manually fires `CanExecuteChanged` notifications and returns the first
+    /// notification failure after attempting all subscribed controls.
+    pub fn try_notify(&self) -> Result<()> {
+        Ok(self.raw.try_notify()?)
     }
 
     /// Invokes the command directly from Rust with `parameter`.

@@ -189,9 +189,6 @@ pub enum HostLoadError {
     IncompatibleAllocator,
     InvalidExportsSize(u32),
     MissingExport(&'static str),
-    /// [`Host::load_static`] was called, but no host is linked into this
-    /// binary (enable the `static-host` feature).
-    NotStaticallyLinked,
     /// The host was built against a different ABI than this crate. `found`
     /// is `None` for hosts that predate `avn_get_host_info`.
     IncompatibleHost {
@@ -215,9 +212,6 @@ impl std::fmt::Display for HostLoadError {
             Self::MissingExport(name) => {
                 write!(formatter, "in-process Avalonia host is missing {name}")
             }
-            Self::NotStaticallyLinked => formatter.write_str(
-                "no rustolonia host is linked into this binary; enable the `static-host` feature",
-            ),
             Self::IncompatibleHost { expected, found } => match found {
                 Some(found) => write!(
                     formatter,
@@ -509,7 +503,9 @@ impl Host {
     /// feature. Check [`STATIC_HOST`] first.
     #[cfg(not(any(target_os = "emscripten", rustolonia_static_host)))]
     pub fn load_static() -> std::result::Result<Self, HostLoadError> {
-        Err(HostLoadError::NotStaticallyLinked)
+        Err(HostLoadError::MissingExport(
+            "statically linked host (enable the `static-host` feature)",
+        ))
     }
 
     #[cfg(not(target_os = "emscripten"))]

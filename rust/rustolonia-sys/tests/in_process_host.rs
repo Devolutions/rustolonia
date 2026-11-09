@@ -135,3 +135,14 @@ fn in_process_host_validates_the_table_and_abi_before_publishing_allocators() {
         Err(HostLoadError::IncompatibleAllocator)
     ));
 }
+
+#[cfg(all(not(target_os = "emscripten"), not(rustolonia_static_host)))]
+#[test]
+fn load_static_without_feature_reports_missing_host() {
+    assert!(matches!(
+        Host::load_static(),
+        Err(HostLoadError::MissingExport(
+            "statically linked host (enable the `static-host` feature)"
+        ))
+    ));
+}
