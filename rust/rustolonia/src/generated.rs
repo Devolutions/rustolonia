@@ -4245,6 +4245,16 @@ impl AutoCompleteBox {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -5020,6 +5030,12 @@ impl crate::view::El<AutoCompleteBox> {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
         })
     }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
+        })
+    }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
@@ -5757,6 +5773,16 @@ impl Border {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -6331,6 +6357,12 @@ impl crate::view::El<Border> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -7261,6 +7293,16 @@ impl Button {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -7966,6 +8008,12 @@ impl crate::view::El<Button> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -8859,6 +8907,16 @@ impl ButtonSpinner {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -9578,6 +9636,12 @@ impl crate::view::El<ButtonSpinner> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -10517,6 +10581,16 @@ impl Calendar {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -11205,6 +11279,12 @@ impl crate::view::El<Calendar> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -12206,6 +12286,16 @@ impl CalendarDatePicker {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -12932,6 +13022,12 @@ impl crate::view::El<CalendarDatePicker> {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
         })
     }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
+        })
+    }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
@@ -13635,6 +13731,16 @@ impl Canvas {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -14183,6 +14289,12 @@ impl crate::view::El<Canvas> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -15103,6 +15215,16 @@ impl Carousel {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -15851,6 +15973,12 @@ impl crate::view::El<Carousel> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -16810,6 +16938,16 @@ impl CheckBox {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -17598,6 +17736,12 @@ impl crate::view::El<CheckBox> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -18596,6 +18740,16 @@ impl ComboBox {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -19383,6 +19537,12 @@ impl crate::view::El<ComboBox> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -20238,6 +20398,16 @@ impl ComboBoxItem {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -20933,6 +21103,12 @@ impl crate::view::El<ComboBoxItem> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -21898,6 +22074,16 @@ impl CommandBar {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -22586,6 +22772,12 @@ impl crate::view::El<CommandBar> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -23573,6 +23765,16 @@ impl CommandBarButton {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -24343,6 +24545,12 @@ impl crate::view::El<CommandBarButton> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -25155,6 +25363,16 @@ impl CommandBarSeparator {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -25806,6 +26024,12 @@ impl crate::view::El<CommandBarSeparator> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -26819,6 +27043,16 @@ impl CommandBarToggleButton {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -27643,6 +27877,12 @@ impl crate::view::El<CommandBarToggleButton> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -28490,6 +28730,16 @@ impl ContentControl {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -29121,6 +29371,12 @@ impl crate::view::El<ContentControl> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -30167,6 +30423,16 @@ impl ContextMenu {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -31015,6 +31281,12 @@ impl crate::view::El<ContextMenu> {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
         })
     }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
+        })
+    }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
@@ -31664,6 +31936,16 @@ impl Control {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -32132,6 +32414,12 @@ impl crate::view::El<Control> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -33038,6 +33326,16 @@ impl DatePicker {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -33716,6 +34014,12 @@ impl crate::view::El<DatePicker> {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
         })
     }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
+        })
+    }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
@@ -34383,6 +34687,16 @@ impl Decorator {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -34892,6 +35206,12 @@ impl crate::view::El<Decorator> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -35594,6 +35914,16 @@ impl DockPanel {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -36160,6 +36490,12 @@ impl crate::view::El<DockPanel> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -37090,6 +37426,16 @@ impl DropDownButton {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -37824,6 +38170,12 @@ impl crate::view::El<DropDownButton> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -38767,6 +39119,16 @@ impl Expander {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -39501,6 +39863,12 @@ impl crate::view::El<Expander> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -40434,6 +40802,7 @@ impl Grid {
         self.set_background(value)?;
         Ok(self)
     }
+    pub fn is_effectively_visible(&self) -> Result<bool> { Ok(self.raw.get_is_effectively_visible()?) }
     pub fn get_show_grid_lines(&self) -> Result<bool> { Ok(self.raw.get_show_grid_lines()?) }
     pub fn set_show_grid_lines(&self, value: bool) -> Result<()> {
         Ok(self.raw.set_show_grid_lines(value)?)
@@ -40478,6 +40847,33 @@ impl Grid {
     }
     pub fn row_definitions(self, value: impl AsRef<str>) -> Result<Self> {
         self.set_row_definitions(value)?;
+        Ok(self)
+    }
+    pub fn update_layout(&self) -> Result<()> { Ok(self.raw.update_layout()?) }
+    pub fn subscribe_layout_updated(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::grid_layout_updated_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_layout_updated(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_layout_updated(subscription_id)))
+    }
+    pub fn on_layout_updated(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_layout_updated(callback)?);
+        Ok(self)
+    }
+    pub fn subscribe_children_changed(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {
+        let handler = sys::grid_children_changed_handler(move || {
+            callback(());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_children_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_children_changed(subscription_id)))
+    }
+    pub fn on_children_changed(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {
+        scope.retain_subscription(self.subscribe_children_changed(callback)?);
         Ok(self)
     }
     pub fn get_column(target: &impl AsControl) -> Result<i32> {
@@ -40683,6 +41079,16 @@ impl Grid {
     }
     pub fn relative_panel_align_vertical_center_with_panel(self, value: bool) -> Result<Self> {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
+        Ok(self)
+    }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
         Ok(self)
     }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
@@ -41169,6 +41575,18 @@ impl crate::view::El<Grid> {
             crate::view::apply_prop(control, binding, |c, v| c.set_row_definitions(v))
         })
     }
+    pub fn on_layout_updated(self, callback: impl FnMut(()) + Send + 'static) -> Self {
+        self.with_op(move |scope, control| {
+            scope.retain_subscription(control.subscribe_layout_updated(callback)?);
+            Ok(())
+        })
+    }
+    pub fn on_children_changed(self, callback: impl FnMut(()) + Send + 'static) -> Self {
+        self.with_op(move |scope, control| {
+            scope.retain_subscription(control.subscribe_children_changed(callback)?);
+            Ok(())
+        })
+    }
     pub fn canvas_left<M>(self, value: impl crate::view::IntoProp<f64, M> + 'static) -> Self {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
@@ -41263,6 +41681,12 @@ impl crate::view::El<Grid> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -42138,6 +42562,16 @@ impl GridSplitter {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -42825,6 +43259,12 @@ impl crate::view::El<GridSplitter> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -43698,6 +44138,16 @@ impl GroupBox {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -44396,6 +44846,12 @@ impl crate::view::El<GroupBox> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -45345,6 +45801,16 @@ impl HyperlinkButton {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -46091,6 +46557,12 @@ impl crate::view::El<HyperlinkButton> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -46878,6 +47350,16 @@ impl IconElement {
     }
     pub fn relative_panel_align_vertical_center_with_panel(self, value: bool) -> Result<Self> {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
+        Ok(self)
+    }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
         Ok(self)
     }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
@@ -47735,6 +48217,16 @@ impl Image {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -48256,6 +48748,12 @@ impl crate::view::El<Image> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -49089,6 +49587,16 @@ impl ItemsControl {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -49718,6 +50226,12 @@ impl crate::view::El<ItemsControl> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -50576,6 +51090,16 @@ impl Label {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -51242,6 +51766,12 @@ impl crate::view::El<Label> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -51922,6 +52452,16 @@ impl LayoutTransformControl {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -52466,6 +53006,12 @@ impl crate::view::El<LayoutTransformControl> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -53377,6 +53923,16 @@ impl ListBox {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -54119,6 +54675,12 @@ impl crate::view::El<ListBox> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -54974,6 +55536,16 @@ impl ListBoxItem {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -55640,6 +56212,12 @@ impl crate::view::El<ListBoxItem> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -56871,6 +57449,16 @@ impl MaskedTextBox {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -57527,7 +58115,7 @@ impl crate::view::El<MaskedTextBox> {
                 binding,
                 |c, v| c.set_text(v),
                 |c: &_| c.get_text().map(|v| v.unwrap_or_default()),
-                |c, mut cb| c.subscribe_text_changed(move |_| cb()),
+                |c, mut cb| c.subscribe_text_changing(move |_| cb()),
             )
         })
     }
@@ -57775,6 +58363,12 @@ impl crate::view::El<MaskedTextBox> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -58705,6 +59299,16 @@ impl Menu {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -59482,6 +60086,12 @@ impl crate::view::El<Menu> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -60403,6 +61013,16 @@ impl MenuBase {
     }
     pub fn relative_panel_align_vertical_center_with_panel(self, value: bool) -> Result<Self> {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
+        Ok(self)
+    }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
         Ok(self)
     }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
@@ -62123,6 +62743,16 @@ impl MenuItem {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -62975,6 +63605,12 @@ impl crate::view::El<MenuItem> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -63856,6 +64492,16 @@ impl NotificationCard {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -64534,6 +65180,12 @@ impl crate::view::El<NotificationCard> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -65354,6 +66006,16 @@ impl WindowNotificationManager {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -65976,6 +66638,12 @@ impl crate::view::El<WindowNotificationManager> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -66977,6 +67645,16 @@ impl NumericUpDown {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -67709,6 +68387,12 @@ impl crate::view::El<NumericUpDown> {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
         })
     }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
+        })
+    }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
@@ -68376,6 +69060,16 @@ impl Panel {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -68895,6 +69589,12 @@ impl crate::view::El<Panel> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -69702,6 +70402,16 @@ impl PathIcon {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -70347,6 +71057,12 @@ impl crate::view::El<PathIcon> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -71204,6 +71920,16 @@ impl PipsPager {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -71856,6 +72582,12 @@ impl crate::view::El<PipsPager> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -72835,6 +73567,16 @@ impl HeaderedContentControl {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -73504,6 +74246,12 @@ impl crate::view::El<HeaderedContentControl> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -74369,6 +75117,16 @@ impl HeaderedItemsControl {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -75036,6 +75794,12 @@ impl crate::view::El<HeaderedItemsControl> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -75966,6 +76730,16 @@ impl HeaderedSelectingItemsControl {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -76711,6 +77485,12 @@ impl crate::view::El<HeaderedSelectingItemsControl> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -77560,6 +78340,16 @@ impl Popup {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -78180,6 +78970,12 @@ impl crate::view::El<Popup> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -79277,6 +80073,16 @@ impl RangeBase {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -80338,6 +81144,16 @@ impl SelectingItemsControl {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -81045,6 +81861,12 @@ impl crate::view::El<SelectingItemsControl> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -81841,6 +82663,16 @@ impl TemplatedControl {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -82422,6 +83254,12 @@ impl crate::view::El<TemplatedControl> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -83248,6 +84086,16 @@ impl Thumb {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -83876,6 +84724,12 @@ impl crate::view::El<Thumb> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -84832,6 +85686,16 @@ impl ToggleButton {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -85593,6 +86457,12 @@ impl crate::view::El<ToggleButton> {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
         })
     }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
+        })
+    }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
@@ -86300,6 +87170,16 @@ impl UniformGrid {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -86878,6 +87758,12 @@ impl crate::view::El<UniformGrid> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -87764,6 +88650,16 @@ impl ProgressBar {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -88470,6 +89366,12 @@ impl crate::view::El<ProgressBar> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -89437,6 +90339,16 @@ impl RadioButton {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -90231,6 +91143,12 @@ impl crate::view::El<RadioButton> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -91111,6 +92029,16 @@ impl RefreshContainer {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -91789,6 +92717,12 @@ impl crate::view::El<RefreshContainer> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -92512,6 +93446,16 @@ impl RelativePanel {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -93060,6 +94004,12 @@ impl crate::view::El<RelativePanel> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -94006,6 +94956,16 @@ impl RepeatButton {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -94752,6 +95712,12 @@ impl crate::view::El<RepeatButton> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -95605,6 +96571,15 @@ impl ScrollViewer {
         scope.retain_subscription(self.subscribe_scroll_changed(callback)?);
         Ok(self)
     }
+    pub fn get_attached_horizontal_scroll_bar_visibility(target: &impl AsControl) -> Result<ScrollBarVisibility> {
+        let target = target.as_control()?;
+        let value = with_factory(|factory| factory.get_scroll_viewer_statics()?.get_horizontal_scroll_bar_visibility(&target))?;
+        ScrollBarVisibility::try_from(value)
+    }
+    pub fn set_attached_horizontal_scroll_bar_visibility(target: &impl AsControl, value: ScrollBarVisibility) -> Result<()> {
+        let target = target.as_control()?;
+        with_factory(|factory| factory.get_scroll_viewer_statics()?.set_horizontal_scroll_bar_visibility(&target, value as i32))
+    }
     pub fn get_canvas_left(&self) -> Result<f64> {
         Canvas::get_left(self)
     }
@@ -95763,6 +96738,16 @@ impl ScrollViewer {
     }
     pub fn relative_panel_align_vertical_center_with_panel(self, value: bool) -> Result<Self> {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
+        Ok(self)
+    }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
         Ok(self)
     }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
@@ -96503,6 +97488,12 @@ impl crate::view::El<ScrollViewer> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -97391,6 +98382,16 @@ impl SelectableTextBlock {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -98055,6 +99056,12 @@ impl crate::view::El<SelectableTextBlock> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -98851,6 +99858,16 @@ impl Separator {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -99461,6 +100478,12 @@ impl crate::view::El<Separator> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -100215,6 +101238,16 @@ impl Arc {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -100807,6 +101840,12 @@ impl crate::view::El<Arc> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -101545,6 +102584,16 @@ impl Ellipse {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -102125,6 +103174,12 @@ impl crate::view::El<Ellipse> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -102883,6 +103938,16 @@ impl Line {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -103475,6 +104540,12 @@ impl crate::view::El<Line> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -104224,6 +105295,16 @@ impl Path {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -104810,6 +105891,12 @@ impl crate::view::El<Path> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -105570,6 +106657,16 @@ impl Polygon {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -106162,6 +107259,12 @@ impl crate::view::El<Polygon> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -106922,6 +108025,16 @@ impl Polyline {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -107514,6 +108627,12 @@ impl crate::view::El<Polyline> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -108268,6 +109387,16 @@ impl Rectangle {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -108860,6 +109989,12 @@ impl crate::view::El<Rectangle> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -109614,6 +110749,16 @@ impl Sector {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -110206,6 +111351,12 @@ impl crate::view::El<Sector> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -110935,6 +112086,16 @@ impl Shape {
     }
     pub fn relative_panel_align_vertical_center_with_panel(self, value: bool) -> Result<Self> {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
+        Ok(self)
+    }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
         Ok(self)
     }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
@@ -111972,6 +113133,16 @@ impl Slider {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -112690,6 +113861,12 @@ impl crate::view::El<Slider> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -113544,6 +114721,16 @@ impl Spinner {
     }
     pub fn relative_panel_align_vertical_center_with_panel(self, value: bool) -> Result<Self> {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
+        Ok(self)
+    }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
         Ok(self)
     }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
@@ -114637,6 +115824,16 @@ impl SplitButton {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -115324,6 +116521,12 @@ impl crate::view::El<SplitButton> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -116305,6 +117508,16 @@ impl SplitView {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -117042,6 +118255,12 @@ impl crate::view::El<SplitView> {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
         })
     }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
+        })
+    }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
@@ -117744,6 +118963,16 @@ impl StackPanel {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -118316,6 +119545,12 @@ impl crate::view::El<StackPanel> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -119276,6 +120511,16 @@ impl TabControl {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -120036,6 +121281,12 @@ impl crate::view::El<TabControl> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -120954,6 +122205,16 @@ impl TabItem {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -121670,6 +122931,12 @@ impl crate::view::El<TabItem> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -122599,6 +123866,16 @@ impl TableView {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -123376,6 +124653,12 @@ impl crate::view::El<TableView> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -124223,6 +125506,16 @@ impl TableViewCell {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -124883,6 +126176,12 @@ impl crate::view::El<TableViewCell> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -126132,6 +127431,16 @@ impl TableViewRow {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -126827,6 +128136,12 @@ impl crate::view::El<TableViewRow> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -127657,6 +128972,16 @@ impl TextBlock {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -128262,6 +129587,12 @@ impl crate::view::El<TextBlock> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -129440,6 +130771,16 @@ impl TextBox {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -130067,7 +131408,7 @@ impl crate::view::El<TextBox> {
                 binding,
                 |c, v| c.set_text(v),
                 |c: &_| c.get_text().map(|v| v.unwrap_or_default()),
-                |c, mut cb| c.subscribe_text_changed(move |_| cb()),
+                |c, mut cb| c.subscribe_text_changing(move |_| cb()),
             )
         })
     }
@@ -130279,6 +131620,12 @@ impl crate::view::El<TextBox> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -130962,6 +132309,16 @@ impl ThemeVariantScope {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -131506,6 +132863,12 @@ impl crate::view::El<ThemeVariantScope> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -132371,6 +133734,16 @@ impl TimePicker {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -133023,6 +134396,12 @@ impl crate::view::El<TimePicker> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -133943,6 +135322,16 @@ impl ToggleSplitButton {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -134671,6 +136060,12 @@ impl crate::view::El<ToggleSplitButton> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -135672,6 +137067,16 @@ impl ToggleSwitch {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -136478,6 +137883,12 @@ impl crate::view::El<ToggleSwitch> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -137407,6 +138818,16 @@ impl ToolTip {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -138067,6 +139488,12 @@ impl crate::view::El<ToolTip> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -138933,6 +140360,16 @@ impl TransitioningContentControl {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -139605,6 +141042,12 @@ impl crate::view::El<TransitioningContentControl> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -140672,6 +142115,16 @@ impl TreeView {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -141354,6 +142807,12 @@ impl crate::view::El<TreeView> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -142262,6 +143721,16 @@ impl TreeViewItem {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -142982,6 +144451,12 @@ impl crate::view::El<TreeViewItem> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -143829,6 +145304,16 @@ impl UserControl {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -144489,6 +145974,12 @@ impl crate::view::El<UserControl> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -145173,6 +146664,16 @@ impl Viewbox {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -145688,6 +147189,12 @@ impl crate::view::El<Viewbox> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
@@ -146699,6 +148206,16 @@ impl Window {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -147457,6 +148974,12 @@ impl crate::view::El<Window> {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
         })
     }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
+        })
+    }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
@@ -148178,6 +149701,16 @@ impl WrapPanel {
         RelativePanel::set_align_vertical_center_with_panel(&self, value)?;
         Ok(self)
     }
+    pub fn get_scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::get_attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(self, value: ScrollBarVisibility) -> Result<Self> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(&self, value)?;
+        Ok(self)
+    }
     pub fn get_tool_tip_tip(&self) -> Result<Option<String>> {
         ToolTip::get_tip(self)
     }
@@ -148762,6 +150295,12 @@ impl crate::view::El<WrapPanel> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
         })
     }
     pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {

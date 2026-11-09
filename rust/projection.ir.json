@@ -2471,8 +2471,24 @@
       "baseFullName": "Avalonia.Host.Com.IAvnPanel",
       "managedFullName": "Avalonia.Controls.Grid",
       "isConstructible": true,
-      "methods": [],
+      "methods": [
+        {
+          "name": "UpdateLayout",
+          "managedName": "UpdateLayout",
+          "returnKind": "I32",
+          "preserveSig": true,
+          "parameters": []
+        }
+      ],
       "properties": [
+        {
+          "name": "IsEffectivelyVisible",
+          "kind": "Bool",
+          "canRead": true,
+          "canWrite": false,
+          "managedTypeName": "System.Boolean",
+          "isNullable": false
+        },
         {
           "name": "ShowGridLines",
           "kind": "Bool",
@@ -2503,7 +2519,8 @@
           "canRead": true,
           "canWrite": true,
           "managedTypeName": "Avalonia.Controls.ColumnDefinitions",
-          "isNullable": false
+          "isNullable": false,
+          "stringConverterTypeName": "Avalonia.Host.Com.AvnColumnDefinitions"
         },
         {
           "name": "RowDefinitions",
@@ -2511,10 +2528,30 @@
           "canRead": true,
           "canWrite": true,
           "managedTypeName": "Avalonia.Controls.RowDefinitions",
-          "isNullable": false
+          "isNullable": false,
+          "stringConverterTypeName": "Avalonia.Host.Com.AvnRowDefinitions"
         }
       ],
-      "events": []
+      "events": [
+        {
+          "name": "LayoutUpdated",
+          "handlerInterfaceName": "Avalonia.Host.Com.IAvnGridLayoutUpdatedHandler",
+          "handlerInterfaceIid": "403C4FD0-1CFA-5C01-8F58-748997240703",
+          "payloadKind": "None",
+          "managedHandlerTypeName": "System.EventHandler",
+          "parameters": []
+        },
+        {
+          "name": "ChildrenChanged",
+          "handlerInterfaceName": "Avalonia.Host.Com.IAvnGridChildrenChangedHandler",
+          "handlerInterfaceIid": "77F512D9-27B4-551F-AAC7-F92DB8F9DB0E",
+          "payloadKind": "None",
+          "managedHandlerTypeName": "System.Collections.Specialized.NotifyCollectionChangedEventHandler",
+          "managedSourcePropertyName": "Children",
+          "managedEventName": "CollectionChanged",
+          "parameters": []
+        }
+      ]
     },
     {
       "name": "IAvnGridSplitter",
@@ -11112,6 +11149,16 @@
       "name": "AlignVerticalCenterWithPanel",
       "kind": "Bool",
       "managedTypeName": "System.Boolean",
+      "isNullable": false
+    },
+    {
+      "ownerName": "ScrollViewer",
+      "ownerManagedFullName": "Avalonia.Controls.ScrollViewer",
+      "staticsInterfaceName": "Avalonia.Host.Com.IAvnScrollViewerStatics",
+      "staticsInterfaceIid": "98B05BF7-D536-5DE3-8780-663E8E715BC8",
+      "name": "HorizontalScrollBarVisibility",
+      "kind": "I32",
+      "managedTypeName": "Avalonia.Controls.Primitives.ScrollBarVisibility",
       "isNullable": false
     },
     {

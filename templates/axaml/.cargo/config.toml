@@ -1,0 +1,3 @@
+# Allow release host downloads when building inside the Rustolonia checkout.
+[env]
+RUSTOLONIA_NO_DOWNLOAD = "0"

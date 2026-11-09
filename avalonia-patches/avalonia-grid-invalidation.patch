@@ -1,0 +1,22 @@
+diff --git a/src/Avalonia.Controls/DefinitionList.cs b/src/Avalonia.Controls/DefinitionList.cs
+index aa2f4f4..f0909cd 100644
+--- a/src/Avalonia.Controls/DefinitionList.cs
++++ b/src/Avalonia.Controls/DefinitionList.cs
+@@ -87,2 +87,3 @@ internal void OnCollectionChanged(object? sender, NotifyCollectionChangedEventAr
+             IsDirty = true;
++            Parent?.Invalidate();
+         }
+diff --git a/src/Avalonia.Controls/Grid.cs b/src/Avalonia.Controls/Grid.cs
+index 2e15b07..b3cd03c 100644
+--- a/src/Avalonia.Controls/Grid.cs
++++ b/src/Avalonia.Controls/Grid.cs
+@@ -208,3 +208,3 @@ public ColumnDefinitions ColumnDefinitions
+                 _extData.ColumnDefinitions.Parent = this;
+-                InvalidateMeasure();
++                Invalidate();
+             }
+@@ -236,3 +236,3 @@ public RowDefinitions RowDefinitions
+                 _extData.RowDefinitions.Parent = this;
+-                InvalidateMeasure();
++                Invalidate();
+             }

@@ -1,0 +1,9 @@
+{
+  "generator": "avalonia-projection",
+  "files": [
+    {
+      "path": "projection.ir.json",
+      "sha256": "0e441f02a343e45ab6684bfb6ba22b5c772d582af99d7a8b68ea69a4020f8206"
+    }
+  ]
+}

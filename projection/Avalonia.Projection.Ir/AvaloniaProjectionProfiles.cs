@@ -170,7 +170,8 @@ public static class AvaloniaProjectionProfiles
                  "ClipToBoundsRadius", "BoxShadow"],
             ["Avalonia.Controls.Panel"] = ["Background", "Children"],
             ["Avalonia.Controls.Grid"] =
-                ["ShowGridLines", "RowSpacing", "ColumnSpacing", "ColumnDefinitions", "RowDefinitions"],
+                ["ShowGridLines", "RowSpacing", "ColumnSpacing", "ColumnDefinitions", "RowDefinitions",
+                 "IsEffectivelyVisible", "LayoutUpdated", "UpdateLayout"],
             ["Avalonia.Controls.Canvas"] = [],
             ["Avalonia.Controls.DockPanel"] = ["LastChildFill", "HorizontalSpacing", "VerticalSpacing"],
             ["Avalonia.Controls.Window"] =
@@ -679,10 +680,6 @@ public static class AvaloniaProjectionProfiles
                 ElementKind = MarshallingKind.StringUtf16,
                 IsNullable = false,
             },
-            // Grid's track definitions cross as the same comma-separated length list that
-            // ColumnDefinitions/RowDefinitions already parse and print, not as a projected
-            // collection of definition objects. The host wrapper converts with the type's own
-            // Parse/ToString, so nothing here needs an interface of its own.
             ["Avalonia.Controls.Primitives.TemplatedControl.FontFamily"] = new()
             {
                 Kind = MarshallingKind.StringUtf16,
@@ -756,11 +753,13 @@ public static class AvaloniaProjectionProfiles
             ["Avalonia.Controls.Grid.ColumnDefinitions"] = new()
             {
                 Kind = MarshallingKind.StringUtf16,
+                StringConverterTypeName = "Avalonia.Host.Com.AvnColumnDefinitions",
                 IsNullable = false,
             },
             ["Avalonia.Controls.Grid.RowDefinitions"] = new()
             {
                 Kind = MarshallingKind.StringUtf16,
+                StringConverterTypeName = "Avalonia.Host.Com.AvnRowDefinitions",
                 IsNullable = false,
             },
             ["Avalonia.Controls.Decorator.Child"] = new()
@@ -1244,8 +1243,24 @@ public static class AvaloniaProjectionProfiles
                         ["BeginResizeDrag"] = "drag needs the pointer-event payload shape",
                         ["SelectedItems"] = "the new-hidden member duplicates the projected base",
                     },
-                    EventOverrides = new Dictionary<string, EventProjection>(StringComparer.Ordinal)
+        NestedEvents = new Dictionary<string, IReadOnlyList<NestedEventProjection>>(StringComparer.Ordinal)
         {
+            ["Avalonia.Controls.Grid"] =
+            [
+                new()
+                {
+                    Name = "ChildrenChanged",
+                    SourceProperty = "Children",
+                    EventName = "CollectionChanged",
+                },
+            ],
+        },
+        EventOverrides = new Dictionary<string, EventProjection>(StringComparer.Ordinal)
+        {
+            ["Avalonia.Controls.Grid.LayoutUpdated"] = new()
+            {
+                PayloadKind = EventPayloadKind.None,
+            },
             ["Avalonia.Controls.Button.Click"] = new()
             {
                 PayloadKind = EventPayloadKind.None,
@@ -1753,6 +1768,7 @@ public static class AvaloniaProjectionProfiles
                 ["Column", "Row", "ColumnSpan", "RowSpan", "IsSharedSizeScope"],
             ["Avalonia.Controls.Canvas"] = ["Left", "Top", "Right", "Bottom"],
             ["Avalonia.Controls.DockPanel"] = ["Dock"],
+            ["Avalonia.Controls.ScrollViewer"] = ["HorizontalScrollBarVisibility"],
             ["Avalonia.Controls.ToolTip"] =
             [
                 "Tip", "IsOpen", "Placement", "HorizontalOffset", "VerticalOffset",
@@ -1780,11 +1796,6 @@ public static class AvaloniaProjectionProfiles
         },
     };
 }
-
-
-
-
-
 
 
 

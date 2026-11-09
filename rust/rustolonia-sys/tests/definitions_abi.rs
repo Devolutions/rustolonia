@@ -13,13 +13,25 @@ fn definitions_are_published_as_utf16_string_slots_on_grid() {
         "*set_column_definitions)(IAvnGrid* self, const uint16_t* value)",
         "*get_row_definitions)(IAvnGrid* self, uint16_t** value)",
         "*set_row_definitions)(IAvnGrid* self, const uint16_t* value)",
-        // They are appended after the members Grid already published, so no existing slot moved.
-        // (Waves P and Q grew Control above these slots.)
-        "*set_column_spacing)(IAvnGrid* self, double value); /* slot 92 */",
-        "*get_column_definitions)(IAvnGrid* self, uint16_t** value); /* slot 93 */",
-        "#define I_AVN_GRID_VTABLE_SLOTS 97",
+        "*set_column_spacing)(IAvnGrid* self, double value); /* slot 93 */",
+        "*get_column_definitions)(IAvnGrid* self, uint16_t** value); /* slot 94 */",
+        "#define I_AVN_GRID_VTABLE_SLOTS 103",
     ] {
         assert!(HEADER.contains(expected), "header is missing `{expected}`");
+    }
+
+    #[test]
+    fn grid_publishes_layout_and_child_collection_notifications() {
+        for expected in [
+            "*get_is_effectively_visible)(IAvnGrid* self, int32_t* value); /* slot 87 */",
+            "*update_layout)(IAvnGrid* self); /* slot 98 */",
+            "*advise_layout_updated)(IAvnGrid* self, IAvnGridLayoutUpdatedHandler* handler, int64_t* subscription_id); /* slot 99 */",
+            "*unadvise_layout_updated)(IAvnGrid* self, int64_t subscription_id); /* slot 100 */",
+            "*advise_children_changed)(IAvnGrid* self, IAvnGridChildrenChangedHandler* handler, int64_t* subscription_id); /* slot 101 */",
+            "*unadvise_children_changed)(IAvnGrid* self, int64_t subscription_id); /* slot 102 */",
+        ] {
+            assert!(HEADER.contains(expected), "header is missing `{expected}`");
+        }
     }
 
     // A definition list is a string, not a projected collection: no per-definition interface

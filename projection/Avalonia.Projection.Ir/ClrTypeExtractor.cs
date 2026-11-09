@@ -412,6 +412,42 @@ public static class ClrTypeExtractor
             });
         }
 
+        if (policy.NestedEvents.TryGetValue(type.FullName ?? type.Name, out var nestedEvents))
+        {
+            foreach (var nested in nestedEvents)
+            {
+                var source = type.GetProperty(nested.SourceProperty, flags);
+                var nestedEvent = source?.PropertyType.GetEvent(nested.EventName, flags);
+                var invoke = nestedEvent?.EventHandlerType?.GetMethod("Invoke");
+                if (source?.GetMethod?.IsPublic != true || IsNullable(source) ||
+                    nestedEvent?.AddMethod?.IsPublic != true ||
+                    nestedEvent.RemoveMethod?.IsPublic != true ||
+                    invoke?.ReturnType != typeof(void) || invoke.GetParameters().Length != 2)
+                {
+                    throw new InvalidOperationException(
+                        $"Invalid nested event projection '{type.FullName}.{nested.Name}': " +
+                        $"'{nested.SourceProperty}.{nested.EventName}' must be a public, " +
+                        "non-null event source with a two-argument void handler.");
+                }
+                if (events.Any(item => item.Name == nested.Name))
+                    throw new InvalidOperationException(
+                        $"Duplicate event projection '{type.FullName}.{nested.Name}'.");
+
+                var handlerInterfaceName =
+                    $"{policy.ProjectionNamespace}.IAvn{type.Name}{nested.Name}Handler";
+                events.Add(new ProjectedEvent
+                {
+                    Name = nested.Name,
+                    HandlerInterfaceName = handlerInterfaceName,
+                    HandlerInterfaceIid = CreateDeterministicIid(handlerInterfaceName),
+                    PayloadKind = EventPayloadKind.None,
+                    ManagedHandlerTypeName = ManagedTypeName(nestedEvent.EventHandlerType!),
+                    ManagedSourcePropertyName = nested.SourceProperty,
+                    ManagedEventName = nested.EventName,
+                });
+            }
+        }
+
         foreach (var method in type.GetMethods(flags)
                      .Where(m => !m.IsSpecialName)
                      .OrderBy(m => m.MetadataToken))

@@ -2311,7 +2311,11 @@ public static class ComSourceEmitter
         sb.AppendLine("        {");
         sb.AppendLine("            using var call = _state.EnterCall();");
         sb.AppendLine("            _value.VerifyAccess();");
-        sb.AppendLine("            var eventSource = _value;");
+        var source = @event.ManagedSourcePropertyName is { } property
+            ? $"_value.{property}"
+            : "_value";
+        var managedName = @event.ManagedEventName ?? name;
+        sb.AppendLine($"            var eventSource = {source};");
         sb.AppendLine($"            var callback = new global::{@event.ManagedHandlerTypeName}((_, eventArgs) =>");
         sb.AppendLine("            {");
         if (@event.PayloadKind == EventPayloadKind.Args && @event.ArgsInterfaceName is { } argsFullName)
@@ -2340,9 +2344,9 @@ public static class ComSourceEmitter
                 sb.AppendLine($"                eventArgs.{parameter.Name} = {EventWriteExpression(parameter, LowerFirst(parameter.Name))};");
         }
         sb.AppendLine("            });");
-        sb.AppendLine($"            eventSource.{name} += callback;");
+        sb.AppendLine($"            eventSource.{managedName} += callback;");
         sb.AppendLine($"            subscriptionId = global::System.Threading.Interlocked.Increment(ref _next{name}SubscriptionId);");
-        sb.AppendLine($"            _{field}Subscriptions.Add(subscriptionId, (handler, () => eventSource.{name} -= callback));");
+        sb.AppendLine($"            _{field}Subscriptions.Add(subscriptionId, (handler, () => eventSource.{managedName} -= callback));");
         sb.AppendLine("            global::Avalonia.Host.ProjectionDiagnostics.SubscriptionAdded();");
         sb.AppendLine("            return global::Avalonia.Host.HResults.S_OK;");
         sb.AppendLine("        }");
@@ -2705,4 +2709,3 @@ public static class ComSourceEmitter
     private static string LowerFirst(string value) =>
         char.ToLowerInvariant(value[0]) + value[1..];
 }
-

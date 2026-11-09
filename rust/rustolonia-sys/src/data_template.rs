@@ -3,7 +3,8 @@
 //! `data_template()` builds a ref-counted CCW the NativeAOT host consumes as an
 //! `IDataTemplate`: `Match` receives the item as an `AvnVariant` and reports
 //! whether this template builds a control for it, and `Build` hands back a
-//! freshly created control. The host frees the variant payload after the call.
+//! freshly created control. The CCW frees the incoming variant payload after
+//! the callback.
 
 use crate::com::{ComInterface, ComPtr, IUnknown};
 use crate::generated::{AvnVariant, IAvnControl, IAvnDataTemplate};
@@ -134,6 +135,9 @@ unsafe extern "system" fn data_template_match(
     value: *mut i32,
 ) -> i32 {
     if value.is_null() {
+        if data.tag == AvnVariant::TAG_UTF16 && !data.utf16.is_null() {
+            crate::free_utf16_if_host(data.utf16);
+        }
         return hresult::E_POINTER;
     }
     let object = this.cast::<DataTemplateObject>();

@@ -11,6 +11,13 @@ public sealed class ProjectedEvent
     public string? ManagedHandlerTypeName { get; init; }
 
     /// <summary>
+    /// For an event on a property of the projected object, the property and its CLR event name.
+    /// These are host-only details; the ABI event is still identified by <see cref="Name"/>.
+    /// </summary>
+    public string? ManagedSourcePropertyName { get; init; }
+    public string? ManagedEventName { get; init; }
+
+    /// <summary>
     /// For <see cref="EventPayloadKind.Args"/>: the fully-qualified name of the
     /// args interface the handler receives (e.g.
     /// <c>Avalonia.Host.Com.IAvnSelectionChangedArgs</c>). The <c>Parameters</c>

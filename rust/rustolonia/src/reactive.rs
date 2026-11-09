@@ -11,17 +11,21 @@ use std::cell::RefCell;
 use std::collections::{HashMap, VecDeque};
 use std::fmt;
 use std::marker::PhantomData;
+use std::rc::Rc;
+use std::sync::Arc;
 
 struct SignalSlot {
-    value: Box<dyn Any>,
+    value: Option<Box<dyn Any>>,
     subscribers: Vec<usize>,
 }
 
 type EffectCallback = Box<dyn FnMut() -> Result<()>>;
+type ScopeCleanup = Box<dyn FnOnce()>;
 
 struct EffectSlot {
     callback: Option<EffectCallback>,
     dependencies: Vec<usize>,
+    scope_id: usize,
     active: bool,
     running: bool,
     queued: bool,
@@ -32,6 +36,7 @@ struct ScopeSlot {
     children: Vec<usize>,
     effects: Vec<usize>,
     contexts: HashMap<TypeId, Box<dyn Any>>,
+    cleanups: Vec<ScopeCleanup>,
     active: bool,
 }
 
@@ -53,21 +58,12 @@ thread_local! {
 // Single-view hosts (browser, Android) keep the session for the process lifetime.
 #[cfg_attr(any(target_os = "emscripten", target_os = "android"), allow(dead_code))]
 pub(crate) fn clear_reactive_runtime() {
-    RUNTIME.with(|runtime| {
-        let mut rt = runtime.borrow_mut();
-        for effect in &mut rt.effects {
-            effect.active = false;
-            effect.callback = None;
-            effect.dependencies.clear();
-        }
-        rt.signals.clear();
-        rt.effects.clear();
-        rt.scopes.clear();
-        rt.tracking_stack.clear();
-        rt.scope_stack.clear();
-        rt.pending_effects.clear();
-        rt.flushing = false;
-    });
+    let has_root = RUNTIME.with(|runtime| !runtime.borrow().scopes.is_empty());
+    if has_root {
+        ReactiveScope { id: 0 }.dispose();
+    }
+    let old = RUNTIME.with(|runtime| std::mem::take(&mut *runtime.borrow_mut()));
+    drop(old);
 }
 
 fn ensure_root_scope(rt: &mut ReactiveRuntime) -> usize {
@@ -77,6 +73,7 @@ fn ensure_root_scope(rt: &mut ReactiveRuntime) -> usize {
             children: Vec::new(),
             effects: Vec::new(),
             contexts: HashMap::new(),
+            cleanups: Vec::new(),
             active: true,
         });
     }
@@ -93,6 +90,9 @@ fn attach_effect_to_current_scope(rt: &mut ReactiveRuntime, effect_id: usize) {
         if scope.active && !scope.effects.contains(&effect_id) {
             scope.effects.push(effect_id);
         }
+    }
+    if let Some(effect) = rt.effects.get_mut(effect_id) {
+        effect.scope_id = scope_id;
     }
 }
 
@@ -152,12 +152,11 @@ fn enqueue_subscribers(signal_id: usize) {
     });
 
     if should_flush {
-        let _ = flush_pending_effects();
+        flush_pending_effects();
     }
 }
 
-fn flush_pending_effects() -> Result<()> {
-    let mut first_error: Option<crate::Error> = None;
+fn flush_pending_effects() {
     loop {
         let next_effect = RUNTIME.with(|runtime| {
             let mut rt = runtime.borrow_mut();
@@ -190,31 +189,29 @@ fn flush_pending_effects() -> Result<()> {
             let mut rt = runtime.borrow_mut();
             unlink_effect_dependencies(&mut rt, effect_id);
             rt.tracking_stack.push(effect_id);
+            let scope_id = rt.effects[effect_id].scope_id;
+            rt.scope_stack.push(scope_id);
         });
 
         let result = cb();
 
+        let mut callback = Some(cb);
         RUNTIME.with(|runtime| {
             let mut rt = runtime.borrow_mut();
             rt.tracking_stack.pop();
+            rt.scope_stack.pop();
             if let Some(effect) = rt.effects.get_mut(effect_id) {
                 effect.running = false;
                 if effect.active {
-                    effect.callback = Some(cb);
+                    effect.callback = callback.take();
                 }
             }
         });
+        drop(callback);
 
         if let Err(err) = result {
-            if first_error.is_none() {
-                first_error = Some(err);
-            }
+            eprintln!("reactive effect failed: {err}");
         }
-    }
-
-    match first_error {
-        Some(err) => Err(err),
-        None => Ok(()),
     }
 }
 
@@ -256,7 +253,7 @@ impl<T: 'static> Signal<T> {
             let mut rt = runtime.borrow_mut();
             let id = rt.signals.len();
             rt.signals.push(SignalSlot {
-                value: Box::new(initial),
+                value: Some(Box::new(initial)),
                 subscribers: Vec::new(),
             });
             id
@@ -265,6 +262,33 @@ impl<T: 'static> Signal<T> {
             id,
             _marker: PhantomData,
         }
+    }
+
+    pub(crate) fn new_scoped(initial: T) -> Self {
+        let signal = Self::new(initial);
+        on_scope_cleanup(move || signal.dispose_value());
+        signal
+    }
+
+    pub(crate) fn dispose_value(self) {
+        let value = RUNTIME.with(|runtime| {
+            runtime
+                .borrow_mut()
+                .signals
+                .get_mut(self.id)
+                .and_then(|slot| slot.value.take())
+        });
+        drop(value);
+    }
+
+    pub(crate) fn is_alive(self) -> bool {
+        RUNTIME.with(|runtime| {
+            runtime
+                .borrow()
+                .signals
+                .get(self.id)
+                .is_some_and(|slot| slot.value.is_some())
+        })
     }
 
     /// Reads and clones the current value, recording a reactive dependency if
@@ -300,6 +324,8 @@ impl<T: 'static> Signal<T> {
                 .expect("Signal read after reactive runtime was cleared");
             let value = slot
                 .value
+                .as_ref()
+                .expect("Signal read after its reactive scope was disposed")
                 .downcast_ref::<T>()
                 .expect("Signal type mismatch");
             f(value)
@@ -308,12 +334,19 @@ impl<T: 'static> Signal<T> {
 
     /// Replaces the signal's value and notifies all subscribed effects and memos.
     pub fn set(&self, value: T) {
-        RUNTIME.with(|runtime| {
+        let old = RUNTIME.with(|runtime| {
             let mut rt = runtime.borrow_mut();
             if let Some(slot) = rt.signals.get_mut(self.id) {
-                slot.value = Box::new(value);
+                assert!(
+                    slot.value.is_some(),
+                    "Signal updated after its reactive scope was disposed"
+                );
+                slot.value.replace(Box::new(value))
+            } else {
+                None
             }
         });
+        drop(old);
         enqueue_subscribers(self.id);
     }
 
@@ -323,22 +356,24 @@ impl<T: 'static> Signal<T> {
     where
         T: PartialEq,
     {
-        let changed = RUNTIME.with(|runtime| {
+        let old = RUNTIME.with(|runtime| {
             let mut rt = runtime.borrow_mut();
             let Some(slot) = rt.signals.get_mut(self.id) else {
-                return false;
+                return None;
             };
             let current = slot
                 .value
+                .as_ref()
+                .expect("Signal updated after its reactive scope was disposed")
                 .downcast_ref::<T>()
                 .expect("Signal type mismatch");
             if *current == value {
-                return false;
+                return None;
             }
-            slot.value = Box::new(value);
-            true
+            slot.value.replace(Box::new(value))
         });
-        if changed {
+        if old.is_some() {
+            drop(old);
             enqueue_subscribers(self.id);
         }
     }
@@ -350,6 +385,8 @@ impl<T: 'static> Signal<T> {
             if let Some(slot) = rt.signals.get_mut(self.id) {
                 let value = slot
                     .value
+                    .as_mut()
+                    .expect("Signal updated after its reactive scope was disposed")
                     .downcast_mut::<T>()
                     .expect("Signal type mismatch");
                 f(value);
@@ -393,6 +430,79 @@ impl<T: 'static> TwoWay<T> {
     }
 }
 
+type PathReader<T> = dyn Fn() -> Result<T>;
+type PathWriter<T> = dyn Fn(T) -> Result<()> + Send + Sync;
+
+/// An application-supplied path into a Rust model.
+///
+/// Signal reads made by the reader are tracked on every evaluation. When an
+/// intermediate model changes, subsequent evaluations subscribe to the new
+/// model and unsubscribe from the old one.
+pub struct PropertyPath<T: 'static> {
+    pub(crate) read: Rc<PathReader<T>>,
+    pub(crate) write: Option<Arc<PathWriter<T>>>,
+}
+
+impl<T: 'static> Clone for PropertyPath<T> {
+    fn clone(&self) -> Self {
+        Self {
+            read: self.read.clone(),
+            write: self.write.clone(),
+        }
+    }
+}
+
+impl<T: 'static> fmt::Debug for PropertyPath<T> {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("PropertyPath")
+            .field("writable", &self.write.is_some())
+            .finish_non_exhaustive()
+    }
+}
+
+impl<T: 'static> PropertyPath<T> {
+    /// Creates a read-only path. Return an error if an intermediate value is
+    /// unavailable; callers may instead choose an explicit fallback.
+    pub fn read_only(read: impl Fn() -> Result<T> + 'static) -> Self {
+        Self {
+            read: Rc::new(read),
+            write: None,
+        }
+    }
+
+    /// Creates a path whose writer updates the currently selected model.
+    pub fn writable(
+        read: impl Fn() -> Result<T> + 'static,
+        write: impl Fn(T) -> Result<()> + Send + Sync + 'static,
+    ) -> Self {
+        Self {
+            read: Rc::new(read),
+            write: Some(Arc::new(write)),
+        }
+    }
+
+    /// Reads the current value and records any signal dependencies.
+    pub fn get(&self) -> Result<T> {
+        (self.read)()
+    }
+
+    /// Writes through the current path, or reports that it is read-only.
+    pub fn set(&self, value: T) -> Result<()> {
+        self.write
+            .as_ref()
+            .ok_or(crate::Error::ReadOnlyBindingPath)?(value)
+    }
+
+    /// Uses this path as a two-way control binding.
+    pub fn two_way(&self) -> PathTwoWay<T> {
+        PathTwoWay(self.clone())
+    }
+}
+
+/// A two-way descriptor created by [`PropertyPath::two_way`].
+pub struct PathTwoWay<T: 'static>(pub(crate) PropertyPath<T>);
+
 /// A derived, cached reactive value that automatically recomputes when any
 /// [`Signal`] or [`Memo`] read inside its computation changes, and only notifies
 /// downstream subscribers when the resulting value changes (`PartialEq`).
@@ -427,6 +537,7 @@ impl<T: Clone + PartialEq + 'static> Memo<T> {
             rt.effects.push(EffectSlot {
                 callback: None,
                 dependencies: Vec::new(),
+                scope_id: 0,
                 active: true,
                 running: true,
                 queued: false,
@@ -467,6 +578,14 @@ impl<T: Clone + PartialEq + 'static> Memo<T> {
         }
     }
 
+    /// Creates a memo whose cached value is released when the current reactive
+    /// scope is disposed. Its signal must not be used after that point.
+    pub fn new_scoped(compute: impl FnMut() -> T + 'static) -> Self {
+        let memo = Self::new(compute);
+        on_scope_cleanup(move || memo.signal.dispose_value());
+        memo
+    }
+
     pub fn get(&self) -> T {
         self.signal.get()
     }
@@ -500,6 +619,7 @@ impl Effect {
             rt.effects.push(EffectSlot {
                 callback: None,
                 dependencies: Vec::new(),
+                scope_id: 0,
                 active: true,
                 running: true,
                 queued: false,
@@ -531,21 +651,24 @@ impl Effect {
 
     /// Stops this effect from running on future signal updates.
     pub fn dispose(self) {
-        RUNTIME.with(|runtime| {
+        let callback = RUNTIME.with(|runtime| {
             let mut rt = runtime.borrow_mut();
             unlink_effect_dependencies(&mut rt, self.id);
             if let Some(effect) = rt.effects.get_mut(self.id) {
                 effect.active = false;
-                effect.callback = None;
+                effect.callback.take()
+            } else {
+                None
             }
         });
+        drop(callback);
     }
 }
 
 /// A `Copy` slot for capturing a materialized control reference from a declarative
 /// [`El`](crate::view::El) or `rsx!` tree.
 pub struct NodeRef<T: 'static> {
-    slot: Signal<Option<T>>,
+    slot: Signal<(u64, Option<T>)>,
 }
 
 impl<T: 'static> Copy for NodeRef<T> {}
@@ -571,7 +694,14 @@ impl<T: 'static> fmt::Debug for NodeRef<T> {
 impl<T: 'static> NodeRef<T> {
     pub fn new() -> Self {
         Self {
-            slot: Signal::new(None),
+            slot: Signal::new((0, None)),
+        }
+    }
+
+    /// Creates a reference whose storage is released with the current reactive scope.
+    pub fn new_scoped() -> Self {
+        Self {
+            slot: Signal::new_scoped((0, None)),
         }
     }
 
@@ -579,11 +709,40 @@ impl<T: 'static> NodeRef<T> {
     where
         T: Clone,
     {
-        self.slot.get_untracked()
+        if !self.slot.is_alive() {
+            return None;
+        }
+        self.slot.with_untracked(|(_, value)| value.clone())
     }
 
     pub fn set(&self, value: T) {
-        self.slot.set(Some(value));
+        self.assign(Some(value));
+    }
+
+    /// Clears the captured value.
+    pub fn clear(&self) {
+        self.assign(None);
+    }
+
+    fn assign(&self, value: Option<T>) -> u64 {
+        let generation = self
+            .slot
+            .with_untracked(|(generation, _)| generation.wrapping_add(1));
+        self.slot.set((generation, value));
+        generation
+    }
+
+    pub(crate) fn set_scoped(&self, value: T) {
+        let generation = self.assign(Some(value));
+        let slot = *self;
+        on_scope_cleanup(move || {
+            if slot
+                .slot
+                .with_untracked(|(current, _)| *current == generation)
+            {
+                slot.clear();
+            }
+        });
     }
 }
 
@@ -602,6 +761,18 @@ impl Default for ReactiveScope {
 }
 
 impl ReactiveScope {
+    pub(crate) fn current() -> Self {
+        RUNTIME.with(|runtime| {
+            let mut rt = runtime.borrow_mut();
+            let id = rt
+                .scope_stack
+                .last()
+                .copied()
+                .unwrap_or_else(|| ensure_root_scope(&mut rt));
+            Self { id }
+        })
+    }
+
     /// Creates a new child `ReactiveScope` parented to the currently active scope.
     pub fn new() -> Self {
         let id = RUNTIME.with(|runtime| {
@@ -618,6 +789,7 @@ impl ReactiveScope {
                 children: Vec::new(),
                 effects: Vec::new(),
                 contexts: HashMap::new(),
+                cleanups: Vec::new(),
                 active: true,
             });
             if let Some(parent_id) = parent {
@@ -633,7 +805,12 @@ impl ReactiveScope {
     /// Runs `f` with this scope active on the scope stack.
     pub fn run<R>(self, f: impl FnOnce() -> R) -> R {
         RUNTIME.with(|runtime| {
-            runtime.borrow_mut().scope_stack.push(self.id);
+            let mut rt = runtime.borrow_mut();
+            assert!(
+                rt.scopes.get(self.id).is_some_and(|scope| scope.active),
+                "cannot run a disposed reactive scope"
+            );
+            rt.scope_stack.push(self.id);
         });
         struct PopGuard;
         impl Drop for PopGuard {
@@ -658,39 +835,87 @@ impl ReactiveScope {
     /// Disposes this scope, all of its child scopes, and every [`Effect`] / [`Memo`]
     /// created within them.
     pub fn dispose(self) {
-        RUNTIME.with(|runtime| {
+        let disposed = RUNTIME.with(|runtime| {
             let mut rt = runtime.borrow_mut();
-            dispose_scope_recursive(&mut rt, self.id);
+            let mut disposed = ScopeDisposals::default();
+            dispose_scope_recursive(&mut rt, self.id, &mut disposed);
+            disposed
         });
+        drop(disposed.callbacks);
+        for cleanup in disposed.cleanups {
+            cleanup();
+        }
+        drop(disposed.contexts);
     }
 }
 
-fn dispose_scope_recursive(rt: &mut ReactiveRuntime, scope_id: usize) {
-    let (children, effects) = if let Some(scope) = rt.scopes.get_mut(scope_id) {
-        if !scope.active {
+#[derive(Default)]
+struct ScopeDisposals {
+    callbacks: Vec<EffectCallback>,
+    contexts: Vec<Box<dyn Any>>,
+    cleanups: Vec<ScopeCleanup>,
+}
+
+fn dispose_scope_recursive(
+    rt: &mut ReactiveRuntime,
+    scope_id: usize,
+    disposed: &mut ScopeDisposals,
+) {
+    let (parent, children, effects, contexts, cleanups) =
+        if let Some(scope) = rt.scopes.get_mut(scope_id) {
+            if !scope.active {
+                return;
+            }
+            scope.active = false;
+            (
+                scope.parent,
+                std::mem::take(&mut scope.children),
+                std::mem::take(&mut scope.effects),
+                std::mem::take(&mut scope.contexts),
+                std::mem::take(&mut scope.cleanups),
+            )
+        } else {
             return;
-        }
-        scope.active = false;
-        scope.contexts.clear();
-        (
-            std::mem::take(&mut scope.children),
-            std::mem::take(&mut scope.effects),
-        )
-    } else {
-        return;
-    };
+        };
 
     for child_id in children {
-        dispose_scope_recursive(rt, child_id);
+        dispose_scope_recursive(rt, child_id, disposed);
     }
 
     for effect_id in effects {
         unlink_effect_dependencies(rt, effect_id);
         if let Some(effect) = rt.effects.get_mut(effect_id) {
             effect.active = false;
-            effect.callback = None;
+            if let Some(callback) = effect.callback.take() {
+                disposed.callbacks.push(callback);
+            }
         }
     }
+    disposed.contexts.extend(contexts.into_values());
+    disposed.cleanups.extend(cleanups.into_iter().rev());
+    if let Some(parent) = parent.and_then(|id| rt.scopes.get_mut(id)) {
+        parent.children.retain(|child| *child != scope_id);
+    }
+}
+
+pub(crate) fn on_scope_cleanup(cleanup: impl FnOnce() + 'static) {
+    RUNTIME.with(|runtime| {
+        let mut rt = runtime.borrow_mut();
+        let scope_id = rt
+            .scope_stack
+            .last()
+            .copied()
+            .unwrap_or_else(|| ensure_root_scope(&mut rt));
+        let scope = rt
+            .scopes
+            .get_mut(scope_id)
+            .expect("reactive scope is no longer available");
+        assert!(
+            scope.active,
+            "cannot attach cleanup to a disposed reactive scope"
+        );
+        scope.cleanups.push(Box::new(cleanup));
+    });
 }
 
 /// Provides a typed context value to the current [`ReactiveScope`] and all of
@@ -852,5 +1077,66 @@ impl<T: 'static> Resource<T> {
 
     pub(crate) fn current_generation(&self) -> u64 {
         self.generation.get_untracked()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::rc::Rc;
+
+    #[test]
+    fn scoped_node_refs_release_their_value_without_clearing_a_newer_mount() {
+        let node = NodeRef::new();
+        let first = ReactiveScope::new();
+        let first_value = Rc::new(1);
+        let first_weak = Rc::downgrade(&first_value);
+        first.run(|| node.set_scoped(first_value));
+
+        let second = ReactiveScope::new();
+        let second_value = Rc::new(2);
+        let second_weak = Rc::downgrade(&second_value);
+        second.run(|| node.set_scoped(second_value));
+        assert!(first_weak.upgrade().is_none());
+        first.dispose();
+        assert_eq!(*node.get().unwrap(), 2);
+        second.dispose();
+        assert!(node.get().is_none());
+        assert!(second_weak.upgrade().is_none());
+    }
+
+    #[test]
+    fn scoped_memos_release_captured_and_cached_values() {
+        let scope = ReactiveScope::new();
+        let value = Rc::new(String::from("owned by the view"));
+        let weak = Rc::downgrade(&value);
+        scope.run(|| {
+            let _memo = Memo::new_scoped(move || value.clone());
+        });
+        assert!(weak.upgrade().is_some());
+        scope.dispose();
+        assert!(weak.upgrade().is_none());
+    }
+
+    #[test]
+    fn scope_disposal_drops_callbacks_outside_the_runtime_borrow() {
+        struct ReadsSignalOnDrop(Signal<i32>);
+        impl Drop for ReadsSignalOnDrop {
+            fn drop(&mut self) {
+                assert_eq!(self.0.get_untracked(), 7);
+            }
+        }
+
+        let signal = Signal::new(7);
+        let scope = ReactiveScope::new();
+        scope.run(|| {
+            let guard = ReadsSignalOnDrop(signal);
+            Effect::new(move || {
+                let _ = &guard;
+                Ok(())
+            })
+            .unwrap();
+        });
+        scope.dispose();
     }
 }

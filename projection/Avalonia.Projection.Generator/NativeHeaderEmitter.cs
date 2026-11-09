@@ -65,6 +65,12 @@ public static class NativeHeaderEmitter
         sb.AppendLine();
         sb.AppendLine("#include <stdint.h>");
         sb.AppendLine();
+        if (ir.Types.SelectMany(type => type.Properties)
+            .Any(property => property.StringConverterTypeName == "Avalonia.Host.Com.AvnColumnDefinitions"))
+        {
+            sb.AppendLine("/* Grid definition strings accept an optional @SharedSizeGroup per track. */");
+            sb.AppendLine();
+        }
         sb.AppendLine("#if defined(_WIN32)");
         sb.AppendLine("#define AVN_CALL __stdcall");
         sb.AppendLine("#else");

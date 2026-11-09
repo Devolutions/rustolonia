@@ -710,9 +710,11 @@ when the type's own parser is looser than the published contract
 (`DatePicker.SelectedDate` and `TimePicker.SelectedTime` publish a strict ISO-8601
 grammar rather than whatever `DateTimeOffset.Parse` happens to accept), when the
 profile names a host-side converter in `stringConverterTypeName`. That field is a
-host-side detail only: the ABI slot is an ordinary UTF-16 string, so neither the
-native header nor the Rust bindings read it, and a consumer that ignores it sees
-no difference.
+normally a host-side detail: the ABI slot is an ordinary UTF-16 string, and the
+Rust bindings do not read the converter name. Grid track definitions additionally
+support an optional `@SharedSizeGroup` suffix per length. That string contract is
+recorded in the generated native header so its fingerprint requires a matching
+host; a previous host cannot safely consume the extended format.
 
 ## RID artifacts
 

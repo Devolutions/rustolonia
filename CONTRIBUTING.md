@@ -42,6 +42,16 @@ Quick script, package-helper and scaffold cases do not compile native code:
 pwsh .\rust\tests\test-build-app.ps1
 ```
 
+The standalone AXAML template has a copy-out Cargo check that blocks .NET:
+
+```sh
+bash rust/tests/test-axaml-template.sh
+```
+
+With `RUSTOLONIA_HOST_LIB` and `RUSTOLONIA_HOST_DIR` pointing at a matching
+prebuilt host and a desktop display available, pass `--native-smoke` to run
+the copied template's generated views and lifecycle fixture without .NET.
+
 Managed tests and the Rust generator can run independently:
 
 ```powershell

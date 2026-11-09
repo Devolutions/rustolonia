@@ -677,7 +677,7 @@ public class ClrTypeExtractorTests
         Assert.Equal(
             ["Avalonia.Host.Com.IAvnCanvasStatics", "Avalonia.Host.Com.IAvnDockPanelStatics",
                 "Avalonia.Host.Com.IAvnGridStatics", "Avalonia.Host.Com.IAvnRelativePanelStatics",
-                "Avalonia.Host.Com.IAvnToolTipStatics"],
+                "Avalonia.Host.Com.IAvnScrollViewerStatics", "Avalonia.Host.Com.IAvnToolTipStatics"],
             ir.AttachedProperties
                 .Select(property => property.StaticsInterfaceName)
                 .Distinct(StringComparer.Ordinal)
@@ -841,7 +841,7 @@ public class ClrTypeExtractorTests
     }
 
     [Fact]
-    public void Projects_grid_definitions_as_the_length_list_string_grid_already_parses()
+    public void Projects_grid_definitions_as_strings_with_host_converters()
     {
         var ir = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
 
@@ -855,9 +855,12 @@ public class ClrTypeExtractorTests
                 Assert.True(property.CanRead && property.CanWrite);
                 // Never null: an empty grid reports an empty list rather than a null pointer.
                 Assert.False(property.IsNullable);
-                // The managed type is retained so the emitter converts with the type's own
-                // Parse/ToString instead of assigning a string to a definition collection.
+                // The managed type is retained, and the host converter preserves shared groups.
                 Assert.Equal($"Avalonia.Controls.{name}", property.ManagedTypeName);
+                var converter = name == nameof(Grid.ColumnDefinitions)
+                    ? "Avalonia.Host.Com.AvnColumnDefinitions"
+                    : "Avalonia.Host.Com.AvnRowDefinitions";
+                Assert.Equal(converter, property.StringConverterTypeName);
                 Assert.Null(property.InterfaceName);
                 Assert.Null(property.ElementKind);
             });
@@ -875,14 +878,71 @@ public class ClrTypeExtractorTests
     }
 
     [Fact]
+    public void Projects_grid_layout_observation_and_effective_visibility()
+    {
+        var ir = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
+        var grid = Type(ir, "IAvnGrid");
+        var visibility = grid.Properties.Single(property => property.Name == nameof(Grid.IsEffectivelyVisible));
+
+        Assert.Equal(MarshallingKind.Bool, visibility.Kind);
+        Assert.True(visibility.CanRead);
+        Assert.False(visibility.CanWrite);
+        Assert.Contains(grid.Methods, method => method.Name == nameof(Grid.UpdateLayout));
+        var updated = Assert.Single(grid.Events, item => item.Name == nameof(Grid.LayoutUpdated));
+        Assert.Equal(EventPayloadKind.None, updated.PayloadKind);
+        Assert.Empty(updated.Parameters);
+        var childrenChanged = Assert.Single(grid.Events, item => item.Name == "ChildrenChanged");
+        Assert.Equal(EventPayloadKind.None, childrenChanged.PayloadKind);
+        Assert.Equal("Children", childrenChanged.ManagedSourcePropertyName);
+        Assert.Equal("CollectionChanged", childrenChanged.ManagedEventName);
+        Assert.Equal("System.Collections.Specialized.NotifyCollectionChangedEventHandler",
+            childrenChanged.ManagedHandlerTypeName);
+        Assert.Empty(childrenChanged.Parameters);
+    }
+
+    [Fact]
+    public void Rejects_an_invalid_nested_event_projection()
+    {
+        var policy = new ProjectionPolicy
+        {
+            IncludeTypeNames = [typeof(Grid).FullName!],
+            NestedEvents = new Dictionary<string, IReadOnlyList<NestedEventProjection>>
+            {
+                [typeof(Grid).FullName!] =
+                [
+                    new() { Name = "ChildrenChanged", SourceProperty = "Children", EventName = "Missing" },
+                ],
+            },
+        };
+        var error = Assert.Throws<InvalidOperationException>(
+            () => ClrTypeExtractor.Extract([typeof(Grid)], policy));
+        Assert.Contains("Children.Missing", error.Message);
+    }
+
+    [Fact]
     public void A_string_override_requires_the_managed_type_to_own_both_halves_of_the_round_trip()
     {
-        // Grid's definitions qualify: both declare `static T Parse(string)` and override
-        // ToString(), so the projection is a conversion the type itself owns.
-        var ir = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
-        Assert.Equal(2, Type(ir, "IAvnGrid").Properties
-            .Count(property => property.ManagedTypeName is
-                "Avalonia.Controls.ColumnDefinitions" or "Avalonia.Controls.RowDefinitions"));
+        // Grid definitions have both Parse(string) and ToString(), so they can be used
+        // with a plain override independently of the production host converters.
+        var gridPolicy = new ProjectionPolicy
+        {
+            IncludeTypeNames = [typeof(Grid).FullName!],
+            IncludeMembers = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
+            {
+                [typeof(Grid).FullName!] = [nameof(Grid.ColumnDefinitions), nameof(Grid.RowDefinitions)],
+            },
+            MemberOverrides = new Dictionary<string, MarshallingOverride>(StringComparer.Ordinal)
+            {
+                [$"{typeof(Grid).FullName}.{nameof(Grid.ColumnDefinitions)}"] =
+                    new() { Kind = MarshallingKind.StringUtf16 },
+                [$"{typeof(Grid).FullName}.{nameof(Grid.RowDefinitions)}"] =
+                    new() { Kind = MarshallingKind.StringUtf16 },
+            },
+        };
+        var gridIr = ClrTypeExtractor.Extract(KernelTypes, gridPolicy);
+        var gridProperties = Type(gridIr, "IAvnGrid").Properties;
+        Assert.Equal(2, gridProperties.Count);
+        Assert.All(gridProperties, property => Assert.Null(property.StringConverterTypeName));
 
         // A type without that pair is refused rather than projected with a guessed conversion.
         var policy = new ProjectionPolicy
@@ -1460,6 +1520,11 @@ public class ClrTypeExtractorTests
         Assert.Equal(MarshallingKind.Vector, scroll.Properties.Single(p => p.Name == "ScrollBarMaximum").Kind);
         Assert.False(scroll.Properties.Single(p => p.Name == "Extent").CanWrite);
         Assert.True(scroll.Properties.Single(p => p.Name == "Offset").CanWrite);
+        var attachedVisibility = ir.AttachedProperties.Single(property =>
+            property.OwnerName == nameof(ScrollViewer) && property.Name == "HorizontalScrollBarVisibility");
+        Assert.Equal("Avalonia.Host.Com.IAvnScrollViewerStatics", attachedVisibility.StaticsInterfaceName);
+        Assert.Equal(MarshallingKind.I32, attachedVisibility.Kind);
+        Assert.Equal("Avalonia.Controls.Primitives.ScrollBarVisibility", attachedVisibility.ManagedTypeName);
     }
 
     [Fact]
@@ -1624,6 +1689,3 @@ public class ClrTypeExtractorTests
     private static ProjectedType Type(ProjectionIr ir, string name) =>
         ir.Types.Single(t => t.Name == name);
 }
-
-
-

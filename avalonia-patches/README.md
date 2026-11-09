@@ -13,6 +13,7 @@ the upstream `12.1.6` tag (`cf8e564674700348947e93ab19105f27afe859a9`) by
 | `avalonia-termination.patch` | Deferred macOS application termination for asynchronous shutdown coordination. |
 | `avalonia-file-drag.patch` | Retains a macOS mouse event for a deferred native file-drag operation. |
 | `avalonia-application-name.patch` | Names the default macOS application-menu holder from `Application.Name` before export, so both the menu item and submenu retain the application name when windows become key. |
+| `avalonia-grid-invalidation.patch` | Invalidates Grid's cell cache and measure when row or column definitions are replaced or changed. |
 
 ## Usage
 
@@ -59,4 +60,5 @@ Rustolonia's compatibility work.
 | `TableViewRowAutomationPeer` | merged upstream (AvaloniaUI/Avalonia#22709, shipped in 12.1.6); removed from the patch |
 | Column/row unit tests | upstream with the corresponding features; local viewport and virtualization tests remain |
 | Default macOS application-menu holder uses `Application.Name` | candidate upstream fix; covered by Rustolonia's standalone and bundled native multi-window naming regression |
+| Grid row/column definition changes invalidate cached cells | candidate upstream fix; covered by managed layout and native AXAML regressions |
 | `InternalsVisibleTo` for `Avalonia.Host` (+ tests) in `Avalonia.Controls.csproj` | rustolonia-specific; preferred fix is a public `CustomPopupPlacement` factory, after which this line disappears |

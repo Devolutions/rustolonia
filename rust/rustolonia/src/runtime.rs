@@ -1,8 +1,10 @@
 use crate::async_runtime::{decode_none, decode_string, TaskScope};
-use crate::{AsyncOperation, Error, Result, Window};
+use crate::reactive::on_scope_cleanup;
+use crate::{AsyncOperation, Error, Result, Signal, Window};
 use rustolonia_sys as sys;
 use std::any::Any;
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
+use std::collections::HashMap;
 use std::fmt;
 use std::future::Future;
 use std::marker::PhantomData;
@@ -13,7 +15,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 #[repr(i32)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum ThemeVariant {
     Default = 0,
     Light = 1,
@@ -30,8 +32,198 @@ pub enum ResourceValue {
     Color(u32),
 }
 
+#[derive(Clone)]
+pub struct LocalizationResources {
+    state: Arc<LocalizationState>,
+}
+
+struct LocalizationState {
+    default_culture: String,
+    current_culture: Signal<String>,
+    catalog: Mutex<LocalizationCatalog>,
+}
+
+#[derive(Default)]
+struct LocalizationCatalog {
+    values: HashMap<(String, String), String>,
+    signals: Vec<(String, Signal<String>)>,
+    revision: u64,
+}
+
+impl LocalizationResources {
+    /// Creates a Rust-owned string catalog with a required fallback culture.
+    ///
+    /// Read and update the catalog on the Avalonia UI thread, like other
+    /// [`Signal`] values.
+    pub fn new(default_culture: impl Into<String>) -> Result<Self> {
+        let default_culture = default_culture.into();
+        if default_culture.trim().is_empty() {
+            return Err(Error::InvalidResourceCatalog(
+                "localization default culture cannot be empty".to_string(),
+            ));
+        }
+        Ok(Self {
+            state: Arc::new(LocalizationState {
+                current_culture: Signal::new(default_culture.clone()),
+                default_culture,
+                catalog: Mutex::new(LocalizationCatalog::default()),
+            }),
+        })
+    }
+
+    /// Adds or replaces a localized string and refreshes existing string signals.
+    pub fn insert(
+        &self,
+        culture: impl Into<String>,
+        key: impl Into<String>,
+        value: impl Into<String>,
+    ) -> Result<()> {
+        let culture = culture.into();
+        let key = key.into();
+        if culture.trim().is_empty() || key.trim().is_empty() {
+            return Err(Error::InvalidResourceCatalog(
+                "localization culture and key cannot be empty".to_string(),
+            ));
+        }
+        let current_culture = self.state.current_culture.get_untracked();
+        let (revision, updates) = {
+            let mut catalog = lock_localization_catalog(&self.state)?;
+            catalog.values.insert((culture, key), value.into());
+            let updates = localized_updates(&self.state, &catalog, &current_culture)?;
+            catalog.revision = catalog.revision.wrapping_add(1);
+            (catalog.revision, updates)
+        };
+        self.apply_updates(revision, updates)
+    }
+
+    /// Changes the active culture; missing translations fall back to the default culture.
+    pub fn set_culture(&self, culture: impl Into<String>) -> Result<()> {
+        let culture = culture.into();
+        if culture.trim().is_empty() {
+            return Err(Error::InvalidResourceCatalog(
+                "localization culture cannot be empty".to_string(),
+            ));
+        }
+        let (revision, updates) = {
+            let mut catalog = lock_localization_catalog(&self.state)?;
+            let updates = localized_updates(&self.state, &catalog, &culture)?;
+            catalog.revision = catalog.revision.wrapping_add(1);
+            (catalog.revision, updates)
+        };
+        self.state.current_culture.set_if_changed(culture);
+        self.apply_updates(revision, updates)
+    }
+
+    /// Returns the active culture identifier.
+    pub fn culture(&self) -> String {
+        self.state.current_culture.get()
+    }
+
+    /// Creates a reactive string signal, returning an error if the key has no
+    /// value in either the active or default culture.
+    pub fn string_signal(&self, key: impl Into<String>) -> Result<Signal<String>> {
+        let key = key.into();
+        if key.trim().is_empty() {
+            return Err(Error::InvalidResourceCatalog(
+                "localization key cannot be empty".to_string(),
+            ));
+        }
+        let culture = self.state.current_culture.get_untracked();
+        let mut catalog = lock_localization_catalog(&self.state)?;
+        let initial = localized_value(&self.state, &catalog, &key, &culture)?;
+        let signal = Signal::new(initial);
+        catalog.signals.push((key, signal));
+        drop(catalog);
+        let state = Arc::downgrade(&self.state);
+        on_scope_cleanup(move || {
+            if let Some(state) = state.upgrade() {
+                let mut catalog = match state.catalog.lock() {
+                    Ok(catalog) => catalog,
+                    Err(poisoned) => {
+                        eprintln!("localization catalog lock is poisoned during cleanup");
+                        poisoned.into_inner()
+                    }
+                };
+                catalog
+                    .signals
+                    .retain(|(_, registered)| *registered != signal);
+            }
+            signal.dispose_value();
+        });
+        Ok(signal)
+    }
+
+    fn apply_updates(&self, revision: u64, updates: Vec<(Signal<String>, String)>) -> Result<()> {
+        for (signal, value) in updates {
+            if lock_localization_catalog(&self.state)?.revision != revision {
+                break;
+            }
+            if signal.is_alive() {
+                signal.set_if_changed(value);
+            }
+        }
+        Ok(())
+    }
+}
+
+fn lock_localization_catalog(
+    state: &LocalizationState,
+) -> Result<std::sync::MutexGuard<'_, LocalizationCatalog>> {
+    state.catalog.lock().map_err(|_| {
+        Error::InvalidResourceCatalog("localization catalog lock is poisoned".to_string())
+    })
+}
+
+fn localized_value(
+    state: &LocalizationState,
+    catalog: &LocalizationCatalog,
+    key: &str,
+    culture: &str,
+) -> Result<String> {
+    catalog
+        .values
+        .get(&(culture.to_string(), key.to_string()))
+        .or_else(|| {
+            catalog
+                .values
+                .get(&(state.default_culture.clone(), key.to_string()))
+        })
+        .cloned()
+        .ok_or_else(|| Error::MissingResource {
+            key: key.to_string(),
+            culture: culture.to_string(),
+        })
+}
+
+fn localized_updates(
+    state: &LocalizationState,
+    catalog: &LocalizationCatalog,
+    culture: &str,
+) -> Result<Vec<(Signal<String>, String)>> {
+    catalog
+        .signals
+        .iter()
+        .map(|(key, signal)| {
+            localized_value(state, catalog, key, culture).map(|value| (*signal, value))
+        })
+        .collect()
+}
+
 thread_local! {
     static FACTORY: RefCell<Option<sys::ComPtr<sys::IAvnControlFactory>>> = const { RefCell::new(None) };
+    static VIEW_BUILD_DEPTH: Cell<usize> = const { Cell::new(0) };
+}
+
+pub(crate) fn with_view_subscription_scope<T>(build: impl FnOnce() -> T) -> T {
+    VIEW_BUILD_DEPTH.with(|depth| depth.set(depth.get() + 1));
+    struct BuildGuard;
+    impl Drop for BuildGuard {
+        fn drop(&mut self) {
+            VIEW_BUILD_DEPTH.with(|depth| depth.set(depth.get() - 1));
+        }
+    }
+    let _guard = BuildGuard;
+    build()
 }
 
 pub trait AsControl {
@@ -356,7 +548,18 @@ impl AppScope {
             .spawn(self.context.dispatcher.clone(), future)
     }
 
-    pub(crate) fn retain_subscription(&self, subscription: EventSubscription) {
+    /// Retains an event subscription until the current reactive view is disposed,
+    /// or until the application scope ends when called outside a view build.
+    pub fn retain_subscription(&self, subscription: EventSubscription) {
+        if VIEW_BUILD_DEPTH.with(|depth| depth.get() > 0) {
+            on_scope_cleanup(move || {
+                let mut subscription = subscription;
+                if let Err(error) = subscription.unsubscribe() {
+                    eprintln!("failed to unsubscribe a disposed view event: {error}");
+                }
+            });
+            return;
+        }
         self.state
             .subscriptions
             .lock()
@@ -370,6 +573,16 @@ impl AppScope {
             .lock()
             .expect("application object scope lock poisoned")
             .push(Box::new(value));
+    }
+
+    /// Keeps localized resource signals active for this application lifetime.
+    pub fn retain_localization_resources(&self, resources: LocalizationResources) {
+        self.retain_object(resources);
+    }
+
+    /// Keeps Rust-owned resource signals active for this application lifetime.
+    pub fn retain_resource_scope(&self, resources: crate::ResourceScope) {
+        self.retain_object(resources);
     }
 
     pub(crate) fn application(&self) -> &sys::ComPtr<sys::IAvnApplication> {
@@ -812,6 +1025,18 @@ fn to_abi_error(error: Error) -> sys::Error {
         | Error::UiContextAlreadyActive
         | Error::InvalidEnumValue(_)
         | Error::InvalidAsyncValue
+        | Error::InvalidResourceCatalog(_)
+        | Error::MissingResource { .. }
+        | Error::MissingScopedResource { .. }
+        | Error::ResourceTypeMismatch { .. }
+        | Error::InvalidResourceScope(_)
+        | Error::Binding(_)
+        | Error::ReadOnlyBindingPath
+        | Error::DuplicateItemKey
+        | Error::CollectionUpdateRollback { .. }
+        | Error::ControlSlotNotMounted
+        | Error::ControlSlotAlreadyMounted
+        | Error::InvalidViewRegistry(_)
         | Error::InvalidViewModelMember { .. }
         | Error::Async { .. } => sys::Error(sys::E_FAIL),
     }
@@ -838,6 +1063,139 @@ fn resource_value(value: sys::ComPtr<sys::IAvnResourceValue>) -> Result<Resource
         5 => ResourceValue::Color(value.color()?),
         kind => return Err(Error::InvalidEnumValue(kind)),
     })
+}
+
+#[cfg(test)]
+mod localization_tests {
+    use super::*;
+
+    #[test]
+    fn localized_signals_follow_culture_and_fall_back_to_default() {
+        let resources = LocalizationResources::new("en-US").unwrap();
+        resources.insert("en-US", "greeting", "Hello").unwrap();
+        resources.insert("fr-FR", "greeting", "Bonjour").unwrap();
+        let greeting = resources.string_signal("greeting").unwrap();
+        assert_eq!(greeting.get(), "Hello");
+
+        resources.set_culture("fr-FR").unwrap();
+        assert_eq!(greeting.get(), "Bonjour");
+
+        resources.set_culture("de-DE").unwrap();
+        assert_eq!(greeting.get(), "Hello");
+    }
+
+    #[test]
+    fn localized_signals_update_when_catalog_entries_change() {
+        let resources = LocalizationResources::new("en-US").unwrap();
+        resources.insert("en-US", "greeting", "Hello").unwrap();
+        let greeting = resources.string_signal("greeting").unwrap();
+
+        resources.insert("en-US", "greeting", "Hi").unwrap();
+        assert_eq!(greeting.get(), "Hi");
+    }
+
+    #[test]
+    fn missing_localized_strings_are_reported() {
+        let resources = LocalizationResources::new("en-US").unwrap();
+        let error = resources
+            .string_signal("missing")
+            .expect_err("missing keys must not silently become empty strings");
+        assert!(matches!(
+            error,
+            Error::MissingResource { key, culture } if key == "missing" && culture == "en-US"
+        ));
+    }
+
+    #[test]
+    fn culture_changes_with_missing_translations_leave_the_previous_values_intact() {
+        let resources = LocalizationResources::new("en-US").unwrap();
+        resources.set_culture("fr-FR").unwrap();
+        resources.insert("fr-FR", "greeting", "Bonjour").unwrap();
+        let greeting = resources.string_signal("greeting").unwrap();
+
+        assert!(matches!(
+            resources.set_culture("de-DE"),
+            Err(Error::MissingResource { key, culture })
+                if key == "greeting" && culture == "de-DE"
+        ));
+        assert_eq!(resources.culture(), "fr-FR");
+        assert_eq!(greeting.get(), "Bonjour");
+
+        resources.insert("en-US", "greeting", "Hello").unwrap();
+        resources.set_culture("de-DE").unwrap();
+        assert_eq!(greeting.get(), "Hello");
+    }
+
+    #[test]
+    fn dropping_the_last_catalog_owner_releases_its_state() {
+        let resources = LocalizationResources::new("en-US").unwrap();
+        resources.insert("en-US", "greeting", "Hello").unwrap();
+        let greeting = resources.string_signal("greeting").unwrap();
+        let state = Arc::downgrade(&resources.state);
+
+        drop(resources);
+        assert!(state.upgrade().is_none());
+        assert_eq!(greeting.get(), "Hello");
+    }
+
+    #[test]
+    fn disposing_a_view_removes_its_localization_subscription() {
+        let resources = LocalizationResources::new("en-US").unwrap();
+        resources.insert("en-US", "greeting", "Hello").unwrap();
+        let scope = crate::ReactiveScope::new();
+        let _greeting = scope.run(|| resources.string_signal("greeting").unwrap());
+        assert_eq!(resources.state.catalog.lock().unwrap().signals.len(), 1);
+
+        scope.dispose();
+        assert!(resources.state.catalog.lock().unwrap().signals.is_empty());
+        resources.insert("en-US", "greeting", "Hi").unwrap();
+    }
+
+    #[test]
+    fn disposing_a_view_during_catalog_updates_skips_its_pending_signal() {
+        let resources = LocalizationResources::new("en-US").unwrap();
+        resources.insert("en-US", "greeting", "Hello").unwrap();
+        let trigger = resources.string_signal("greeting").unwrap();
+        let view = crate::ReactiveScope::new();
+        let _view_signal = view.run(|| resources.string_signal("greeting").unwrap());
+        let survivor = resources.string_signal("greeting").unwrap();
+        let effect = crate::Effect::new(move || {
+            if trigger.get() == "Hi" {
+                view.dispose();
+            }
+            Ok(())
+        })
+        .unwrap();
+
+        resources.insert("en-US", "greeting", "Hi").unwrap();
+        assert_eq!(survivor.get(), "Hi");
+        assert_eq!(resources.state.catalog.lock().unwrap().signals.len(), 2);
+        effect.dispose();
+    }
+
+    #[test]
+    fn reentrant_catalog_updates_refresh_all_registered_strings() {
+        let resources = LocalizationResources::new("en-US").unwrap();
+        resources.insert("en-US", "first", "First").unwrap();
+        resources.insert("en-US", "second", "Second").unwrap();
+        resources.insert("fr-FR", "first", "Premier").unwrap();
+        resources.insert("fr-FR", "second", "Deuxieme").unwrap();
+        let first = resources.string_signal("first").unwrap();
+        let second = resources.string_signal("second").unwrap();
+        let callback_resources = resources.clone();
+        let effect = crate::Effect::new(move || {
+            if callback_resources.culture() == "fr-FR" {
+                callback_resources.insert("fr-FR", "first", "Un")?;
+            }
+            Ok(())
+        })
+        .unwrap();
+
+        resources.set_culture("fr-FR").unwrap();
+        assert_eq!(first.get(), "Un");
+        assert_eq!(second.get(), "Deuxieme");
+        effect.dispose();
+    }
 }
 
 #[cfg(test)]

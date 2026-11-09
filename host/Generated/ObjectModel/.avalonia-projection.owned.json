@@ -211,7 +211,7 @@
     },
     {
       "path": "IAvnControlFactory.g.cs",
-      "sha256": "3c648f909d8590ce2627f959d9ac5ce1e8aa7ef555441606c20b023cd1bd5d83"
+      "sha256": "101e7b46d15a80fe2beb3f9eadfedd5f76ef58288cb7e21c3b6fac34f25c6df0"
     },
     {
       "path": "IAvnControlGotFocusHandler.g.cs",
@@ -339,7 +339,15 @@
     },
     {
       "path": "IAvnGrid.g.cs",
-      "sha256": "a2def0b839b13f91f7ec66c44ef0eb8281691790ecfbfa48245c0d05ed84af24"
+      "sha256": "9f90593e31eccbee72cc991df5269f59716d02c14fb20c3d79a5daffd5651f15"
+    },
+    {
+      "path": "IAvnGridChildrenChangedHandler.g.cs",
+      "sha256": "254589b79c12b96da35904e59990483cfc80b6e8f7024e88acbd3b8cef9e7c3b"
+    },
+    {
+      "path": "IAvnGridLayoutUpdatedHandler.g.cs",
+      "sha256": "633edf3aae01307222fcee937784c70206687788300720744adf661c2735bb66"
     },
     {
       "path": "IAvnGridSplitter.g.cs",
@@ -564,6 +572,10 @@
     {
       "path": "IAvnScrollViewerScrollChangedHandler.g.cs",
       "sha256": "e64488b229c5ddb706c5e0b1bf42a7a0915da76e5905f7fd0ba6d50a774f57f0"
+    },
+    {
+      "path": "IAvnScrollViewerStatics.g.cs",
+      "sha256": "1e616aaafa9b0a2c1c5c5b113df0d1724911ca06679801ab38528d8d46018157"
     },
     {
       "path": "IAvnSector.g.cs",
@@ -855,7 +867,7 @@
     },
     {
       "path": "ProjectionAotRoots.g.cs",
-      "sha256": "7598eb5b799a226ccd5a421776f8c02d82fad8dc9fe288fce32c01bdf5f002d1"
+      "sha256": "0c1d6f429461f2042441fc62642f6f99473488d94ba4fd7998097c115481cfd8"
     },
     {
       "path": "ProjectionRuntime.g.cs",

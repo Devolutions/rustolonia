@@ -373,8 +373,15 @@ Integration tests and repository-relative fixtures are not packaged. MSRV is
 host. Packaging is checked in CI with:
 
 ```bash
-cargo package --locked -p rustolonia-sys -p rustolonia-bindgen -p rustolonia
+cd rust
+cargo package --locked -p rustolonia-sys -p rustolonia-bindgen -p rustolonia \
+  --config 'patch.crates-io.rustolonia-sys.path="rustolonia-sys"'
 ```
+
+The local patch verifies the package against the matching unpublished sys
+sources rather than an older published crate with the same version. It does
+not alter the published dependency; the standalone package rehearsal also
+builds an external consumer from the extracted crate archives.
 
 ### Prebuilt host tarballs
 

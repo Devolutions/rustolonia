@@ -121,6 +121,18 @@ public class ComSourceEmitterTests
     ];
 
     [Fact]
+    public void Emits_nested_event_subscriptions_on_the_collection()
+    {
+        var ir = ClrTypeExtractor.Extract(KernelTypes, AvaloniaProjectionProfiles.ObjectModelKernel);
+        var source = ComSourceEmitter.Emit(ir)["IAvnGrid.g.cs"];
+
+        Assert.Contains("int AdviseChildrenChanged(IAvnGridChildrenChangedHandler? handler", source);
+        Assert.Contains("var eventSource = _value.Children;", source);
+        Assert.Contains("eventSource.CollectionChanged += callback;", source);
+        Assert.Contains("eventSource.CollectionChanged -= callback", source);
+    }
+
+    [Fact]
     public void Emits_fixture_interfaces_with_stable_guids_and_preserve_sig()
     {
         var ir = ComInterfaceExtractor.Extract(typeof(IAvnEcho).Assembly, new ProjectionPolicy
@@ -237,7 +249,7 @@ public class ComSourceEmitterTests
     }
 
     [Fact]
-    public void Emits_grid_definitions_as_strings_converted_by_the_managed_types_own_parse()
+    public void Emits_grid_definitions_as_strings_converted_by_host_helpers()
     {
         var ir = ClrTypeExtractor.Extract(
             [typeof(AvaloniaObject), typeof(StyledElement), typeof(Control), typeof(Panel), typeof(Grid)],
@@ -256,14 +268,13 @@ public class ComSourceEmitterTests
             Assert.Contains(expected, grid, StringComparison.Ordinal);
         }
 
-        // The wrapper converts with ColumnDefinitions/RowDefinitions' own round trip rather
-        // than assigning a string straight onto a definition collection.
+        // The host helpers preserve shared-size groups as well as track lengths.
         foreach (var expected in new[]
                  {
-                     "value = _value.ColumnDefinitions.ToString();",
-                     "_value.ColumnDefinitions = global::Avalonia.Controls.ColumnDefinitions.Parse(value);",
-                     "value = _value.RowDefinitions.ToString();",
-                     "_value.RowDefinitions = global::Avalonia.Controls.RowDefinitions.Parse(value);",
+                     "value = global::Avalonia.Host.Com.AvnColumnDefinitions.ToAbi(_value.ColumnDefinitions)!;",
+                     "_value.ColumnDefinitions = global::Avalonia.Host.Com.AvnColumnDefinitions.FromAbi(value)!;",
+                     "value = global::Avalonia.Host.Com.AvnRowDefinitions.ToAbi(_value.RowDefinitions)!;",
+                     "_value.RowDefinitions = global::Avalonia.Host.Com.AvnRowDefinitions.FromAbi(value)!;",
                  })
         {
             Assert.Contains(expected, grid, StringComparison.Ordinal);

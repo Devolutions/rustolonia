@@ -11,10 +11,10 @@ var checkMode = args.Length > 0 && args[0] == "--check";
 if (checkMode)
     args = args[1..];
 
-if (args.Length is not (2 or 3))
+if (args.Length is not (2 or 3 or 4))
 {
     Console.Error.WriteLine(
-        "Usage: Avalonia.Projection.Tool [--check] <ir-output> <csharp-output-directory> [native-header-output]");
+        "Usage: Avalonia.Projection.Tool [--check] <ir-output> <csharp-output-directory> [native-header-output [axaml-template-ir-output]]");
     return 2;
 }
 
@@ -25,6 +25,7 @@ var irPath = Path.GetFullPath(args[0]);
 var csharpDirectory = Path.GetFullPath(args[1]);
 var outputDirectories = new List<string> { csharpDirectory, Path.GetDirectoryName(irPath)! };
 var expectedFiles = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+var irJson = ir.ToJson().Replace(Environment.NewLine, "\n") + "\n";
 
 foreach (var (name, source) in ComSourceEmitter.Emit(ir))
     OwnedOutputs.Add(expectedFiles, Path.Combine(csharpDirectory, name), source.Replace(Environment.NewLine, "\n"));
@@ -32,7 +33,7 @@ foreach (var (name, source) in ComSourceEmitter.Emit(ir))
 var reportPath = Path.ChangeExtension(irPath, ".gaps.txt");
 var reportText = string.Join("\n", ir.Skipped.Select(s => $"{s.Owner}.{s.Member}: {s.Reason}")) + "\n";
 
-OwnedOutputs.Add(expectedFiles, irPath, ir.ToJson().Replace(Environment.NewLine, "\n") + "\n");
+OwnedOutputs.Add(expectedFiles, irPath, irJson);
 OwnedOutputs.Add(expectedFiles, reportPath, reportText);
 
 if (args.Length == 3)
@@ -40,6 +41,15 @@ if (args.Length == 3)
     var headerPath = Path.GetFullPath(args[2]);
     outputDirectories.Add(Path.GetDirectoryName(headerPath)!);
     OwnedOutputs.Add(expectedFiles, headerPath, NativeHeaderEmitter.Emit(ir).Replace(Environment.NewLine, "\n"));
+}
+else if (args.Length == 4)
+{
+    var headerPath = Path.GetFullPath(args[2]);
+    var axamlIrPath = Path.GetFullPath(args[3]);
+    outputDirectories.Add(Path.GetDirectoryName(headerPath)!);
+    outputDirectories.Add(Path.GetDirectoryName(axamlIrPath)!);
+    OwnedOutputs.Add(expectedFiles, headerPath, NativeHeaderEmitter.Emit(ir).Replace(Environment.NewLine, "\n"));
+    OwnedOutputs.Add(expectedFiles, axamlIrPath, irJson);
 }
 
 if (checkMode)

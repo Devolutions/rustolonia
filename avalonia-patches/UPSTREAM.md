@@ -27,6 +27,14 @@ Rustolonia-specific friend declarations to be removed.
 - `avalonia-application-name.patch` initializes the default macOS application
   menu holder with `Application.Name`.
 
+## Grid definition changes invalidate cached cells
+
+Replacing or mutating row/column definitions must invalidate the grid's cell
+structure as well as measure. Otherwise a previously measured child can retain
+an index into a removed track and the next layout can throw. The separate
+`avalonia-grid-invalidation.patch` uses the existing Grid invalidation method;
+managed and native layout regressions cover the change.
+
 ## Changes merged upstream
 
 - `TableViewColumn.IsVisible`: AvaloniaUI/Avalonia#22162, shipped in 12.1.3.

@@ -86,18 +86,24 @@ pub struct Command {
 impl Command {
     /// Fires every live `CanExecuteChanged` subscription. Call this whenever
     /// the value `can_execute` would return has changed.
-    pub fn notify(&self) {
+    pub fn notify(&self) -> Result<()> {
         let handlers: Vec<ComPtr<IAvnCommandCanExecuteChangedHandler>> = unsafe {
             let object = self.ptr.as_raw().cast::<CommandObject>();
-            let subscriptions = match (*object).subscriptions.lock() {
-                Ok(subscriptions) => subscriptions,
-                Err(_) => return,
-            };
+            let subscriptions = (*object)
+                .subscriptions
+                .lock()
+                .map_err(|_| hresult::Error(hresult::E_FAIL))?;
             subscriptions.values().cloned().collect()
         };
+        let mut first_error = None;
         for handler in handlers {
-            let _ = handler.invoke();
+            if let Err(error) = handler.invoke() {
+                if first_error.is_none() {
+                    first_error = Some(error);
+                }
+            }
         }
+        first_error.map_or(Ok(()), Err)
     }
 
     pub fn as_com_ptr(&self) -> &ComPtr<IAvnCommand> {
@@ -180,6 +186,9 @@ unsafe extern "system" fn command_can_execute(
     value: *mut i32,
 ) -> i32 {
     if value.is_null() {
+        if parameter.tag == AvnVariant::TAG_UTF16 && !parameter.utf16.is_null() {
+            crate::free_utf16_if_host(parameter.utf16);
+        }
         return hresult::E_POINTER;
     }
     let object = this.cast::<CommandObject>();

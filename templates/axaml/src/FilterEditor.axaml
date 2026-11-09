@@ -1,0 +1,27 @@
+<local:FilterEditor xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                    xmlns:local="urn:example:views"
+                    xmlns:models="urn:example:models"
+                    mc:Ignorable="d" d:DesignWidth="480"
+                    x:Class="Example.FilterEditor" x:DataType="local:FilterModel">
+  <Design.DataContext>
+    <local:DesignFilterModel />
+  </Design.DataContext>
+  <FormGrid x:Name="form_grid">
+    <FormGrid.ColumnDefinitions>
+      <ColumnDefinition Width="Auto" SharedSizeGroup="FilterColumn" />
+      <ColumnDefinition Width="*" />
+    </FormGrid.ColumnDefinitions>
+    <EnumPicker x:Name="filter_picker"
+                x:TypeArguments="models:FilterKind"
+                SelectedValue="{Binding Kind}"
+                IncludedValues="{Binding AllowedKinds}"
+                Grid.Column="0" />
+    <TextBox x:Name="filter_text"
+             Grid.Column="1"
+             Text="{Binding SearchText}"
+             ScrollViewer.HorizontalScrollBarVisibility="Hidden" />
+  </FormGrid>
+</local:FilterEditor>
