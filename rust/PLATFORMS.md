@@ -111,7 +111,7 @@ rustolonia = { version = "=X.Y.Z", default-features = false, features = ["static
 rustup target add x86_64-unknown-linux-musl
 # Install the native musl compiler/linker (for example, musl-tools on Ubuntu).
 CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER=musl-gcc \
-RUSTFLAGS="-C target-feature=+crt-static" \
+RUSTFLAGS="-C target-feature=+crt-static -C relocation-model=static" \
 cargo build --release --target x86_64-unknown-linux-musl
 ```
 
@@ -119,7 +119,10 @@ For ARM64, use `aarch64-unknown-linux-musl` and the matching target linker.
 Cross-compilation needs an architecture-matching musl toolchain. The target's
 static CRT is required and the host build fails if it is disabled. A release
 containing the musl archives is required; existing releases do not contain
-them.
+them. The `relocation-model=static` option avoids a `musl-gcc` static-PIE
+wrapper issue that can otherwise introduce a dynamic interpreter; it produces
+a non-PIE executable. A linker that supports static PIE can retain PIE instead,
+but verify the resulting executable's ELF headers and dependencies.
 
 With the application's own native dependencies also linked statically, the
 executable has no ELF interpreter or `DT_NEEDED` entries. It still needs an

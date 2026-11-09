@@ -92,14 +92,16 @@ includes the separate musl assets:
 ```bash
 rustup target add x86_64-unknown-linux-musl
 CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER=musl-gcc \
-RUSTFLAGS="-C target-feature=+crt-static" \
+RUSTFLAGS="-C target-feature=+crt-static -C relocation-model=static" \
 cargo build --release --target x86_64-unknown-linux-musl
 ```
 
 Enable `static-host` on the dependency and install a matching musl linker.
-ARM64 uses `aarch64-unknown-linux-musl`. With the application's other native
-dependencies also statically linked, the binary needs an X server and fonts
-but no shared libraries. It uses software rendering; see the
+ARM64 uses `aarch64-unknown-linux-musl`. The static relocation model avoids a
+`musl-gcc` static-PIE issue and produces a non-PIE executable. With the
+application's other native dependencies also statically linked, the binary
+needs an X server and fonts but no shared libraries. It uses software
+rendering; see the
 [`rustolonia-sys` README](../rustolonia-sys/README.md) for limitations.
 
 The Rust and native host versions are locked to each other: `rustolonia X.Y.Z`

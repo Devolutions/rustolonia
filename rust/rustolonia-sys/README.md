@@ -91,7 +91,9 @@ For a fully static Linux system binary, build for
 `x86_64-unknown-linux-musl` or `aarch64-unknown-linux-musl` with
 `static-host` and `-C target-feature=+crt-static`. These targets select
 `rustolonia-host-<version>-linux-musl-{x64|arm64}-static.tar.gz` and require
-a matching musl linker. They never use the GNU host. The musl host uses X11
+a matching musl linker. With `musl-gcc`, also use `-C relocation-model=static`
+to avoid its static-PIE interpreter issue; this produces a non-PIE executable.
+They never use the GNU host. The musl host uses X11
 software rendering; it requires an X server, fonts and other application data
 or services, but loads no shared libraries. Runtime-loaded GTK/GL modules and
 the DRM backend are unavailable. Existing releases need a new release with

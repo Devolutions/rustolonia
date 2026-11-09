@@ -469,6 +469,29 @@ function Set-WindowsStaticCrt {
     }
 }
 
+function Assert-StaticMuslExecutable {
+    param([Parameter(Mandatory)][string]$Path)
+
+    if (-not (Get-Command readelf -ErrorAction SilentlyContinue)) {
+        throw 'A static musl executable requires readelf to verify its ELF dependencies.'
+    }
+    $previousNativeErrorPreference = $PSNativeCommandUseErrorActionPreference
+    try {
+        $PSNativeCommandUseErrorActionPreference = $false
+        $segments = @(& readelf -l $Path 2>&1)
+        if ($LASTEXITCODE -ne 0) { throw "readelf failed to inspect program headers for ${Path}: $($segments -join ' ')" }
+        if ($segments -match '\sINTERP\s') {
+            throw 'The musl executable has a dynamic ELF interpreter. With musl-gcc, add -C relocation-model=static to RUSTFLAGS; this disables PIE.'
+        }
+        $dynamic = @(& readelf -d $Path 2>&1)
+        if ($LASTEXITCODE -ne 0) { throw "readelf failed to inspect dynamic dependencies for ${Path}: $($dynamic -join ' ')" }
+        if ($dynamic -match '\(NEEDED\)') { throw 'The musl executable has dynamic ELF dependencies.' }
+    }
+    finally {
+        $PSNativeCommandUseErrorActionPreference = $previousNativeErrorPreference
+    }
+}
+
 function Resolve-CallerRelativePath {
     param(
         [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$PathValue

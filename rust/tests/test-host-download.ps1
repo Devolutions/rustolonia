@@ -147,11 +147,7 @@ try {
         Remove-Item -LiteralPath $cache -Recurse -Force
     }
     if ($Rid -cin $script:MuslStaticHostRids) {
-        if (-not (Get-Command readelf -ErrorAction SilentlyContinue)) { throw 'The musl static smoke test requires readelf.' }
-        $segments = & readelf -l $exe
-        if ($LASTEXITCODE -ne 0 -or ($segments -match '\sINTERP\s')) { throw 'The musl executable has a dynamic ELF interpreter.' }
-        $dynamic = & readelf -d $exe
-        if ($LASTEXITCODE -ne 0 -or ($dynamic -match '\(NEEDED\)')) { throw 'The musl executable has dynamic ELF dependencies.' }
+        Assert-StaticMuslExecutable -Path $exe
     }
     if ($BuildOnly) {
         Write-Host "$Example built and staged with the downloaded $variant host (not launched)."

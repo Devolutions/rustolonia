@@ -233,6 +233,9 @@ function Invoke-ConsumerPackage {
         if (-not (Test-Path -LiteralPath $executable -PathType Leaf)) {
             throw "Cargo did not produce the declared binary: $executable"
         }
+        if ($static -and $rid -cin $script:MuslStaticHostRids) {
+            Assert-StaticMuslExecutable -Path $executable
+        }
     }
     if (-not $static) {
         & $buildCargo $null

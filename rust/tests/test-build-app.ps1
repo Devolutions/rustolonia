@@ -168,6 +168,39 @@ try {
         Assert-True (-not (Test-Path -LiteralPath (Join-Path $scratch 'STATIC-LINUX-NOTICES.txt'))) 'Rejected cross-architecture staging must not write metadata.'
     }
 
+    & {
+        $elfFixture = 'static'
+        function Get-Command {
+            [CmdletBinding()]
+            param([string]$Name)
+            if ($Name -eq 'readelf' -and $elfFixture -ne 'missing') { [pscustomobject]@{ Name = 'readelf' } }
+        }
+        function readelf {
+            $global:LASTEXITCODE = 0
+            Assert-True ($args[1] -eq 'fixture') 'The executable path must be passed to readelf.'
+            if ($args[0] -eq '-l') {
+                if ($elfFixture -eq 'header-error') { $global:LASTEXITCODE = 1; return 'invalid ELF' }
+                if ($elfFixture -eq 'interpreter') { return '  INTERP   0x0000' }
+                return '  LOAD   0x0000'
+            }
+            if ($elfFixture -eq 'dynamic-error') { $global:LASTEXITCODE = 1; return 'invalid dynamic section' }
+            if ($elfFixture -eq 'needed') { return '  (NEEDED) Shared library: [libc.so]' }
+            return 'There is no dynamic section in this file.'
+        }
+        Assert-StaticMuslExecutable -Path fixture
+        $elfFixture = 'interpreter'
+        Assert-Throws { Assert-StaticMuslExecutable -Path fixture } 'dynamic ELF interpreter.*relocation-model=static'
+        $elfFixture = 'needed'
+        Assert-Throws { Assert-StaticMuslExecutable -Path fixture } 'dynamic ELF dependencies'
+        $elfFixture = 'header-error'
+        Assert-Throws { Assert-StaticMuslExecutable -Path fixture } 'readelf failed to inspect program headers'
+        $elfFixture = 'dynamic-error'
+        Assert-Throws { Assert-StaticMuslExecutable -Path fixture } 'readelf failed to inspect dynamic dependencies'
+        $elfFixture = 'missing'
+        Assert-Throws { Assert-StaticMuslExecutable -Path fixture } 'requires readelf'
+        $global:LASTEXITCODE = 0
+    }
+
     $publishProperties = @('-p:AvaloniaProducerRoot=producer path', '-p:RustoloniaRoot=rustolonia path')
     $publishCommand = New-DotnetPublishCommand -Project 'host project.csproj' -Configuration Release -Rid win-x64 -ArtifactsPath 'artifacts path' -AdditionalProperties $publishProperties
     Assert-True ($publishCommand[0] -eq 'dotnet' -and $publishCommand[2] -eq 'host project.csproj') 'Publish argv must preserve command and spaced paths.'

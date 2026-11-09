@@ -478,6 +478,8 @@ compiler libraries are included as link inputs; an executable with statically
 linked application dependencies has no ELF interpreter or shared-library
 dependencies. It uses software rendering and still needs an X server, font
 configuration and any external services or data used by the app.
+`build-app.ps1 -Linkage Static` verifies those ELF properties before packaging
+a musl executable.
 See [Fully static Linux executable](PLATFORMS.md#fully-static-linux-executable)
 for a consumer example and runtime limitations.
 
