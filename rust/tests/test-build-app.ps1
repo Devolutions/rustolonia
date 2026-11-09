@@ -2,7 +2,8 @@
 #Requires -Version 7.0
 [CmdletBinding()]
 param(
-    [switch]$RunNativeSmoke
+    [switch]$RunNativeSmoke,
+    [switch]$RunStaticNativeSmoke
 )
 
 Set-StrictMode -Version Latest
@@ -27,7 +28,7 @@ $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 . (Join-Path $root 'rust' 'package-shared.ps1')
 
 function Test-NativeConsumer {
-    param([string]$Scratch)
+    param([string]$Scratch, [switch]$Static)
 
     if ($IsLinux -and [string]::IsNullOrWhiteSpace($env:DISPLAY)) {
         throw 'Native Linux smoke execution requires a display. Run this script with xvfb-run -a pwsh -NoProfile -File ... -RunNativeSmoke.'
@@ -38,8 +39,20 @@ function Test-NativeConsumer {
     $rid = "$platform-$architecture"
     $target = Get-RidTargetInfo -Rid $rid
     $producer = Join-Path $root 'avalonia-src'
-    $consumer = Join-Path $Scratch 'native consumer'
+    $consumer = Join-Path $Scratch $(if ($Static) { 'native static consumer' } else { 'native consumer' })
     & (Join-Path $root 'rust' 'new-app.ps1') -Name smoke_app -Destination $consumer -ProducerRoot $producer -RustoloniaRoot $root
+    if ($Static) {
+        $cargoManifest = Join-Path $consumer 'Cargo.toml'
+        $cargoText = Get-Content -LiteralPath $cargoManifest -Raw
+        $renamedCargoText = $cargoText.Replace('rustolonia = { path =', 'ui = { package = "rustolonia", path =')
+        Assert-True ($renamedCargoText -cne $cargoText) 'Cannot rename the static consumer dependency.'
+        Set-Content -LiteralPath $cargoManifest -Value $renamedCargoText -NoNewline
+        $mainPath = Join-Path $consumer 'src/main.rs'
+        $mainText = Get-Content -LiteralPath $mainPath -Raw
+        $renamedMainText = $mainText.Replace('pub use rustolonia::{', "extern crate ui as rustolonia;`n`npub use rustolonia::{")
+        Assert-True ($renamedMainText -cne $mainText) 'Cannot alias the static consumer crate.'
+        Set-Content -LiteralPath $mainPath -Value $renamedMainText -NoNewline
+    }
     $manifestPath = Join-Path $consumer 'avalonia-app.json'
     $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json -AsHashtable
     $manifest.rid = $rid
@@ -50,17 +63,26 @@ function Test-NativeConsumer {
     $previousSigner = $env:AVALONIA_RUST_SIGN_COMMAND
     try {
         Remove-Item Env:AVALONIA_RUST_SIGN_COMMAND -ErrorAction SilentlyContinue
-        & (Join-Path $root 'rust' 'build-app.ps1') -ProducerRoot $producer -Manifest $manifestPath -UpdateLockFile
+        $linkage = if ($Static) { 'Static' } else { 'Shared' }
+        & (Join-Path $root 'rust' 'build-app.ps1') -ProducerRoot $producer -Manifest $manifestPath -UpdateLockFile -Linkage $linkage
     }
     finally {
         if ($null -ne $previousSigner) { $env:AVALONIA_RUST_SIGN_COMMAND = $previousSigner }
         else { Remove-Item Env:AVALONIA_RUST_SIGN_COMMAND -ErrorAction SilentlyContinue }
     }
 
-    $bundle = Join-Path $consumer 'artifacts' $rid
+    $bundle = Join-Path $consumer 'artifacts' $(if ($Static) { "$rid-static" } else { $rid })
     $executable = Join-Path $bundle "smoke_app$($target.ExeExtension)"
     Assert-True (Test-Path -LiteralPath $executable -PathType Leaf) "Packaged executable is missing: $executable"
-    Assert-True (Test-Path -LiteralPath (Join-Path $bundle $target.HostFileName) -PathType Leaf) 'Packaged host is missing.'
+    if ($Static) {
+        $sharedFiles = @(Get-ChildItem -LiteralPath $bundle -File | Where-Object {
+            $_.Extension -in @('.dll', '.so', '.dylib') -or $_.Name -like '*.so.*'
+        })
+        Assert-True ($sharedFiles.Count -eq 0) 'Static consumer bundles must not contain project shared libraries.'
+        Assert-True (Test-Path -LiteralPath (Join-Path $bundle 'STATIC-NATIVE-NOTICES.txt') -PathType Leaf) 'Static consumer notices are missing.'
+    } else {
+        Assert-True (Test-Path -LiteralPath (Join-Path $bundle $target.HostFileName) -PathType Leaf) 'Packaged host is missing.'
+    }
     $inventory = Get-Content -LiteralPath (Join-Path $bundle 'sbom.cdx.json') -Raw | ConvertFrom-Json
     Assert-True (@($inventory.components | Where-Object { $_.type -eq 'library' -and $_.purl -like 'pkg:nuget/*' }).Count -gt 0) 'Packaged inventory must contain the published host dependencies.'
     foreach ($line in Get-Content -LiteralPath (Join-Path $bundle 'checksums.sha256')) {
@@ -70,11 +92,43 @@ function Test-NativeConsumer {
     }
 
     $previousHost = $env:RUSTOLONIA_HOST_LIB
+    $traceVariable = if ($Static -and $IsMacOS) { 'DYLD_PRINT_LIBRARIES' }
+        elseif ($Static -and $IsLinux) { 'LD_DEBUG' }
+        else { $null }
+    $previousTrace = if ($traceVariable) { [Environment]::GetEnvironmentVariable($traceVariable) } else { $null }
+    $tracePath = Join-Path $Scratch 'native-static-consumer.stderr.log'
     $process = $null
     try {
         Remove-Item Env:RUSTOLONIA_HOST_LIB -ErrorAction SilentlyContinue
-        $process = Start-Process -FilePath $executable -WorkingDirectory $bundle -PassThru
-        Assert-True (-not $process.WaitForExit(5000)) "Packaged consumer exited during startup."
+        $processArguments = @{ FilePath = $executable; WorkingDirectory = $bundle; PassThru = $true }
+        if ($traceVariable) {
+            [Environment]::SetEnvironmentVariable($traceVariable, $(if ($IsMacOS) { '1' } else { 'libs' }))
+            $processArguments.RedirectStandardError = $tracePath
+        }
+        try { $process = Start-Process @processArguments }
+        finally {
+            if ($traceVariable) {
+                if ($null -eq $previousTrace) { Remove-Item -LiteralPath "env:$traceVariable" -ErrorAction SilentlyContinue }
+                else { [Environment]::SetEnvironmentVariable($traceVariable, $previousTrace) }
+            }
+        }
+        if ($process.WaitForExit(5000)) {
+            if ($traceVariable -and (Test-Path -LiteralPath $tracePath -PathType Leaf)) {
+                Get-Content -LiteralPath $tracePath | Write-Host
+            }
+            throw "Packaged consumer exited during startup with code $($process.ExitCode)."
+        }
+        if ($Static) {
+            $forbidden = '(?i)(AvaloniaNative|SkiaSharp|HarfBuzzSharp|av_libGLESv2)(\.dll|\.dylib|\.so(\.\d+)*)'
+            $loaded = @(
+                if ($IsWindows) {
+                    $process.Modules | Where-Object { $_.ModuleName -match $forbidden } | ForEach-Object ModuleName
+                } elseif ($traceVariable) {
+                    Select-String -LiteralPath $tracePath -Pattern $forbidden
+                }
+            )
+            Assert-True ($loaded.Count -eq 0) "Static consumer loaded a project library dynamically: $($loaded -join ', ')"
+        }
     }
     finally {
         if ($null -ne $previousHost) { $env:RUSTOLONIA_HOST_LIB = $previousHost }
@@ -89,7 +143,7 @@ function Test-NativeConsumer {
             finally { $process.Dispose() }
         }
     }
-    Write-Host "Native consumer smoke passed for $rid."
+    Write-Host "Native $linkage consumer smoke passed for $rid."
 }
 
 $scratch = Join-Path $root 'rust' 'target' ('test-build-app-' + [guid]::NewGuid().ToString('N'))
@@ -102,6 +156,16 @@ try {
         [System.Management.Automation.Language.Parser]::ParseFile($scriptFile.FullName, [ref]$tokens, [ref]$parseErrors) | Out-Null
         $messages = @($parseErrors | ForEach-Object { $_.Message }) -join '; '
         Assert-True ($parseErrors.Count -eq 0) "Invalid script $($scriptFile.FullName): $messages"
+    }
+
+    if ($IsLinux) {
+        $wrongStaticRid = if ((Get-CurrentRuntimeArchitecture) -eq 'arm64') { 'linux-x64' } else { 'linux-arm64' }
+        & {
+            $PSNativeCommandUseErrorActionPreference = $false
+            $output = & sh (Join-Path $root 'rust' 'stage-linux-static-libs.sh') $scratch $wrongStaticRid 2>&1
+            Assert-True ($LASTEXITCODE -ne 0 -and ($output -join "`n") -match 'matching architecture') 'Static Linux staging must reject a different build architecture.'
+        }
+        Assert-True (-not (Test-Path -LiteralPath (Join-Path $scratch 'STATIC-LINUX-NOTICES.txt'))) 'Rejected cross-architecture staging must not write metadata.'
     }
 
     $publishProperties = @('-p:AvaloniaProducerRoot=producer path', '-p:RustoloniaRoot=rustolonia path')
@@ -134,6 +198,18 @@ try {
     }
     $cargoCommand = New-CargoBuildCommand -ManifestPath 'app path/Cargo.toml' -PackageName example_app -TargetTriple x86_64-pc-windows-msvc -Example hello_world
     Assert-True ($cargoCommand.Count -eq 11 -and $cargoCommand[0] -eq 'cargo' -and $cargoCommand[3] -eq 'app path/Cargo.toml') 'Cargo argv must be flat and preserve spaced paths.'
+    $featureMetadata = @{
+        workspace_members = @('app-id')
+        packages = @(@{
+            id = 'app-id'; name = 'example_app'
+            dependencies = @(@{ name = 'rustolonia'; kind = $null; rename = 'ui' })
+        })
+    }
+    Assert-True ((@(Get-StaticHostCargoFeatures -Metadata $featureMetadata -PackageName example_app) -join ',') -eq 'ui/static-host') 'Static consumer features must use the Cargo dependency alias.'
+    $featureMetadata.packages[0].dependencies[0].rename = $null
+    Assert-True ((@(Get-StaticHostCargoFeatures -Metadata $featureMetadata -PackageName example_app) -join ',') -eq 'rustolonia/static-host') 'Static consumer features must use the unaliased dependency name.'
+    $featureMetadata.packages[0].dependencies[0].kind = 'dev'
+    Assert-Throws { Get-StaticHostCargoFeatures -Metadata $featureMetadata -PackageName example_app } 'depend directly on rustolonia'
 
     $hostProperties = New-HostPublishProperties -ProducerRoot producer -RustoloniaRoot rustolonia -Rid win-x64 -HostPlatform Win32
     foreach ($rid in @('linux-x64', 'linux-arm64')) {
@@ -202,6 +278,101 @@ try {
     Copy-BundleFiles -SourceDirectory $sourceBundle -DestinationDirectory $copyBundle -HostFile $sourceHost -Rid win-x64
     Assert-True ((Get-Content -LiteralPath $metadata -Raw).Trim() -eq 'preserve me') 'Copying must preserve existing metadata.'
     Assert-True (Test-Path -LiteralPath (Join-Path $copyBundle 'libexample.so.1')) 'Versioned native libraries must be copied.'
+    $staticSourceHost = Join-Path $sourceBundle 'rustolonia_host.lib'
+    Set-Content -LiteralPath $staticSourceHost -Value 'static host'
+    Set-Content -LiteralPath (Join-Path $sourceBundle 'SkiaSharp.lib') -Value 'static graphics library'
+    Set-Content -LiteralPath (Join-Path $sourceBundle 'rustolonia-host-link.txt') -Value 'static SkiaSharp.lib'
+    $staticBundle = Join-Path $scratch 'static-bundle-copy'
+    Prepare-ArtifactBundle -BundlePath $staticBundle | Out-Null
+    Copy-BundleFiles -SourceDirectory $sourceBundle -DestinationDirectory $staticBundle -HostFile $staticSourceHost -Rid win-x64 -Static
+    Assert-True (Test-Path -LiteralPath (Join-Path $staticBundle 'SkiaSharp.lib')) 'Static packages must include static native libraries.'
+    Assert-True (Test-Path -LiteralPath (Join-Path $staticBundle 'rustolonia-host-link.txt')) 'Static packages must include link directives.'
+    Assert-True (-not (Test-Path -LiteralPath (Join-Path $staticBundle 'rustolonia_host.dll'))) 'Static packages must not include the shared host.'
+    Assert-True (-not (Test-Path -LiteralPath (Join-Path $staticBundle 'libexample.so.1'))) 'Static packages must not include shared native libraries.'
+
+    $staticPackages = Join-Path $scratch 'static-packages'
+    $staticLibraries = @{}
+    foreach ($name in @('SkiaSharp.NativeAssets.Win32', 'HarfBuzzSharp.NativeAssets.Win32', 'Summpot.StaticAvalonia', 'runtime.win-x64.Microsoft.DotNet.ILCompiler')) {
+        $relative = "$($name.ToLowerInvariant())/1.0"
+        $directory = Join-Path $staticPackages $relative
+        New-Item -ItemType Directory -Force -Path $directory | Out-Null
+        $staticLibraries["$name/1.0"] = @{ type = 'package'; path = $relative }
+        if ($name -like '*.NativeAssets.*') {
+            Set-Content -LiteralPath (Join-Path $directory 'LICENSE.txt') -Value "$name license"
+            Set-Content -LiteralPath (Join-Path $directory 'THIRD-PARTY-NOTICES.txt') -Value "$name notices"
+        }
+    }
+    $runtimePackage = Join-Path $staticPackages 'runtime.win-x64.microsoft.dotnet.ilcompiler' '1.0'
+    Set-Content -LiteralPath (Join-Path $runtimePackage 'THIRD-PARTY-NOTICES.TXT') -Value '.NET runtime notices'
+    $runtimePack = Join-Path $staticPackages 'microsoft.netcore.app.runtime.win-x64' '1.0'
+    New-Item -ItemType Directory -Force -Path $runtimePack | Out-Null
+    Set-Content -LiteralPath (Join-Path $runtimePack 'LICENSE.TXT') -Value '.NET runtime license'
+    $staticPackage = Join-Path $staticPackages 'summpot.staticavalonia' '1.0'
+    New-Item -ItemType Directory -Force -Path (Join-Path $staticPackage 'build' 'components'), (Join-Path $staticPackage 'licenses' 'angle') | Out-Null
+    Set-Content -LiteralPath (Join-Path $staticPackage 'build' 'components' 'skiasharp.json') -Value '{"component":"skiasharp","version":"1.0"}'
+    Set-Content -LiteralPath (Join-Path $staticPackage 'build' 'components' 'angle.json') -Value '{"component":"angle"}'
+    Set-Content -LiteralPath (Join-Path $staticPackage 'licenses' 'angle' 'LICENSE') -Value 'ANGLE license'
+    $packageFolders = @{}
+    $packageFolders[$staticPackages] = @{}
+    $staticAssets = Join-Path $scratch 'static.assets.json'
+    @{ libraries = $staticLibraries; packageFolders = $packageFolders } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $staticAssets
+    Copy-StaticNativeNotices -ProjectAssetsJsonPath $staticAssets -DestinationDirectory $staticBundle -Rid win-x64
+    $staticNoticeText = Get-Content -LiteralPath (Join-Path $staticBundle 'STATIC-NATIVE-NOTICES.txt') -Raw
+    Assert-True ($staticNoticeText -match 'SkiaSharp.NativeAssets.Win32 license' -and $staticNoticeText -match 'HarfBuzzSharp.NativeAssets.Win32 notices' -and $staticNoticeText -match 'ANGLE license' -and $staticNoticeText -match '.NET runtime license' -and $staticNoticeText -match 'Copyright 2017 The Wuffs Authors') 'Static bundles must preserve graphics, ANGLE, Wuffs, and runtime notices.'
+    Assert-True (Test-Path -LiteralPath (Join-Path $staticBundle 'STATIC-SKIASHARP-PROVENANCE.json')) 'Static bundles must record SkiaSharp provenance.'
+    Assert-True (Test-Path -LiteralPath (Join-Path $staticBundle 'STATIC-ANGLE-PROVENANCE.json')) 'Windows static bundles must record ANGLE provenance.'
+    Remove-Item -LiteralPath (Join-Path $staticPackages 'harfbuzzsharp.nativeassets.win32' '1.0' 'LICENSE.txt')
+    Assert-Throws { Copy-StaticNativeNotices -ProjectAssetsJsonPath $staticAssets -DestinationDirectory $staticBundle -Rid win-x64 } 'Missing .* notice'
+    foreach ($name in @('SkiaSharp.NativeAssets.Linux', 'HarfBuzzSharp.NativeAssets.Linux', 'runtime.linux-x64.Microsoft.DotNet.ILCompiler')) {
+        $relative = "$($name.ToLowerInvariant())/1.0"
+        $directory = Join-Path $staticPackages $relative
+        New-Item -ItemType Directory -Force -Path $directory | Out-Null
+        $staticLibraries["$name/1.0"] = @{ type = 'package'; path = $relative }
+        if ($name -like '*.NativeAssets.*') {
+            Set-Content -LiteralPath (Join-Path $directory 'LICENSE.txt') -Value "$name license"
+            Set-Content -LiteralPath (Join-Path $directory 'THIRD-PARTY-NOTICES.txt') -Value "$name notices"
+        } else {
+            Set-Content -LiteralPath (Join-Path $directory 'THIRD-PARTY-NOTICES.TXT') -Value '.NET runtime notices'
+        }
+    }
+    $runtimePack = Join-Path $staticPackages 'microsoft.netcore.app.runtime.linux-x64' '1.0'
+    New-Item -ItemType Directory -Force -Path $runtimePack | Out-Null
+    Set-Content -LiteralPath (Join-Path $runtimePack 'LICENSE.TXT') -Value '.NET runtime license'
+    @{ libraries = $staticLibraries; packageFolders = $packageFolders } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $staticAssets
+    $linuxPublish = Join-Path $scratch 'linux-static-publish'
+    New-Item -ItemType Directory -Path $linuxPublish | Out-Null
+    $linuxArchives = @{}
+    foreach ($archive in @('libSkiaSharp.a', 'libskia.a', 'libHarfBuzzSharp.a')) {
+        $path = Join-Path $linuxPublish $archive
+        Set-Content -LiteralPath $path -Value "$archive fixture"
+        $linuxArchives[$archive] = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
+    }
+    $linuxSourceNotices = Join-Path $linuxPublish 'STATIC-SKIASHARP-SOURCE-NOTICES.txt'
+    Set-Content -LiteralPath $linuxSourceNotices -Value 'Source notices fixture'
+    $linuxProvenance = @{
+        version = '1.0'; rid = 'linux-x64'; glibcBuild = '2.35'; archives = $linuxArchives
+        skiasharpCommit = 'a' * 40; skiaCommit = 'b' * 40
+        noticesSha256 = (Get-FileHash -LiteralPath $linuxSourceNotices -Algorithm SHA256).Hash.ToLowerInvariant()
+    }
+    $linuxProvenancePath = Join-Path $linuxPublish 'STATIC-SKIASHARP-PROVENANCE.json'
+    $linuxProvenance | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $linuxProvenancePath
+    Set-Content -LiteralPath (Join-Path $linuxPublish 'STATIC-LINUX-NOTICES.txt') -Value 'Linux fixture'
+    Set-Content -LiteralPath (Join-Path $linuxPublish 'STATIC-LINUX-PROVENANCE.tsv') -Value "# archive`tpackage`tversion`tsha256`tdistribution", "libfontconfig.a`tlibfontconfig-dev:amd64`t2.13.1`t$('c' * 64)`tubuntu"
+    Copy-StaticNativeNotices -ProjectAssetsJsonPath $staticAssets -DestinationDirectory $staticBundle -Rid linux-x64 -StaticPublishDirectory $linuxPublish
+    $copiedProvenance = Get-Content -LiteralPath (Join-Path $staticBundle 'STATIC-SKIASHARP-PROVENANCE.json') -Raw | ConvertFrom-Json
+    Assert-True ($copiedProvenance.rid -eq 'linux-x64' -and $copiedProvenance.archives.'libskia.a' -eq $linuxArchives['libskia.a']) 'Linux bundles must record provenance of the source-built archives.'
+    Assert-True ((Get-Content -LiteralPath (Join-Path $staticBundle 'STATIC-SKIASHARP-SOURCE-NOTICES.txt') -Raw).Trim() -eq 'Source notices fixture') 'Linux bundles must preserve source-built graphics notices.'
+    & (Join-Path $root 'rust' 'generate-sbom.ps1') -Rid linux-x64 -Bundle $staticBundle
+    $linuxSbom = Get-Content -LiteralPath (Join-Path $staticBundle 'sbom.cdx.json') -Raw | ConvertFrom-Json
+    Assert-True (@($linuxSbom.components | Where-Object { $_.type -eq 'library' -and $_.name -eq 'libskia.a' -and $_.purl -eq "pkg:github/mono/skia@$($linuxProvenance.skiaCommit)" -and $_.hashes.content -eq $linuxArchives['libskia.a'] }).Count -eq 1) 'Linux SBOM must identify the source-built Skia archive and its hash.'
+    Set-Content -LiteralPath $linuxSourceNotices -Value 'changed notices'
+    Assert-Throws { Copy-StaticNativeNotices -ProjectAssetsJsonPath $staticAssets -DestinationDirectory $staticBundle -Rid linux-x64 -StaticPublishDirectory $linuxPublish } 'provenance does not match the source notices'
+    Set-Content -LiteralPath $linuxSourceNotices -Value 'Source notices fixture'
+    Set-Content -LiteralPath (Join-Path $linuxPublish 'libskia.a') -Value 'changed archive'
+    Assert-Throws { Copy-StaticNativeNotices -ProjectAssetsJsonPath $staticAssets -DestinationDirectory $staticBundle -Rid linux-x64 -StaticPublishDirectory $linuxPublish } 'provenance does not match libskia.a'
+    $linuxProvenance.rid = 'linux-arm64'
+    $linuxProvenance | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $linuxProvenancePath
+    Assert-Throws { Copy-StaticNativeNotices -ProjectAssetsJsonPath $staticAssets -DestinationDirectory $staticBundle -Rid linux-x64 -StaticPublishDirectory $linuxPublish } 'does not match linux-x64'
     Assert-Throws { Copy-BundleFiles -SourceDirectory $sourceBundle -DestinationDirectory $sourceBundle -HostFile $sourceHost -Rid win-x64 } 'differ|overlap|nested'
     $protectedBundle = Join-Path $scratch 'protected-bundle'
     New-Item -ItemType Directory -Path $protectedBundle | Out-Null
@@ -661,12 +832,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "rustolonia"
 version = "0.1.0"
 '@
+    Set-Content -LiteralPath (Join-Path $depsInventory 'STATIC-LINUX-PROVENANCE.tsv') -Value "# archive`tpackage`tversion`tsha256`tdistribution", "libfontconfig.a`tlibfontconfig-dev:arm64`t2.13.1`t$('a' * 64)`tubuntu"
     & (Join-Path $root 'rust' 'generate-sbom.ps1') -Rid win-x64 -Bundle $depsInventory -CargoLockPath $fakeCargoLock -ProjectAssetsJsonPath $fakeAssets -ProducerPin 'deadbeef'
     $depsSbom = Get-Content -LiteralPath (Join-Path $depsInventory 'sbom.cdx.json') -Raw | ConvertFrom-Json
     Assert-True (@($depsSbom.components | Where-Object { $_.type -eq 'library' -and $_.purl -eq 'pkg:nuget/Some.Package@1.2.3' }).Count -eq 1) 'SBOM must include resolved NuGet package dependencies.'
     Assert-True (@($depsSbom.components | Where-Object { $_.type -eq 'library' -and $_.name -eq 'local-project' }).Count -eq 0) 'SBOM must not list local project references as third-party dependencies.'
     Assert-True (@($depsSbom.components | Where-Object { $_.type -eq 'library' -and $_.purl -eq 'pkg:cargo/third-party-crate@0.4.1' }).Count -eq 1) 'SBOM must include resolved Cargo dependencies.'
     Assert-True (@($depsSbom.components | Where-Object { $_.type -eq 'library' -and $_.name -eq 'rustolonia' -and $_.version -eq '0.1.0' }).Count -eq 0) 'SBOM must not list workspace-local crates without a [source] as third-party dependencies.'
+    Assert-True (@($depsSbom.components | Where-Object { $_.type -eq 'library' -and $_.purl -eq 'pkg:deb/ubuntu/libfontconfig-dev@2.13.1?arch=arm64' }).Count -eq 1) 'SBOM must identify static Linux system packages.'
     Assert-True (@($depsSbom.metadata.properties | Where-Object { $_.name -eq 'avalonia:producer-pin' -and $_.value -eq 'deadbeef' }).Count -eq 1) 'SBOM must record the producer pin used to build the bundle.'
     & (Join-Path $root 'rust' 'generate-sbom.ps1') -Rid win-x64 -Bundle $depsInventory -CargoLockPath (Join-Path $scratch 'missing.lock') -ProjectAssetsJsonPath (Join-Path $scratch 'missing.assets.json')
     $missingSbom = Get-Content -LiteralPath (Join-Path $depsInventory 'sbom.cdx.json') -Raw | ConvertFrom-Json
@@ -685,10 +858,46 @@ version = "0.1.0"
     Assert-Throws { Get-HostAssetName -Version '1.2.3' -Rid 'freebsd-x64' } 'Unsupported RID'
     Assert-True ((Get-HostAssetName -Version '1.2.3' -Rid osx-arm64 -Linkage Static) -eq 'rustolonia-host-1.2.3-osx-arm64-static.tar.gz') 'Static hosts must have a separate release asset.'
     Assert-True ((Get-HostAssetName -Version '1.2.3' -Rid linux-x64 -LinuxBackend Drm -Linkage Static) -eq 'rustolonia-host-1.2.3-linux-x64-drm-static.tar.gz') 'Static asset names must match rustolonia-sys host_variant.'
+    Assert-True ((Get-HostAssetName -Version '1.2.3' -Rid linux-musl-arm64 -Linkage Static) -eq 'rustolonia-host-1.2.3-linux-musl-arm64-static.tar.gz') 'Fully static musl hosts need a distinct RID and asset.'
+    Assert-Throws { Get-HostAssetName -Version '1.2.3' -Rid linux-musl-x64 } 'only with static linkage'
+    Assert-Throws { Get-HostAssetName -Version '1.2.3' -Rid linux-musl-x64 -LinuxBackend Drm -Linkage Static } 'requires a glibc Linux RID'
+    Assert-True ((Get-RidTargetInfo -Rid linux-musl-x64).Triple -eq 'x86_64-unknown-linux-musl') 'The musl asset must select the musl Rust target.'
     Assert-Throws { Get-HostAssetName -Version '1.2.3' -Rid ios-arm64 -Linkage Static } 'Only desktop RIDs'
     Assert-Throws { Get-HostAssetName -Version '1.2.3' -Rid $script:BrowserHostRid -Linkage Static } 'Only desktop RIDs'
     Assert-True ((Get-RidTargetInfo -Rid win-x64).StaticHostFileName -eq 'rustolonia_host.lib') 'Windows static hosts must be .lib archives.'
     Assert-True ((Get-RidTargetInfo -Rid linux-arm64).StaticHostFileName -eq 'librustolonia_host.a') 'Unix static hosts must be .a archives.'
+    $muslStage = Join-Path $scratch 'musl-static-provenance'
+    New-Item -ItemType Directory -Path $muslStage | Out-Null
+    $sourcePins = Join-Path $root 'rust/linux-musl-static-sources.tsv'
+    $stagedPins = Join-Path $muslStage 'STATIC-LINUX-MUSL-SOURCES.tsv'
+    Copy-Item -LiteralPath $sourcePins -Destination $stagedPins
+    $muslNotices = Join-Path $muslStage 'STATIC-LINUX-NOTICES.txt'
+    [IO.File]::WriteAllText($muslNotices, 'verified notices')
+    $muslLines = @('# archive	package	version	sha256	distribution')
+    foreach ($line in Get-Content -LiteralPath $sourcePins) {
+        if ($line.StartsWith('#') -or -not $line) { continue }
+        $file, $owner, $packageVersion, $sourceName, $sourceHash = $line -split "`t"
+        $archive = Join-Path $muslStage $file
+        [IO.File]::WriteAllText($archive, "archive $file")
+        $hash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+        $distribution = if ($owner.StartsWith('xorg-')) { 'xorg' } else { 'alpine' }
+        $muslLines += "$file`t$($owner):aarch64`t$packageVersion`t$hash`t$distribution"
+    }
+    $muslLines += "# notices-sha256`t$((Get-FileHash -LiteralPath $muslNotices -Algorithm SHA256).Hash.ToLowerInvariant())"
+    $muslLines += "# sources-sha256`t$((Get-FileHash -LiteralPath $stagedPins -Algorithm SHA256).Hash.ToLowerInvariant())"
+    $muslProvenance = Join-Path $muslStage 'STATIC-LINUX-PROVENANCE.tsv'
+    [IO.File]::WriteAllLines($muslProvenance, [string[]]$muslLines)
+    Assert-LinuxMuslStaticProvenance -Rid linux-musl-arm64 -Directory $muslStage
+    [IO.File]::WriteAllText((Join-Path $muslStage 'libssl.a'), 'tampered')
+    Assert-Throws { Assert-LinuxMuslStaticProvenance -Rid linux-musl-arm64 -Directory $muslStage } 'archive does not match'
+    [IO.File]::WriteAllText((Join-Path $muslStage 'libssl.a'), 'archive libssl.a')
+    [IO.File]::WriteAllText($muslNotices, 'tampered')
+    Assert-Throws { Assert-LinuxMuslStaticProvenance -Rid linux-musl-arm64 -Directory $muslStage } 'notice or source metadata does not match'
+    [IO.File]::WriteAllText($muslNotices, 'verified notices')
+    & (Join-Path $root 'rust/generate-sbom.ps1') -Rid linux-musl-arm64 -Bundle $muslStage
+    $muslSbom = Get-Content -LiteralPath (Join-Path $muslStage 'sbom.cdx.json') -Raw | ConvertFrom-Json
+    Assert-True (@($muslSbom.components | Where-Object { $_.type -eq 'library' -and $_.purl -eq 'pkg:apk/alpine/openssl-libs-static@3.5.9-r0?arch=aarch64&distro=3.24' }).Count -eq 2) 'The musl SBOM must identify both static OpenSSL archives.'
+    Assert-True (@($muslSbom.components | Where-Object { $_.type -eq 'library' -and $_.purl -eq 'pkg:generic/xorg/libxau@1.0.12?arch=aarch64' }).Count -eq 1) 'The musl SBOM must identify source-built X11 archives.'
     $staticCargo = New-CargoBuildCommand -ManifestPath 'Cargo.toml' -PackageName app -TargetTriple aarch64-apple-darwin -BinaryName app -Features @('rustolonia/static-host')
     Assert-True (($staticCargo -join ' ') -eq 'cargo build --manifest-path Cargo.toml -p app --features rustolonia/static-host --bin app --target aarch64-apple-darwin --release') 'Static consumer builds must enable rustolonia/static-host.'
     $releaseVersion = Get-RustoloniaReleaseVersion -RustoloniaRoot $root
@@ -780,6 +989,9 @@ version = "0.1.0"
     $sumsLines += foreach ($rid in @('linux-x64', 'linux-arm64')) {
         "$('8' * 64)  $(Get-HostAssetName -Version '9.8.7-rc.1' -Rid $rid -LinuxBackend Drm -Linkage Static)"
     }
+    $sumsLines += foreach ($rid in $script:MuslStaticHostRids) {
+        "$('7' * 64)  $(Get-HostAssetName -Version '9.8.7-rc.1' -Rid $rid -Linkage Static)"
+    }
     $sumsLines += "$('d' * 64)  $(Get-HostAssetName -Version '9.8.7-rc.1' -Rid $script:BrowserHostRid)"
     $sumsLines += "$('e' * 64)  $(Get-AndroidHostAssetName -Version '9.8.7-rc.1')"
     $sumsLines += "$('f' * 64)  unrelated.apk"
@@ -787,7 +999,7 @@ version = "0.1.0"
     [IO.File]::WriteAllLines($sumsFile, [string[]]$sumsLines)
     & $prepareRelease -Checksums -SumsFile $sumsFile -RustoloniaRoot $releaseRoot | Out-Null
     $checksumLines = @(Get-Content -LiteralPath (Join-Path $releaseRoot 'rust/rustolonia-sys/host-checksums.txt') | Where-Object { $_ -and -not $_.StartsWith('#') })
-    Assert-True ($checksumLines.Count -eq 21) 'host-checksums.txt must list every desktop, DRM, static, iOS and browser host tarball and the Android host APK.'
+    Assert-True ($checksumLines.Count -eq 23) 'host-checksums.txt must list every desktop, DRM, static, musl, iOS and browser host tarball and the Android host APK.'
     Assert-True (@($checksumLines | Where-Object { $_ -like '*symbols*' -or $_ -like '*unrelated*' }).Count -eq 0) 'host-checksums.txt must not list symbol tarballs or other files.'
     [IO.File]::WriteAllLines($sumsFile, [string[]]($sumsLines | Select-Object -Skip 2))
     Assert-Throws { & $prepareRelease -Checksums -SumsFile $sumsFile -RustoloniaRoot $releaseRoot } 'no entry for rustolonia-host-9\.8\.7-rc\.1-win-x64'
@@ -801,6 +1013,8 @@ version = "0.1.0"
     Assert-Throws { & $prepareRelease -Checksums -SumsFile $sumsFile -RustoloniaRoot $releaseRoot } 'no entry for rustolonia-host-9\.8\.7-rc\.1-linux-arm64-drm'
     [IO.File]::WriteAllLines($sumsFile, [string[]]($sumsLines | Where-Object { $_ -notlike '*osx-arm64-static.tar.gz' }))
     Assert-Throws { & $prepareRelease -Checksums -SumsFile $sumsFile -RustoloniaRoot $releaseRoot } 'no entry for rustolonia-host-9\.8\.7-rc\.1-osx-arm64-static'
+    [IO.File]::WriteAllLines($sumsFile, [string[]]($sumsLines | Where-Object { $_ -notlike '*linux-musl-arm64-static.tar.gz' }))
+    Assert-Throws { & $prepareRelease -Checksums -SumsFile $sumsFile -RustoloniaRoot $releaseRoot } 'no entry for rustolonia-host-9\.8\.7-rc\.1-linux-musl-arm64-static'
 
     function Invoke-ChecksumsFromTestRelease([string]$ReleaseSums) {
         function gh {
@@ -815,16 +1029,21 @@ version = "0.1.0"
     $releaseWarnings = @(Invoke-ChecksumsFromTestRelease $sumsFile 3>&1 | Where-Object { $_ -is [System.Management.Automation.WarningRecord] })
     Assert-True ($releaseWarnings.Count -eq 0) 'Recovering a complete release must not warn about missing hosts.'
     $checksumLines = @(Get-Content -LiteralPath (Join-Path $releaseRoot 'rust/rustolonia-sys/host-checksums.txt') | Where-Object { $_ -and -not $_.StartsWith('#') })
-    Assert-True ($checksumLines.Count -eq 21) 'Complete release recovery must retain every host.'
+    Assert-True ($checksumLines.Count -eq 23) 'Complete release recovery must retain every host.'
 
     $desktopOnlySums = @($sumsLines | Where-Object { $_ -notlike '*-ios*.tar.gz' -and $_ -notlike '*-browser-wasm.tar.gz' -and $_ -notlike '*-drm.tar.gz' -and $_ -notlike '*-static.tar.gz' -and $_ -notlike '*.apk' })
     [IO.File]::WriteAllLines($sumsFile, [string[]]$desktopOnlySums)
     $releaseWarnings = @(Invoke-ChecksumsFromTestRelease $sumsFile 3>&1 | Where-Object { $_ -is [System.Management.Automation.WarningRecord] })
-    Assert-True ($releaseWarnings.Count -eq 5 -and $releaseWarnings[0].Message -match 'legacy desktop-only') 'Recovering a legacy release must warn that it has no iOS, browser, DRM, static or Android host.'
+    Assert-True ($releaseWarnings.Count -eq 6 -and $releaseWarnings[0].Message -match 'legacy desktop-only') 'Recovering a legacy release must warn about missing iOS, browser, DRM, static, musl and Android hosts.'
     $checksumLines = @(Get-Content -LiteralPath (Join-Path $releaseRoot 'rust/rustolonia-sys/host-checksums.txt') | Where-Object { $_ -and -not $_.StartsWith('#') })
     Assert-True ($checksumLines.Count -eq 6) 'Legacy release recovery must retain the desktop hosts.'
     Assert-Throws { & $prepareRelease -Checksums -SumsFile $sumsFile -RustoloniaRoot $releaseRoot } 'no entry for rustolonia-host-9\.8\.7-rc\.1-ios-arm64'
 
+    [IO.File]::WriteAllLines($sumsFile, [string[]]($sumsLines | Where-Object { $_ -notlike '*linux-musl-*-static.tar.gz' }))
+    $releaseWarnings = @(Invoke-ChecksumsFromTestRelease $sumsFile 3>&1 | Where-Object { $_ -is [System.Management.Automation.WarningRecord] })
+    Assert-True ($releaseWarnings.Count -eq 1 -and $releaseWarnings[0].Message -match 'no fully static Linux musl') 'Recovering an older static release must not require musl assets.'
+    [IO.File]::WriteAllLines($sumsFile, [string[]]($sumsLines | Where-Object { $_ -notlike '*linux-musl-x64-static.tar.gz' }))
+    Assert-Throws { Invoke-ChecksumsFromTestRelease $sumsFile } 'no entry for rustolonia-host-9\.8\.7-rc\.1-linux-musl-x64-static'
     [IO.File]::WriteAllLines($sumsFile, [string[]]($sumsLines | Where-Object { $_ -notlike '*iossimulator-arm64.tar.gz' }))
     Assert-Throws { Invoke-ChecksumsFromTestRelease $sumsFile } 'no entry for rustolonia-host-9\.8\.7-rc\.1-iossimulator-arm64'
     [IO.File]::WriteAllLines($sumsFile, [string[]]($sumsLines | Where-Object { $_ -notlike '*linux-arm64-drm.tar.gz' }))
@@ -859,7 +1078,7 @@ version = "0.1.0"
     & git -C $releaseRoot tag -d v9.8.7-rc.1 | Out-Null
     Assert-Throws { & $prepareRelease -Checksums -SumsFile $sumsFile -CommitAndTag -RustoloniaRoot $releaseRoot } 'already lists these hashes'
 
-    if ($RunNativeSmoke) {
+    if ($RunNativeSmoke -or $RunStaticNativeSmoke) {
         $nativeTempRoot = [IO.Path]::GetTempPath()
         if ($IsMacOS) {
             # /var is a symlink to /private/var. MSBuild canonicalizes the project
@@ -871,7 +1090,10 @@ version = "0.1.0"
         }
         $nativeScratch = Join-Path $nativeTempRoot ('rustolonia-native-' + [guid]::NewGuid().ToString('N'))
         New-Item -ItemType Directory -Path $nativeScratch | Out-Null
-        try { Test-NativeConsumer -Scratch $nativeScratch }
+        try {
+            if ($RunNativeSmoke) { Test-NativeConsumer -Scratch $nativeScratch }
+            if ($RunStaticNativeSmoke) { Test-NativeConsumer -Scratch $nativeScratch -Static }
+        }
         finally {
             if (Test-Path -LiteralPath $nativeScratch) { Remove-Item -LiteralPath $nativeScratch -Recurse -Force }
         }

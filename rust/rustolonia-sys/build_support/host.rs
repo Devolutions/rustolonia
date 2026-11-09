@@ -32,14 +32,17 @@ pub fn rid_for_target(target: &str) -> Option<&'static str> {
             target.contains("-windows-msvc"),
             target.contains("-apple-darwin"),
             target.contains("-linux-gnu"),
+            target.contains("-linux-musl"),
             arm64,
         ) {
-            (true, _, _, false) => "win-x64",
-            (true, _, _, true) => "win-arm64",
-            (_, true, _, false) => "osx-x64",
-            (_, true, _, true) => "osx-arm64",
-            (_, _, true, false) => "linux-x64",
-            (_, _, true, true) => "linux-arm64",
+            (true, _, _, _, false) => "win-x64",
+            (true, _, _, _, true) => "win-arm64",
+            (_, true, _, _, false) => "osx-x64",
+            (_, true, _, _, true) => "osx-arm64",
+            (_, _, true, _, false) => "linux-x64",
+            (_, _, true, _, true) => "linux-arm64",
+            (_, _, _, true, false) => "linux-musl-x64",
+            (_, _, _, true, true) => "linux-musl-arm64",
             _ => return None,
         },
     )
@@ -76,6 +79,53 @@ pub fn validate_backend(target: &str, linux_drm: bool) -> Result<(), String> {
         return Err(format!(
             "the `linux-drm` feature requires an x86_64/aarch64 linux-gnu target, not {target}"
         ));
+    }
+    Ok(())
+}
+
+pub fn validate_static_crt(
+    target: &str,
+    static_host: bool,
+    target_features: &str,
+) -> Result<(), String> {
+    if static_host
+        && (target.contains("-windows-msvc") || target.contains("-linux-musl"))
+        && !target_features
+            .split(',')
+            .any(|feature| feature == "crt-static")
+    {
+        return Err(format!(
+            "the `static-host` feature on {} requires the static C runtime; \
+             configure Rust with `-C target-feature=+crt-static`",
+            if target.contains("-linux-musl") {
+                "Linux musl"
+            } else {
+                "Windows"
+            }
+        ));
+    }
+    Ok(())
+}
+
+pub fn validate_macos_deployment_target(
+    target: &str,
+    static_host: bool,
+    deployment_target: Option<&str>,
+) -> Result<(), String> {
+    if static_host && target.contains("-apple-darwin") {
+        let valid = deployment_target.is_some_and(|version| {
+            let parts = version.split('.').collect::<Vec<_>>();
+            !parts.is_empty()
+                && parts.len() <= 3
+                && parts.iter().all(|part| part.parse::<u32>().is_ok())
+                && parts[0].parse::<u32>().is_ok_and(|major| major >= 12)
+        });
+        if !valid {
+            return Err("the `static-host` feature on macOS requires \
+                 MACOSX_DEPLOYMENT_TARGET=12.0 or newer; Rust's older default can \
+                 produce an executable that cannot load the system Swift runtime"
+                .to_owned());
+        }
     }
     Ok(())
 }
@@ -187,6 +237,82 @@ pub fn static_link_name(file: &str) -> &str {
     }
 }
 
+fn required_static_native_libraries(rid: &str) -> &'static [&'static str] {
+    if rid.starts_with("win-") {
+        &[
+            "SkiaSharp.lib",
+            "skia.lib",
+            "libHarfBuzzSharp.lib",
+            "libGLESv2_static.lib",
+            "libANGLE_static.lib",
+        ]
+    } else if rid.starts_with("osx-") {
+        &[
+            "libSkiaSharp.a",
+            "libskia.a",
+            "libHarfBuzzSharp.a",
+            "libAvaloniaNative.a",
+        ]
+    } else if rid.starts_with("linux-musl-") {
+        &[
+            "libSkiaSharp.a",
+            "libskia.a",
+            "libHarfBuzzSharp.a",
+            "libfontconfig.a",
+            "libfreetype.a",
+            "libstdc++.a",
+            "libgcc.a",
+            "libgcc_eh.a",
+            "libX11.a",
+            "libXrandr.a",
+            "libXi.a",
+            "libXext.a",
+            "libXcursor.a",
+            "libXfixes.a",
+            "libICE.a",
+            "libSM.a",
+            "libSystem.Security.Cryptography.Native.OpenSsl.a",
+            "libssl.a",
+            "libcrypto.a",
+        ]
+    } else {
+        &[
+            "libSkiaSharp.a",
+            "libskia.a",
+            "libHarfBuzzSharp.a",
+            "libfontconfig.a",
+            "libfreetype.a",
+            "libstdc++.a",
+            "libgcc.a",
+            "libgcc_eh.a",
+        ]
+    }
+}
+
+fn is_shared_graphics_library(rid: &str, file: &str) -> bool {
+    let file = file.to_ascii_lowercase();
+    if rid.starts_with("win-") {
+        matches!(
+            file.as_str(),
+            "libskiasharp.dll" | "libharfbuzzsharp.dll" | "av_libglesv2.dll"
+        )
+    } else if rid.starts_with("osx-") {
+        matches!(
+            file.as_str(),
+            "libskiasharp.dylib" | "libharfbuzzsharp.dylib" | "libavalonianative.dylib"
+        )
+    } else {
+        ["libskiasharp.so", "libharfbuzzsharp.so"]
+            .iter()
+            .any(|base| {
+                file == *base
+                    || file
+                        .strip_prefix(base)
+                        .is_some_and(|tail| tail.starts_with('.'))
+            })
+    }
+}
+
 /// What the staged host must match.
 pub struct Expected<'a> {
     pub version: &'a str,
@@ -218,14 +344,62 @@ pub fn validate_host_dir(
         ));
     }
     if expected.static_host {
+        for entry in
+            fs::read_dir(dir).map_err(|error| format!("cannot read {}: {error}", dir.display()))?
+        {
+            let entry = entry.map_err(|error| format!("cannot read {}: {error}", dir.display()))?;
+            let name = entry.file_name();
+            let shared = name.to_str().is_some_and(|name| {
+                is_shared_graphics_library(expected.rid, name)
+                    || (expected.rid.starts_with("linux-musl-")
+                        && (name.ends_with(".so") || name.contains(".so.")))
+            });
+            if entry.path().is_file() && shared {
+                let kind = if expected.rid.starts_with("linux-musl-") {
+                    "shared native library"
+                } else {
+                    "shared native graphics library"
+                };
+                return Err(format!(
+                    "{} contains a {kind} {}; use a clean static host directory",
+                    dir.display(),
+                    name.to_string_lossy()
+                ));
+            }
+        }
         let link_path = dir.join(LINK_FILE);
         let link_file = fs::read_to_string(&link_path)
             .map_err(|error| format!("cannot read {}: {error}", link_path.display()))?;
-        for directive in parse_link_file(&link_file)? {
+        let directives = parse_link_file(&link_file)?;
+        for directive in &directives {
             if let LinkDirective::Static(file) | LinkDirective::WholeStatic(file) = directive {
-                if !dir.join(&file).is_file() {
+                if !dir.join(file).is_file() {
                     return Err(format!("{} does not contain {file}", dir.display()));
                 }
+            }
+            let static_musl_directive = match directive {
+                LinkDirective::Static(_) | LinkDirective::WholeStatic(_) => true,
+                LinkDirective::System(name) => {
+                    matches!(name.as_str(), "c" | "dl" | "m" | "pthread" | "rt")
+                }
+                _ => false,
+            };
+            if expected.rid.starts_with("linux-musl-") && !static_musl_directive {
+                return Err(format!(
+                    "{} contains a non-static Linux musl link directive: {directive:?}",
+                    link_path.display()
+                ));
+            }
+        }
+        for &required in required_static_native_libraries(expected.rid) {
+            let linked = directives.iter().any(|directive| {
+                matches!(directive, LinkDirective::Static(file) | LinkDirective::WholeStatic(file) if file == required)
+            });
+            if !linked {
+                return Err(format!(
+                    "{} does not link {required}; rebuild the host with static native dependencies",
+                    link_path.display()
+                ));
             }
         }
     }
@@ -339,6 +513,17 @@ pub fn resolve(config: &Config) -> Result<Resolution, String> {
     }
 
     let rid = rid_for_target(&config.target);
+    if rid.is_some_and(|rid| rid.starts_with("linux-musl-"))
+        && !config.static_host
+        && config.host_dir.is_none()
+        && !config.skip_download
+    {
+        return Err(
+            "the prebuilt Linux musl host requires the `static-host` feature; \
+             use RUSTOLONIA_HOST_DIR or `no-download` for a custom host"
+                .into(),
+        );
+    }
 
     if let Some(dir) = &config.host_dir {
         let rid = rid.ok_or_else(|| unsupported_target(&config.target))?;
@@ -420,7 +605,7 @@ fn expected<'a>(config: &'a Config, rid: &'a str) -> Expected<'a> {
 fn unsupported_target(target: &str) -> String {
     format!(
         "rustolonia has no prebuilt host for target {target}; supported targets are \
-         x86_64/aarch64 windows-msvc, apple-darwin and linux-gnu. Set \
+         x86_64/aarch64 windows-msvc, apple-darwin, linux-gnu and linux-musl (static only). Set \
          RUSTOLONIA_HOST_DIR or enable the `no-download` feature"
     )
 }

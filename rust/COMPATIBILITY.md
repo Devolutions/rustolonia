@@ -716,10 +716,13 @@ no difference.
 
 ## RID artifacts
 
-Release artifacts are per RID and retain their exact names:
+Shared release artifacts are per RID and retain their exact names:
 `rustolonia_host.dll` (`win-*`), `librustolonia_host.so` (`linux-*`), and
-`librustolonia_host.dylib` (`osx-*`). Each artifact directory contains the matching
-native dependencies, `licence.md`, a deterministic `sbom.cdx.json` delivery
+`librustolonia_host.dylib` (`osx-*`). Static desktop archives use
+`rustolonia_host.lib` on Windows and `librustolonia_host.a` elsewhere.
+The fully static Linux musl hosts use their own `linux-musl-*` RIDs and are
+never interchangeable with the Linux GNU hosts. Each artifact directory
+contains the matching native dependencies, `licence.md`, a deterministic `sbom.cdx.json` delivery
 inventory, and a `checksums.sha256` manifest covering every delivered file
 except the manifest itself. Verify it before distribution or launch. Every RID
 maps to an explicit native Rust target triple; packaging and executable tests
@@ -734,9 +737,10 @@ Official desktop release binaries must be signed with the platform-appropriate
 signing identity before the SBOM and checksums are generated. The optional
 `AVALONIA_RUST_SIGN_COMMAND` hook is a wrapper executable/script path that
 receives an artifact path as a separate argument; unsigned local developer
-artifacts are not release artifacts. iOS host archives contain link inputs
-rather than an installable app; the app developer signs and provisions the
-final device app and its embedded frameworks.
+artifacts are not release artifacts. Static host archives contain link inputs
+rather than an installable app; the app developer signs the final executable.
+The iOS app developer also provisions the final device app and its embedded
+frameworks.
 
 The Rust host and standalone Rust artifacts are not NuGet packages, so
 `nukebuild/SbomGenerator.cs` remains unchanged. Their per-RID delivery scope

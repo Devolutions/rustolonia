@@ -120,7 +120,11 @@ function Read-ConsumerManifest {
             # Bundle metadata names stay portable across case-sensitive and
             # case-insensitive destination filesystems.
             $comparison = [StringComparison]::OrdinalIgnoreCase
-            if (@('sbom.cdx.json', 'checksums.sha256') | Where-Object { $noticeName.Equals($_, $comparison) }) {
+            $reserved = @('sbom.cdx.json', 'checksums.sha256')
+            if ($Linkage -eq 'Static') {
+                $reserved += @('STATIC-NATIVE-NOTICES.txt', 'STATIC-SKIASHARP-PROVENANCE.json', 'STATIC-SKIASHARP-SOURCE-NOTICES.txt', 'STATIC-ANGLE-PROVENANCE.json', 'STATIC-LINUX-NOTICES.txt', 'STATIC-LINUX-PROVENANCE.tsv', 'STATIC-LINUX-MUSL-SOURCES.tsv')
+            }
+            if ($reserved | Where-Object { $noticeName.Equals($_, $comparison) }) {
                 throw "Invalid consumer manifest: noticeFiles entry uses a reserved bundle filename: $noticeName"
             }
             if (@($noticePaths | Where-Object { $noticeName.Equals((Split-Path -Leaf $_), $comparison) }).Count -gt 0) {
@@ -153,6 +157,7 @@ function Invoke-ConsumerPackage {
     Assert-ArtifactBundleDestination -BundlePath $paths.outputDirectory
     $rid = [string]$Document.rid
     $target = Get-RidTargetInfo -Rid $rid -LinuxBackend $LinuxBackend
+    Assert-RidLinkage -Rid $rid -Linkage $Linkage
     $rustoloniaRootPath = (Resolve-Path -LiteralPath $RustoloniaRoot).Path
     Assert-ConsumerTools -Rid $rid -RustoloniaRoot $rustoloniaRootPath -ConsumerRoot $Document._manifestDirectory
     Assert-ConsumerSource -ProducerRoot $ProducerRootPath -RustoloniaRoot $rustoloniaRootPath
@@ -161,6 +166,9 @@ function Invoke-ConsumerPackage {
     if (-not $UpdateLockFile) { $metadataCommand += '--locked' }
     $metadata = Invoke-Logged -WorkingDirectory $Document._manifestDirectory -Command $metadataCommand | ConvertFrom-Json -AsHashtable
     $cargoLockPath = Join-Path $metadata.workspace_root 'Cargo.lock'
+    $staticCargoFeatures = if ($Linkage -eq 'Static') {
+        @(Get-StaticHostCargoFeatures -Metadata $metadata -PackageName $Document.packageName)
+    } else { @() }
     $hostProject = Join-Path $rustoloniaRootPath 'host' 'Avalonia.Host.csproj'
     $projectionTool = Join-Path $rustoloniaRootPath 'projection' 'Avalonia.ViewModelProjection.Tool' 'Avalonia.ViewModelProjection.Tool.csproj'
     $licenseFile = Join-Path $ProducerRootPath 'licence.md'
@@ -211,7 +219,7 @@ function Invoke-ConsumerPackage {
         }
         Set-WindowsStaticCrt -Triple $target.Triple
         try {
-            $features = if ($StaticHostDirectory) { @('rustolonia/static-host') } else { @() }
+            $features = if ($StaticHostDirectory) { $staticCargoFeatures } else { @() }
             $cargoArgs = New-CargoBuildCommand -ManifestPath $paths.cargoManifest -PackageName $Document.packageName -BinaryName $Document.binary -TargetTriple $target.Triple -Configuration $Document.configuration -Features $features
             $cargoArgs += '--locked'
             Invoke-Logged -WorkingDirectory $Document._manifestDirectory -Command $cargoArgs
@@ -256,18 +264,14 @@ function Invoke-ConsumerPackage {
         }
         Invoke-ArtifactBundleTransaction -BundlePath $bundle -Rid $rid -Build {
         param($bundle)
-        if ($static) {
-            # The host is inside the executable; ship only its shared native
-            # dependencies.
-            Get-ChildItem -LiteralPath $staging -File | Where-Object {
-                $_.Extension -in @('.dll', '.so', '.dylib') -or $_.Name -like '*.so.*'
-            } | Copy-Item -Destination $bundle
-        }
-        else {
+        if (-not $static) {
             Copy-BundleFiles -SourceDirectory $staging -DestinationDirectory $bundle -HostFile $hostFile -Rid $rid
         }
         Copy-Item -LiteralPath $executable -Destination (Join-Path $bundle (Split-Path -Leaf $executable))
         Copy-BundleNotices -ProducerRoot $ProducerRootPath -RustoloniaRoot $rustoloniaRootPath -DestinationDirectory $bundle
+        if ($static) {
+            Copy-StaticNativeNotices -ProjectAssetsJsonPath $consumerHostAssets -DestinationDirectory $bundle -Rid $rid -StaticPublishDirectory $staging
+        }
         foreach ($notice in $Document._noticeFiles) {
             $noticeDestination = Join-Path $bundle (Split-Path -Leaf $notice)
             if (Test-Path -LiteralPath $noticeDestination) {
@@ -306,4 +310,15 @@ if ($LinuxBackend -eq 'Drm') {
 if ($Linkage -eq 'Static') {
     $document._paths.outputDirectory += '-static'
 }
-Invoke-ConsumerPackage $producer $document
+$previousDeploymentTarget = [Environment]::GetEnvironmentVariable('MACOSX_DEPLOYMENT_TARGET', 'Process')
+$setDeploymentTarget = $Linkage -eq 'Static' -and $IsMacOS -and [string]::IsNullOrWhiteSpace($previousDeploymentTarget)
+try {
+    if ($setDeploymentTarget) { $env:MACOSX_DEPLOYMENT_TARGET = '12.0' }
+    Invoke-ConsumerPackage $producer $document
+}
+finally {
+    if ($setDeploymentTarget) {
+        if ($null -eq $previousDeploymentTarget) { Remove-Item Env:MACOSX_DEPLOYMENT_TARGET -ErrorAction SilentlyContinue }
+        else { $env:MACOSX_DEPLOYMENT_TARGET = $previousDeploymentTarget }
+    }
+}

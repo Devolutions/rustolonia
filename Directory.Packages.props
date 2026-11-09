@@ -17,6 +17,7 @@
     <PackageVersion Include="MicroCom.CodeGenerator" Version="0.11.6" />
     <PackageVersion Include="MicroCom.CodeGenerator.MSBuild" Version="0.11.6" />
     <PackageVersion Include="MicroCom.CodeGenerator.Roslyn" Version="0.11.6" />
+    <PackageVersion Include="Summpot.StaticAvalonia" Version="3.119.4-avalonia.12.1.4-r1" />
     <PackageVersion Include="xunit.v3.mtp-v2" Version="3.2.2" />
     <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="2.0.2" />
   </ItemGroup>

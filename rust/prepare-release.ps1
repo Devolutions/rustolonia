@@ -147,7 +147,7 @@ foreach ($line in $sumsLines) {
     if (-not $isTarball -and $name -cne $androidAsset) { continue }
     $entries[$name] = $hash
 }
-$requiredRids = @($script:RidTargets.Keys)
+$requiredRids = @($script:SharedHostRids)
 $hasIosAssets = @($script:IosHostRids | Where-Object {
     $entries.Contains((Get-HostAssetName -Version $version -Rid $_))
 }).Count -gt 0
@@ -174,7 +174,7 @@ if ($FromRelease -and @($drmAssets | Where-Object { $entries.Contains($_) }).Cou
 else {
     $requiredAssets += $drmAssets
 }
-$staticAssets = @($script:RidTargets.Keys | ForEach-Object {
+$staticAssets = @($script:SharedHostRids | ForEach-Object {
     Get-HostAssetName -Version $version -Rid $_ -Linkage Static
 }) + @('linux-x64', 'linux-arm64' | ForEach-Object {
     Get-HostAssetName -Version $version -Rid $_ -LinuxBackend Drm -Linkage Static
@@ -184,6 +184,15 @@ if ($FromRelease -and @($staticAssets | Where-Object { $entries.Contains($_) }).
 }
 else {
     $requiredAssets += $staticAssets
+}
+$muslAssets = @($script:MuslStaticHostRids | ForEach-Object {
+    Get-HostAssetName -Version $version -Rid $_ -Linkage Static
+})
+if ($FromRelease -and @($muslAssets | Where-Object { $entries.Contains($_) }).Count -eq 0) {
+    Write-Warning "Release v$version has no fully static Linux musl hosts."
+}
+else {
+    $requiredAssets += $muslAssets
 }
 if ($FromRelease -and -not $entries.Contains($androidAsset)) {
     Write-Warning "Release v$version has no Android host checksum; treating it as a release without an Android host."

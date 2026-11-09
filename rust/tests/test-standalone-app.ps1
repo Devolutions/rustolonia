@@ -35,7 +35,7 @@ verifies download and packaging without launching on a host lacking DRM.
 ./rust/tests/test-standalone-app.ps1 -Distributable -KeepWorkDirectory
 #>
 param(
-    [ValidateSet('win-x64', 'win-arm64', 'linux-x64', 'linux-arm64', 'osx-x64', 'osx-arm64')]
+    [ValidateSet('win-x64', 'win-arm64', 'linux-x64', 'linux-arm64', 'linux-musl-x64', 'linux-musl-arm64', 'osx-x64', 'osx-arm64')]
     [string]$Rid,
     [ValidateSet('X11', 'Drm')][string]$LinuxBackend = 'X11',
     [ValidateSet('Shared', 'Static')][string]$Linkage = 'Shared',
@@ -163,6 +163,85 @@ fn main() -> rustolonia::Result<()> {
     })
 }
 '@ | Set-Content -LiteralPath (Join-Path $appDir 'src' 'main.rs')
+if ($Rid -cin $script:MuslStaticHostRids) {
+    @'
+use rustolonia::{
+    App, Button, OpenFilePickerOptions, Orientation, PickerOutcome, StackPanel, TextBlock, TextBox,
+    Window,
+};
+
+fn main() -> rustolonia::Result<()> {
+    App::load_from_env()?.run(|scope| {
+        let editor = TextBox::new()?.text("initial")?;
+        let editor_for_event = editor.clone();
+        let editor = editor.on_text_changed(scope, move |_| {
+            println!(
+                "edited={}",
+                editor_for_event.get_text().expect("read text").expect("text is present")
+            );
+        })?;
+        let shutdown = scope.clone();
+        let button = Button::new()?
+            .height(80.0)?
+            .content(Some(&TextBlock::new()?.text("Stop")?))?
+            .on_click(scope, move |_| {
+                println!("clicked");
+                shutdown.shutdown().expect("shutdown failed");
+            })?;
+        let services_scope = scope.clone();
+        let services = Button::new()?
+            .height(80.0)?
+            .content(Some(&TextBlock::new()?.text("Check desktop services")?))?
+            .on_click(scope, move |_| {
+                let task_scope = services_scope.clone();
+                services_scope
+                    .spawn(async move {
+                        let window = task_scope.main_window().expect("main window");
+                        task_scope
+                            .clipboard_set_text(&window, "static-clipboard")
+                            .expect("start clipboard write")
+                            .await
+                            .expect("clipboard write");
+                        let text = task_scope
+                            .clipboard_get_text(&window)
+                            .expect("start clipboard read")
+                            .await
+                            .expect("clipboard read");
+                        println!("clipboard={}", text.expect("clipboard text"));
+                        let result = task_scope
+                            .open_file_picker(
+                                &window,
+                                &OpenFilePickerOptions::new().title("Rustolonia static picker probe"),
+                            )
+                            .expect("start picker")
+                            .await
+                            .expect("picker result");
+                        match result {
+                            PickerOutcome::Cancelled => println!("picker=cancelled"),
+                            PickerOutcome::Selected(_) => panic!("picker unexpectedly selected a file"),
+                        }
+                    })
+                    .expect("spawn desktop services probe");
+            })?;
+        scope.mount(
+            Window::new()?
+                .title("Rustolonia static musl probe")?
+                .width(400.0)?
+                .height(250.0)?
+                .content(Some(
+                    &StackPanel::new()?
+                        .orientation(Orientation::Vertical)?
+                        .child(editor)?
+                        .child(button)?
+                        .child(services)?,
+                ))?,
+        )
+    })?;
+    println!("stopped");
+    Ok(())
+}
+'@ | Set-Content -LiteralPath (Join-Path $appDir 'src' 'main.rs')
+}
 if ($LinuxBackend -eq 'Drm') {
     Copy-Item -LiteralPath (Join-Path $rustDir 'rustolonia/examples/embedded_linux.rs') `
         -Destination (Join-Path $appDir 'src/main.rs') -Force
@@ -174,6 +253,7 @@ try {
         -AppManifest (Join-Path $appDir 'Cargo.toml') -AppName $appName -ShipHost:$Distributable `
         -UseCommittedChecksums:$UseCommittedChecksums `
         -BuildOnly:$BuildOnly `
+        -MuslInteraction:($Rid -cin $script:MuslStaticHostRids) `
         -LaunchSeconds $LaunchSeconds
     $source = if ($GitRepository) { "git tag $GitTag" } else { "packaged crates" }
     Write-Host "Standalone app built from rustolonia $version $source and the $Rid ($LinuxBackend, $Linkage) host tarball."

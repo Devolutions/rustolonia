@@ -7,6 +7,7 @@ NativeAOT host selects one Avalonia windowing backend at publish time:
 | --- | --- | --- | --- |
 | Windows | `win-x64`, `win-arm64` | Win32 | `build.ps1` |
 | Linux | `linux-x64`, `linux-arm64` | X11 | `build.ps1` |
+| Linux, fully static | `linux-musl-x64`, `linux-musl-arm64` | X11, software rendering | `build-linux-musl-release-host.sh` |
 | Embedded Linux (experimental) | `linux-x64`, `linux-arm64` | DRM/KMS, single view | `build.ps1 -LinuxBackend Drm` |
 | macOS | `osx-x64`, `osx-arm64` | Avalonia.Native | `build.ps1` |
 | iOS (experimental) | `ios-arm64`, `iossimulator-arm64`, `iossimulator-x64` | Avalonia.iOS | `samples/ios/build.sh` |
@@ -20,17 +21,23 @@ a shared library: UIKit owns the event loop and a Rust static library supplies
 one main view. See the [iOS sample](../samples/ios/README.md) for requirements
 and limitations.
 
-Linux publishes the host with a `$ORIGIN` runpath. Consequently
+The default shared Linux host has a `$ORIGIN` runpath. Consequently
 `libSkiaSharp.so` and `libHarfBuzzSharp.so` are resolved beside
 `librustolonia_host.so` without requiring a process-wide `LD_LIBRARY_PATH`.
 
-macOS publishes against `Avalonia.Native` and loads
+The default shared macOS host publishes against `Avalonia.Native` and loads
 `libAvaloniaNative.dylib` from `@loader_path`. `build.ps1`, `package.ps1`,
 and `build-app.ps1` generate the native COM headers and invoke the producer's
 `xcodebuild` project with an explicit target `ARCHS` and
 `CONFIGURATION_BUILD_DIR=Build/Products/Release`, so the generated
 `libAvalonia.Native.OSX.dylib` is included by `Avalonia.Native` as
 `libAvaloniaNative.dylib` in the NativeAOT publish output.
+
+The opt-in desktop `static-host` feature links the host and project graphics
+libraries into the Rust executable. On Linux GNU, macOS, and Windows, system
+libraries remain dynamic. Linux musl targets instead select a separate
+fully static X11 host; see [static host packaging](PRODUCTIZATION.md#prebuilt-host-tarballs).
+The Linux GNU graphics build continues to target the glibc 2.35 baseline.
 
 `build.ps1` publishes the host and runs `cargo test --workspace`. It requires
 the requested architecture to match `RuntimeInformation.OSArchitecture` on
@@ -87,6 +94,40 @@ pwsh ./rust/build.ps1
 
 The X11 host requires the standard Avalonia Linux runtime libraries, including
 X11, fontconfig, and OpenGL/EGL or software-rendering dependencies.
+
+### Fully static Linux executable
+
+The `linux-musl-x64` and `linux-musl-arm64` release hosts are static-only,
+use X11 software rendering, and do not load shared libraries. They are separate
+from the GNU/glibc and DRM assets. Enable `static-host` and select a Rust musl
+target; the `linux-drm` feature is not supported with these hosts. For x64:
+
+```toml
+[dependencies]
+rustolonia = { version = "=X.Y.Z", default-features = false, features = ["static-host"] }
+```
+
+```bash
+rustup target add x86_64-unknown-linux-musl
+# Install the native musl compiler/linker (for example, musl-tools on Ubuntu).
+CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER=musl-gcc \
+RUSTFLAGS="-C target-feature=+crt-static" \
+cargo build --release --target x86_64-unknown-linux-musl
+```
+
+For ARM64, use `aarch64-unknown-linux-musl` and the matching target linker.
+Cross-compilation needs an architecture-matching musl toolchain. The target's
+static CRT is required and the host build fails if it is disabled. A release
+containing the musl archives is required; existing releases do not contain
+them.
+
+With the application's own native dependencies also linked statically, the
+executable has no ELF interpreter or `DT_NEEDED` entries. It still needs an
+accessible X server, usable fonts and fontconfig data, and any resources the
+application uses, such as TLS certificate roots or D-Bus services.
+Hardware GL and dynamically loaded GTK integrations are unavailable in this
+variant. Application dependencies that require loading shared modules at
+runtime are not supported by static musl.
 
 ### Embedded Linux: direct DRM/KMS display
 
@@ -651,12 +692,14 @@ Release tarballs (`rust/package-host.ps1`) define the minimum OS a published
 | --- | --- | --- |
 | `win-x64`, `win-arm64` | `windows-latest` / `windows-11-arm` runners | Windows 10 1607 / Server 2016 (.NET 10 support floor) |
 | `linux-x64`, `linux-arm64` | `ubuntu-22.04` / `ubuntu-22.04-arm` runners | glibc 2.35 |
+| `linux-musl-x64`, `linux-musl-arm64` | Alpine 3.24 on the matching architecture | Linux and X11; no glibc dependency |
 | `osx-x64`, `osx-arm64` | `macos-14` (Apple silicon) runners for both; osx-x64 is cross-built and smoke-tested under Rosetta 2; `MACOSX_DEPLOYMENT_TARGET=12.0` | macOS 12 |
 
-Linux hosts are glibc-only; musl RIDs are not published. Desktop hosts need an X11
-display (XWayland works), the X11 client libraries (`libX11`, `libICE`,
-`libSM`) and fontconfig at runtime. DRM variants retain the same glibc floor,
-but use the graphics/input dependencies and permissions described in the
+Desktop hosts need an X11 display (XWayland works) and usable fonts. GNU
+hosts additionally need the X11 client libraries (`libX11`, `libICE`, `libSM`)
+and fontconfig at runtime; the static musl variant links these libraries.
+DRM variants retain the GNU glibc floor, but use the graphics/input
+dependencies and permissions described in the
 [embedded Linux section](#embedded-linux-direct-drmkms-display), not X11.
 
 ## Cross-platform gate result

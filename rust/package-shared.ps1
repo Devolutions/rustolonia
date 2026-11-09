@@ -26,10 +26,14 @@ $script:RidTargets = @{
     'win-arm64'   = @{ Triple = 'aarch64-pc-windows-msvc'; Platform = 'Win32'; HostExtension = '.dll'; HostFileName = 'rustolonia_host.dll'; ExeExtension = '.exe'; OS = 'Windows'; Arch = 'arm64' }
     'linux-x64'   = @{ Triple = 'x86_64-unknown-linux-gnu'; Platform = 'X11'; HostExtension = '.so'; HostFileName = 'librustolonia_host.so'; ExeExtension = ''; OS = 'Linux'; Arch = 'x64' }
     'linux-arm64' = @{ Triple = 'aarch64-unknown-linux-gnu'; Platform = 'X11'; HostExtension = '.so'; HostFileName = 'librustolonia_host.so'; ExeExtension = ''; OS = 'Linux'; Arch = 'arm64' }
+    'linux-musl-x64'   = @{ Triple = 'x86_64-unknown-linux-musl'; Platform = 'X11'; HostExtension = '.so'; HostFileName = 'librustolonia_host.so'; ExeExtension = ''; OS = 'Linux'; Arch = 'x64' }
+    'linux-musl-arm64' = @{ Triple = 'aarch64-unknown-linux-musl'; Platform = 'X11'; HostExtension = '.so'; HostFileName = 'librustolonia_host.so'; ExeExtension = ''; OS = 'Linux'; Arch = 'arm64' }
     'osx-x64'     = @{ Triple = 'x86_64-apple-darwin'; Platform = 'OSX'; HostExtension = '.dylib'; HostFileName = 'librustolonia_host.dylib'; ExeExtension = ''; OS = 'macOS'; Arch = 'x64' }
     'osx-arm64'   = @{ Triple = 'aarch64-apple-darwin'; Platform = 'OSX'; HostExtension = '.dylib'; HostFileName = 'librustolonia_host.dylib'; ExeExtension = ''; OS = 'macOS'; Arch = 'arm64' }
 }
 
+$script:MuslStaticHostRids = @('linux-musl-x64', 'linux-musl-arm64')
+$script:SharedHostRids = @($script:RidTargets.Keys | Where-Object { $_ -cnotin $script:MuslStaticHostRids })
 $script:IosHostRids = @('ios-arm64', 'iossimulator-arm64', 'iossimulator-x64')
 # The browser relink kit (rust/package-browser-host.ps1): one for every browser.
 $script:BrowserHostRid = 'browser-wasm'
@@ -51,9 +55,19 @@ function Get-RidTargetInfo {
         if ($target.OS -ne 'Linux') {
             throw 'The Drm backend requires a Linux RID.'
         }
+        if ($Rid -cin $script:MuslStaticHostRids) {
+            throw 'The Drm backend requires a glibc Linux RID.'
+        }
         $target.Platform = 'LinuxDrm'
     }
     return $target
+}
+
+function Assert-RidLinkage {
+    param([string]$Rid, [string]$Linkage)
+    if ($Rid -cin $script:MuslStaticHostRids -and $Linkage -ne 'Static') {
+        throw "The $Rid host is available only with static linkage."
+    }
 }
 
 function New-DotnetPublishCommand {
@@ -245,6 +259,29 @@ function Get-CurrentRuntimeArchitecture {
         'Arm64' { return 'arm64' }
         default { throw "Unsupported CPU architecture: $([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)" }
     }
+}
+
+function Get-StaticHostCargoFeatures {
+    param(
+        [Parameter(Mandatory)][hashtable]$Metadata,
+        [Parameter(Mandatory)][string]$PackageName
+    )
+
+    $packages = @($Metadata.packages | Where-Object {
+        $_.name -ceq $PackageName -and $_.id -in $Metadata.workspace_members
+    })
+    if ($packages.Count -ne 1) {
+        throw "Cannot find consumer package '$PackageName' in the Cargo workspace."
+    }
+    $aliases = @($packages[0].dependencies | Where-Object {
+        $_.name -ceq 'rustolonia' -and $null -eq $_.kind
+    } | ForEach-Object {
+        if ($_.rename) { $_.rename } else { $_.name }
+    } | Select-Object -Unique)
+    if ($aliases.Count -eq 0) {
+        throw "Static consumer package '$PackageName' must depend directly on rustolonia."
+    }
+    return @($aliases | ForEach-Object { "$_/static-host" })
 }
 
 function Get-DefaultConsumerRid {
@@ -704,7 +741,7 @@ function Copy-BundleFiles {
     }
 
     $target = Get-RidTargetInfo -Rid $Rid
-    if ($target.Platform -eq 'OSX' -and -not (Test-Path -LiteralPath (Join-Path $resolvedSource 'libAvaloniaNative.dylib') -PathType Leaf)) {
+    if (-not $Static -and $target.Platform -eq 'OSX' -and -not (Test-Path -LiteralPath (Join-Path $resolvedSource 'libAvaloniaNative.dylib') -PathType Leaf)) {
         throw 'libAvaloniaNative.dylib was not published with the macOS host.'
     }
     Copy-Item -LiteralPath $HostFile -Destination $resolvedDestination
@@ -717,10 +754,8 @@ function Copy-BundleFiles {
     }
     $artifactFiles = Get-ChildItem -LiteralPath $resolvedSource -File | Where-Object {
         $_.FullName -ne $HostFile -and (
-            $_.Extension -in @('.dll', '.so', '.dylib') -or
-            $_.Name -like '*.so.*' -or
-            $_.Extension -in $staticExtensions -or
-            ($Static -and $_.Name -eq 'rustolonia-host-link.txt')
+            ($Static -and ($_.Extension -in $staticExtensions -or $_.Name -eq 'rustolonia-host-link.txt')) -or
+            (-not $Static -and ($_.Extension -in @('.dll', '.so', '.dylib') -or $_.Name -like '*.so.*'))
         )
     }
 
@@ -740,6 +775,219 @@ function Copy-BundleNotices {
     foreach ($name in @('LICENSE', 'THIRD-PARTY-NOTICES.txt')) {
         Copy-Item -LiteralPath (Join-Path $RustoloniaRoot $name) -Destination $DestinationDirectory
     }
+}
+
+function Assert-LinuxMuslStaticProvenance {
+    param([string]$Rid, [string]$Directory)
+
+    $sources = Join-Path $Directory 'STATIC-LINUX-MUSL-SOURCES.tsv'
+    $pinned = Join-Path $PSScriptRoot 'linux-musl-static-sources.tsv'
+    $provenance = Join-Path $Directory 'STATIC-LINUX-PROVENANCE.tsv'
+    $notices = Join-Path $Directory 'STATIC-LINUX-NOTICES.txt'
+    foreach ($path in @($sources, $pinned, $provenance, $notices)) {
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "Missing static musl metadata: $path" }
+    }
+    $sourceHash = (Get-FileHash -LiteralPath $sources -Algorithm SHA256).Hash
+    if ($sourceHash -ne (Get-FileHash -LiteralPath $pinned -Algorithm SHA256).Hash) {
+        throw 'Static musl source metadata does not match the pinned source manifest.'
+    }
+    $pins = @{}
+    foreach ($line in Get-Content -LiteralPath $pinned) {
+        if ([string]::IsNullOrWhiteSpace($line) -or $line.StartsWith('#')) { continue }
+        $fields = $line -split "`t"
+        if ($fields.Count -ne 5 -or $fields[0] -notmatch '^lib[A-Za-z0-9_+.-]+\.a$' -or
+            $fields[4] -notmatch '^[0-9a-f]{128}$' -or $pins.ContainsKey($fields[0])) {
+            throw "Invalid pinned musl source metadata: $line"
+        }
+        $pins[$fields[0]] = $fields
+    }
+    $architecture = if ($Rid -eq 'linux-musl-x64') { 'x86_64' } else { 'aarch64' }
+    $seen = @{}
+    $noticeHash = $null
+    $recordedSourceHash = $null
+    foreach ($line in Get-Content -LiteralPath $provenance) {
+        if ($line -match '^# notices-sha256\t([0-9a-f]{64})$') {
+            if ($noticeHash) { throw 'Duplicate static musl notice hash.' }
+            $noticeHash = $Matches[1]
+            continue
+        }
+        if ($line -match '^# sources-sha256\t([0-9a-f]{64})$') {
+            if ($recordedSourceHash) { throw 'Duplicate static musl source hash.' }
+            $recordedSourceHash = $Matches[1]
+            continue
+        }
+        if ([string]::IsNullOrWhiteSpace($line) -or $line.StartsWith('#')) { continue }
+        $fields = $line -split "`t"
+        if ($fields.Count -ne 5 -or -not $pins.ContainsKey($fields[0]) -or $seen.ContainsKey($fields[0])) {
+            throw "Invalid static musl package provenance: $line"
+        }
+        $pin = $pins[$fields[0]]
+        $distribution = if ($pin[1].StartsWith('xorg-')) { 'xorg' } else { 'alpine' }
+        if ($fields[1] -cne "$($pin[1]):$architecture" -or $fields[2] -cne $pin[2] -or
+            $fields[3] -notmatch '^[0-9a-f]{64}$' -or $fields[4] -cne $distribution) {
+            throw "Static musl package provenance does not match its pin: $line"
+        }
+        $archive = Join-Path $Directory $fields[0]
+        if (-not (Test-Path -LiteralPath $archive -PathType Leaf) -or
+            (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash -ne $fields[3]) {
+            throw "Static musl archive does not match its provenance: $archive"
+        }
+        $seen[$fields[0]] = $true
+    }
+    foreach ($archive in $pins.Keys) {
+        if (-not $seen.ContainsKey($archive)) { throw "Static musl provenance is missing $archive." }
+    }
+    if (-not $noticeHash -or $noticeHash -ne (Get-FileHash -LiteralPath $notices -Algorithm SHA256).Hash -or
+        -not $recordedSourceHash -or $recordedSourceHash -ne $sourceHash) {
+        throw 'Static musl notice or source metadata does not match its provenance.'
+    }
+}
+
+function Copy-StaticNativeNotices {
+    param(
+        [Parameter(Mandatory)][string]$ProjectAssetsJsonPath,
+        [Parameter(Mandatory)][string]$DestinationDirectory,
+        [Parameter(Mandatory)][string]$Rid,
+        [string]$StaticPublishDirectory
+    )
+
+    if (-not (Test-Path -LiteralPath $ProjectAssetsJsonPath -PathType Leaf)) {
+        throw "Cannot find restored package metadata: $ProjectAssetsJsonPath"
+    }
+    $assets = Get-Content -LiteralPath $ProjectAssetsJsonPath -Raw | ConvertFrom-Json
+    $platform = if ($Rid.StartsWith('win-')) { 'Win32' } elseif ($Rid.StartsWith('osx-')) { 'macOS' } else { 'Linux' }
+    $runtimeName = "runtime.$Rid.Microsoft.DotNet.ILCompiler"
+    $packageNames = @("SkiaSharp.NativeAssets.$platform", "HarfBuzzSharp.NativeAssets.$platform", 'Summpot.StaticAvalonia', $runtimeName)
+    $packagePaths = @{}
+    $packageVersions = @{}
+    foreach ($name in $packageNames) {
+        $package = @($assets.libraries.PSObject.Properties | Where-Object { $_.Name -like "$name/*" -and $_.Value.type -eq 'package' })
+        if ($package.Count -ne 1) { throw "Cannot find the restored $name package in $ProjectAssetsJsonPath." }
+        $packageVersions[$name] = $package[0].Name.Substring($name.Length + 1)
+        foreach ($folder in $assets.packageFolders.PSObject.Properties.Name) {
+            $candidate = Join-Path $folder $package[0].Value.path
+            if (Test-Path -LiteralPath $candidate -PathType Container) {
+                $packagePaths[$name] = $candidate
+                break
+            }
+        }
+        if (-not $packagePaths.ContainsKey($name)) { throw "Cannot locate the restored $name package on disk." }
+    }
+
+    $notices = @()
+    foreach ($name in $packageNames[0..1]) {
+        foreach ($file in @('LICENSE.txt', 'THIRD-PARTY-NOTICES.txt')) {
+            $path = Join-Path $packagePaths[$name] $file
+            if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "Missing $name notice: $path" }
+            $notices += @{ Label = "$name/$file"; Path = $path }
+        }
+    }
+    $runtimeNotices = Join-Path $packagePaths[$runtimeName] 'THIRD-PARTY-NOTICES.TXT'
+    if (-not (Test-Path -LiteralPath $runtimeNotices -PathType Leaf)) { throw "Missing NativeAOT runtime notices: $runtimeNotices" }
+    $notices += @{ Label = "$runtimeName/THIRD-PARTY-NOTICES.TXT"; Path = $runtimeNotices }
+    $runtimeLicense = $null
+    foreach ($folder in $assets.packageFolders.PSObject.Properties.Name) {
+        $candidate = Join-Path $folder "microsoft.netcore.app.runtime.$Rid" $packageVersions[$runtimeName] 'LICENSE.TXT'
+        if (Test-Path -LiteralPath $candidate -PathType Leaf) { $runtimeLicense = $candidate; break }
+    }
+    if (-not $runtimeLicense) { throw "Cannot find the .NET runtime license for $Rid $($packageVersions[$runtimeName])." }
+    $notices += @{ Label = "Microsoft.NETCore.App.Runtime.$Rid/LICENSE.TXT"; Path = $runtimeLicense }
+    $staticPackage = $packagePaths['Summpot.StaticAvalonia']
+    if ($Rid.StartsWith('win-')) {
+        $angleNotices = Join-Path $staticPackage 'licenses'
+        if (-not (Test-Path -LiteralPath $angleNotices -PathType Container)) {
+            throw "Missing static ANGLE notices: $angleNotices"
+        }
+        $angleFiles = @(Get-ChildItem -LiteralPath $angleNotices -File -Recurse | Sort-Object FullName -CaseSensitive)
+        if ($angleFiles.Count -eq 0) { throw "Static ANGLE notices are empty: $angleNotices" }
+        foreach ($file in $angleFiles) {
+            $relative = [IO.Path]::GetRelativePath($staticPackage, $file.FullName).Replace('\', '/')
+            $notices += @{ Label = "Summpot.StaticAvalonia/$relative"; Path = $file.FullName }
+        }
+    }
+
+    $components = @(@{ Source = 'skiasharp.json'; Destination = 'STATIC-SKIASHARP-PROVENANCE.json' })
+    if ($Rid.StartsWith('win-')) {
+        $components += @{ Source = 'angle.json'; Destination = 'STATIC-ANGLE-PROVENANCE.json' }
+    }
+    foreach ($component in $components) {
+        $source = if ($Rid.StartsWith('linux-')) {
+            if ([string]::IsNullOrWhiteSpace($StaticPublishDirectory)) {
+                throw 'The static Linux publish directory is required to collect native provenance.'
+            }
+            Join-Path $StaticPublishDirectory $component.Destination
+        } else {
+            Join-Path $staticPackage 'build' 'components' $component.Source
+        }
+        if (-not (Test-Path -LiteralPath $source -PathType Leaf)) { throw "Missing static native provenance: $source" }
+        if ($component.Source -eq 'skiasharp.json') {
+            $metadata = Get-Content -LiteralPath $source -Raw | ConvertFrom-Json
+            if ($metadata.version -ne $packageVersions["SkiaSharp.NativeAssets.$platform"]) {
+                throw "Static SkiaSharp $($metadata.version) does not match the restored managed graphics version $($packageVersions["SkiaSharp.NativeAssets.$platform"])."
+            }
+            if ($Rid.StartsWith('linux-')) {
+                if ($Rid -cin $script:MuslStaticHostRids) {
+                    $patch = Join-Path $PSScriptRoot 'static-skia-musl-dng.patch'
+                    if ($metadata.rid -ne $Rid -or -not $metadata.PSObject.Properties['libc'] -or $metadata.libc -ne 'musl' -or
+                        -not $metadata.PSObject.Properties['dngPatchSha256'] -or
+                        $metadata.dngPatchSha256 -ne (Get-FileHash -LiteralPath $patch -Algorithm SHA256).Hash) {
+                        throw "Static Linux graphics provenance does not match $Rid and the musl source patch."
+                    }
+                }
+                elseif ($metadata.rid -ne $Rid -or $metadata.glibcBuild -ne '2.35') {
+                    throw "Static Linux graphics provenance does not match $Rid and the glibc 2.35 baseline."
+                }
+                if (-not $metadata.PSObject.Properties['archives']) {
+                    throw 'Static Linux graphics provenance does not contain archive hashes.'
+                }
+                foreach ($archive in @('libSkiaSharp.a', 'libskia.a', 'libHarfBuzzSharp.a')) {
+                    $property = $metadata.archives.PSObject.Properties[$archive]
+                    if ($null -eq $property) { throw "Static Linux graphics provenance is missing $archive." }
+                    $expected = $property.Value
+                    $actual = (Get-FileHash -LiteralPath (Join-Path $StaticPublishDirectory $archive) -Algorithm SHA256).Hash
+                    if ($expected -notmatch '^[0-9a-f]{64}$' -or $actual -ne $expected) {
+                        throw "Static Linux graphics provenance does not match $archive."
+                    }
+                }
+                $sourceNotices = Join-Path $StaticPublishDirectory 'STATIC-SKIASHARP-SOURCE-NOTICES.txt'
+                if (-not (Test-Path -LiteralPath $sourceNotices -PathType Leaf)) { throw "Missing static graphics source notices: $sourceNotices" }
+                $noticeHash = (Get-FileHash -LiteralPath $sourceNotices -Algorithm SHA256).Hash
+                if (-not $metadata.PSObject.Properties['noticesSha256'] -or
+                    $metadata.noticesSha256 -notmatch '^[0-9a-f]{64}$' -or $noticeHash -ne $metadata.noticesSha256) {
+                    throw 'Static Linux graphics provenance does not match the source notices.'
+                }
+            }
+        }
+        Copy-Item -LiteralPath $source -Destination (Join-Path $DestinationDirectory $component.Destination)
+    }
+    if ($Rid.StartsWith('linux-')) {
+        if ([string]::IsNullOrWhiteSpace($StaticPublishDirectory)) {
+            throw 'The static Linux publish directory is required to collect system-library notices.'
+        }
+        $linuxMetadata = @('STATIC-LINUX-NOTICES.txt', 'STATIC-LINUX-PROVENANCE.tsv', 'STATIC-SKIASHARP-SOURCE-NOTICES.txt')
+        if ($Rid -cin $script:MuslStaticHostRids) {
+            Assert-LinuxMuslStaticProvenance -Rid $Rid -Directory $StaticPublishDirectory
+            $linuxMetadata += 'STATIC-LINUX-MUSL-SOURCES.tsv'
+        }
+        foreach ($name in $linuxMetadata) {
+            $source = Join-Path $StaticPublishDirectory $name
+            if (-not (Test-Path -LiteralPath $source -PathType Leaf)) { throw "Missing static Linux metadata: $source" }
+            Copy-Item -LiteralPath $source -Destination (Join-Path $DestinationDirectory $name)
+        }
+    }
+    $output = Join-Path $DestinationDirectory 'STATIC-NATIVE-NOTICES.txt'
+    $writer = [IO.StreamWriter]::new($output, $false, [Text.UTF8Encoding]::new($false))
+    try {
+        foreach ($notice in $notices) {
+            $writer.WriteLine("===== $($notice.Label) =====")
+            $writer.WriteLine([IO.File]::ReadAllText($notice.Path).TrimEnd("`r", "`n"))
+            $writer.WriteLine()
+        }
+        $writer.WriteLine('===== Wuffs =====')
+        $writer.WriteLine('Copyright 2017 The Wuffs Authors.')
+        $writer.WriteLine('Licensed under the Apache License, Version 2.0, included in the SkiaSharp third-party notices above.')
+    }
+    finally { $writer.Dispose() }
 }
 
 function New-IsolatedPackageStagingRoot {
@@ -795,6 +1043,7 @@ function Get-HostAssetName {
 
     if ($Rid -cnotin $script:IosHostRids -and $Rid -cne $script:BrowserHostRid) {
         $null = Get-RidTargetInfo -Rid $Rid -LinuxBackend $LinuxBackend
+        Assert-RidLinkage -Rid $Rid -Linkage $Linkage
     }
     elseif ($LinuxBackend -eq 'Drm') {
         throw 'The Drm backend requires a Linux RID.'

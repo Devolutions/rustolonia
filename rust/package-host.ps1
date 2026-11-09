@@ -29,7 +29,7 @@ running `dotnet publish` (used by CI smoke tests).
 #>
 param(
     [Parameter(Mandatory)]
-    [ValidateSet('win-x64', 'win-arm64', 'linux-x64', 'linux-arm64', 'osx-x64', 'osx-arm64')]
+    [ValidateSet('win-x64', 'win-arm64', 'linux-x64', 'linux-arm64', 'linux-musl-x64', 'linux-musl-arm64', 'osx-x64', 'osx-arm64')]
     [string]$Rid,
     [ValidateSet('X11', 'Drm')]
     [string]$LinuxBackend = 'X11',
@@ -66,6 +66,7 @@ if (-not (Test-Path -LiteralPath $resolvedProducerRoot -PathType Container)) {
 }
 
 $target = Get-RidTargetInfo -Rid $Rid -LinuxBackend $LinuxBackend
+Assert-RidLinkage -Rid $Rid -Linkage $Linkage
 $backendSuffix = if ($LinuxBackend -eq 'Drm') { '-drm' } else { '' }
 $static = $Linkage -eq 'Static'
 $linkageSuffix = if ($static) { '-static' } else { '' }
@@ -97,6 +98,12 @@ if ([string]::IsNullOrWhiteSpace($PublishDirectory)) {
     $PublishDirectory = Join-Path $artifactsRoot 'publish' 'Avalonia.Host' "release_$Rid"
 }
 $PublishDirectory = (Resolve-Path -LiteralPath (Resolve-CallerRelativePath -PathValue $PublishDirectory)).Path
+if ($static -and -not $hostAssets) {
+    $hostAssets = Join-Path $PublishDirectory 'rustolonia-project-assets.json'
+    if (-not (Test-Path -LiteralPath $hostAssets -PathType Leaf)) {
+        throw "The static publish is missing its restored package metadata: $hostAssets. Republish the host before packaging it."
+    }
+}
 $hostFileName = if ($static) { $target.StaticHostFileName } else { $target.HostFileName }
 $hostFile = Join-Path $PublishDirectory $hostFileName
 if (-not (Test-Path -LiteralPath $hostFile -PathType Leaf)) {
@@ -104,13 +111,16 @@ if (-not (Test-Path -LiteralPath $hostFile -PathType Leaf)) {
 }
 
 $assetName = Get-HostAssetName -Version $version -Rid $Rid -Flavor $Flavor -LinuxBackend $LinuxBackend -Linkage $Linkage
-$symbolsName = Get-HostAssetName -Version $version -Rid $Rid -Flavor $Flavor -LinuxBackend $LinuxBackend -Symbols
+$symbolsName = if (-not $static) { Get-HostAssetName -Version $version -Rid $Rid -Flavor $Flavor -LinuxBackend $LinuxBackend -Symbols }
 $staging = New-IsolatedPackageStagingRoot -OutputRoot $OutputRoot -Rid $Rid
 try {
     $bundle = Prepare-ArtifactBundle -BundlePath (Join-Path $staging 'host')
     Write-Host "==> Staging host and native dependencies"
     Copy-BundleFiles -SourceDirectory $PublishDirectory -DestinationDirectory $bundle -HostFile $hostFile -Rid $Rid -Static:$static
     Copy-BundleNotices -ProducerRoot $resolvedProducerRoot -RustoloniaRoot $resolvedRustoloniaRoot -DestinationDirectory $bundle
+    if ($static) {
+        Copy-StaticNativeNotices -ProjectAssetsJsonPath $hostAssets -DestinationDirectory $bundle -Rid $Rid -StaticPublishDirectory $PublishDirectory
+    }
     Remove-Item -LiteralPath (Join-Path $bundle '.rustolonia-bundle-owner') -Force
     # Copy-BundleFiles matches *.so.*, which includes Linux .so.dbg symbol files.
     Get-ChildItem -LiteralPath $bundle -File -Filter '*.dbg' | Remove-Item -Force

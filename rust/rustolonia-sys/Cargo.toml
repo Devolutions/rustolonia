@@ -32,8 +32,8 @@ dev-host-path = []
 linux-drm = []
 # Link the prebuilt host into the executable as a static library instead of
 # loading rustolonia_host.dll/.so/.dylib at run time (desktop targets only).
-# Its native dependencies (Avalonia.Native, SkiaSharp, HarfBuzzSharp) remain
-# shared libraries shipped next to the executable.
+# The desktop host and its project-native graphics dependencies are linked in.
+# Operating-system libraries and frameworks can still be dynamic.
 static-host = []
 
 # Browser builds (wasm32-unknown-emscripten) link the host statically into

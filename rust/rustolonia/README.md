@@ -66,8 +66,8 @@ On the first build, `rustolonia-sys` downloads the prebuilt
 `rustolonia_host` library for your target from the matching
 [GitHub release](https://github.com/Devolutions/rustolonia/releases),
 checks it against the SHA-256 baked into the crate, and caches it. No .NET SDK
-is needed. Supported targets: Windows, macOS, and Linux (glibc) on x64 and
-arm64. To use a locally built host, offline builds, or a different mirror, see
+is needed. Supported targets: Windows, macOS, and Linux (glibc or static musl)
+on x64 and arm64. To use a locally built host, offline builds, or a different mirror, see
 the `rustolonia-sys` README (`RUSTOLONIA_HOST_DIR`, `RUSTOLONIA_NO_DOWNLOAD`,
 `RUSTOLONIA_CACHE_DIR`, `RUSTOLONIA_HOST_BASE_URL`).
 
@@ -77,6 +77,30 @@ host directory when the default `dev-host-path` feature is enabled. When you
 ship an application, copy the host directory next to your executable and build
 with `default-features = false` so that no build machine paths end up in the
 binary.
+
+For an executable with the host and graphics libraries linked in, enable
+`features = ["static-host"]` on the dependency and use a release containing
+the static assets. No Rustolonia, Avalonia.Native, SkiaSharp, HarfBuzzSharp or
+ANGLE shared library needs to accompany the executable. On Windows also build
+with `-C target-feature=+crt-static`; on macOS set
+`MACOSX_DEPLOYMENT_TARGET=12.0` or newer. On those platforms and Linux GNU,
+operating-system libraries and frameworks remain dynamic.
+
+For a fully static Linux executable, use a musl target and a release that
+includes the separate musl assets:
+
+```bash
+rustup target add x86_64-unknown-linux-musl
+CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER=musl-gcc \
+RUSTFLAGS="-C target-feature=+crt-static" \
+cargo build --release --target x86_64-unknown-linux-musl
+```
+
+Enable `static-host` on the dependency and install a matching musl linker.
+ARM64 uses `aarch64-unknown-linux-musl`. With the application's other native
+dependencies also statically linked, the binary needs an X server and fonts
+but no shared libraries. It uses software rendering; see the
+[`rustolonia-sys` README](../rustolonia-sys/README.md) for limitations.
 
 The Rust and native host versions are locked to each other: `rustolonia X.Y.Z`
 pins `rustolonia-sys =X.Y.Z`, which only downloads the `X.Y.Z` host release

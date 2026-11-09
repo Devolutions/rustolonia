@@ -479,14 +479,10 @@ impl Host {
 
     /// Binds the host the `static-host` feature linked into this binary.
     ///
-    /// The host's own native dependencies (Avalonia.Native, SkiaSharp,
-    /// HarfBuzzSharp) stay shared libraries. The host finds them next to the
-    /// executable; otherwise they are preloaded from the macOS bundle's
-    /// `Contents/Frameworks` or, with the `dev-host-path` feature, from the
-    /// directory the host was staged in at build time.
+    /// Avalonia's native backend and graphics dependencies are linked into
+    /// the executable as well. Platform system libraries may remain dynamic.
     #[cfg(rustolonia_static_host)]
     pub fn load_static() -> std::result::Result<Self, HostLoadError> {
-        let dependencies = static_host_dependencies()?;
         let exports = ResolvedHostExports {
             get_activation_factory: avn_get_activation_factory,
             free: avn_free,
@@ -497,7 +493,7 @@ impl Host {
         let info = publish_host_exports(found, &exports)?;
         Ok(Self {
             _lib: None,
-            _dependencies: ManuallyDrop::new(dependencies),
+            _dependencies: ManuallyDrop::new(Vec::new()),
             get_activation_factory: exports.get_activation_factory,
             free: exports.free,
             get_last_error: exports.get_last_error,
@@ -646,58 +642,6 @@ impl Host {
             Some(result)
         }
     }
-}
-
-/// Preloads the shared native libraries a statically linked host depends on
-/// when they are not next to the executable, where the host looks first.
-#[cfg(rustolonia_static_host)]
-fn static_host_dependencies() -> std::result::Result<Vec<Library>, HostLoadError> {
-    let extension = if cfg!(target_os = "windows") {
-        "dll"
-    } else if cfg!(target_os = "macos") {
-        "dylib"
-    } else {
-        "so"
-    };
-    let has_dependencies = |dir: &Path| {
-        std::fs::read_dir(dir).is_ok_and(|entries| {
-            entries.flatten().any(|entry| {
-                let name = entry.file_name();
-                let name = name.to_string_lossy();
-                name.starts_with("libSkiaSharp.") || name.starts_with("libAvaloniaNative.")
-            })
-        })
-    };
-    let exe = std::env::current_exe().ok();
-    let exe_dir = exe.as_deref().and_then(Path::parent);
-    if exe_dir.is_some_and(has_dependencies) {
-        return Ok(Vec::new());
-    }
-    let frameworks = exe_dir
-        .filter(|_| cfg!(target_os = "macos"))
-        .and_then(Path::parent)
-        .map(|contents| contents.join("Frameworks"));
-    let Some(dir) = frameworks
-        .into_iter()
-        .chain(BUILD_HOST_DIR.map(std::path::PathBuf::from))
-        .find(|dir| has_dependencies(dir))
-    else {
-        return Ok(Vec::new());
-    };
-    let mut files: Vec<_> = std::fs::read_dir(&dir)
-        .map(|entries| {
-            entries
-                .flatten()
-                .map(|entry| entry.path())
-                .filter(|path| path.extension().is_some_and(|ext| ext == extension))
-                .collect()
-        })
-        .unwrap_or_default();
-    files.sort();
-    files
-        .into_iter()
-        .map(|path| unsafe { Library::new(path) }.map_err(HostLoadError::from))
-        .collect()
 }
 
 #[cfg(test)]

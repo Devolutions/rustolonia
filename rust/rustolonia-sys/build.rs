@@ -46,6 +46,15 @@ fn main() {
     if static_host && env::var_os("DOCS_RS").is_some() {
         return;
     }
+    host::validate_static_crt(
+        &target,
+        static_host,
+        &env::var("CARGO_CFG_TARGET_FEATURE").unwrap_or_default(),
+    )
+    .unwrap_or_else(|error| panic!("rustolonia-sys: {error}"));
+    let deployment_target = env_var("MACOSX_DEPLOYMENT_TARGET");
+    host::validate_macos_deployment_target(&target, static_host, deployment_target.as_deref())
+        .unwrap_or_else(|error| panic!("rustolonia-sys: {error}"));
 
     match host::resolve(&config) {
         Ok(host::Resolution::Found { dir, .. }) => {

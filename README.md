@@ -28,7 +28,8 @@ pinned `avalonia-src` producer submodule at upstream Avalonia `12.1.5` (commit
 
 ## Quick start (GitHub release)
 
-Code-first applications need only Cargo; no .NET SDK or source checkout:
+Code-first applications using the default shared host need only Cargo; no .NET
+SDK or source checkout:
 
 ```toml
 [dependencies]
@@ -52,6 +53,12 @@ its SHA-256, and caches it. See [rust/rustolonia/README.md](rust/rustolonia/READ
 for a hello-world and how to ship the host with your application, and
 [rust/rustolonia-sys/README.md](rust/rustolonia-sys/README.md) for offline,
 mirrored and locally built hosts.
+
+For a fully static Linux X11 executable, releases containing the separate
+musl hosts support the `static-host` feature and a matching musl Rust
+toolchain; see [fully static Linux builds](rust/PLATFORMS.md#fully-static-linux-executable).
+Existing releases do not yet include these assets. Static hosts on macOS and
+Windows still depend on operating-system libraries.
 
 Applications with compiled AXAML and Rust view-models still build their own
 host from a source checkout, as described below.
