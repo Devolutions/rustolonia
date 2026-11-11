@@ -4,12 +4,13 @@
 //! the COM object lifetime, application-scoped registration, and conflict
 //! rejection required by the architecture review.
 
+use crate::reactive::RawSignalId;
 use crate::view::{markers, set_unless_updating, IntoProp, PropBinding, TwoWayAdapter};
 use crate::{AppScope, Effect, Error, PropertyPath, Result, Signal};
 use rustolonia_sys as sys;
 use std::fmt;
 use std::marker::PhantomData;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 pub use sys::{ConversionDirection, ScalarKind, ScalarValue};
 
@@ -64,7 +65,8 @@ pub struct RegisteredValueConverter {
     reference: String,
     converter_id: i32,
     dispatch: Arc<dyn ValueConverterDispatch>,
-    culture: Signal<String>,
+    culture: RawSignalId,
+    culture_snapshot: Arc<Mutex<String>>,
 }
 
 impl fmt::Debug for RegisteredValueConverter {
@@ -90,11 +92,21 @@ impl RegisteredValueConverter {
                 "converter reference must not be empty".to_string(),
             ));
         }
+        let culture_snapshot = Arc::new(Mutex::new(culture.get_untracked()));
+        let snapshot_for_effect = culture_snapshot.clone();
+        let _ = Effect::new(move || {
+            let latest = culture.get();
+            if let Ok(mut guard) = snapshot_for_effect.lock() {
+                *guard = latest;
+            }
+            Ok(())
+        })?;
         Ok(Self {
             reference,
             converter_id,
             dispatch,
-            culture,
+            culture: culture.raw_id(),
+            culture_snapshot,
         })
     }
 
@@ -113,9 +125,17 @@ impl RegisteredValueConverter {
                 self.reference
             )));
         }
-        let culture = culture_override
-            .map(str::to_string)
-            .unwrap_or_else(|| self.culture.get());
+        let culture = match culture_override {
+            Some(override_val) => override_val.to_string(),
+            None => match Signal::<String>::try_from_raw(self.culture) {
+                Ok(sig) => sig.get(),
+                Err(_) => self
+                    .culture_snapshot
+                    .lock()
+                    .map(|g| g.clone())
+                    .unwrap_or_default(),
+            },
+        };
         self.dispatch.convert(
             self.converter_id,
             direction,

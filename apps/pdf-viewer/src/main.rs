@@ -4,26 +4,10 @@
 //! view-model bridge exposes that state to the compiled Avalonia presentation.
 #![cfg_attr(target_os = "windows", windows_subsystem = "windows")]
 
-pub use rustolonia::{
-    AppScope, CancellationToken, ClipboardData, ConversionDirection, Error, MapKey, RangeBatch,
-    RangeRequest, RecentFileList, Result, ScalarKind, ScalarValue,
-};
-pub mod view_model {
-    pub use rustolonia::view_model::{
-        BatchCompletion, DynamicViewModel, ViewModelBatch, ViewModelSink,
-    };
-}
-pub mod value_converter {
-    pub use rustolonia::value_converter::ValueConverterDispatch;
-}
-
 #[path = "../generated/generated_view_models.rs"]
 mod generated_view_models;
 mod pdf;
 
-use rustolonia::{
-    ActivationEvent, App, FileTypeFilter, OpenFilePickerOptions, PickerOutcome, Window,
-};
 use base64::Engine;
 use generated_view_models::{
     mount_main_window, MainViewModel, MainViewModelSink, OutlineItemViewModel,
@@ -32,6 +16,10 @@ use generated_view_models::{
 use pdf::{
     create_sample_pdf, load_page, outline_len, render_page, search_document, DocumentState,
     OutlineEntry, PdfHandle, SearchHit,
+};
+use rustolonia::{
+    ActivationEvent, App, AppScope, Error, FileTypeFilter, OpenFilePickerOptions, PickerOutcome,
+    RecentFileList, Result, Window,
 };
 use std::path::{Path, PathBuf};
 use std::sync::{
@@ -120,11 +108,7 @@ impl OutlineItemViewModel for OutlineItemModel {
             let Some(document) = shared.document.as_ref() else {
                 return Ok(());
             };
-            (
-                document.path.clone(),
-                document.pdf.clone(),
-                document.page,
-            )
+            (document.path.clone(), document.pdf.clone(), document.page)
         };
         if current == page {
             return Ok(());
@@ -140,10 +124,7 @@ impl OutlineItemViewModel for OutlineItemModel {
     }
 }
 
-fn outline_models(
-    entries: Vec<OutlineEntry>,
-    shared: Arc<Mutex<Shared>>,
-) -> Vec<OutlineItemModel> {
+fn outline_models(entries: Vec<OutlineEntry>, shared: Arc<Mutex<Shared>>) -> Vec<OutlineItemModel> {
     entries
         .into_iter()
         .map(|entry| OutlineItemModel {
@@ -766,7 +747,12 @@ fn start_loading(
                 let outline = worker_shared
                     .lock()
                     .ok()
-                    .and_then(|state| state.document.as_ref().map(|document| document.outline.clone()))
+                    .and_then(|state| {
+                        state
+                            .document
+                            .as_ref()
+                            .map(|document| document.outline.clone())
+                    })
                     .unwrap_or_default();
                 render_page(pdf, &worker_path, page, outline)
             } else {

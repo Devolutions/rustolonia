@@ -213,7 +213,7 @@ where
 }
 
 fn text_value(text: &TextBlock) -> CheckResult<String> {
-    text.get_text()?
+    text.text()?
         .ok_or_else(|| std::io::Error::other("TextBlock has no text").into())
 }
 
@@ -247,7 +247,7 @@ fn named_item_id(node: NodeRef<TextBlock>) -> CheckResult<i64> {
 fn child_text(border: &Border) -> CheckResult<TextBlock> {
     cast(
         border
-            .get_child()?
+            .child()?
             .ok_or_else(|| std::io::Error::other("view slot has no child"))?,
         "view slot child is not a TextBlock",
     )
@@ -290,7 +290,7 @@ fn exercise_custom_editor(
         .custom_editor
         .get()
         .ok_or_else(|| std::io::Error::other("missing custom editor host"))?;
-    host.set_content(Some(&editor))?;
+    host.set_content(&editor)?;
     driver.update_layout()?;
     let grid = editor_refs
         .form_grid
@@ -305,19 +305,19 @@ fn exercise_custom_editor(
         .get()
         .ok_or_else(|| std::io::Error::other("missing filter text"))?;
     check(
-        grid.get_column_definitions()? == "Auto@FilterColumn,1*",
+        grid.column_definitions()? == "Auto@FilterColumn,1*".parse()?,
         "shared column metadata did not reach the host",
     )?;
     check(
-        text.get_scroll_viewer_horizontal_scroll_bar_visibility()?
+        text.scroll_viewer_horizontal_scroll_bar_visibility()?
             == rustolonia::ScrollBarVisibility::Hidden,
         "attached scroll visibility did not reach the text box",
     )?;
     check(
-        picker.get_height()? == 24.0
-            && picker.get_margin()?.right == 1.0
-            && text.get_height()? == 24.0
-            && text.get_margin()? == rustolonia::Thickness::uniform(0.0)
+        picker.height()? == 24.0
+            && picker.margin()?.right == 1.0
+            && text.height()? == 24.0
+            && text.margin()? == rustolonia::Thickness::uniform(0.0)
             && picker.classes()?.contains("form-grid-item")?
             && picker.classes()?.contains("last-row-item")?
             && text.classes()?.contains("last-column-item")?
@@ -327,7 +327,7 @@ fn exercise_custom_editor(
     text.set_visible(false)?;
     grid.update_layout()?;
     let picker_last_column = picker.classes()?.contains("last-column-item")?;
-    let picker_right = picker.get_margin()?.right;
+    let picker_right = picker.margin()?.right;
     let text_is_item = text.classes()?.contains("form-grid-item")?;
     check(
         picker_last_column && picker_right == 0.0 && !text_is_item,
@@ -348,7 +348,7 @@ fn exercise_custom_editor(
     picker.set_visible(true)?;
     grid.update_layout()?;
     check(
-        picker.get_margin()?.right == 1.0 && text.classes()?.contains("preceded-by-control")?,
+        picker.margin()?.right == 1.0 && text.classes()?.contains("preceded-by-control")?,
         "restoring visible controls did not restore grid classes",
     )?;
     host.set_visible(false)?;
@@ -369,7 +369,7 @@ fn exercise_custom_editor(
     )?;
     check(
         picker.items()?.len()? == 3
-            && picker.get_selected_index()? == 0
+            && picker.selected_index()? == 0
             && text_value(&direct_item(&picker, 0)?)? == "Name",
         "initial picker choices or selection",
     )?;
@@ -380,13 +380,13 @@ fn exercise_custom_editor(
     )?;
     bindings.kind.set(FilterKind::Category);
     check(
-        picker.get_selected_index()? == 2,
+        picker.selected_index()? == 2,
         "model did not update selection",
     )?;
     bindings.allowed_kinds.set(vec![FilterKind::Name]);
     check(
         picker.items()?.len()? == 1
-            && picker.get_selected_index()? == -1
+            && picker.selected_index()? == -1
             && bindings.kind.get() == FilterKind::Category,
         "restricting choices changed an excluded model value",
     )?;
@@ -404,13 +404,13 @@ fn exercise_custom_editor(
         picker.items()?.len()? == 2
             && text_value(&direct_item(&picker, 0)?)? == "Nom"
             && text_value(&direct_item(&picker, 1)?)? == "Catégorie"
-            && picker.get_selected_index()? == 1
+            && picker.selected_index()? == 1
             && bindings.kind.get() == FilterKind::Category,
         "localized choices, ordering, or selection were not preserved",
     )?;
     bindings.allowed_kinds.set(Vec::new());
     check(
-        picker.items()?.len()? == 3 && picker.get_selected_index()? == 2,
+        picker.items()?.len()? == 3 && picker.selected_index()? == 2,
         "empty filter did not restore all choices",
     )?;
     bindings.allowed_kinds.update(|choices| {
@@ -419,20 +419,20 @@ fn exercise_custom_editor(
     });
     check(
         picker.items()?.len()? == 1
-            && picker.get_selected_index()? == -1
+            && picker.selected_index()? == -1
             && bindings.kind.get() == FilterKind::Category,
         "an in-place filter update did not restrict the picker",
     )?;
     bindings.allowed_kinds.update(Vec::clear);
     check(
         picker.items()?.len()? == 3
-            && picker.get_selected_index()? == 2
+            && picker.selected_index()? == 2
             && text_value(&direct_item(&picker, 0)?)? == "Nom"
             && text_value(&direct_item(&picker, 2)?)? == "Catégorie",
         "clearing the filter in place did not restore ordered localized choices",
     )?;
     check(
-        text.get_text()?.as_deref() == Some("initial"),
+        text.text()?.as_deref() == Some("initial"),
         "initial filter text",
     )?;
     text.set_text("edited")?;
@@ -442,7 +442,7 @@ fn exercise_custom_editor(
     )?;
     bindings.search_text.set("model update".into());
     check(
-        text.get_text()?.as_deref() == Some("model update"),
+        text.text()?.as_deref() == Some("model update"),
         "model did not update filter text",
     )?;
 
@@ -469,7 +469,7 @@ fn exercise_custom_editor(
     bindings.kind.set(FilterKind::Owner);
     bindings.search_text.set("after model disposal".into());
     check(
-        picker.get_selected_index()? == 0 && text.get_text()?.as_deref() == Some("after disposal"),
+        picker.selected_index()? == 0 && text.text()?.as_deref() == Some("after disposal"),
         "disposed custom view still reacted to the model",
     )?;
     host.set_content(None)?;
@@ -498,13 +498,14 @@ fn exercise_generalized_form_grid(
     })?;
     grid.set_row_definitions("Auto,Auto,Auto")?;
     grid.set_column_definitions("Auto,Auto,Auto")?;
-    host.set_content(Some(&grid))?;
+    host.set_content(&grid)?;
     driver.update_layout()?;
 
     let first = TextBox::new()?;
-    let label = TextBlock::new()?.text("Label")?;
+    let label = TextBlock::new()?;
+    label.set_text("Label")?;
     label.set_margin(Thickness::uniform(9.0))?;
-    let original_padding = label.get_padding()?;
+    let original_padding = label.padding()?;
     let span = TextBox::new()?;
     let lower = TextBox::new()?;
     let last = TextBox::new()?;
@@ -540,11 +541,11 @@ fn exercise_generalized_form_grid(
     check(
         first.classes()?.contains("form-grid-item")?
             && !first.classes()?.contains("last-row-item")?
-            && first.get_margin()? == Thickness::new(0.0, 0.0, 1.0, 5.0)
+            && first.margin()? == Thickness::new(0.0, 0.0, 1.0, 5.0)
             && label.classes()?.contains("label-like-item")?
             && label.classes()?.contains("preceded-by-control")?
-            && label.get_margin()? == Thickness::new(4.0, 0.0, 5.0, 5.0)
-            && label.get_padding()? == Thickness::uniform(3.0),
+            && label.margin()? == Thickness::new(4.0, 0.0, 5.0, 5.0)
+            && label.padding()? == Thickness::uniform(3.0),
         "multi-row form grid did not apply label/input metrics",
     )?;
     check(
@@ -567,8 +568,8 @@ fn exercise_generalized_form_grid(
     check(
         !label.classes()?.contains("form-grid-item")?
             && !label.classes()?.contains("label-like-item")?
-            && label.get_margin()? == Thickness::uniform(9.0)
-            && label.get_padding()? == original_padding,
+            && label.margin()? == Thickness::uniform(9.0)
+            && label.padding()? == original_padding,
         "removing a child did not immediately restore its classes and sample styling",
     )?;
     grid.update_layout()?;
@@ -642,13 +643,13 @@ fn exercise_generalized_form_grid(
     label.set_margin(Thickness::uniform(7.0))?;
     Grid::set_column(&label, 2)?;
     grid.children()?.add(&label)?;
-    host.set_content(Some(&grid))?;
+    host.set_content(&grid)?;
     driver.update_layout()?;
     grid.update_layout()?;
     check(
         label.classes()?.contains("label-like-item")?
             && label.classes()?.contains("preceded-by-control")?
-            && label.get_margin()? == Thickness::uniform(7.0),
+            && label.margin()? == Thickness::uniform(7.0),
         "empty-cell option or disabled sample styling was not respected",
     )?;
     grid.set_column_definitions("Auto,Auto")?;
@@ -681,22 +682,24 @@ fn exercise_generalized_form_grid(
     })?;
     let child = TextBox::new()?;
     child.set_margin(Thickness::uniform(9.0))?;
-    let original_height = child.get_height()?;
+    let original_height = child.height()?;
     source.children()?.add(&child)?;
-    let panel = StackPanel::new()?.child(&source)?.child(&target)?;
-    host.set_content(Some(&panel))?;
+    let panel = StackPanel::new()?;
+    panel.children()?.add(&source)?;
+    panel.children()?.add(&target)?;
+    host.set_content(&panel)?;
     driver.update_layout()?;
     check(
-        child.classes()?.contains("form-grid-item")? && child.get_height()? == 24.0,
+        child.classes()?.contains("form-grid-item")? && child.height()? == 24.0,
         "source grid did not classify and style its child",
     )?;
 
     source.children()?.remove(0)?;
     check(
         !child.classes()?.contains("form-grid-item")?
-            && child.get_margin()? == Thickness::uniform(9.0)
-            && (child.get_height()? == original_height
-                || (child.get_height()?.is_nan() && original_height.is_nan())),
+            && child.margin()? == Thickness::uniform(9.0)
+            && (child.height()? == original_height
+                || (child.height()?.is_nan() && original_height.is_nan())),
         "removing a child did not restore it before reparenting",
     )?;
     target.children()?.add(&child)?;
@@ -704,9 +707,9 @@ fn exercise_generalized_form_grid(
     source.update_layout()?;
     check(
         child.classes()?.contains("form-grid-item")?
-            && child.get_margin()? == Thickness::uniform(9.0)
-            && (child.get_height()? == original_height
-                || (child.get_height()?.is_nan() && original_height.is_nan())),
+            && child.margin()? == Thickness::uniform(9.0)
+            && (child.height()? == original_height
+                || (child.height()?.is_nan() && original_height.is_nan())),
         "the old grid disturbed a child after reparenting",
     )?;
 
@@ -717,10 +720,10 @@ fn exercise_generalized_form_grid(
         "removing a child from an unattached grid did not clear its classes",
     )?;
     source.children()?.add(&child)?;
-    host.set_content(Some(&panel))?;
+    host.set_content(&panel)?;
     driver.update_layout()?;
     check(
-        child.classes()?.contains("form-grid-item")? && child.get_height()? == 24.0,
+        child.classes()?.contains("form-grid-item")? && child.height()? == 24.0,
         "reparenting through an unattached grid did not reapply the new grid",
     )?;
     source_lifetime.dispose();
@@ -772,21 +775,21 @@ fn exercise_interactive(
 
     check(text_value(&title)? == "First", "initial nested title")?;
     check(
-        text_value(&message)? == "First message" && detail.get_is_visible()?,
+        text_value(&message)? == "First message" && detail.is_visible()?,
         "initial converted message visibility",
     )?;
     state.first.message.set(String::new());
-    check(!detail.get_is_visible()?, "empty message stayed visible")?;
+    check(!detail.is_visible()?, "empty message stayed visible")?;
     state.first.message.set("Restored".to_string());
     check(
-        detail.get_is_visible()? && text_value(&message)? == "Restored",
+        detail.is_visible()? && text_value(&message)? == "Restored",
         "message did not update reactively",
     )?;
     state.profile.set(Some(state.second.clone()));
     check(
         text_value(&title)? == "Second"
             && text_value(&message)? == "Second message"
-            && detail.get_is_visible()?,
+            && detail.is_visible()?,
         "replacing an intermediate model did not update bindings",
     )?;
     let calls_before_old_changes = state.converters.calls.lock().unwrap().len();
@@ -795,7 +798,7 @@ fn exercise_interactive(
     state.first.port.set("stale".to_string());
     check(
         text_value(&title)? == "Second"
-            && detail.get_is_visible()?
+            && detail.is_visible()?
             && state.converters.calls.lock().unwrap().len() == calls_before_old_changes,
         "replaced model still had active subscribers",
     )?;
@@ -822,19 +825,19 @@ fn exercise_interactive(
         (&web, "80,443,8080,8443"),
         (&dynamic, "2200"),
     ] {
-        let parameter = button.get_command_parameter()?;
+        let parameter = button.command_parameter()?;
         check(
             parameter == Variant::Utf16(expected.to_string()),
             "command parameter did not remain a string",
         )?;
         let command = button
-            .get_command()?
+            .command()?
             .ok_or_else(|| std::io::Error::other("button has no command"))?;
         check(
-            Command::can_execute_interface(&command, parameter.clone())?,
+            command.can_execute(parameter.clone())?,
             "command rejected its button parameter",
         )?;
-        Command::execute_interface(&command, parameter)?;
+        command.execute(parameter)?;
         check(
             state.port_spec.get() == expected && text_value(&selected_port)? == expected,
             "button command did not receive its parameter",
@@ -865,19 +868,19 @@ fn exercise_interactive(
     state.second.port.set("端口-😀".to_string());
     check(
         state.original.can_execute("端口-😀")?
-            && dynamic.get_command_parameter()? == Variant::Utf16("端口-😀".to_string()),
+            && dynamic.command_parameter()? == Variant::Utf16("端口-😀".to_string()),
         "dynamic Unicode parameter did not update",
     )?;
 
     let command = dynamic
-        .get_command()?
+        .command()?
         .ok_or_else(|| std::io::Error::other("dynamic button has no command"))?;
     for _ in 0..250 {
         check(
-            Command::can_execute_interface(&command, "端口-😀")?,
+            command.can_execute("端口-😀")?,
             "Unicode parameter CanExecute failed",
         )?;
-        Command::execute_interface(&command, "端口-😀")?;
+        command.execute("端口-😀")?;
         state.original.execute("直接-😀")?;
     }
     check(
@@ -886,15 +889,15 @@ fn exercise_interactive(
     )?;
     state.command.set(Some(state.replacement.clone()));
     let replacement = rdp
-        .get_command()?
+        .command()?
         .ok_or_else(|| std::io::Error::other("replacement command missing"))?;
-    Command::execute_interface(&replacement, rdp.get_command_parameter()?)?;
+    replacement.execute(rdp.command_parameter()?)?;
     check(
         state.port_spec.get() == "replacement:3389",
         "reactive command replacement failed",
     )?;
     state.command.set(None);
-    check(rdp.get_command()?.is_none(), "command was not cleared")?;
+    check(rdp.command()?.is_none(), "command was not cleared")?;
     state.command.set(Some(state.original.clone()));
     let failing = Command::new(|_| Err(Error::Binding("command failed".to_string())));
     check(
@@ -902,10 +905,7 @@ fn exercise_interactive(
         "command error was swallowed",
     )?;
 
-    check(
-        number.get_text()?.as_deref() == Some("12"),
-        "initial Convert",
-    )?;
+    check(number.text()?.as_deref() == Some("12"), "initial Convert")?;
     let text_changed_count = Arc::new(AtomicUsize::new(0));
     let text_changed = text_changed_count.clone();
     let text_changed_subscription = number.subscribe_text_changed(move |_| {
@@ -933,7 +933,7 @@ fn exercise_interactive(
         .count();
     state.number.set(17);
     check(
-        number.get_text()?.as_deref() == Some("17")
+        number.text()?.as_deref() == Some("17")
             && state
                 .converters
                 .calls
@@ -987,11 +987,13 @@ fn exercise(scope: &AppScope) -> CheckResult<DeferredChecks> {
         interactive_controls,
     ) = lifetime.run(|| -> CheckResult<_> {
         let resources = ResourceScope::new();
-        let light = Some(Brush::solid(Color::rgb(20, 30, 40)));
-        let dark = Some(Brush::solid(Color::rgb(200, 210, 220)));
+        let light_brush = Some(Brush::solid(Color::rgb(20, 30, 40)));
+        let dark_brush = Some(Brush::solid(Color::rgb(200, 210, 220)));
+        let light = light_brush.map(rustolonia::Paint::from);
+        let dark = dark_brush.map(rustolonia::Paint::from);
         let dictionary = resources.dictionary()?;
-        dictionary.insert_for_theme(ThemeVariant::Default, "WindowBackground", light)?;
-        dictionary.insert_for_theme(ThemeVariant::Dark, "WindowBackground", dark)?;
+        dictionary.insert_for_theme(ThemeVariant::Default, "WindowBackground", light_brush)?;
+        dictionary.insert_for_theme(ThemeVariant::Dark, "WindowBackground", dark_brush)?;
         resources.merge(&dictionary)?;
 
         let strings = LocalizationResources::new("en-US")?;
@@ -1048,20 +1050,6 @@ fn exercise(scope: &AppScope) -> CheckResult<DeferredChecks> {
             profile_message: PropertyPath::read_only(move || {
                 Ok(InteractiveState::current(profile)?.message.get())
             }),
-            profile_message_converter_source: ScalarPath::new(
-                ScalarKind::String,
-                PropertyPath::read_only(move || {
-                    Ok(ScalarValue::String(
-                        InteractiveState::current(profile)?.message.get(),
-                    ))
-                }),
-            )?,
-            converter_static_string_converters_is_not_null_or_empty: RegisteredValueConverter::new(
-                "x:Static StringConverters.IsNotNullOrEmpty",
-                1,
-                interactive.converters.clone(),
-                interactive.culture,
-            )?,
             set_ports_command: interactive.command,
             profile_port_command_parameter: PropertyPath::read_only(move || {
                 Ok(Variant::Utf16(
@@ -1095,6 +1083,27 @@ fn exercise(scope: &AppScope) -> CheckResult<DeferredChecks> {
         };
         let (window, refs) = build_main_window(&bindings, handlers);
         let window = window.build(scope)?;
+        let _custom_static_probe = Border::el()
+            .visible(rustolonia::ConvertedBinding::<bool>::new(
+                ScalarPath::new(
+                    ScalarKind::String,
+                    PropertyPath::read_only(move || {
+                        Ok(ScalarValue::String(
+                            InteractiveState::current(profile)?.message.get(),
+                        ))
+                    }),
+                )?,
+                RegisteredValueConverter::new(
+                    "x:Static CustomConverters.HasText",
+                    1,
+                    interactive.converters.clone(),
+                    interactive.culture,
+                )?,
+                "x:Static CustomConverters.HasText",
+                ScalarValue::Null,
+                None,
+            ))
+            .build(scope)?;
         let instruction = refs
             .instruction
             .get()
@@ -1124,7 +1133,7 @@ fn exercise(scope: &AppScope) -> CheckResult<DeferredChecks> {
             "editable item template is not a TextBox",
         )?;
         check(
-            editable_input.get_text()?.as_deref() == Some("Editable item"),
+            editable_input.text()?.as_deref() == Some("Editable item"),
             "two-way item binding did not read its initial signal",
         )?;
         editable_input.set_text("Edited item")?;
@@ -1134,12 +1143,12 @@ fn exercise(scope: &AppScope) -> CheckResult<DeferredChecks> {
         )?;
         editable_name.set("Updated from Rust".to_string());
         check(
-            editable_input.get_text()?.as_deref() == Some("Updated from Rust"),
+            editable_input.text()?.as_deref() == Some("Updated from Rust"),
             "two-way item binding did not observe its model signal",
         )?;
         bindings.name.set("Initial name".to_string());
         check(
-            name_input.get_text()?.as_deref() == Some("Initial name"),
+            name_input.text()?.as_deref() == Some("Initial name"),
             "model did not update two-way text",
         )?;
         name_input.set_text("Edited name")?;
@@ -1148,7 +1157,7 @@ fn exercise(scope: &AppScope) -> CheckResult<DeferredChecks> {
             "two-way text did not update its model",
         )?;
         check(
-            optional_flag.get_is_checked()?.is_none(),
+            optional_flag.is_checked()?.is_none(),
             "initial nullable binding",
         )?;
         optional_flag.set_checked(Some(true))?;
@@ -1166,15 +1175,12 @@ fn exercise(scope: &AppScope) -> CheckResult<DeferredChecks> {
             "initial localization",
         )?;
         check(
-            instruction.get_name()?.as_deref() == Some("instruction"),
+            instruction.name()?.as_deref() == Some("instruction"),
             "x:Name was not assigned to the control",
         )?;
+        check(surface.background()? == light, "initial dynamic resource")?;
         check(
-            surface.get_background()? == light,
-            "initial dynamic resource",
-        )?;
-        check(
-            static_swatch.get_background()? == light,
+            static_swatch.background()? == light,
             "initial static resource",
         )?;
         strings.set_culture("fr-FR")?;
@@ -1183,9 +1189,9 @@ fn exercise(scope: &AppScope) -> CheckResult<DeferredChecks> {
             text_value(&instruction)? == "Entrez votre nom",
             "culture update",
         )?;
-        check(surface.get_background()? == dark, "theme update")?;
+        check(surface.background()? == dark, "theme update")?;
         check(
-            static_swatch.get_background()? == light,
+            static_swatch.background()? == light,
             "static resource changed",
         )?;
 
@@ -1233,7 +1239,7 @@ fn exercise(scope: &AppScope) -> CheckResult<DeferredChecks> {
             "replacement content",
         )?;
         model.set(None);
-        check(host.get_child()?.is_none(), "content was not cleared")?;
+        check(host.child()?.is_none(), "content was not cleared")?;
 
         let checked = Signal::new(None::<bool>);
         let checked_ref = NodeRef::<CheckBox>::new();
@@ -1367,8 +1373,8 @@ fn exercise(scope: &AppScope) -> CheckResult<DeferredChecks> {
             "second item name resolved to the wrong control",
         )?;
         check(
-            inline_one.get_name()?.as_deref() == Some("contact_name")
-                && inline_two.get_name()?.as_deref() == Some("contact_name"),
+            inline_one.name()?.as_deref() == Some("contact_name")
+                && inline_two.name()?.as_deref() == Some("contact_name"),
             "item control names were not set",
         )?;
         let (outer_one, _) = registry_item(&recent, 0)?;
@@ -1551,13 +1557,13 @@ fn exercise(scope: &AppScope) -> CheckResult<DeferredChecks> {
             .ok_or_else(|| std::io::Error::other("missing form grid surface"))?;
         let scroll: ScrollViewer = cast(
             surface
-                .get_child()?
+                .child()?
                 .ok_or_else(|| std::io::Error::other("missing form grid scroll viewer"))?,
             "form grid host is not a ScrollViewer",
         )?;
         let panel: StackPanel = cast(
             scroll
-                .get_content()?
+                .content()?
                 .ok_or_else(|| std::io::Error::other("missing form grid panel"))?,
             "form grid panel is not a StackPanel",
         )?;
@@ -1572,7 +1578,7 @@ fn exercise(scope: &AppScope) -> CheckResult<DeferredChecks> {
         panel.children()?.remove(driver_index)?;
         check(
             interactive.number.get() == 17
-                && interactive_controls.number.get_text()?.as_deref() == Some("17")
+                && interactive_controls.number.text()?.as_deref() == Some("17")
                 && interactive
                     .converters
                     .calls
@@ -1610,8 +1616,8 @@ fn exercise(scope: &AppScope) -> CheckResult<DeferredChecks> {
         check(
             text_value(&interactive_controls.title)? == "Second updated"
                 && text_value(&interactive_controls.message)? == "Second message"
-                && interactive_controls.detail.get_is_visible()?
-                && interactive_controls.number.get_text()?.as_deref() == Some("17")
+                && interactive_controls.detail.is_visible()?
+                && interactive_controls.number.text()?.as_deref() == Some("17")
                 && interactive.converters.calls.lock().unwrap().len() == converter_calls,
             "disposed interactive view still reacted to model or culture changes",
         )?;
@@ -1664,8 +1670,8 @@ fn main() -> CheckResult<()> {
                                 .with(|checks| checks.borrow_mut().take())
                                 .ok_or_else(|| std::io::Error::other("missing deferred checks"))?;
                             let (window, instruction) = finish()?;
-                            check(window.get_is_visible()?, "window is not visible")?;
-                            check(instruction.get_is_visible()?, "instruction is not visible")
+                            check(window.is_visible()?, "window is not visible")?;
+                            check(instruction.is_visible()?, "instruction is not visible")
                         })();
                         *final_result.lock().unwrap() =
                             Some(checked.map_err(|error| error.to_string()));

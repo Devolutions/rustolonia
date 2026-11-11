@@ -71,12 +71,16 @@ public class ApplicationInterfaceTests
         nameof(IAvnApplication.SetWindowMenu),
         nameof(IAvnApplication.IsNativeMenuExported),
         nameof(IAvnApplication.CreateNativeMenuBar),
+        nameof(IAvnApplication.ApplyStyles),
+        nameof(IAvnApplication.RemoveStyles),
+        nameof(IAvnApplication.AddWindowKeyBinding),
+        nameof(IAvnApplication.RemoveWindowKeyBinding),
     ];
 
     [Fact]
     public void Application_is_one_interface_in_rust_vtable_order()
     {
         Assert.Equal(s_slots, typeof(IAvnApplication).GetMethods().Select(m => m.Name));
-        Assert.Equal(60, s_slots.Length);
+        Assert.Equal(64, s_slots.Length);
     }
 }

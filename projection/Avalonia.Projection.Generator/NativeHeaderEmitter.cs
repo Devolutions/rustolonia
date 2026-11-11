@@ -394,7 +394,8 @@ public static class NativeHeaderEmitter
                 [$"{InputType(collection.ElementKind.Value, collection.ElementInterfaceName)} value", "int32_t* index"]);
             EmitSlot(sb, 7, "remove_at", name, ["int32_t index"]);
             EmitSlot(sb, 8, "clear", name, []);
-            EndInterface(sb, name, 9);
+            EmitSlot(sb, 9, "insert", name, ["int32_t index", $"{InputType(collection.ElementKind.Value, collection.ElementInterfaceName)} value"]);
+            EndInterface(sb, name, 10);
         }
 
         foreach (var type in types)

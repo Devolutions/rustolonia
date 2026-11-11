@@ -19,23 +19,51 @@ tag to avoid unintended upgrades. After crates.io publication,
 `rustolonia = "=12.1.0"` is also supported.
 
 ```rust,no_run
-use rustolonia::{App, Button, Orientation, StackPanel, TextBlock, Window};
+use rustolonia::{
+    color, fmt, rsx, App, Button, Orientation, StackPanel, Style, StyleSheet, TextBlock, Window,
+};
 
 fn main() -> rustolonia::Result<()> {
-    App::load_from_env()?.run(|scope| {
-        scope.mount(
-            Window::new()?.title("Hello from Rust")?.content(Some(
-                &StackPanel::new()?
-                    .orientation(Orientation::Vertical)?
-                    .child(TextBlock::new()?.text("Welcome to Avalonia!")?)?
-                    .child(Button::new()?.content(Some(&TextBlock::new()?.text("Hello")?))?)?,
-            ))?,
-        )
+    let styles = StyleSheet::from([
+        Style::select("Button.primary")
+            .background(color!("#2563eb"))
+            .foreground(color!("#ffffff"))
+            .corner_radius(6.0),
+        Style::select("Button.primary:pointerover").background(color!("#1d4ed8")),
+    ]);
+
+    App::load_from_env()?.run_with_styles(styles, |scope| {
+        let clicks = scope.signal(0_u32);
+        scope.mount_view(rsx! {
+            Window {
+                title: "Hello from Rust",
+                StackPanel {
+                    orientation: Orientation::Vertical,
+                    margin: 24.0,
+                    spacing: 12.0,
+                    TextBlock { "Welcome to Avalonia!" }
+                    Button {
+                        class: "primary",
+                        on_click: move |_| clicks.update(|c| *c += 1),
+                        text: fmt!("Clicked {} times", clicks.get())
+                    }
+                }
+            }
+        })?;
+        Ok(())
     })
 }
 ```
 
 `cargo run` is all it takes.
+
+## Declarative UI, Reactivity, and Async
+
+- **Declarative `rsx!` & `#[component]`**: Author control trees with `rsx!`, inline `"string"` children, `class:`, `ref:`, `show cond { ... } else { ... }`, `for item in signal key |x| x.id { ... }`, compile-time `color!("#rrggbb")`, `tracks![auto, 1*, 240px]`, reactive `fmt!(...)`, and `#[derive(Lens)]` / `lens!`.
+- **UI-thread reactive state**: `Signal<T>`, `Memo<T>`, and `NodeRef<T>` are `Copy` UI-thread handles, so UI event closures need no `Send` bounds or `Arc<Mutex<...>>`. Background threads update UI state through `signal.writer(scope)` (`SignalWriter<T>`) or `scope.channel(...)` (`UiSender<M>`).
+- **Single-step async & off-thread work**: `scope.spawn_local(...)` polls `!Send` UI futures on the dispatcher; `scope.run_blocking(...)` / `scope.spawn_blocking(...)` run CPU or blocking I/O work off the UI thread; `scope.open_files(...)`, `scope.save_file(...)`, `scope.clipboard_text()`, and `scope.show_modal(&dialog)` resolve the active window automatically and return a single `Future<Output = Result<T>>`.
+- **Pure-Rust styling & menus**: `StyleSheet` / `Style::select(...)` target Avalonia selector classes and pseudo-classes (`:pointerover`, `:pressed`, `:focus`, `:disabled`) with `Paint` (solid or linear/radial gradients), metrics, shadows, and property transitions. `MenuBar` and `Shortcut` bind native menus and window `KeyBinding`s reactively without integer command IDs.
+- **Optional ecosystem features**: Enable `chrono`, `time`, `rust_decimal`, or `tokio` on `rustolonia` for seamless conversions with `CivilDate`, `CivilTime`, `Decimal`, and `create_resource`.
 
 Set the application name before `run` when shipping a desktop application:
 
@@ -141,13 +169,12 @@ and keys to a Rust closure, for canvases, overlays and custom charts (see
 menu Rust builds, with no schema compiled into the host. Both need a host with
 the stage 34 capability.
 
-`native_menu::NativeMenu` is Avalonia's
-[`NativeMenu`](https://docs.avaloniaui.net/controls/menus/nativemenu) built from
+`native_menu::MenuBar` and `native_menu::NativeMenu` build Avalonia's
+[`NativeMenu`](https://docs.avaloniaui.net/controls/menus/nativemenu) from
 Rust: window menus (the macOS menu bar, or an in-window `NativeMenuBar`
-elsewhere) and the macOS application menu, with shortcuts and check/radio
-items whose state Rust owns (see `examples/native_menu.rs` and
-[MENUS.md](https://github.com/Devolutions/rustolonia/blob/master/rust/MENUS.md#code-first-native-menus)). It needs a host with the
-`IAvnApplication15` capability.
+elsewhere) and the macOS application menu, with typed `Shortcut`s and reactive
+check/radio items whose state Rust owns (see `examples/native_menu.rs` and
+[MENUS.md](https://github.com/Devolutions/rustolonia/blob/master/rust/MENUS.md#code-first-native-menus)).
 
 Application view-model schemas are owned by the consuming crate. In this
 repository the flagship sample is [`../avalonia-sample`](../avalonia-sample),

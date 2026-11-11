@@ -21,25 +21,30 @@ fn main() {
         if std::env::args().any(|arg| arg == "--placement") {
             return placement_probe(scope);
         }
-        let protected = Button::new()?.tool_tip_tip("Protected tooltip")?;
-        let normal = Button::new()?.tool_tip_tip("Normal tooltip")?;
-        let window = Window::new()?.title("Protected")?.content(Some(&protected))?;
+        let protected = Button::el().tool_tip_tip("Protected tooltip").build(scope)?;
+        let normal = Button::el().tool_tip_tip("Normal tooltip").build(scope)?;
+        let window = Window::new()?;
+        window.set_title("Protected")?;
+        window.set_content(&protected)?;
         scope.set_overlay_popups(&window, true)?;
         scope.mount(window)?;
-        scope.mount(Window::new()?.title("Normal")?.content(Some(&normal))?)?;
+        let normal_window = Window::new()?;
+        normal_window.set_title("Normal")?;
+        normal_window.set_content(&normal)?;
+        scope.mount(normal_window)?;
         let baseline = visible_windows();
         for (target, overlay) in [(&protected, true), (&normal, false)] {
             target.set_tool_tip_is_open(true)?;
-            assert!(target.get_tool_tip_is_open()?);
+            assert!(target.tool_tip_is_open()?);
             let tooltip_windows = visible_windows();
             assert_eq!(tooltip_windows == baseline, overlay, "tooltip native-window count");
             target.set_tool_tip_is_open(false)?;
             let flyout = MenuFlyout::new()?;
-            flyout.items()?.add(
-                MenuItem::new()?.header(Some(&rustolonia::TextBlock::new()?.text("Menu entry")?))?,
-            )?;
+            let entry = MenuItem::new()?;
+            entry.set_header("Menu entry")?;
+            flyout.items()?.add(entry)?;
             flyout.show_at_with_control(target)?;
-            assert!(flyout.get_is_open()?);
+            assert!(flyout.is_open()?);
             let flyout_windows = visible_windows();
             assert_eq!(flyout_windows == baseline, overlay, "MenuFlyout native-window count");
             flyout.hide()?;
@@ -72,9 +77,18 @@ fn file_drag_probe() -> Result<(), Box<dyn std::error::Error>> {
         scope.set_shutdown_mode(ShutdownMode::OnExplicitShutdown)?;
         let clicks = Arc::new(std::sync::atomic::AtomicUsize::new(0));
         let count = clicks.clone();
-        let button = Button::new()?.width(300.0)?.height(120.0)?.content(Some(&rustolonia::TextBlock::new()?.text("Drag files")?))?
-            .on_click(scope, move |_| { count.fetch_add(1, std::sync::atomic::Ordering::SeqCst); })?;
-        let owner = Window::new()?.width(300.0)?.height(120.0)?.content(Some(&button))?;
+        let button = Button::el()
+            .width(300.0)
+            .height(120.0)
+            .content("Drag files")
+            .on_click(move |_| {
+                count.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            })
+            .build(scope)?;
+        let owner = Window::new()?;
+        owner.set_width(300.0)?;
+        owner.set_height(120.0)?;
+        owner.set_content(&button)?;
         scope.mount(owner.clone())?;
         let events = Arc::new(Mutex::new(Vec::new()));
         let observed = events.clone();
@@ -237,9 +251,11 @@ fn termination_probe() -> Result<(), Box<dyn std::error::Error>> {
         });
         gate.set_termination_handler(Some(&handler))?;
         drop(handler);
-        let button = Button::new()?.tool_tip_tip("Pending shutdown tooltip")?;
+        let button = Button::new()?;
+        button.set_tool_tip_tip("Pending shutdown tooltip")?;
         button.set_tool_tip_placement(PlacementMode::Bottom)?;
-        let owner = Window::new()?.content(Some(&button))?;
+        let owner = Window::new()?;
+        owner.set_content(&button)?;
         if with_popup {
             use rustolonia::AsControl;
             let raw = owner
@@ -256,7 +272,7 @@ fn termination_probe() -> Result<(), Box<dyn std::error::Error>> {
                 Ok(())
             });
             popup_gate.set_native_popup_gate(&raw, Some(&handler))?;
-            let owner = owner.on_unloaded(scope, move |_| {
+            owner.on_unloaded(scope, move |_| {
                 assert!(
                     native_placement::cleanup_done(),
                     "cleanup precedes owner Unloaded"
@@ -347,7 +363,7 @@ fn termination_probe() -> Result<(), Box<dyn std::error::Error>> {
 
 #[cfg(target_os = "macos")]
 fn teardown_probe() -> Result<(), Box<dyn std::error::Error>> {
-    use rustolonia::{AsControl, Button, MenuFlyout, MenuItem, PlacementMode, TextBlock, Window};
+    use rustolonia::{AsControl, Button, MenuFlyout, MenuItem, PlacementMode, Window};
     use rustolonia_sys::NativePopupEvent;
     use std::sync::{Arc, Mutex};
     struct HandlerLifetime(Arc<std::sync::atomic::AtomicBool>);
@@ -370,9 +386,11 @@ fn teardown_probe() -> Result<(), Box<dyn std::error::Error>> {
         let events = events.clone();
         let owner_ref = owner_ref.clone();
         move |scope| {
-            let button = Button::new()?.tool_tip_tip("Teardown tooltip")?;
+            let button = Button::new()?;
+            button.set_tool_tip_tip("Teardown tooltip")?;
             button.set_tool_tip_placement(PlacementMode::Bottom)?;
-            let owner = Window::new()?.content(Some(&button))?;
+            let owner = Window::new()?;
+            owner.set_content(&button)?;
             let raw = owner.as_control()?.query_interface::<rustolonia_sys::IAvnWindow>()?;
             *owner_ref.lock().unwrap() = Some(raw.clone());
             let observed = events.clone();
@@ -390,7 +408,7 @@ fn teardown_probe() -> Result<(), Box<dyn std::error::Error>> {
                 let gate_for_unload = gate.clone();
                 let raw_for_unload = raw.clone();
                 let events_for_unload = events.clone();
-                let owner = owner.on_unloaded(scope, move |_| {
+                owner.on_unloaded(scope, move |_| {
                     let events = events_for_unload.lock().unwrap();
                     assert!(events.iter().any(|event| matches!(event, NativePopupEvent::Closed { .. })),
                         "popup closes before owner Unloaded");
@@ -403,8 +421,9 @@ fn teardown_probe() -> Result<(), Box<dyn std::error::Error>> {
                 let scope = scope.clone();
                 return scope.post(move || {
                     let flyout = MenuFlyout::new().unwrap();
-                    flyout.items().unwrap().add(MenuItem::new().unwrap()
-                        .header(Some(&TextBlock::new().unwrap().text("Entry").unwrap())).unwrap()).unwrap();
+                    let entry = MenuItem::new().unwrap();
+                    entry.set_header("Entry").unwrap();
+                    flyout.items().unwrap().add(entry).unwrap();
                     if menu { flyout.show_at_with_control(&button).unwrap(); }
                     else { button.set_tool_tip_is_open(true).unwrap(); }
                     let token = events.lock().unwrap().iter().find_map(|event| match event {
@@ -416,14 +435,14 @@ fn teardown_probe() -> Result<(), Box<dyn std::error::Error>> {
                 });
             }
             scope.mount(owner.clone())?;
-            scope.mount(Window::new()?.title("Keep dispatcher running")?)?;
+            scope.mount(Window::el().title("Keep dispatcher running").build(scope)?)?;
             let scope = scope.clone();
             let dispatcher = scope.clone();
             dispatcher.post(move || {
                 let flyout = MenuFlyout::new().expect("flyout");
-                flyout.items().unwrap().add(
-                    MenuItem::new().unwrap().header(Some(&TextBlock::new().unwrap().text("Entry").unwrap())).unwrap()
-                ).unwrap();
+                let entry = MenuItem::new().unwrap();
+                entry.set_header("Entry").unwrap();
+                flyout.items().unwrap().add(entry).unwrap();
                 if menu {
                     flyout.show_at_with_control(&button).unwrap();
                 } else {
@@ -481,11 +500,13 @@ fn teardown_probe() -> Result<(), Box<dyn std::error::Error>> {
 fn placement_probe(scope: &rustolonia::AppScope) -> rustolonia::Result<()> {
     use rustolonia::{Button, PlacementMode, Window};
     use rustolonia_sys::NativePopupEvent;
-    let target = Button::new()?.tool_tip_tip("Placement tooltip")?;
-    let window = Window::new()?
-        .width(300.0)?
-        .height(88.0)?
-        .content(Some(&target))?;
+    let target = Button::el()
+        .tool_tip_tip("Placement tooltip")
+        .build(scope)?;
+    let window = Window::new()?;
+    window.set_width(300.0)?;
+    window.set_height(88.0)?;
+    window.set_content(&target)?;
     scope.mount(window.clone())?;
     let scope = scope.clone();
     let dispatcher = scope.clone();
@@ -1136,10 +1157,11 @@ mod native_placement {
 
 #[cfg(target_os = "macos")]
 fn gate_probe(scope: &rustolonia::AppScope) -> rustolonia::Result<()> {
-    use rustolonia::{Button, MenuFlyout, MenuItem, TextBlock, Window};
+    use rustolonia::{Button, MenuFlyout, MenuItem, Window};
     use rustolonia_sys::NativePopupEvent;
-    let target = Button::new()?.tool_tip_tip("Gated tooltip")?;
-    let window = Window::new()?.content(Some(&target))?;
+    let target = Button::el().tool_tip_tip("Gated tooltip").build(scope)?;
+    let window = Window::new()?;
+    window.set_content(&target)?;
     let events = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
     scope.set_native_popup_gate(&window, {
         let events = events.clone();
@@ -1149,8 +1171,10 @@ fn gate_probe(scope: &rustolonia::AppScope) -> rustolonia::Result<()> {
         }
     })?;
     scope.mount(window)?;
-    let normal = Button::new()?.tool_tip_tip("Ungated tooltip")?;
-    scope.mount(Window::new()?.content(Some(&normal))?)?;
+    let normal = Button::el().tool_tip_tip("Ungated tooltip").build(scope)?;
+    let normal_window = Window::new()?;
+    normal_window.set_content(&normal)?;
+    scope.mount(normal_window)?;
     let baseline = visible_windows();
     normal.set_tool_tip_is_open(true)?;
     assert_eq!(
@@ -1208,9 +1232,9 @@ fn gate_probe(scope: &rustolonia::AppScope) -> rustolonia::Result<()> {
     );
     target.set_tool_tip_is_open(false)?;
     let flyout = MenuFlyout::new()?;
-    flyout
-        .items()?
-        .add(MenuItem::new()?.header(Some(&TextBlock::new()?.text("Gated menu")?))?)?;
+    let gated_item = MenuItem::new()?;
+    gated_item.set_header("Gated menu")?;
+    flyout.items()?.add(gated_item)?;
     flyout.show_at_with_control(&target)?;
     assert_eq!(
         visible_windows(),

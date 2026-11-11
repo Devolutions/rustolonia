@@ -6,16 +6,18 @@ currently uses this Rustolonia source revision with a matching prebuilt host.
 
 | Template | Starting point | Structure |
 | --- | --- | --- |
-| [minimal](minimal/README.md) | One window, a label, and a button callback | `main.rs` bootstrap, `ui.rs` composition |
-| [form](form/README.md) | Text input, validation, Submit and Clear actions | `main.rs`, `ui.rs`, UI-independent `model.rs` |
-| [multi-window](multi-window/README.md) | Main workspace opening independent text-preview windows | `main.rs`, `ui.rs`, `ui/preview.rs` |
+| [minimal](minimal/README.md) | One window, `rsx!`, `StyleSheet`, `color!`, `fmt!`, and a reactive `Signal` counter | `main.rs` bootstrap, `ui.rs` composition |
+| [form](form/README.md) | Two-way `TextBox`, `#[derive(Lens)]`, `#[component]`, validation, Submit and Clear actions | `main.rs`, `ui.rs`, UI-independent `model.rs` |
+| [multi-window](multi-window/README.md) | Main workspace opening independent `rsx!` text-preview windows | `main.rs`, `ui.rs`, `ui/preview.rs` |
 | [axaml](axaml/README.md) | `.axaml` compiled into Rust builders during Cargo builds (development) | `build.rs`, AXAML views, Rust components and signals |
 
-The three code-first templates pin **v12.1.0**. The AXAML template's
-**v12.1.5** tag predates its compiler and runtime additions, so it requires the
-local source override described in its README until those additions are
-released. Its projection catalog is generated from the same metadata as the
-host. Do not mix bindings and hosts with different ABI fingerprints.
+The three code-first templates pin **v12.1.0** and the AXAML template pins
+**v12.1.5**. Until the next release ships the `rsx!`, `rustolonia-macros`,
+`StyleSheet`, and AXAML additions from this revision, out-of-repo copies can
+override `rustolonia`, `rustolonia-macros`, `rustolonia-bindgen`, and
+`rustolonia-sys` with a `[patch."https://github.com/Devolutions/rustolonia"]`
+entry and a matching local host as described in [axaml/README.md](axaml/README.md).
+Do not mix bindings and hosts with different ABI fingerprints.
 
 ## Copy and run
 

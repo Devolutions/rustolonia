@@ -1,6 +1,6 @@
 //! Rust-owned, typed resource dictionaries for code-first and AXAML views.
 
-use crate::reactive::on_scope_cleanup;
+use crate::reactive::{on_scope_cleanup, RawSignalId};
 use crate::{Error, Result, Signal, ThemeVariant};
 use std::any::{type_name, Any};
 use std::collections::{HashMap, HashSet};
@@ -57,8 +57,9 @@ struct TypedWatch<T: 'static> {
     id: u64,
     scope_id: u64,
     key: String,
-    signal: Signal<T>,
+    signal: RawSignalId,
     active: Arc<AtomicBool>,
+    _marker: std::marker::PhantomData<fn() -> T>,
 }
 
 impl<T: 'static> Drop for TypedWatch<T> {
@@ -82,11 +83,15 @@ impl<T: Clone + PartialEq + Send + Sync + 'static> ResourceWatch for TypedWatch<
 
     fn prepare(&self, value: &StoredValue) -> Result<PendingUpdate> {
         let value = value.typed::<T>(&self.key)?;
-        let signal = self.signal;
+        let raw_signal = self.signal;
         let active = self.active.clone();
         Ok(Box::new(move || {
             if active.load(Ordering::Acquire) {
-                signal.set_if_changed((*value).clone());
+                if let Ok(signal) = Signal::<T>::try_from_raw(raw_signal) {
+                    if signal.is_alive() {
+                        signal.set_if_changed((*value).clone());
+                    }
+                }
             }
         }))
     }
@@ -98,7 +103,7 @@ struct ResourceRegistry {
     dictionaries: HashMap<u64, Dictionary>,
     watches: Vec<Box<dyn ResourceWatch>>,
     theme: ThemeVariant,
-    theme_signal: Signal<ThemeVariant>,
+    theme_signal: RawSignalId,
     revision: u64,
 }
 
@@ -179,7 +184,7 @@ impl ResourceScope {
                     dictionaries,
                     watches: Vec::new(),
                     theme: ThemeVariant::Default,
-                    theme_signal: Signal::new(ThemeVariant::Default),
+                    theme_signal: Signal::new(ThemeVariant::Default).raw_id(),
                     revision: 0,
                 })),
                 id: 0,
@@ -403,12 +408,13 @@ impl ResourceScope {
             let mut registry = self.lock()?;
             let watch_id = registry.next_watch_id;
             registry.next_watch_id += 1;
-            let watch = TypedWatch {
+            let watch = TypedWatch::<T> {
                 id: watch_id,
                 scope_id: self.lease.id,
                 key,
-                signal,
+                signal: signal.raw_id(),
                 active: Arc::new(AtomicBool::new(true)),
+                _marker: std::marker::PhantomData,
             };
             let pending = watch.prepare(resolve(&registry, watch.scope_id, &watch.key)?)?;
             registry.watches.push(Box::new(watch));
@@ -438,12 +444,12 @@ impl ResourceScope {
 
     /// Returns a signal of the registry's current theme.
     pub fn theme_signal(&self) -> Result<Signal<ThemeVariant>> {
-        Ok(self.lock()?.theme_signal)
+        Signal::try_from_raw(self.lock()?.theme_signal)
     }
 
     /// Changes the theme after validating all active dynamic references.
     pub fn set_theme(&self, theme: ThemeVariant) -> Result<()> {
-        let (revision, updates, signal) = {
+        let (revision, updates, raw_signal) = {
             let mut registry = self.lock()?;
             let previous = registry.theme;
             registry.theme = theme;
@@ -458,6 +464,7 @@ impl ResourceScope {
                 }
             }
         };
+        let signal = Signal::<ThemeVariant>::try_from_raw(raw_signal)?;
         signal.set_if_changed(theme);
         self.apply_updates(revision, updates)
     }

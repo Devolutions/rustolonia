@@ -5,14 +5,15 @@
 //! captured directly by multiple event closures (`on_click`, `on_value_changed`)
 //! without cloning control handles or wrapping state in `Arc<Mutex<_>>`.
 
-use crate::Result;
+use crate::{AppContext, AppScope, Error, Result};
 use std::any::{Any, TypeId};
 use std::cell::RefCell;
 use std::collections::{HashMap, VecDeque};
 use std::fmt;
 use std::marker::PhantomData;
 use std::rc::Rc;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
+use std::thread::ThreadId;
 
 struct SignalSlot {
     value: Option<Box<dyn Any>>,
@@ -51,19 +52,141 @@ struct ReactiveRuntime {
     flushing: bool,
 }
 
+#[derive(Default)]
+struct UiCallbackPool {
+    next_id: u64,
+    slots: HashMap<u64, Box<dyn Any>>,
+}
+
+static ORPHANED_UI_CALLBACKS: Mutex<Vec<(ThreadId, u64)>> = Mutex::new(Vec::new());
+
 thread_local! {
     static RUNTIME: RefCell<ReactiveRuntime> = RefCell::new(ReactiveRuntime::default());
+    static UI_CALLBACKS: RefCell<UiCallbackPool> = RefCell::new(UiCallbackPool::default());
+}
+
+fn drain_orphaned_ui_callbacks_for_current_thread() {
+    let current = std::thread::current().id();
+    let ids: Vec<u64> = {
+        let Ok(mut orphaned) = ORPHANED_UI_CALLBACKS.lock() else {
+            return;
+        };
+        if !orphaned.iter().any(|(tid, _)| *tid == current) {
+            return;
+        }
+        let mut collected = Vec::new();
+        orphaned.retain(|(tid, id)| {
+            if *tid == current {
+                collected.push(*id);
+                false
+            } else {
+                true
+            }
+        });
+        collected
+    };
+    if ids.is_empty() {
+        return;
+    }
+    let removed: Vec<Box<dyn Any>> = UI_CALLBACKS.with(|pool| {
+        let mut pool = pool.borrow_mut();
+        ids.into_iter()
+            .filter_map(|id| pool.slots.remove(&id))
+            .collect()
+    });
+    drop(removed);
+}
+
+struct UiCallbackDrop {
+    thread: ThreadId,
+    id: u64,
+}
+
+impl Drop for UiCallbackDrop {
+    fn drop(&mut self) {
+        if std::thread::current().id() == self.thread {
+            let removed = UI_CALLBACKS.with(|pool| pool.borrow_mut().slots.remove(&self.id));
+            drop(removed);
+        } else if let Ok(mut orphaned) = ORPHANED_UI_CALLBACKS.lock() {
+            orphaned.push((self.thread, self.id));
+        }
+    }
+}
+
+/// A `Clone + Send + Sync` handle to a `!Send` closure pinned to its creating UI thread.
+///
+/// The closure itself never leaves thread-local storage, even if the last handle
+/// is dropped from a background thread.
+pub(crate) struct UiCallbackHandle<F: 'static> {
+    inner: Arc<UiCallbackDrop>,
+    _marker: PhantomData<fn() -> F>,
+}
+
+impl<F: 'static> Clone for UiCallbackHandle<F> {
+    fn clone(&self) -> Self {
+        Self {
+            inner: self.inner.clone(),
+            _marker: PhantomData,
+        }
+    }
+}
+
+impl<F: 'static> fmt::Debug for UiCallbackHandle<F> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("UiCallbackHandle")
+            .field("id", &self.inner.id)
+            .finish()
+    }
+}
+
+impl<F: 'static> UiCallbackHandle<F> {
+    pub(crate) fn new(callback: F) -> Self {
+        drain_orphaned_ui_callbacks_for_current_thread();
+        let thread = std::thread::current().id();
+        let id = UI_CALLBACKS.with(|pool| {
+            let mut pool = pool.borrow_mut();
+            let id = pool.next_id.wrapping_add(1);
+            pool.next_id = id;
+            let cell: Rc<RefCell<F>> = Rc::new(RefCell::new(callback));
+            pool.slots.insert(id, Box::new(cell));
+            id
+        });
+        Self {
+            inner: Arc::new(UiCallbackDrop { thread, id }),
+            _marker: PhantomData,
+        }
+    }
+
+    pub(crate) fn with<R>(&self, invoke: impl FnOnce(&mut F) -> R) -> Result<R> {
+        if std::thread::current().id() != self.inner.thread {
+            return Err(Error::NoUiContext);
+        }
+        drain_orphaned_ui_callbacks_for_current_thread();
+        let cell: Option<Rc<RefCell<F>>> = UI_CALLBACKS.with(|pool| {
+            pool.borrow()
+                .slots
+                .get(&self.inner.id)
+                .and_then(|boxed| boxed.downcast_ref::<Rc<RefCell<F>>>())
+                .cloned()
+        });
+        let cell = cell.ok_or(Error::NoUiContext)?;
+        let mut guard = cell.borrow_mut();
+        Ok(invoke(&mut *guard))
+    }
 }
 
 // Single-view hosts (browser, Android) keep the session for the process lifetime.
 #[cfg_attr(any(target_os = "emscripten", target_os = "android"), allow(dead_code))]
 pub(crate) fn clear_reactive_runtime() {
+    drain_orphaned_ui_callbacks_for_current_thread();
     let has_root = RUNTIME.with(|runtime| !runtime.borrow().scopes.is_empty());
     if has_root {
         ReactiveScope { id: 0 }.dispose();
     }
     let old = RUNTIME.with(|runtime| std::mem::take(&mut *runtime.borrow_mut()));
     drop(old);
+    let old_callbacks = UI_CALLBACKS.with(|pool| std::mem::take(&mut *pool.borrow_mut()));
+    drop(old_callbacks);
 }
 
 fn ensure_root_scope(rt: &mut ReactiveRuntime) -> usize {
@@ -210,18 +333,30 @@ fn flush_pending_effects() {
         drop(callback);
 
         if let Err(err) = result {
-            eprintln!("reactive effect failed: {err}");
+            crate::runtime::report_ui_error("reactive effect failed", &err);
         }
     }
 }
 
-/// A `Copy`, fine-grained reactive signal holding a value of type `T`.
+/// Thread-tagged internal signal identifier for `Send` registries that only
+/// dereference signals on their owning UI thread.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct RawSignalId {
+    id: usize,
+    thread: ThreadId,
+}
+
+/// A `Copy`, fine-grained UI-thread reactive signal holding a value of type `T`.
+///
+/// `Signal<T>` is `!Send` and `!Sync` because its backing arena is thread-local
+/// to the UI thread. To update a signal from a background thread, obtain a
+/// [`SignalWriter<T>`] via [`Signal::writer`] or use [`AppScope::channel`].
 ///
 /// Reading a `Signal` inside a [`Memo`], [`Effect`], or reactive view property
 /// automatically subscribes to future changes.
 pub struct Signal<T: 'static> {
     id: usize,
-    _marker: PhantomData<fn() -> T>,
+    _marker: PhantomData<*mut T>,
 }
 
 impl<T: 'static> Copy for Signal<T> {}
@@ -401,6 +536,127 @@ impl<T: 'static> Signal<T> {
     pub fn two_way(&self) -> TwoWay<T> {
         TwoWay { signal: *self }
     }
+
+    /// Creates a `Send + Sync + Clone` [`SignalWriter<T>`] that marshals updates
+    /// from background threads onto the UI dispatcher.
+    pub fn writer(&self, scope: &AppScope) -> SignalWriter<T>
+    where
+        T: Send,
+    {
+        SignalWriter {
+            context: scope.clone_context(),
+            raw: self.raw_id(),
+            _marker: PhantomData,
+        }
+    }
+
+    pub(crate) fn raw_id(&self) -> RawSignalId {
+        RawSignalId {
+            id: self.id,
+            thread: std::thread::current().id(),
+        }
+    }
+
+    pub(crate) fn try_from_raw(raw: RawSignalId) -> Result<Self> {
+        if std::thread::current().id() != raw.thread {
+            return Err(Error::NoUiContext);
+        }
+        Ok(Self {
+            id: raw.id,
+            _marker: PhantomData,
+        })
+    }
+}
+
+/// A thread-safe (`Send + Sync + Clone`) writer handle for updating a [`Signal<T>`]
+/// from background threads via [`AppContext::post`].
+pub struct SignalWriter<T: Send + 'static> {
+    context: AppContext,
+    raw: RawSignalId,
+    _marker: PhantomData<fn(T)>,
+}
+
+impl<T: Send + 'static> Clone for SignalWriter<T> {
+    fn clone(&self) -> Self {
+        Self {
+            context: self.context.clone(),
+            raw: self.raw,
+            _marker: PhantomData,
+        }
+    }
+}
+
+impl<T: Send + 'static> fmt::Debug for SignalWriter<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("SignalWriter")
+            .field("raw", &self.raw)
+            .finish()
+    }
+}
+
+impl<T: Send + 'static> SignalWriter<T> {
+    /// Replaces the signal's value on the UI thread.
+    pub fn set(&self, value: T) -> Result<()> {
+        let raw = self.raw;
+        if std::thread::current().id() == raw.thread {
+            if let Ok(sig) = Signal::<T>::try_from_raw(raw) {
+                if sig.is_alive() {
+                    sig.set(value);
+                }
+            }
+            return Ok(());
+        }
+        self.context.post(move || {
+            if let Ok(sig) = Signal::<T>::try_from_raw(raw) {
+                if sig.is_alive() {
+                    sig.set(value);
+                }
+            }
+        })
+    }
+
+    /// Replaces the signal's value on the UI thread only when `current != value`.
+    pub fn set_if_changed(&self, value: T) -> Result<()>
+    where
+        T: PartialEq,
+    {
+        let raw = self.raw;
+        if std::thread::current().id() == raw.thread {
+            if let Ok(sig) = Signal::<T>::try_from_raw(raw) {
+                if sig.is_alive() {
+                    sig.set_if_changed(value);
+                }
+            }
+            return Ok(());
+        }
+        self.context.post(move || {
+            if let Ok(sig) = Signal::<T>::try_from_raw(raw) {
+                if sig.is_alive() {
+                    sig.set_if_changed(value);
+                }
+            }
+        })
+    }
+
+    /// Mutates the signal's value in place on the UI thread.
+    pub fn update(&self, f: impl FnOnce(&mut T) + Send + 'static) -> Result<()> {
+        let raw = self.raw;
+        if std::thread::current().id() == raw.thread {
+            if let Ok(sig) = Signal::<T>::try_from_raw(raw) {
+                if sig.is_alive() {
+                    sig.update(f);
+                }
+            }
+            return Ok(());
+        }
+        self.context.post(move || {
+            if let Ok(sig) = Signal::<T>::try_from_raw(raw) {
+                if sig.is_alive() {
+                    sig.update(f);
+                }
+            }
+        })
+    }
 }
 
 /// Two-way binding descriptor created via [`Signal::two_way`].
@@ -431,7 +687,7 @@ impl<T: 'static> TwoWay<T> {
 }
 
 type PathReader<T> = dyn Fn() -> Result<T>;
-type PathWriter<T> = dyn Fn(T) -> Result<()> + Send + Sync;
+type PathWriter<T> = dyn Fn(T) -> Result<()>;
 
 /// An application-supplied path into a Rust model.
 ///
@@ -440,7 +696,7 @@ type PathWriter<T> = dyn Fn(T) -> Result<()> + Send + Sync;
 /// model and unsubscribe from the old one.
 pub struct PropertyPath<T: 'static> {
     pub(crate) read: Rc<PathReader<T>>,
-    pub(crate) write: Option<Arc<PathWriter<T>>>,
+    pub(crate) write: Option<Rc<PathWriter<T>>>,
 }
 
 impl<T: 'static> Clone for PropertyPath<T> {
@@ -474,11 +730,11 @@ impl<T: 'static> PropertyPath<T> {
     /// Creates a path whose writer updates the currently selected model.
     pub fn writable(
         read: impl Fn() -> Result<T> + 'static,
-        write: impl Fn(T) -> Result<()> + Send + Sync + 'static,
+        write: impl Fn(T) -> Result<()> + 'static,
     ) -> Self {
         Self {
             read: Rc::new(read),
-            write: Some(Arc::new(write)),
+            write: Some(Rc::new(write)),
         }
     }
 
@@ -1069,14 +1325,12 @@ impl<T: 'static> Resource<T> {
         self.state.set(ResourceState::Error(message.into()));
     }
 
-    pub(crate) fn next_generation(&self) -> u64 {
-        let next = self.generation.get_untracked().wrapping_add(1);
-        self.generation.set(next);
-        next
+    pub(crate) fn state_raw_id(&self) -> RawSignalId {
+        self.state.raw_id()
     }
 
-    pub(crate) fn current_generation(&self) -> u64 {
-        self.generation.get_untracked()
+    pub(crate) fn generation_raw_id(&self) -> RawSignalId {
+        self.generation.raw_id()
     }
 }
 

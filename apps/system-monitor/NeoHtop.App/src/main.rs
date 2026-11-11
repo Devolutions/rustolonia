@@ -12,11 +12,7 @@ use sysinfo::{Disks, Networks, System};
 use crate::filter::Filters;
 use crate::monitoring::{PendingKill, ProcessInfo, ProcessMonitor, SystemMonitor, SystemStats};
 use crate::sort::{process_key, sort_label, sort_visible_indices, SortColumn};
-
-pub use rustolonia::{
-    App, AppScope, CancellationToken, ClipboardData, Error, MapKey, RangeBatch, RangeRequest,
-    Result,
-};
+use rustolonia::{App, AppScope, ClipboardData, Error, Result};
 
 mod filter;
 mod format;
@@ -25,16 +21,6 @@ mod monitoring;
 mod reconcile;
 mod refresh;
 mod sort;
-
-pub mod value_converter {
-    pub use rustolonia::value_converter::ValueConverterDispatch;
-}
-
-pub mod view_model {
-    pub use rustolonia::view_model::{
-        BatchCompletion, DynamicViewModel, ViewModelBatch, ViewModelSink,
-    };
-}
 
 #[path = "../../generated_view_models.rs"]
 mod generated_view_models;
@@ -860,7 +846,6 @@ impl MainViewModel for Model {
     fn close_overlays(&mut self) -> Result<()> {
         self.set_overlay(Overlay::None, false)
     }
-
 }
 
 #[derive(Clone, Copy)]
@@ -952,10 +937,7 @@ fn start_refresh_thread(
     )
 }
 
-fn publish_snapshot(
-    state: &mut MonitorState,
-    sink: &MainViewModelSink,
-) -> Result<()> {
+fn publish_snapshot(state: &mut MonitorState, sink: &MainViewModelSink) -> Result<()> {
     let cpu_avg = if state.stats.cpu_usage.is_empty() {
         0.0
     } else {
@@ -1090,7 +1072,9 @@ fn publish_snapshot(
         if let Some(row) = state.published_rows.get(key) {
             row.update(values)?;
         } else {
-            state.published_rows.insert(key.clone(), RowModel::new(values));
+            state
+                .published_rows
+                .insert(key.clone(), RowModel::new(values));
         }
     }
     for change in reconcile::reconcile(&mut state.published_keys, &desired) {

@@ -4,12 +4,13 @@
 //!
 //! Like `Brush`, these are plain values in Rust; minting one across the ABI needs a live
 //! host factory (`IAvnControlFactory::CreateLinearGradientBrush` /
-//! `CreateRadialGradientBrush`). Neither shape is wired to a `Background`/`BorderBrush`/
-//! `Foreground` control property in this wave, so there is no public route to a real ABI
-//! round trip from outside the crate; these tests cover the value semantics that the ABI
-//! marshalling (`to_abi`/`from_abi`) builds on.
+//! `CreateRadialGradientBrush`). These tests cover the pure-Rust value semantics and
+//! `IntoValue<Option<Paint>>` conversions; `nativeaot_object_model` covers a real host
+//! round trip on control brush properties.
 
-use rustolonia::{Color, GradientStop, LinearGradientBrush, Paint, RadialGradientBrush};
+use rustolonia::{
+    Brush, Color, GradientStop, IntoValue, LinearGradientBrush, Paint, RadialGradientBrush,
+};
 use rustolonia::{RelativePoint, RelativeScalar, RelativeUnit, SpreadMethod};
 
 #[test]
@@ -86,6 +87,36 @@ fn a_gradient_brush_converts_into_the_matching_paint_variant() {
         RelativeScalar::new(0.5, RelativeUnit::Relative),
     );
 
-    assert_eq!(Paint::from(linear.clone()), Paint::LinearGradient(linear));
-    assert_eq!(Paint::from(radial.clone()), Paint::RadialGradient(radial));
+    assert_eq!(
+        Paint::from(linear.clone()),
+        Paint::LinearGradient(linear.clone())
+    );
+    assert_eq!(
+        Paint::from(radial.clone()),
+        Paint::RadialGradient(radial.clone())
+    );
+
+    let from_color: Option<Paint> = Color::rgb(0x11, 0x22, 0x33).into_value();
+    assert_eq!(
+        from_color,
+        Some(Paint::Solid(Brush::solid(Color::rgb(0x11, 0x22, 0x33))))
+    );
+    let from_rgb_tuple: Option<Paint> = (0x44_u8, 0x55_u8, 0x66_u8).into_value();
+    assert_eq!(
+        from_rgb_tuple,
+        Some(Paint::Solid(Brush::solid(Color::rgb(0x44, 0x55, 0x66))))
+    );
+    let from_opt_brush: Option<Paint> = Some(Brush::new(Color::rgb(1, 2, 3), 0.5)).into_value();
+    assert_eq!(
+        from_opt_brush,
+        Some(Paint::Solid(Brush::new(Color::rgb(1, 2, 3), 0.5)))
+    );
+    let cleared_brush: Option<Paint> = Option::<Brush>::None.into_value();
+    assert_eq!(cleared_brush, None);
+    let cleared_paint: Option<Paint> = Option::<Paint>::None.into_value();
+    assert_eq!(cleared_paint, None);
+    let from_linear: Option<Paint> = linear.clone().into_value();
+    assert_eq!(from_linear, Some(Paint::LinearGradient(linear)));
+    let from_radial: Option<Paint> = radial.clone().into_value();
+    assert_eq!(from_radial, Some(Paint::RadialGradient(radial)));
 }

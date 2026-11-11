@@ -89,16 +89,20 @@ were already on `Control`, so `Window` inherits them.
 `HorizontalAlignment`, `VerticalAlignment` and `WindowState` are carried as
 `int32_t` and projected into the safe crate as Rust enums with `TryFrom<i32>`.
 
-In safe Rust each member is a `set_*`/`get_*` pair plus a chaining builder, and
-`Thickness` gains `const` helpers so a caller never repeats a scalar:
+In safe Rust, live `Control` handles provide explicit `set_*` mutators and
+`C-GETTER` getters without a `get_` prefix (`control.margin()?`,
+`control.is_visible()?`, `text_box.text()?`), while `El<T>` and `rsx!` provide
+declarative fluent builders:
 
 ```rust
-let readout = TextBlock::new()?
-    .text("Laid out from Rust")?
-    .margin(Thickness::symmetric(12.0, 4.0))?
-    .horizontal_alignment(HorizontalAlignment::Right)?
-    .max_width(320.0)?;
+let readout = TextBlock::el()
+    .text("Laid out from Rust")
+    .margin(Thickness::symmetric(12.0, 4.0))
+    .horizontal_alignment(HorizontalAlignment::Right)
+    .max_width(320.0)
+    .build(scope)?;
 readout.set_margin(Thickness::uniform(8.0))?;
+assert_eq!(readout.margin()?, Thickness::uniform(8.0));
 ```
 
 `Thickness::uniform`, `Thickness::symmetric` and `CornerRadius::uniform` are
@@ -227,15 +231,18 @@ let sunset = LinearGradientBrush::new(
     RelativePoint::new(0.0, 0.0, RelativeUnit::Relative),
     RelativePoint::new(1.0, 1.0, RelativeUnit::Relative),
 );
-let paint: Paint = sunset.into();
+let border = Border::el().background(sunset).build(scope)?;
+assert!(matches!(border.background()?, Some(Paint::LinearGradient(_))));
 ```
 
-`Paint`, `LinearGradientBrush` and `RadialGradientBrush` are additive: no
-existing `Brush`-typed property getter or setter was rewired to accept or
-return `Paint`. Reading `Background`/`BorderBrush`/`Foreground` off a
-gradient-backed control still fails with `AVN_E_NONSOLIDBRUSH` today, matching
-"reads fail rather than degrade" above; wiring chrome properties to accept a
-`Paint` is left to a future wave.
+All `Brush`-marshalled chrome and shape properties (`Background`, `BorderBrush`,
+`Foreground`, `Fill`, `Stroke`, `PaneBackground`) accept `impl Into<Option<Paint>>`
+(`Paint`, `Brush`, `Color`, `LinearGradientBrush`, `RadialGradientBrush`, or
+`None`) and return `Result<Option<Paint>>` from getters. Calling `get_color`
+directly on a raw `IAvnBrush` backed by a gradient still returns
+`AVN_E_NONSOLIDBRUSH`, while the safe `Paint` conversion queries
+`IAvnLinearGradientBrush` and `IAvnRadialGradientBrush` first so solid and
+gradient brushes round-trip losslessly.
 
 ## Chrome members
 
@@ -282,12 +289,10 @@ Avalonia. `ComboBox` re-declares `HorizontalContentAlignment` and
 input handling, so the ABI publishes `get_is_pressed` and no setter. In safe Rust
 a read-only member drops the `get_` prefix and has no builder: `button.is_pressed()?`.
 
-`ClickMode` and `SelectionMode` join the IR enums. `SelectionMode` is a `[Flags]`
-enum, and — like `KeyModifiers` — it projects as a plain Rust enum carrying only
-the declared modes. A combined value such as `Multiple | Toggle` therefore cannot
-be written from Rust, and reading one that XAML set reports
-`Error::InvalidEnumValue`. Bitmask-shaped enums need their own representation and
-are deliberately left to a later wave.
+`ClickMode` and `SelectionMode` join the IR enums. `[Flags]` enums such as
+`SelectionMode` and `KeyModifiers` project as typed bitflag structs (`SelectionMode::MULTIPLE | SelectionMode::TOGGLE`,
+`KeyModifiers::CONTROL | KeyModifiers::SHIFT`) supporting `|`, `&`, `^`, `!`,
+`contains`, `is_empty`, and lossless round-tripping across the `i32` ABI slot.
 
 `Command`, `Flyout`, `ISelectionModel` and `PasswordChar` remain out of scope:
 the first three need reference graphs the ABI does not marshal, and `char` is not
@@ -514,7 +519,7 @@ flyout.subscribe_closing(|arguments| arguments.cancel = !ready_to_close())?;
 ## Menus as controls
 
 This is the **imperative** menu, distinct from the `NativeMenu` (view-model or
-code-first, via `IAvnApplication15`) in [MENUS.md](MENUS.md). A `Menu` is an `ItemsControl` whose items are real projected
+code-first, via `IAvnApplication`) in [MENUS.md](MENUS.md). A `Menu` is an `ItemsControl` whose items are real projected
 controls, built and driven from Rust:
 
 | Projected interface                 | Base                                | Members it declares |

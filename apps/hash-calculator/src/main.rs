@@ -4,26 +4,10 @@
 //! bridge exposes that state to the compiled Avalonia presentation.
 #![cfg_attr(target_os = "windows", windows_subsystem = "windows")]
 
-pub use rustolonia::{
-    AppScope, CancellationToken, ClipboardData, ConversionDirection, Error, MapKey, RangeBatch,
-    RangeRequest, RecentFileList, Result, ScalarKind, ScalarValue,
-};
-pub mod view_model {
-    pub use rustolonia::view_model::{
-        BatchCompletion, DynamicViewModel, ViewModelBatch, ViewModelSink,
-    };
-}
-pub mod value_converter {
-    pub use rustolonia::value_converter::ValueConverterDispatch;
-}
-
 #[path = "../generated/generated_view_models.rs"]
 mod generated_view_models;
 mod hash;
 
-use rustolonia::{
-    ActivationEvent, App, FileTypeFilter, OpenFilePickerOptions, PickerOutcome, Window,
-};
 use generated_view_models::{
     mount_main_window, FileRowViewModel, FileRowViewModelSink, MainViewModel, MainViewModelSink,
     MAIN_VIEW_MODEL_RECENT_FILES_CAPACITY,
@@ -31,6 +15,10 @@ use generated_view_models::{
 use hash::{
     format_row_report, format_size, hash_file, match_label, write_sample_file, FileHashes,
     HashOptions, SAMPLE_FILE_NAME,
+};
+use rustolonia::{
+    ActivationEvent, App, AppScope, ClipboardData, Error, FileTypeFilter, OpenFilePickerOptions,
+    PickerOutcome, RecentFileList, Result, Window,
 };
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
@@ -125,14 +113,18 @@ impl FileRowViewModel for FileRowModel {
     fn copy_row(&mut self) -> Result<()> {
         let report = {
             let shared = self.shared.lock().expect("shared state lock poisoned");
-            shared.files.iter().find(|file| file.id == self.id).map(|file| {
-                format_row_report(
-                    &file.name,
-                    &file.path.to_string_lossy(),
-                    &file.size_label,
-                    &file.hashes,
-                )
-            })
+            shared
+                .files
+                .iter()
+                .find(|file| file.id == self.id)
+                .map(|file| {
+                    format_row_report(
+                        &file.name,
+                        &file.path.to_string_lossy(),
+                        &file.size_label,
+                        &file.hashes,
+                    )
+                })
         };
         let Some(report) = report else {
             return Ok(());
@@ -213,7 +205,8 @@ impl MainViewModel for Model {
                         .filter_map(|item| item.local_path().map(Path::to_path_buf))
                         .collect();
                     if paths.is_empty() {
-                        let _ = set_status(&shared, "The selection is not available as local files.");
+                        let _ =
+                            set_status(&shared, "The selection is not available as local files.");
                         return;
                     }
                     if let Err(error) = add_paths(&shared, &paths, true) {
@@ -365,7 +358,11 @@ fn compare_status(shared: &Shared) -> String {
     let matches = shared
         .files
         .iter()
-        .filter(|file| file.hashes.matched_algorithm(&shared.expected_hash).is_some())
+        .filter(|file| {
+            file.hashes
+                .matched_algorithm(&shared.expected_hash)
+                .is_some()
+        })
         .count();
     if matches == 0 {
         "No files match".to_string()
@@ -639,86 +636,83 @@ fn add_paths(shared: &Arc<Mutex<Shared>>, paths: &[PathBuf], remember: bool) -> 
 }
 
 fn start_worker(shared: &Arc<Mutex<Shared>>) -> Result<()> {
-    let generation = {
-        let mut state = shared.lock().expect("shared state lock poisoned");
-        if state.worker_running {
-            return Ok(());
-        }
-        if !state
-            .files
-            .iter()
-            .any(|file| file.hashes.missing(state.options) && !file.status.starts_with("Failed"))
+    let generation =
         {
-            return Ok(());
-        }
-        state.worker_running = true;
-        state.hash_generation
-    };
+            let mut state = shared.lock().expect("shared state lock poisoned");
+            if state.worker_running {
+                return Ok(());
+            }
+            if !state.files.iter().any(|file| {
+                file.hashes.missing(state.options) && !file.status.starts_with("Failed")
+            }) {
+                return Ok(());
+            }
+            state.worker_running = true;
+            state.hash_generation
+        };
     let worker_shared = shared.clone();
     std::thread::Builder::new()
         .name("hash-worker".to_string())
-        .spawn(move || {
-            loop {
-                let next = {
-                    let mut state = worker_shared.lock().expect("shared state lock poisoned");
-                    if state.hash_generation != generation {
-                        state.worker_running = false;
-                        drop(state);
-                        let _ = start_worker(&worker_shared);
-                        return;
-                    }
-                    let options = state.options;
-                    let index = state.files.iter().position(|file| {
-                        file.hashes.missing(options) && !file.status.starts_with("Failed")
-                    });
-                    match index {
-                        Some(index) => {
-                            state.files[index].status = STATUS_HASHING.to_string();
-                            Some((
-                                state.files[index].id,
-                                state.files[index].path.clone(),
-                                options,
-                            ))
-                        }
-                        None => {
-                            state.worker_running = false;
-                            None
-                        }
-                    }
-                };
-                let Some((id, path, options)) = next else {
-                    let _ = publish_rows(&worker_shared);
-                    let _ = publish_main(&worker_shared);
+        .spawn(move || loop {
+            let next = {
+                let mut state = worker_shared.lock().expect("shared state lock poisoned");
+                if state.hash_generation != generation {
+                    state.worker_running = false;
+                    drop(state);
+                    let _ = start_worker(&worker_shared);
                     return;
-                };
+                }
+                let options = state.options;
+                let index = state.files.iter().position(|file| {
+                    file.hashes.missing(options) && !file.status.starts_with("Failed")
+                });
+                match index {
+                    Some(index) => {
+                        state.files[index].status = STATUS_HASHING.to_string();
+                        Some((
+                            state.files[index].id,
+                            state.files[index].path.clone(),
+                            options,
+                        ))
+                    }
+                    None => {
+                        state.worker_running = false;
+                        None
+                    }
+                }
+            };
+            let Some((id, path, options)) = next else {
                 let _ = publish_rows(&worker_shared);
                 let _ = publish_main(&worker_shared);
-                let result = hash_file(&path, options);
-                {
-                    let mut state = worker_shared.lock().expect("shared state lock poisoned");
-                    if state.hash_generation != generation {
-                        state.worker_running = false;
-                        drop(state);
-                        let _ = start_worker(&worker_shared);
-                        return;
-                    }
-                    let expected = state.expected_hash.clone();
-                    if let Some(file) = state.files.iter_mut().find(|file| file.id == id) {
-                        match result {
-                            Ok(hashes) => {
-                                file.hashes = hashes;
-                                file.status = STATUS_HASHED.to_string();
-                                file.match_label = match_label(&expected, &file.hashes);
-                            }
-                            Err(error) => {
-                                file.status = format!("Failed: {error}");
-                            }
+                return;
+            };
+            let _ = publish_rows(&worker_shared);
+            let _ = publish_main(&worker_shared);
+            let result = hash_file(&path, options);
+            {
+                let mut state = worker_shared.lock().expect("shared state lock poisoned");
+                if state.hash_generation != generation {
+                    state.worker_running = false;
+                    drop(state);
+                    let _ = start_worker(&worker_shared);
+                    return;
+                }
+                let expected = state.expected_hash.clone();
+                if let Some(file) = state.files.iter_mut().find(|file| file.id == id) {
+                    match result {
+                        Ok(hashes) => {
+                            file.hashes = hashes;
+                            file.status = STATUS_HASHED.to_string();
+                            file.match_label = match_label(&expected, &file.hashes);
+                        }
+                        Err(error) => {
+                            file.status = format!("Failed: {error}");
                         }
                     }
                 }
-                let _ = publish_rows(&worker_shared);
-                let _ = publish_main(&worker_shared);
             }
+            let _ = publish_rows(&worker_shared);
+            let _ = publish_main(&worker_shared);
         })
         .map(|_| ())
         .map_err(|error| Error::Load(format!("Unable to start hash worker: {error}")))

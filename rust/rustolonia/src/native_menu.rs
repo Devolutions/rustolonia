@@ -9,8 +9,15 @@
 //! its items open the macOS application menu (About, Settings…), which other
 //! platforms do not show.
 
-use crate::{AppContext, Control, Result, Window};
+use crate::reactive::{Effect, Signal, TwoWay, UiCallbackHandle};
+use crate::runtime::{report_ui_error, IntoEventResult};
+use crate::style::Shortcut;
+use crate::view::{Command, El, IntoProp, PropBinding};
+use crate::{AppContext, AppScope, Control, Result, Variant, Window};
 use rustolonia_sys as sys;
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::rc::Rc;
 
 /// Generated ids for separators and submenus start here, out of the
 /// application's range.
@@ -115,6 +122,11 @@ impl NativeMenuItem {
     pub fn gesture(mut self, gesture: impl Into<String>) -> Self {
         self.gesture = Some(gesture.into());
         self
+    }
+
+    /// Sets the keyboard shortcut from a typed [`Shortcut`].
+    pub fn shortcut(self, shortcut: Shortcut) -> Self {
+        self.gesture(shortcut.to_gesture_string())
     }
 
     pub fn checked(mut self, checked: bool) -> Self {
@@ -247,15 +259,19 @@ impl NativeMenu {
 impl AppContext {
     /// Creates an empty native menu reporting the id of each clicked item (or
     /// pressed shortcut) to `handler`, on the UI thread.
-    pub fn create_native_menu(
+    pub fn create_native_menu<R: IntoEventResult>(
         &self,
-        mut handler: impl FnMut(u32) -> Result<()> + Send + 'static,
+        mut handler: impl FnMut(u32) -> R + 'static,
     ) -> Result<NativeMenu> {
-        let sys_handler = sys::native_menu_handler(move |id| {
-            handler(id as u32).map_err(|error| match error {
-                crate::Error::Abi(error) => error,
-                _ => sys::Error(sys::E_FAIL),
-            })
+        let cb = UiCallbackHandle::new(move |id: u32| handler(id).into_event_result());
+        let sys_handler = sys::native_menu_handler(move |id| match cb.with(|f| f(id as u32)) {
+            Ok(Ok(())) => Ok(()),
+            Ok(Err(crate::Error::Abi(error))) => Err(error),
+            Ok(Err(other)) => {
+                report_ui_error("native menu callback failed", &other);
+                Err(sys::Error(sys::E_FAIL))
+            }
+            Err(_) => Err(sys::Error(sys::E_FAIL)),
         });
         let raw = self.application().create_native_menu(Some(&sys_handler))?;
         Ok(NativeMenu { raw })
@@ -290,6 +306,401 @@ impl AppContext {
     pub fn create_native_menu_bar(&self) -> Result<Control> {
         let raw = self.application().create_native_menu_bar()?;
         Ok(Control { raw })
+    }
+}
+
+/// Declarative, ID-free reactive builder for cross-platform [`NativeMenu`] bars
+/// and application menus.
+pub struct MenuBar {
+    entries: Vec<ReactiveEntry>,
+    next_id: u32,
+}
+
+type ClickAction = Box<dyn FnMut() -> Result<()>>;
+type ReactiveAttach = Box<dyn FnOnce(&AppScope, &NativeMenu, u32) -> Result<()>>;
+
+enum ReactiveEntry {
+    Item {
+        item: NativeMenuItem,
+        id: u32,
+        on_click: ClickAction,
+        bind: Option<ReactiveAttach>,
+    },
+    Separator,
+    Submenu {
+        header: String,
+        children: Vec<ReactiveEntry>,
+    },
+}
+
+/// Scoped submenu builder passed to [`MenuBar::submenu`].
+pub struct MenuBuilder<'a> {
+    next_id: &'a mut u32,
+    entries: Vec<ReactiveEntry>,
+}
+
+impl Default for MenuBar {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl MenuBar {
+    pub const fn new() -> Self {
+        Self {
+            entries: Vec::new(),
+            next_id: 1,
+        }
+    }
+
+    /// Appends a top-level submenu (such as `"_File"`, `"_Edit"`, `"_View"`).
+    pub fn submenu(
+        mut self,
+        header: impl Into<String>,
+        build: impl FnOnce(&mut MenuBuilder<'_>),
+    ) -> Self {
+        let mut sub = MenuBuilder {
+            next_id: &mut self.next_id,
+            entries: Vec::new(),
+        };
+        build(&mut sub);
+        self.entries.push(ReactiveEntry::Submenu {
+            header: header.into(),
+            children: sub.entries,
+        });
+        self
+    }
+
+    /// Appends a top-level command item (commonly used for macOS application menus).
+    pub fn action<R: IntoEventResult + 'static>(
+        mut self,
+        header: impl Into<String>,
+        shortcut: Option<Shortcut>,
+        on_click: impl FnMut() -> R + 'static,
+    ) -> Self {
+        let mut sub = MenuBuilder {
+            next_id: &mut self.next_id,
+            entries: Vec::new(),
+        };
+        sub.action(header, shortcut, on_click);
+        self.entries.extend(sub.entries);
+        self
+    }
+
+    /// Materializes this declarative specification into a live [`NativeMenu`],
+    /// wiring all click callbacks and reactive `checked`/`enabled` bindings.
+    pub fn build(self, scope: &AppScope) -> Result<NativeMenu> {
+        let actions: Rc<RefCell<HashMap<u32, ClickAction>>> = Rc::new(RefCell::new(HashMap::new()));
+        let mut binders: Vec<(u32, ReactiveAttach)> = Vec::new();
+        let items = collect_entries(self.entries, &mut *actions.borrow_mut(), &mut binders);
+
+        let actions_for_click = actions.clone();
+        let menu = scope.create_native_menu(move |id| {
+            let mut map = actions_for_click.borrow_mut();
+            if let Some(action) = map.get_mut(&id) {
+                action()?;
+            }
+            Ok(())
+        })?;
+        menu.set_items(&items)?;
+
+        for (id, bind) in binders {
+            bind(scope, &menu, id)?;
+        }
+        Ok(menu)
+    }
+}
+
+impl MenuBuilder<'_> {
+    fn alloc_id(&mut self) -> u32 {
+        let id = *self.next_id;
+        *self.next_id += 1;
+        id
+    }
+
+    /// Adds a menu item invoking `on_click`.
+    pub fn action<R: IntoEventResult + 'static>(
+        &mut self,
+        header: impl Into<String>,
+        shortcut: Option<Shortcut>,
+        mut on_click: impl FnMut() -> R + 'static,
+    ) -> &mut Self {
+        let id = self.alloc_id();
+        let mut item = NativeMenuItem::command(id, header);
+        if let Some(sc) = shortcut {
+            item = item.shortcut(sc);
+        }
+        self.entries.push(ReactiveEntry::Item {
+            item,
+            id,
+            on_click: Box::new(move || on_click().into_event_result()),
+            bind: None,
+        });
+        self
+    }
+
+    /// Adds a menu item bound to a [`Command`] (automatically syncing its
+    /// `CanExecute` enabled state!).
+    pub fn command(
+        &mut self,
+        header: impl Into<String>,
+        shortcut: Option<Shortcut>,
+        command: Command,
+    ) -> &mut Self {
+        let id = self.alloc_id();
+        let mut item = NativeMenuItem::command(id, header).enabled(command.is_enabled());
+        if let Some(sc) = shortcut {
+            item = item.shortcut(sc);
+        }
+        let cmd_for_click = command.clone();
+        let cmd_for_bind = command;
+        let bind: ReactiveAttach = Box::new(move |scope, menu, item_id| {
+            let menu = menu.clone();
+            let raw_cmd = cmd_for_bind.as_com_ptr().clone();
+            let raw_for_query = raw_cmd.clone();
+            let handler = sys::command_can_execute_changed_handler(move || {
+                if let Ok(enabled) = Command::can_execute_interface(&raw_for_query, Variant::None) {
+                    let _ = menu.update_item(
+                        item_id,
+                        None,
+                        MenuItemState {
+                            checked: false,
+                            enabled,
+                            visible: true,
+                        },
+                    );
+                }
+                Ok(())
+            });
+            let sub_id = raw_cmd.advise_can_execute_changed(&handler)?;
+            scope.retain_subscription(crate::EventSubscription::new(move || {
+                raw_cmd.unadvise_can_execute_changed(sub_id)
+            }));
+            Ok(())
+        });
+        self.entries.push(ReactiveEntry::Item {
+            item,
+            id,
+            on_click: Box::new(move || cmd_for_click.execute(Variant::None)),
+            bind: Some(bind),
+        });
+        self
+    }
+
+    /// Adds a checkable menu item two-way bound to `checked`.
+    pub fn check(
+        &mut self,
+        header: impl Into<String>,
+        shortcut: Option<Shortcut>,
+        checked: TwoWay<bool>,
+    ) -> &mut Self {
+        let id = self.alloc_id();
+        let sig = checked.signal();
+        let mut item = NativeMenuItem::check(id, header, sig.get_untracked());
+        if let Some(sc) = shortcut {
+            item = item.shortcut(sc);
+        }
+        let bind: ReactiveAttach = Box::new(move |_, menu, item_id| {
+            let menu = menu.clone();
+            Effect::new(move || {
+                menu.update_item(
+                    item_id,
+                    None,
+                    MenuItemState {
+                        checked: sig.get(),
+                        enabled: true,
+                        visible: true,
+                    },
+                )
+            })
+            .map(|_| ())
+        });
+        self.entries.push(ReactiveEntry::Item {
+            item,
+            id,
+            on_click: Box::new(move || {
+                sig.update(|v| *v = !*v);
+                Ok(())
+            }),
+            bind: Some(bind),
+        });
+        self
+    }
+
+    /// Adds a radio menu item bound to `selected == value`.
+    pub fn radio<T: Copy + PartialEq + 'static>(
+        &mut self,
+        header: impl Into<String>,
+        shortcut: Option<Shortcut>,
+        selected: Signal<T>,
+        value: T,
+    ) -> &mut Self {
+        let id = self.alloc_id();
+        let mut item = NativeMenuItem::radio(id, header, selected.get_untracked() == value);
+        if let Some(sc) = shortcut {
+            item = item.shortcut(sc);
+        }
+        let bind: ReactiveAttach = Box::new(move |_, menu, item_id| {
+            let menu = menu.clone();
+            Effect::new(move || {
+                menu.update_item(
+                    item_id,
+                    None,
+                    MenuItemState {
+                        checked: selected.get() == value,
+                        enabled: true,
+                        visible: true,
+                    },
+                )
+            })
+            .map(|_| ())
+        });
+        self.entries.push(ReactiveEntry::Item {
+            item,
+            id,
+            on_click: Box::new(move || {
+                selected.set_if_changed(value);
+                Ok(())
+            }),
+            bind: Some(bind),
+        });
+        self
+    }
+
+    /// Adds a menu item whose enabled state follows a reactive `IntoProp<bool>`.
+    pub fn action_enabled<M, R: IntoEventResult + 'static>(
+        &mut self,
+        header: impl Into<String>,
+        shortcut: Option<Shortcut>,
+        enabled: impl IntoProp<bool, M> + 'static,
+        mut on_click: impl FnMut() -> R + 'static,
+    ) -> &mut Self {
+        let id = self.alloc_id();
+        let mut item = NativeMenuItem::command(id, header);
+        if let Some(sc) = shortcut {
+            item = item.shortcut(sc);
+        }
+        let prop = enabled.into_prop();
+        let bind: ReactiveAttach = Box::new(move |_, menu, item_id| {
+            let menu = menu.clone();
+            match prop {
+                PropBinding::Static(en) => menu.update_item(
+                    item_id,
+                    None,
+                    MenuItemState {
+                        checked: false,
+                        enabled: en,
+                        visible: true,
+                    },
+                ),
+                PropBinding::Reactive(mut compute) => Effect::new(move || {
+                    menu.update_item(
+                        item_id,
+                        None,
+                        MenuItemState {
+                            checked: false,
+                            enabled: compute(),
+                            visible: true,
+                        },
+                    )
+                })
+                .map(|_| ()),
+                PropBinding::Fallible(mut compute) => Effect::new(move || {
+                    menu.update_item(
+                        item_id,
+                        None,
+                        MenuItemState {
+                            checked: false,
+                            enabled: compute()?,
+                            visible: true,
+                        },
+                    )
+                })
+                .map(|_| ()),
+                _ => Ok(()),
+            }
+        });
+        self.entries.push(ReactiveEntry::Item {
+            item,
+            id,
+            on_click: Box::new(move || on_click().into_event_result()),
+            bind: Some(bind),
+        });
+        self
+    }
+
+    pub fn separator(&mut self) -> &mut Self {
+        self.entries.push(ReactiveEntry::Separator);
+        self
+    }
+
+    pub fn submenu(
+        &mut self,
+        header: impl Into<String>,
+        build: impl FnOnce(&mut MenuBuilder<'_>),
+    ) -> &mut Self {
+        let mut sub = MenuBuilder {
+            next_id: self.next_id,
+            entries: Vec::new(),
+        };
+        build(&mut sub);
+        self.entries.push(ReactiveEntry::Submenu {
+            header: header.into(),
+            children: sub.entries,
+        });
+        self
+    }
+}
+
+fn collect_entries(
+    entries: Vec<ReactiveEntry>,
+    actions: &mut HashMap<u32, ClickAction>,
+    binders: &mut Vec<(u32, ReactiveAttach)>,
+) -> Vec<NativeMenuItem> {
+    let mut out = Vec::with_capacity(entries.len());
+    for entry in entries {
+        match entry {
+            ReactiveEntry::Item {
+                item,
+                id,
+                on_click,
+                bind,
+            } => {
+                actions.insert(id, on_click);
+                if let Some(b) = bind {
+                    binders.push((id, b));
+                }
+                out.push(item);
+            }
+            ReactiveEntry::Separator => out.push(NativeMenuItem::separator()),
+            ReactiveEntry::Submenu { header, children } => {
+                let child_items = collect_entries(children, actions, binders);
+                out.push(NativeMenuItem::submenu(header, child_items));
+            }
+        }
+    }
+    out
+}
+
+impl AppScope {
+    /// Returns a declarative [`El<Control>`] rendering the enclosing window's
+    /// native menu bar on Windows/Linux (auto-hiding on macOS).
+    pub fn native_menu_bar_el(&self) -> El<Control> {
+        let ctx = self.clone_context();
+        El::new(move || ctx.create_native_menu_bar())
+    }
+}
+
+impl El<Window> {
+    /// Builds and attaches a declarative [`MenuBar`] onto this window (including
+    /// its keyboard shortcuts).
+    pub fn menu_bar(self, menu_bar: MenuBar) -> Self {
+        self.with_op(move |scope, window| {
+            let menu = menu_bar.build(scope)?;
+            scope.set_window_menu(window, Some(&menu))?;
+            scope.retain_object(menu.raw);
+            Ok(())
+        })
     }
 }
 

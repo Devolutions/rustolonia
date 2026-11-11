@@ -262,18 +262,44 @@ honoured by compiled AXAML instead of being metadata-only.
 
 ## Code-first native menus
 
-Apps without a view-model schema build the same Avalonia
-[`NativeMenu`](https://docs.avaloniaui.net/controls/menus/nativemenu) from Rust
-through `IAvnApplication` and `IAvnNativeMenu` (`examples/native_menu.rs`).
-Like `ShellTray`, Rust numbers the items and receives one callback per click;
-no schema is compiled into the host.
+Apps without a view-model schema can build Avalonia's
+[`NativeMenu`](https://docs.avaloniaui.net/controls/menus/nativemenu) either
+declaratively with [`MenuBar`] (ID-free closures, typed [`Shortcut`]s, and
+reactive `Signal<bool>` / `Memo<bool>` state) or directly through `NativeMenu`
+and integer item IDs (`examples/native_menu.rs`).
+
+### Reactive `MenuBar`
+
+```rust
+let menu_bar = MenuBar::new()
+    .submenu("_File", |file| {
+        file.action("_Open…", Some(Shortcut::primary(Key::O)), move || {
+            status.set("Open…".into());
+        });
+        file.separator();
+        file.action("_Quit", Some(Shortcut::primary(Key::Q)), move || {
+            quit_scope.shutdown()
+        });
+    })
+    .submenu("_View", |view| {
+        view.check(
+            "_Word wrap",
+            Some(Shortcut::primary_shift(Key::W)),
+            word_wrap.two_way(),
+        );
+    });
+
+scope.mount_view(window_el.menu_bar(menu_bar))?;
+```
+
+### Low-level `NativeMenu`
 
 ```rust
 let menu = scope.create_native_menu(move |id| { /* dispatch on id */ Ok(()) })?;
 menu.set_items(&[NativeMenuItem::submenu("File", vec![
-    NativeMenuItem::command(OPEN, "Open…").gesture("Primary+O"),
+    NativeMenuItem::command(OPEN, "Open…").shortcut(Shortcut::primary(Key::O)),
     NativeMenuItem::separator(),
-    NativeMenuItem::check(WRAP, "Word wrap").checked(true),
+    NativeMenuItem::check(WRAP, "Word wrap", true),
 ])])?;
 scope.set_window_menu(&window, Some(&menu))?;      // the window's menu bar
 scope.set_application_menu(Some(&about_menu))?;    // macOS application menu

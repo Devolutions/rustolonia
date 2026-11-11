@@ -3,19 +3,28 @@
 //! `Memo`, `Effect`, `NodeRef`, `TwoWay`), `El<T>`, `rsx!`, and `reactive_view_model!`.
 
 use rustolonia::{
-    prop, provide_context, reactive_view_model, rsx, theme_brush, use_context, when_any, AsControl,
-    AvaloniaObject, Border, Brush, Button, CheckBox, Color, Command, ContentControl, Control,
-    ControlSlot, CornerRadius, Dock, Downcast, Effect, El, For, IntoProp, IntoValue, ItemsView,
-    KeyedListReconciler, ListBox, ListBoxItem, Memo, NodeRef, NonOwningRef, Orientation, Paint,
-    PixelPoint, PlacementMode, Point, PropBinding, PropertyPath, ReactiveScope, Rect, Resource,
-    ResourceState, Result, Show, Signal, Size, Slider, StackPanel, StyledElement, TemplatedControl,
-    TextBlock, TextBox, ThemeVariant, Thickness, ToggleSwitch, Upcast, Vector, ViewRegistry,
-    Window,
+    color, component, fmt, lens, prop, provide_context, reactive_view_model, rsx, theme_brush,
+    tracks, use_context, when_any, with_ui_error_handler, AnyEl, AsControl, AsyncPopulator,
+    AutoCompleteBox, AvaloniaObject, Border, BoxShadow, BoxShadows, Brush, Button, CheckBox,
+    CivilDate, CivilTime, Color, Command, ContentControl, Control, ControlKeyDownEventArgs,
+    ControlSlot, CornerRadius, Decimal, Dock, Downcast, Effect, El, Error, FontWeight, For,
+    GradientStop, Grid, GridTrack, GridTracks, IntoProp, IntoValue, ItemFilter, ItemSelector,
+    ItemsView, Key, KeyModifiers, KeyedListReconciler, Lens, LinearGradientBrush, ListBox,
+    ListBoxItem, Memo, NodeRef, NonOwningRef, Notification, NotificationType, Orientation, Paint,
+    PhysicalKey, PixelPoint, PlacementMode, Point, Popup, PopupAnchor, PopupGravity,
+    PopupPlacementCallback, PopupPlacementInput, PopupPlacementOutput,
+    PopupPositionerConstraintAdjustment, PropBinding, PropertyPath, RadialGradientBrush,
+    ReactiveScope, Rect, RelativePoint, RelativeScalar, RelativeUnit, Resource, ResourceState,
+    Result, SelectingItemsControlSelectionChangedArgs, SelectionMode, Shortcut, Show, Signal, Size,
+    Slider, SpreadMethod, StackPanel, Style, StyleSheet, StyledElement, TemplatedControl,
+    TextBlock, TextBox, TextFilter, TextSelector, ThemeVariant, Thickness, ToggleSwitch, Upcast,
+    Variant, Vector, ViewRegistry, Window,
 };
 use std::cell::RefCell;
 use std::ops::Deref;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 #[test]
 fn geometry_and_color_ergonomic_conversions_match_constructors() {
@@ -63,7 +72,11 @@ fn geometry_and_color_ergonomic_conversions_match_constructors() {
         Color::rgb(0x12, 0x34, 0x56)
     );
     assert_eq!(
-        Color::from((0x80, 0x12, 0x34, 0x56)),
+        Color::rgba(0x12, 0x34, 0x56, 0x80),
+        Color::new(0x80, 0x12, 0x34, 0x56)
+    );
+    assert_eq!(
+        Color::argb(0x80, 0x12, 0x34, 0x56),
         Color::new(0x80, 0x12, 0x34, 0x56)
     );
     assert_eq!(
@@ -1013,53 +1026,632 @@ fn item_scopes_created_on_later_updates_follow_the_parent_scope() {
 
 #[test]
 fn safe_reactive_command_tracks_can_execute_and_derived_resource_updates() {
-    let can_submit = Signal::new(false);
-    let executed_with = Arc::new(Mutex::new(Vec::new()));
-    let executed_for_cmd = executed_with.clone();
+    let scope = ReactiveScope::new();
+    scope.run(|| {
+        let can_submit = Signal::new(false);
+        let executed_with = Arc::new(Mutex::new(Vec::new()));
+        let executed_for_cmd = executed_with.clone();
 
-    let cmd = Command::with_can_execute(can_submit, move |param| {
-        executed_for_cmd.lock().unwrap().push(param);
-        Ok(())
-    })
-    .expect("create command");
+        let cmd = Command::with_can_execute(can_submit, move |param| {
+            executed_for_cmd.lock().unwrap().push(param);
+            Ok(())
+        })
+        .expect("create command");
 
-    assert!(!cmd.is_enabled());
-    can_submit.set(true);
-    assert!(cmd.is_enabled());
+        assert!(!cmd.is_enabled());
+        can_submit.set(true);
+        assert!(cmd.is_enabled());
 
-    cmd.execute(42_i32).expect("execute command");
+        cmd.execute(42_i32).expect("execute command");
+        assert_eq!(
+            *executed_with.lock().unwrap(),
+            vec![rustolonia::Variant::I32(42)]
+        );
+
+        let _btn = rsx! {
+            Button {
+                command: cmd,
+                "Submit"
+            }
+        };
+
+        let query = Signal::new(String::from("rust"));
+        let res = Resource::new_derived(
+            move || query.get(),
+            |q| {
+                if q.is_empty() {
+                    Err("Query cannot be empty".into())
+                } else {
+                    Ok(format!("Results for {q}"))
+                }
+            },
+        )
+        .expect("derived resource");
+
+        assert_eq!(
+            res.get(),
+            ResourceState::Ready("Results for rust".to_string())
+        );
+        query.set(String::new());
+        assert_eq!(
+            res.get(),
+            ResourceState::Error("Query cannot be empty".to_string())
+        );
+    });
+    scope.dispose();
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct RecordedCardProps {
+    title: String,
+    spacing: f64,
+    dense: bool,
+    subtitle: Option<String>,
+    child_count: usize,
+}
+
+#[component]
+fn SectionCard(
+    title: String,
+    #[prop(default = 12.0)] spacing: f64,
+    #[prop(default)] dense: bool,
+    subtitle: Option<String>,
+    recorder: Option<Rc<RefCell<Vec<RecordedCardProps>>>>,
+    children: Vec<AnyEl>,
+) -> El<Border> {
+    if let Some(log) = recorder {
+        log.borrow_mut().push(RecordedCardProps {
+            title: title.clone(),
+            spacing,
+            dense,
+            subtitle: subtitle.clone(),
+            child_count: children.len(),
+        });
+    }
+    let padding = if dense { 6.0 } else { 16.0 };
+    let mut stack = StackPanel::el()
+        .spacing(spacing)
+        .child(TextBlock::el().text(title));
+    if let Some(sub) = subtitle {
+        stack = stack.child(TextBlock::el().text(sub));
+    }
+    for child in children {
+        stack = stack.child(child);
+    }
+    Border::el().padding(padding).child(stack)
+}
+
+#[test]
+fn component_macro_supports_required_defaults_optional_props_and_children_in_rsx() {
+    let recorded: Rc<RefCell<Vec<RecordedCardProps>>> = Rc::new(RefCell::new(Vec::new()));
+
+    // Direct `.into_el()` invokes the component function immediately without needing a host,
+    // letting us assert exact prop resolution and child collection.
+    let _default_el = SectionCard::el()
+        .title("Overview")
+        .recorder(Some(recorded.clone()))
+        .child(TextBlock::el().text("Row A"))
+        .child("Row B")
+        .into_el();
+
+    let _custom_el = SectionCard::el()
+        .title("Details")
+        .spacing(20.0)
+        .dense(true)
+        .subtitle("Secondary heading")
+        .recorder(Some(recorded.clone()))
+        .into_el();
+
     assert_eq!(
-        *executed_with.lock().unwrap(),
-        vec![rustolonia::Variant::I32(42)]
+        *recorded.borrow(),
+        vec![
+            RecordedCardProps {
+                title: "Overview".into(),
+                spacing: 12.0,
+                dense: false,
+                subtitle: None,
+                child_count: 2,
+            },
+            RecordedCardProps {
+                title: "Details".into(),
+                spacing: 20.0,
+                dense: true,
+                subtitle: Some("Secondary heading".into()),
+                child_count: 0,
+            },
+        ]
     );
 
-    let _btn = rsx! {
+    // Also verify full composition inside `rsx!` with shorthand props, defaults, optionals, and nested children.
+    let title = "Dashboard";
+    let spacing = 18.0;
+    let _view: El<Window> = rsx! {
+        Window {
+            title,
+            StackPanel {
+                spacing,
+                SectionCard {
+                    title: "Default Card",
+                    TextBlock { "First child" }
+                    Button { "Action" }
+                }
+                SectionCard {
+                    title,
+                    spacing,
+                    dense: true,
+                    subtitle: "Explicit optional prop",
+                    "Inline text child"
+                }
+            }
+        }
+    };
+}
+
+#[test]
+#[should_panic(expected = "missing required prop 'title'")]
+fn component_macro_panics_when_required_prop_is_omitted() {
+    let _ = SectionCard::el().spacing(8.0).into_el();
+}
+
+#[derive(Clone, Debug, PartialEq, Lens)]
+struct ProfileForm {
+    username: String,
+    age: i32,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct NestedAccount {
+    profile: ProfileForm,
+    verified: bool,
+}
+
+#[test]
+fn color_tracks_fmt_and_lens_macros_produce_typed_values_and_writable_paths() {
+    const SLATE_BG: Color = color!("#1e293b");
+    const TRANSLUCENT_RED: Color = color!("#ff000080");
+    const SHORT_CYAN: Color = color!("#0cf");
+    const SHORT_ALPHA: Color = color!("#f008");
+    const INT_RGB: Color = color!(0x1e293b);
+    const INT_RGBA: Color = color!(0xff00_0080);
+
+    assert_eq!(SLATE_BG, Color::rgb(0x1E, 0x29, 0x3B));
+    assert_eq!(TRANSLUCENT_RED, Color::rgba(255, 0, 0, 128));
+    assert_eq!(SHORT_CYAN, Color::rgb(0x00, 0xCC, 0xFF));
+    assert_eq!(SHORT_ALPHA, Color::rgba(0xFF, 0x00, 0x00, 0x88));
+    assert_eq!(INT_RGB, SLATE_BG);
+    assert_eq!(INT_RGBA, TRANSLUCENT_RED);
+
+    let grid_tracks: GridTracks = tracks![*, Auto@Labels, 120, 2.5*];
+    assert_eq!(
+        grid_tracks,
+        GridTracks(vec![
+            GridTrack::star(1.0),
+            GridTrack::auto().shared_group("Labels"),
+            GridTrack::px(120.0),
+            GridTrack::star(2.5),
+        ])
+    );
+    assert_eq!(grid_tracks.to_string(), "*,Auto@Labels,120,2.5*");
+
+    let count = Signal::new(0_i32);
+    let formatted = fmt!("Count: {}", count.get());
+    assert_eq!(formatted(), "Count: 0");
+    count.set(9);
+    assert_eq!(formatted(), "Count: 9");
+
+    // `#[derive(Lens)]` generates `lens_<field>` writable `PropertyPath`s.
+    let form = Signal::new(ProfileForm {
+        username: "ada".into(),
+        age: 36,
+    });
+    let username_lens = ProfileForm::lens_username(form);
+    let age_lens = ProfileForm::lens_age(form);
+    let observed_names = Rc::new(RefCell::new(Vec::new()));
+    let observed_for_effect = observed_names.clone();
+    let username_for_effect = username_lens.clone();
+    let lens_effect = Effect::new(move || {
+        observed_for_effect
+            .borrow_mut()
+            .push(username_for_effect.get()?);
+        Ok(())
+    })
+    .unwrap();
+
+    assert_eq!(*observed_names.borrow(), vec!["ada"]);
+    assert_eq!(age_lens.get().unwrap(), 36);
+
+    username_lens.set("grace".into()).unwrap();
+    assert_eq!(*observed_names.borrow(), vec!["ada", "grace"]);
+    age_lens.set(40).unwrap();
+    assert_eq!(
+        form.get(),
+        ProfileForm {
+            username: "grace".into(),
+            age: 40,
+        }
+    );
+    lens_effect.dispose();
+
+    // `lens!(sig => ...)` (read-only) and `lens!(mut sig => ...)` (writable, including nested fields).
+    let account = Signal::new(NestedAccount {
+        profile: ProfileForm {
+            username: "linus".into(),
+            age: 21,
+        },
+        verified: false,
+    });
+    let ro_verified = lens!(account => verified);
+    assert!(!ro_verified.get().unwrap());
+    assert!(matches!(
+        ro_verified.set(true),
+        Err(Error::ReadOnlyBindingPath)
+    ));
+
+    let mut_nested_name = lens!(mut account => profile.username);
+    let mut_verified = lens!(mut account => verified);
+    assert_eq!(mut_nested_name.get().unwrap(), "linus");
+    mut_nested_name.set("margaret".into()).unwrap();
+    mut_verified.set(true).unwrap();
+    assert_eq!(account.get().profile.username, "margaret");
+    assert!(account.get().verified);
+}
+
+#[test]
+fn rsx_supports_shorthand_props_reactive_show_else_for_each_and_fmt_children() {
+    let title = "Shorthand & Reactive Control Flow";
+    let spacing = 10.0;
+    let count = Signal::new(4_i32);
+    let is_expanded = Signal::new(true);
+    let items = Signal::new(vec![
+        TodoItem {
+            id: 10,
+            label: "Write tests".into(),
+        },
+        TodoItem {
+            id: 20,
+            label: "Ship release".into(),
+        },
+    ]);
+
+    let _window: El<Window> = rsx! {
+        Window {
+            title,
+            Grid {
+                column_definitions: tracks![*, Auto@Labels, 120, 2.5*],
+                StackPanel {
+                    spacing,
+                    background: color!("#1e293b"),
+                    fmt!("Count: {}", count.get())
+                    show is_expanded {
+                        TextBlock {
+                            foreground: color!("#ff000080"),
+                            text: fmt!("Expanded ({})", count.get()),
+                        }
+                    } else {
+                        TextBlock { "Collapsed" }
+                    }
+                    show when is_expanded {
+                        TextBlock { "Optional banner" }
+                    }
+                    StackPanel {
+                        for each item in items key |x| x.id {
+                            TextBlock {
+                                text: move || item.get().label,
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    };
+}
+
+#[test]
+fn non_send_captures_and_with_ui_error_handler_work_across_callbacks_commands_and_effects() {
+    // `Rc<RefCell<...>>` is `!Send` and `!Sync`.
+    let local_log: Rc<RefCell<Vec<String>>> = Rc::new(RefCell::new(Vec::new()));
+
+    // 1. `El::on_click` accepts `!Send` captures AND fallible `move |_| -> Result<()>` closures.
+    let log_for_click = local_log.clone();
+    let _fallible_button: El<Button> =
+        Button::el()
+            .content("Trigger")
+            .on_click(move |_| -> Result<()> {
+                log_for_click.borrow_mut().push("on_click".into());
+                Err(Error::Binding("fallible on_click error".into()))
+            });
+
+    let log_for_rsx_click = local_log.clone();
+    let _rsx_button: El<Button> = rsx! {
         Button {
-            command: cmd,
-            "Submit"
+            on_click: move |_| -> Result<()> {
+                log_for_rsx_click.borrow_mut().push("rsx_on_click".into());
+                Err(Error::Binding("rsx on_click error".into()))
+            },
+            "RSX Trigger"
         }
     };
 
-    let query = Signal::new(String::from("rust"));
-    let res = Resource::new_derived(
-        move || query.get(),
-        |q| {
-            if q.is_empty() {
-                Err("Query cannot be empty".into())
-            } else {
-                Ok(format!("Results for {q}"))
+    // 2. `PropertyPath::writable` accepts `!Send` captures in both reader and writer.
+    let backing_text: Rc<RefCell<String>> = Rc::new(RefCell::new("hello".into()));
+    let backing_for_read = backing_text.clone();
+    let backing_for_write = backing_text.clone();
+    let log_for_path = local_log.clone();
+    let writable_path = PropertyPath::writable(
+        move || Ok(backing_for_read.borrow().clone()),
+        move |next: String| {
+            log_for_path.borrow_mut().push(format!("path={next}"));
+            if next.is_empty() {
+                return Err(Error::Binding("path rejected empty string".into()));
             }
+            *backing_for_write.borrow_mut() = next;
+            Ok(())
         },
-    )
-    .expect("derived resource");
+    );
+    assert_eq!(writable_path.get().unwrap(), "hello");
+    writable_path.set("world".into()).unwrap();
+    assert_eq!(&*backing_text.borrow(), "world");
+
+    // 3. `Command::new` accepts `!Send` captures and routes `Err(...)` to `with_ui_error_handler`.
+    let log_for_cmd = local_log.clone();
+    let fallible_cmd = Command::new(move |param| -> Result<()> {
+        log_for_cmd.borrow_mut().push(format!("cmd={param:?}"));
+        if param == Variant::I32(-1) {
+            return Err(Error::Binding("negative command parameter".into()));
+        }
+        Ok(())
+    });
+
+    // 4. `Effect::new` updates route `Err(...)` to `with_ui_error_handler`.
+    let step = Signal::new(0_i32);
+    let log_for_effect = local_log.clone();
+    let effect = Effect::new(move || -> Result<()> {
+        let current = step.get();
+        log_for_effect
+            .borrow_mut()
+            .push(format!("effect={current}"));
+        if current < 0 {
+            return Err(Error::Binding("negative effect state".into()));
+        }
+        Ok(())
+    })
+    .expect("initial effect succeeds");
+
+    let captured_errors: Arc<Mutex<Vec<(String, String)>>> = Arc::new(Mutex::new(Vec::new()));
+    let errors_sink = captured_errors.clone();
+
+    with_ui_error_handler(
+        move |context, err| {
+            errors_sink
+                .lock()
+                .unwrap()
+                .push((context.to_string(), err.to_string()));
+        },
+        || {
+            fallible_cmd.execute(1_i32).expect("valid command succeeds");
+            assert!(fallible_cmd.execute(-1_i32).is_err());
+            step.set(-5);
+        },
+    );
+
+    effect.dispose();
 
     assert_eq!(
-        res.get(),
-        ResourceState::Ready("Results for rust".to_string())
+        *local_log.borrow(),
+        vec![
+            "path=world",
+            "effect=0",
+            "cmd=I32(1)",
+            "cmd=I32(-1)",
+            "effect=-5",
+        ]
     );
-    query.set(String::new());
+
+    let errors = captured_errors.lock().unwrap().clone();
     assert_eq!(
-        res.get(),
-        ResourceState::Error("Query cannot be empty".to_string())
+        errors.len(),
+        2,
+        "expected command and effect errors: {errors:?}"
     );
+    assert_eq!(errors[0].0, "command callback failed");
+    assert!(
+        errors[0].1.contains("negative command parameter"),
+        "{errors:?}"
+    );
+    assert_eq!(errors[1].0, "reactive effect failed");
+    assert!(errors[1].1.contains("negative effect state"), "{errors:?}");
+}
+
+#[test]
+fn stylesheet_style_select_shortcut_and_box_shadow_construct_and_serialize() {
+    let drop_shadow = BoxShadow::new(0.0, 4.0, 16.0, color!("#00000040")).spread(2.0);
+    assert_eq!(drop_shadow.to_string(), "0 4 16 2 #40000000");
+
+    let inner_shadow = BoxShadow::new(1.0, 2.0, 4.0, Color::rgb(0x10, 0x20, 0x30)).inset(true);
+    assert_eq!(inner_shadow.to_string(), "inset 1 2 4 0 #FF102030");
+
+    assert_eq!(BoxShadows::none().to_string(), "none");
+    let layered = BoxShadows::from([drop_shadow, inner_shadow]);
+    assert_eq!(
+        layered.to_string(),
+        "0 4 16 2 #40000000, inset 1 2 4 0 #FF102030"
+    );
+
+    let open_shortcut = Shortcut::primary(Key::O);
+    let palette_shortcut = Shortcut::primary_shift(Key::P);
+    let custom_shortcut = Shortcut::new(KeyModifiers::ALT | KeyModifiers::SHIFT, Key::F5);
+    let bare_shortcut = Shortcut::key(Key::Escape);
+
+    if cfg!(any(target_os = "macos", target_os = "ios")) {
+        assert_eq!(open_shortcut.to_gesture_string(), "Cmd+O");
+        assert_eq!(palette_shortcut.to_gesture_string(), "Cmd+Shift+P");
+    } else {
+        assert_eq!(open_shortcut.to_gesture_string(), "Ctrl+O");
+        assert_eq!(palette_shortcut.to_gesture_string(), "Ctrl+Shift+P");
+    }
+    assert_eq!(custom_shortcut.to_gesture_string(), "Alt+Shift+F5");
+    assert_eq!(bare_shortcut.to_gesture_string(), "Escape");
+    let gesture_opt: Option<String> = open_shortcut.into_value();
+    assert_eq!(gesture_opt, Some(open_shortcut.to_string()));
+
+    let linear = LinearGradientBrush::new(
+        vec![
+            GradientStop::new(0.0, color!("#2563eb")),
+            GradientStop::new(1.0, color!("#7c3aed")),
+        ],
+        RelativePoint::new(0.0, 0.0, RelativeUnit::Relative),
+        RelativePoint::new(1.0, 1.0, RelativeUnit::Relative),
+    );
+    let radial = RadialGradientBrush {
+        opacity: 0.9,
+        spread_method: SpreadMethod::Reflect,
+        stops: vec![GradientStop::new(0.0, Color::WHITE)],
+        center: RelativePoint::new(0.5, 0.5, RelativeUnit::Relative),
+        gradient_origin: RelativePoint::new(0.5, 0.5, RelativeUnit::Relative),
+        radius_x: RelativeScalar::new(0.5, RelativeUnit::Relative),
+        radius_y: RelativeScalar::new(0.5, RelativeUnit::Relative),
+    };
+
+    let hover_rule = Style::select("Button.primary.cta:pointerover")
+        .background(color!("#1d4ed8"))
+        .foreground(Color::WHITE)
+        .border_brush(linear)
+        .border_thickness(1.0)
+        .corner_radius(6.0)
+        .padding((16.0, 8.0))
+        .font_size(15.0)
+        .font_weight(FontWeight::DemiBold)
+        .opacity(0.95)
+        .transition_background(Duration::from_millis(180))
+        .transition_opacity(Duration::from_millis(120));
+
+    let card_rule = Style::control("Border")
+        .class("card")
+        .focused()
+        .background(radial)
+        .box_shadow(layered);
+
+    assert!(StyleSheet::new().is_empty());
+    let sheet = StyleSheet::new().rule(hover_rule).rule(card_rule);
+    assert!(!sheet.is_empty());
+
+    let json = sheet.to_json();
+    assert!(json.starts_with("{\"rules\":["), "{json}");
+    assert!(json.contains("\"target\":\"Button\""), "{json}");
+    assert!(json.contains("\"classes\":[\"primary\",\"cta\"]"), "{json}");
+    assert!(json.contains("\"pseudos\":[\":pointerover\"]"), "{json}");
+    assert!(json.contains("\"kind\":\"solid\""), "{json}");
+    assert!(json.contains("\"kind\":\"linear\""), "{json}");
+    assert!(json.contains("\"kind\":\"radial\""), "{json}");
+    assert!(
+        json.contains("\"prop\":\"cornerRadius\",\"value\":[6,6,6,6]"),
+        "{json}"
+    );
+    assert!(
+        json.contains("\"prop\":\"padding\",\"value\":[16,8,16,8]"),
+        "{json}"
+    );
+    assert!(
+        json.contains("\"transitions\":[{\"prop\":\"background\",\"durationMs\":180},{\"prop\":\"opacity\",\"durationMs\":120}]"),
+        "{json}"
+    );
+    assert!(json.contains("\"target\":\"Border\""), "{json}");
+    assert!(json.contains("\"pseudos\":[\":focus\"]"), "{json}");
+    assert!(json.contains("\"prop\":\"boxShadow\""), "{json}");
+
+    // Verify `El::styles` attaches a `StyleSheet` declaratively.
+    let _styled_btn: El<Button> = Button::el()
+        .class("primary cta")
+        .styles(sheet)
+        .content("Save");
+}
+
+#[test]
+fn typed_dates_times_decimals_flags_and_safe_callback_wrappers_work_purely_in_rust() {
+    // CivilDate
+    let leap = CivilDate::new(2024, 2, 29).unwrap();
+    assert_eq!((leap.year(), leap.month(), leap.day()), (2024, 2, 29));
+    assert_eq!(leap.to_string(), "2024-02-29");
+    assert_eq!("2024-02-29".parse::<CivilDate>().unwrap(), leap);
+    assert!(CivilDate::new(2025, 2, 29).is_err());
+    assert!("03/09/2026".parse::<CivilDate>().is_err());
+
+    // CivilTime
+    let time = CivilTime::hm(17, 4).unwrap();
+    assert_eq!((time.hour(), time.minute(), time.second()), (17, 4, 0));
+    assert_eq!(time.to_string(), "17:04:00");
+    assert_eq!("17:04".parse::<CivilTime>().unwrap(), time);
+    assert_eq!("17:04:00".parse::<CivilTime>().unwrap(), time);
+    assert!(CivilTime::new(24, 0, 0).is_err());
+    assert!("PT8H15M".parse::<CivilTime>().is_err());
+
+    // Decimal
+    let d1: Decimal = "12.50".parse().unwrap();
+    let d2 = Decimal::new(125, 1).unwrap();
+    assert_eq!(d1, d2);
+    assert_eq!(d1.normalize().to_string(), "12.5");
+    assert_eq!(Decimal::from(-42_i32).to_string(), "-42");
+    assert!(Decimal::try_from(f64::NAN).is_err());
+
+    // Typed `[Flags]` structs
+    let sel = SelectionMode::MULTIPLE | SelectionMode::ALWAYS_SELECTED;
+    assert!(sel.contains(SelectionMode::MULTIPLE));
+    assert!(sel.contains(SelectionMode::ALWAYS_SELECTED));
+    let mods = KeyModifiers::ALT | KeyModifiers::SHIFT;
+    assert!(mods.contains(KeyModifiers::ALT));
+    assert!(!mods.contains(KeyModifiers::CONTROL));
+    let adj =
+        PopupPositionerConstraintAdjustment::FLIP_X | PopupPositionerConstraintAdjustment::SLIDE_Y;
+    assert!(adj.contains(PopupPositionerConstraintAdjustment::FLIP_X));
+
+    // Safe event args structs
+    let key_args = ControlKeyDownEventArgs {
+        key: Key::Return,
+        physical_key: PhysicalKey::Enter,
+        key_modifiers: KeyModifiers::CONTROL,
+        key_symbol: Some("\r".into()),
+        handled: false,
+    };
+    assert_eq!(key_args.key, Key::Return);
+    let sel_args = SelectingItemsControlSelectionChangedArgs {
+        added_items: vec![Variant::from("Alpha")],
+        removed_items: vec![],
+    };
+    assert_eq!(sel_args.added_items.len(), 1);
+
+    // Safe callback wrappers with `!Send` state (`Rc<RefCell<...>>`)
+    let counter = Rc::new(RefCell::new(0_usize));
+    let c1 = counter.clone();
+    let item_filter = ItemFilter::new(move |search, item| {
+        *c1.borrow_mut() += 1;
+        matches!(item, Variant::Utf16(s) if s.contains(search))
+    });
+    let text_filter = TextFilter::new(|search, text| text.starts_with(search));
+    let item_selector = ItemSelector::new(|_search, item| format!("{item:?}"));
+    let text_selector = TextSelector::new(|_search, text| text.to_uppercase());
+    let async_pop = AsyncPopulator::new(|_search, req| req.complete_empty());
+    let placement_cb =
+        PopupPlacementCallback::new(|input: PopupPlacementInput| PopupPlacementOutput {
+            offset: Vector::new(0.0, input.anchor_rect.height),
+            anchor: PopupAnchor::TOP_LEFT,
+            gravity: PopupGravity::BOTTOM_RIGHT,
+            constraint_adjustment: PopupPositionerConstraintAdjustment::FLIP_X,
+        });
+    let c2 = counter.clone();
+    let _notification = Notification::new("Build succeeded", "All checks green")
+        .kind(NotificationType::Success)
+        .expiration(Duration::from_secs(3))
+        .on_click(move || -> Result<()> {
+            *c2.borrow_mut() += 1;
+            Ok(())
+        })
+        .on_close(|| {});
+
+    let _autocomplete: El<AutoCompleteBox> = AutoCompleteBox::el()
+        .item_filter(item_filter)
+        .text_filter(text_filter)
+        .item_selector(item_selector)
+        .text_selector(text_selector)
+        .async_populator(async_pop);
+    let _popup: El<Popup> = Popup::el().custom_popup_placement_callback(placement_cb);
 }

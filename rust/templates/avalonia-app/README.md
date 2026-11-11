@@ -37,10 +37,6 @@ require the target Rust/native toolchain and cannot be smoke-run on this host.
 view-model API from `view-model.ir.json`, compiles this AXAML project and Rust
 binary, and writes the adjacent runnable bundle declared by the manifest.
 
-Generated external bindings use a crate-root compatibility bridge. Keep the
-`view_model` exports in `src/main.rs`, including `DynamicViewModel`,
-`ViewModelSink`, `ViewModelBatch`, and `BatchCompletion`.
-
 The scaffold's schema declares a stage 31 `Main` menu with a copy command
 (`Ctrl+C`), a recent-file submenu and `Exit` (`Ctrl+Q`). `MainWindow.axaml.cs`
 attaches it through the generated `MainViewModelMenus.AttachMain`, which sets

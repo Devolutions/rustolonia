@@ -3,82 +3,82 @@
 #![allow(dead_code)]
 
 #[derive(Clone, Debug)]
-pub struct MainViewModelSink(crate::view_model::ViewModelSink);
+pub struct MainViewModelSink(::rustolonia::view_model::ViewModelSink);
 
 /// Declared capacity of the `MainViewModel` recent-file list.
 pub const MAIN_VIEW_MODEL_RECENT_FILES_CAPACITY: usize = 5;
 
 impl MainViewModelSink {
-    pub fn set_title(&self, value: impl AsRef<str>) -> crate::Result<()> { self.0.set_string(1, value) }
-    pub fn set_status(&self, value: impl AsRef<str>) -> crate::Result<()> { self.0.set_string(2, value) }
-    pub fn set_document_name(&self, value: impl AsRef<str>) -> crate::Result<()> { self.0.set_string(3, value) }
-    pub fn set_page_image(&self, value: impl AsRef<str>) -> crate::Result<()> { self.0.set_string(4, value) }
-    pub fn set_page_text(&self, value: impl AsRef<str>) -> crate::Result<()> { self.0.set_string(5, value) }
-    pub fn set_page_label(&self, value: impl AsRef<str>) -> crate::Result<()> { self.0.set_string(6, value) }
-    pub fn set_can_go_previous(&self, value: bool) -> crate::Result<()> { self.0.set_boolean(7, value) }
-    pub fn set_can_go_next(&self, value: bool) -> crate::Result<()> { self.0.set_boolean(8, value) }
-    pub fn set_is_loading(&self, value: bool) -> crate::Result<()> { self.0.set_boolean(9, value) }
-    pub fn set_search_text(&self, value: impl AsRef<str>) -> crate::Result<()> { self.0.set_string(10, value) }
-    pub fn set_search_status(&self, value: impl AsRef<str>) -> crate::Result<()> { self.0.set_string(11, value) }
-    pub fn set_search_match_label(&self, value: impl AsRef<str>) -> crate::Result<()> { self.0.set_string(12, value) }
-    pub fn set_can_go_previous_match(&self, value: bool) -> crate::Result<()> { self.0.set_boolean(13, value) }
-    pub fn set_can_go_next_match(&self, value: bool) -> crate::Result<()> { self.0.set_boolean(14, value) }
-    pub fn set_outline_visible(&self, value: bool) -> crate::Result<()> { self.0.set_boolean(15, value) }
-    pub fn set_has_outline(&self, value: bool) -> crate::Result<()> { self.0.set_boolean(16, value) }
-    pub fn set_outline_status(&self, value: impl AsRef<str>) -> crate::Result<()> { self.0.set_string(17, value) }
-    pub fn add_recent_files(&self, value: impl AsRef<str>) -> crate::Result<()> { self.0.add_string(1, value) }
-    pub fn insert_recent_files(&self, index: i32, value: impl AsRef<str>) -> crate::Result<()> { self.0.insert_string(1, index, value) }
-    pub fn replace_recent_files(&self, index: i32, value: impl AsRef<str>) -> crate::Result<()> { self.0.replace_string(1, index, value) }
-    pub fn add_outline(&self, value: impl OutlineItemViewModel) -> crate::Result<()> { self.0.add_model(2, OutlineItemViewModelDispatch { model: value }) }
-    pub fn insert_outline(&self, index: i32, value: impl OutlineItemViewModel) -> crate::Result<()> { self.0.insert_model(2, index, OutlineItemViewModelDispatch { model: value }) }
-    pub fn replace_outline(&self, index: i32, value: impl OutlineItemViewModel) -> crate::Result<()> { self.0.replace_model(2, index, OutlineItemViewModelDispatch { model: value }) }
-    pub fn remove_recent_files(&self, index: i32) -> crate::Result<()> { self.0.remove_string_at(1, index) }
-    pub fn move_recent_files(&self, from_index: i32, to_index: i32) -> crate::Result<()> { self.0.move_string_item(1, from_index, to_index) }
-    pub fn clear_recent_files(&self) -> crate::Result<()> { self.0.clear_string_collection(1) }
-    pub fn remove_outline(&self, index: i32) -> crate::Result<()> { self.0.remove_model_at(2, index) }
-    pub fn move_outline(&self, from_index: i32, to_index: i32) -> crate::Result<()> { self.0.move_model_item(2, from_index, to_index) }
-    pub fn clear_outline(&self) -> crate::Result<()> { self.0.clear_model_collection(2) }
-    pub fn set_open_file_enabled(&self, enabled: bool) -> crate::Result<()> { self.0.set_command_enabled(1, enabled) }
-    pub fn set_previous_page_enabled(&self, enabled: bool) -> crate::Result<()> { self.0.set_command_enabled(2, enabled) }
-    pub fn set_next_page_enabled(&self, enabled: bool) -> crate::Result<()> { self.0.set_command_enabled(3, enabled) }
-    pub fn set_open_recent_file_enabled(&self, enabled: bool) -> crate::Result<()> { self.0.set_command_enabled(4, enabled) }
-    pub fn set_exit_enabled(&self, enabled: bool) -> crate::Result<()> { self.0.set_command_enabled(5, enabled) }
-    pub fn set_search_enabled(&self, enabled: bool) -> crate::Result<()> { self.0.set_command_enabled(6, enabled) }
-    pub fn set_previous_match_enabled(&self, enabled: bool) -> crate::Result<()> { self.0.set_command_enabled(7, enabled) }
-    pub fn set_next_match_enabled(&self, enabled: bool) -> crate::Result<()> { self.0.set_command_enabled(8, enabled) }
+    pub fn set_title(&self, value: impl AsRef<str>) -> ::rustolonia::Result<()> { self.0.set_string(1, value) }
+    pub fn set_status(&self, value: impl AsRef<str>) -> ::rustolonia::Result<()> { self.0.set_string(2, value) }
+    pub fn set_document_name(&self, value: impl AsRef<str>) -> ::rustolonia::Result<()> { self.0.set_string(3, value) }
+    pub fn set_page_image(&self, value: impl AsRef<str>) -> ::rustolonia::Result<()> { self.0.set_string(4, value) }
+    pub fn set_page_text(&self, value: impl AsRef<str>) -> ::rustolonia::Result<()> { self.0.set_string(5, value) }
+    pub fn set_page_label(&self, value: impl AsRef<str>) -> ::rustolonia::Result<()> { self.0.set_string(6, value) }
+    pub fn set_can_go_previous(&self, value: bool) -> ::rustolonia::Result<()> { self.0.set_boolean(7, value) }
+    pub fn set_can_go_next(&self, value: bool) -> ::rustolonia::Result<()> { self.0.set_boolean(8, value) }
+    pub fn set_is_loading(&self, value: bool) -> ::rustolonia::Result<()> { self.0.set_boolean(9, value) }
+    pub fn set_search_text(&self, value: impl AsRef<str>) -> ::rustolonia::Result<()> { self.0.set_string(10, value) }
+    pub fn set_search_status(&self, value: impl AsRef<str>) -> ::rustolonia::Result<()> { self.0.set_string(11, value) }
+    pub fn set_search_match_label(&self, value: impl AsRef<str>) -> ::rustolonia::Result<()> { self.0.set_string(12, value) }
+    pub fn set_can_go_previous_match(&self, value: bool) -> ::rustolonia::Result<()> { self.0.set_boolean(13, value) }
+    pub fn set_can_go_next_match(&self, value: bool) -> ::rustolonia::Result<()> { self.0.set_boolean(14, value) }
+    pub fn set_outline_visible(&self, value: bool) -> ::rustolonia::Result<()> { self.0.set_boolean(15, value) }
+    pub fn set_has_outline(&self, value: bool) -> ::rustolonia::Result<()> { self.0.set_boolean(16, value) }
+    pub fn set_outline_status(&self, value: impl AsRef<str>) -> ::rustolonia::Result<()> { self.0.set_string(17, value) }
+    pub fn add_recent_files(&self, value: impl AsRef<str>) -> ::rustolonia::Result<()> { self.0.add_string(1, value) }
+    pub fn insert_recent_files(&self, index: i32, value: impl AsRef<str>) -> ::rustolonia::Result<()> { self.0.insert_string(1, index, value) }
+    pub fn replace_recent_files(&self, index: i32, value: impl AsRef<str>) -> ::rustolonia::Result<()> { self.0.replace_string(1, index, value) }
+    pub fn add_outline(&self, value: impl OutlineItemViewModel) -> ::rustolonia::Result<()> { self.0.add_model(2, OutlineItemViewModelDispatch { model: value }) }
+    pub fn insert_outline(&self, index: i32, value: impl OutlineItemViewModel) -> ::rustolonia::Result<()> { self.0.insert_model(2, index, OutlineItemViewModelDispatch { model: value }) }
+    pub fn replace_outline(&self, index: i32, value: impl OutlineItemViewModel) -> ::rustolonia::Result<()> { self.0.replace_model(2, index, OutlineItemViewModelDispatch { model: value }) }
+    pub fn remove_recent_files(&self, index: i32) -> ::rustolonia::Result<()> { self.0.remove_string_at(1, index) }
+    pub fn move_recent_files(&self, from_index: i32, to_index: i32) -> ::rustolonia::Result<()> { self.0.move_string_item(1, from_index, to_index) }
+    pub fn clear_recent_files(&self) -> ::rustolonia::Result<()> { self.0.clear_string_collection(1) }
+    pub fn remove_outline(&self, index: i32) -> ::rustolonia::Result<()> { self.0.remove_model_at(2, index) }
+    pub fn move_outline(&self, from_index: i32, to_index: i32) -> ::rustolonia::Result<()> { self.0.move_model_item(2, from_index, to_index) }
+    pub fn clear_outline(&self) -> ::rustolonia::Result<()> { self.0.clear_model_collection(2) }
+    pub fn set_open_file_enabled(&self, enabled: bool) -> ::rustolonia::Result<()> { self.0.set_command_enabled(1, enabled) }
+    pub fn set_previous_page_enabled(&self, enabled: bool) -> ::rustolonia::Result<()> { self.0.set_command_enabled(2, enabled) }
+    pub fn set_next_page_enabled(&self, enabled: bool) -> ::rustolonia::Result<()> { self.0.set_command_enabled(3, enabled) }
+    pub fn set_open_recent_file_enabled(&self, enabled: bool) -> ::rustolonia::Result<()> { self.0.set_command_enabled(4, enabled) }
+    pub fn set_exit_enabled(&self, enabled: bool) -> ::rustolonia::Result<()> { self.0.set_command_enabled(5, enabled) }
+    pub fn set_search_enabled(&self, enabled: bool) -> ::rustolonia::Result<()> { self.0.set_command_enabled(6, enabled) }
+    pub fn set_previous_match_enabled(&self, enabled: bool) -> ::rustolonia::Result<()> { self.0.set_command_enabled(7, enabled) }
+    pub fn set_next_match_enabled(&self, enabled: bool) -> ::rustolonia::Result<()> { self.0.set_command_enabled(8, enabled) }
     /// Publishes the most-recently-used storage URIs into `RecentFiles`.
     ///
     /// The list is bounded by its own capacity (5), so this replaces a
     /// handful of entries rather than a data set; the generated menu derives
     /// each header from the URI and passes the URI back as the command parameter.
-    pub fn publish_recent_files(&self, recent: &crate::RecentFileList) -> crate::Result<()> {
+    pub fn publish_recent_files(&self, recent: &::rustolonia::RecentFileList) -> ::rustolonia::Result<()> {
         self.0.clear_string_collection(1)?;
         for uri in recent.entries() { self.0.add_string(1, uri)?; }
         Ok(())
     }
-    pub fn set_title_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(1, message) }
-    pub fn set_status_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(2, message) }
-    pub fn set_document_name_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(3, message) }
-    pub fn set_page_image_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(4, message) }
-    pub fn set_page_text_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(5, message) }
-    pub fn set_page_label_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(6, message) }
-    pub fn set_can_go_previous_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(7, message) }
-    pub fn set_can_go_next_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(8, message) }
-    pub fn set_is_loading_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(9, message) }
-    pub fn set_search_text_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(10, message) }
-    pub fn set_search_status_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(11, message) }
-    pub fn set_search_match_label_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(12, message) }
-    pub fn set_can_go_previous_match_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(13, message) }
-    pub fn set_can_go_next_match_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(14, message) }
-    pub fn set_outline_visible_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(15, message) }
-    pub fn set_has_outline_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(16, message) }
-    pub fn set_outline_status_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(17, message) }
+    pub fn set_title_error(&self, message: Option<&str>) -> ::rustolonia::Result<()> { self.0.set_property_error(1, message) }
+    pub fn set_status_error(&self, message: Option<&str>) -> ::rustolonia::Result<()> { self.0.set_property_error(2, message) }
+    pub fn set_document_name_error(&self, message: Option<&str>) -> ::rustolonia::Result<()> { self.0.set_property_error(3, message) }
+    pub fn set_page_image_error(&self, message: Option<&str>) -> ::rustolonia::Result<()> { self.0.set_property_error(4, message) }
+    pub fn set_page_text_error(&self, message: Option<&str>) -> ::rustolonia::Result<()> { self.0.set_property_error(5, message) }
+    pub fn set_page_label_error(&self, message: Option<&str>) -> ::rustolonia::Result<()> { self.0.set_property_error(6, message) }
+    pub fn set_can_go_previous_error(&self, message: Option<&str>) -> ::rustolonia::Result<()> { self.0.set_property_error(7, message) }
+    pub fn set_can_go_next_error(&self, message: Option<&str>) -> ::rustolonia::Result<()> { self.0.set_property_error(8, message) }
+    pub fn set_is_loading_error(&self, message: Option<&str>) -> ::rustolonia::Result<()> { self.0.set_property_error(9, message) }
+    pub fn set_search_text_error(&self, message: Option<&str>) -> ::rustolonia::Result<()> { self.0.set_property_error(10, message) }
+    pub fn set_search_status_error(&self, message: Option<&str>) -> ::rustolonia::Result<()> { self.0.set_property_error(11, message) }
+    pub fn set_search_match_label_error(&self, message: Option<&str>) -> ::rustolonia::Result<()> { self.0.set_property_error(12, message) }
+    pub fn set_can_go_previous_match_error(&self, message: Option<&str>) -> ::rustolonia::Result<()> { self.0.set_property_error(13, message) }
+    pub fn set_can_go_next_match_error(&self, message: Option<&str>) -> ::rustolonia::Result<()> { self.0.set_property_error(14, message) }
+    pub fn set_outline_visible_error(&self, message: Option<&str>) -> ::rustolonia::Result<()> { self.0.set_property_error(15, message) }
+    pub fn set_has_outline_error(&self, message: Option<&str>) -> ::rustolonia::Result<()> { self.0.set_property_error(16, message) }
+    pub fn set_outline_status_error(&self, message: Option<&str>) -> ::rustolonia::Result<()> { self.0.set_property_error(17, message) }
     /// Creates a worker-safe immutable update batch with a monotonic generation.
-    pub fn batch(&self, generation: i64) -> MainViewModelSinkBatch { MainViewModelSinkBatch(crate::view_model::ViewModelBatch::new(generation)) }
-    pub fn submit_batch(&self, batch: MainViewModelSinkBatch) -> crate::Result<crate::view_model::BatchCompletion> { self.0.submit_batch(batch.0) }
+    pub fn batch(&self, generation: i64) -> MainViewModelSinkBatch { MainViewModelSinkBatch(::rustolonia::view_model::ViewModelBatch::new(generation)) }
+    pub fn submit_batch(&self, batch: MainViewModelSinkBatch) -> ::rustolonia::Result<::rustolonia::view_model::BatchCompletion> { self.0.submit_batch(batch.0) }
 }
 
-pub struct MainViewModelSinkBatch(crate::view_model::ViewModelBatch);
+pub struct MainViewModelSinkBatch(::rustolonia::view_model::ViewModelBatch);
 
 impl MainViewModelSinkBatch {
     pub fn set_title(&mut self, value: impl AsRef<str>) { self.0.push_string(1, 1, 0, value); }
@@ -155,48 +155,48 @@ impl MainViewModelSinkBatch {
     pub fn set_previous_match_enabled(&mut self, enabled: bool) { self.0.push_boolean(17, 7, enabled); }
     pub fn set_next_match_enabled(&mut self, enabled: bool) { self.0.push_boolean(17, 8, enabled); }
     /// Stages the most-recently-used storage URIs as one `RecentFiles` snapshot.
-    pub fn set_recent_files(&mut self, recent: &crate::RecentFileList) { self.0.push_string_snapshot(1, recent.entries()); }
+    pub fn set_recent_files(&mut self, recent: &::rustolonia::RecentFileList) { self.0.push_string_snapshot(1, recent.entries()); }
 }
 
 pub trait MainViewModel: Send + 'static {
-    fn attach(&mut self, sink: MainViewModelSink) -> crate::Result<()>;
-    fn detach(&mut self) -> crate::Result<()>;
-    fn set_search_text(&mut self, value: String) -> crate::Result<()>;
-    fn set_outline_visible(&mut self, value: bool) -> crate::Result<()>;
-    fn open_file(&mut self) -> crate::Result<()>;
-    fn previous_page(&mut self) -> crate::Result<()>;
-    fn next_page(&mut self) -> crate::Result<()>;
-    fn open_recent_file(&mut self, value: String) -> crate::Result<()>;
-    fn exit(&mut self) -> crate::Result<()>;
-    fn search(&mut self) -> crate::Result<()>;
-    fn previous_match(&mut self) -> crate::Result<()>;
-    fn next_match(&mut self) -> crate::Result<()>;
+    fn attach(&mut self, sink: MainViewModelSink) -> ::rustolonia::Result<()>;
+    fn detach(&mut self) -> ::rustolonia::Result<()>;
+    fn set_search_text(&mut self, value: String) -> ::rustolonia::Result<()>;
+    fn set_outline_visible(&mut self, value: bool) -> ::rustolonia::Result<()>;
+    fn open_file(&mut self) -> ::rustolonia::Result<()>;
+    fn previous_page(&mut self) -> ::rustolonia::Result<()>;
+    fn next_page(&mut self) -> ::rustolonia::Result<()>;
+    fn open_recent_file(&mut self, value: String) -> ::rustolonia::Result<()>;
+    fn exit(&mut self) -> ::rustolonia::Result<()>;
+    fn search(&mut self) -> ::rustolonia::Result<()>;
+    fn previous_match(&mut self) -> ::rustolonia::Result<()>;
+    fn next_match(&mut self) -> ::rustolonia::Result<()>;
 }
 
 struct MainViewModelDispatch<T: MainViewModel> { model: T }
 
-impl<T: MainViewModel> crate::view_model::DynamicViewModel for MainViewModelDispatch<T> {
-    fn attach(&mut self, sink: crate::view_model::ViewModelSink) -> crate::Result<()> { self.model.attach(MainViewModelSink(sink)) }
-    fn detach(&mut self) -> crate::Result<()> { self.model.detach() }
-    fn set_string(&mut self, property_id: i32, value: String) -> crate::Result<()> {
+impl<T: MainViewModel> ::rustolonia::view_model::DynamicViewModel for MainViewModelDispatch<T> {
+    fn attach(&mut self, sink: ::rustolonia::view_model::ViewModelSink) -> ::rustolonia::Result<()> { self.model.attach(MainViewModelSink(sink)) }
+    fn detach(&mut self) -> ::rustolonia::Result<()> { self.model.detach() }
+    fn set_string(&mut self, property_id: i32, value: String) -> ::rustolonia::Result<()> {
         match property_id {
             10 => self.model.set_search_text(value),
-            _ => Err(crate::Error::InvalidViewModelMember { kind: "property", id: property_id }),
+            _ => Err(::rustolonia::Error::InvalidViewModelMember { kind: "property", id: property_id }),
         }
     }
-    fn set_integer(&mut self, property_id: i32, _value: i64) -> crate::Result<()> {
-        Err(crate::Error::InvalidViewModelMember { kind: "property", id: property_id })
+    fn set_integer(&mut self, property_id: i32, _value: i64) -> ::rustolonia::Result<()> {
+        Err(::rustolonia::Error::InvalidViewModelMember { kind: "property", id: property_id })
     }
-    fn set_boolean(&mut self, property_id: i32, value: bool) -> crate::Result<()> {
+    fn set_boolean(&mut self, property_id: i32, value: bool) -> ::rustolonia::Result<()> {
         match property_id {
             15 => self.model.set_outline_visible(value),
-            _ => Err(crate::Error::InvalidViewModelMember { kind: "property", id: property_id }),
+            _ => Err(::rustolonia::Error::InvalidViewModelMember { kind: "property", id: property_id }),
         }
     }
-    fn set_double(&mut self, property_id: i32, _value: f64) -> crate::Result<()> {
-        Err(crate::Error::InvalidViewModelMember { kind: "property", id: property_id })
+    fn set_double(&mut self, property_id: i32, _value: f64) -> ::rustolonia::Result<()> {
+        Err(::rustolonia::Error::InvalidViewModelMember { kind: "property", id: property_id })
     }
-    fn execute(&mut self, command_id: i32, parameter: Option<String>) -> crate::Result<()> {
+    fn execute(&mut self, command_id: i32, parameter: Option<String>) -> ::rustolonia::Result<()> {
         match command_id {
             2 => self.model.previous_page(),
             3 => self.model.next_page(),
@@ -204,44 +204,44 @@ impl<T: MainViewModel> crate::view_model::DynamicViewModel for MainViewModelDisp
             5 => self.model.exit(),
             7 => self.model.previous_match(),
             8 => self.model.next_match(),
-            _ => Err(crate::Error::InvalidViewModelMember { kind: "command", id: command_id }),
+            _ => Err(::rustolonia::Error::InvalidViewModelMember { kind: "command", id: command_id }),
         }
     }
-    fn begin_async(&mut self, command_id: i32, _parameter: Option<String>) -> crate::Result<()> {
+    fn begin_async(&mut self, command_id: i32, _parameter: Option<String>) -> ::rustolonia::Result<()> {
         match command_id {
             1 => self.model.open_file(),
             6 => self.model.search(),
-            _ => Err(crate::Error::InvalidViewModelMember { kind: "command", id: command_id }),
+            _ => Err(::rustolonia::Error::InvalidViewModelMember { kind: "command", id: command_id }),
         }
     }
 }
 
-pub fn mount_main_window(scope: &crate::AppScope, model: impl MainViewModel) -> crate::Result<()> { scope.mount_dynamic_view_model(1, MainViewModelDispatch { model }) }
-pub fn mount_main_window_hidden(scope: &crate::AppScope, model: impl MainViewModel) -> crate::Result<()> { scope.mount_dynamic_view_model_hidden(1, MainViewModelDispatch { model }).map(drop) }
+pub fn mount_main_window(scope: &::rustolonia::AppScope, model: impl MainViewModel) -> ::rustolonia::Result<()> { scope.mount_dynamic_view_model(1, MainViewModelDispatch { model }) }
+pub fn mount_main_window_hidden(scope: &::rustolonia::AppScope, model: impl MainViewModel) -> ::rustolonia::Result<()> { scope.mount_dynamic_view_model_hidden(1, MainViewModelDispatch { model }).map(drop) }
 
 #[derive(Clone, Debug)]
-pub struct OutlineItemViewModelSink(crate::view_model::ViewModelSink);
+pub struct OutlineItemViewModelSink(::rustolonia::view_model::ViewModelSink);
 
 impl OutlineItemViewModelSink {
-    pub fn set_title(&self, value: impl AsRef<str>) -> crate::Result<()> { self.0.set_string(1, value) }
-    pub fn set_page_label(&self, value: impl AsRef<str>) -> crate::Result<()> { self.0.set_string(2, value) }
-    pub fn set_has_children(&self, value: bool) -> crate::Result<()> { self.0.set_boolean(3, value) }
-    pub fn add_children(&self, value: impl OutlineItemViewModel) -> crate::Result<()> { self.0.add_model(1, OutlineItemViewModelDispatch { model: value }) }
-    pub fn insert_children(&self, index: i32, value: impl OutlineItemViewModel) -> crate::Result<()> { self.0.insert_model(1, index, OutlineItemViewModelDispatch { model: value }) }
-    pub fn replace_children(&self, index: i32, value: impl OutlineItemViewModel) -> crate::Result<()> { self.0.replace_model(1, index, OutlineItemViewModelDispatch { model: value }) }
-    pub fn remove_children(&self, index: i32) -> crate::Result<()> { self.0.remove_model_at(1, index) }
-    pub fn move_children(&self, from_index: i32, to_index: i32) -> crate::Result<()> { self.0.move_model_item(1, from_index, to_index) }
-    pub fn clear_children(&self) -> crate::Result<()> { self.0.clear_model_collection(1) }
-    pub fn set_go_to_enabled(&self, enabled: bool) -> crate::Result<()> { self.0.set_command_enabled(1, enabled) }
-    pub fn set_title_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(1, message) }
-    pub fn set_page_label_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(2, message) }
-    pub fn set_has_children_error(&self, message: Option<&str>) -> crate::Result<()> { self.0.set_property_error(3, message) }
+    pub fn set_title(&self, value: impl AsRef<str>) -> ::rustolonia::Result<()> { self.0.set_string(1, value) }
+    pub fn set_page_label(&self, value: impl AsRef<str>) -> ::rustolonia::Result<()> { self.0.set_string(2, value) }
+    pub fn set_has_children(&self, value: bool) -> ::rustolonia::Result<()> { self.0.set_boolean(3, value) }
+    pub fn add_children(&self, value: impl OutlineItemViewModel) -> ::rustolonia::Result<()> { self.0.add_model(1, OutlineItemViewModelDispatch { model: value }) }
+    pub fn insert_children(&self, index: i32, value: impl OutlineItemViewModel) -> ::rustolonia::Result<()> { self.0.insert_model(1, index, OutlineItemViewModelDispatch { model: value }) }
+    pub fn replace_children(&self, index: i32, value: impl OutlineItemViewModel) -> ::rustolonia::Result<()> { self.0.replace_model(1, index, OutlineItemViewModelDispatch { model: value }) }
+    pub fn remove_children(&self, index: i32) -> ::rustolonia::Result<()> { self.0.remove_model_at(1, index) }
+    pub fn move_children(&self, from_index: i32, to_index: i32) -> ::rustolonia::Result<()> { self.0.move_model_item(1, from_index, to_index) }
+    pub fn clear_children(&self) -> ::rustolonia::Result<()> { self.0.clear_model_collection(1) }
+    pub fn set_go_to_enabled(&self, enabled: bool) -> ::rustolonia::Result<()> { self.0.set_command_enabled(1, enabled) }
+    pub fn set_title_error(&self, message: Option<&str>) -> ::rustolonia::Result<()> { self.0.set_property_error(1, message) }
+    pub fn set_page_label_error(&self, message: Option<&str>) -> ::rustolonia::Result<()> { self.0.set_property_error(2, message) }
+    pub fn set_has_children_error(&self, message: Option<&str>) -> ::rustolonia::Result<()> { self.0.set_property_error(3, message) }
     /// Creates a worker-safe immutable update batch with a monotonic generation.
-    pub fn batch(&self, generation: i64) -> OutlineItemViewModelSinkBatch { OutlineItemViewModelSinkBatch(crate::view_model::ViewModelBatch::new(generation)) }
-    pub fn submit_batch(&self, batch: OutlineItemViewModelSinkBatch) -> crate::Result<crate::view_model::BatchCompletion> { self.0.submit_batch(batch.0) }
+    pub fn batch(&self, generation: i64) -> OutlineItemViewModelSinkBatch { OutlineItemViewModelSinkBatch(::rustolonia::view_model::ViewModelBatch::new(generation)) }
+    pub fn submit_batch(&self, batch: OutlineItemViewModelSinkBatch) -> ::rustolonia::Result<::rustolonia::view_model::BatchCompletion> { self.0.submit_batch(batch.0) }
 }
 
-pub struct OutlineItemViewModelSinkBatch(crate::view_model::ViewModelBatch);
+pub struct OutlineItemViewModelSinkBatch(::rustolonia::view_model::ViewModelBatch);
 
 impl OutlineItemViewModelSinkBatch {
     pub fn set_title(&mut self, value: impl AsRef<str>) { self.0.push_string(1, 1, 0, value); }
@@ -264,35 +264,35 @@ impl OutlineItemViewModelSinkBatch {
 }
 
 pub trait OutlineItemViewModel: Send + 'static {
-    fn attach(&mut self, sink: OutlineItemViewModelSink) -> crate::Result<()>;
-    fn detach(&mut self) -> crate::Result<()>;
-    fn go_to(&mut self) -> crate::Result<()>;
+    fn attach(&mut self, sink: OutlineItemViewModelSink) -> ::rustolonia::Result<()>;
+    fn detach(&mut self) -> ::rustolonia::Result<()>;
+    fn go_to(&mut self) -> ::rustolonia::Result<()>;
 }
 
 struct OutlineItemViewModelDispatch<T: OutlineItemViewModel> { model: T }
 
-impl<T: OutlineItemViewModel> crate::view_model::DynamicViewModel for OutlineItemViewModelDispatch<T> {
-    fn attach(&mut self, sink: crate::view_model::ViewModelSink) -> crate::Result<()> { self.model.attach(OutlineItemViewModelSink(sink)) }
-    fn detach(&mut self) -> crate::Result<()> { self.model.detach() }
-    fn set_string(&mut self, property_id: i32, _value: String) -> crate::Result<()> {
-        Err(crate::Error::InvalidViewModelMember { kind: "property", id: property_id })
+impl<T: OutlineItemViewModel> ::rustolonia::view_model::DynamicViewModel for OutlineItemViewModelDispatch<T> {
+    fn attach(&mut self, sink: ::rustolonia::view_model::ViewModelSink) -> ::rustolonia::Result<()> { self.model.attach(OutlineItemViewModelSink(sink)) }
+    fn detach(&mut self) -> ::rustolonia::Result<()> { self.model.detach() }
+    fn set_string(&mut self, property_id: i32, _value: String) -> ::rustolonia::Result<()> {
+        Err(::rustolonia::Error::InvalidViewModelMember { kind: "property", id: property_id })
     }
-    fn set_integer(&mut self, property_id: i32, _value: i64) -> crate::Result<()> {
-        Err(crate::Error::InvalidViewModelMember { kind: "property", id: property_id })
+    fn set_integer(&mut self, property_id: i32, _value: i64) -> ::rustolonia::Result<()> {
+        Err(::rustolonia::Error::InvalidViewModelMember { kind: "property", id: property_id })
     }
-    fn set_boolean(&mut self, property_id: i32, _value: bool) -> crate::Result<()> {
-        Err(crate::Error::InvalidViewModelMember { kind: "property", id: property_id })
+    fn set_boolean(&mut self, property_id: i32, _value: bool) -> ::rustolonia::Result<()> {
+        Err(::rustolonia::Error::InvalidViewModelMember { kind: "property", id: property_id })
     }
-    fn set_double(&mut self, property_id: i32, _value: f64) -> crate::Result<()> {
-        Err(crate::Error::InvalidViewModelMember { kind: "property", id: property_id })
+    fn set_double(&mut self, property_id: i32, _value: f64) -> ::rustolonia::Result<()> {
+        Err(::rustolonia::Error::InvalidViewModelMember { kind: "property", id: property_id })
     }
-    fn execute(&mut self, command_id: i32, _parameter: Option<String>) -> crate::Result<()> {
+    fn execute(&mut self, command_id: i32, _parameter: Option<String>) -> ::rustolonia::Result<()> {
         match command_id {
             1 => self.model.go_to(),
-            _ => Err(crate::Error::InvalidViewModelMember { kind: "command", id: command_id }),
+            _ => Err(::rustolonia::Error::InvalidViewModelMember { kind: "command", id: command_id }),
         }
     }
-    fn begin_async(&mut self, command_id: i32, _parameter: Option<String>) -> crate::Result<()> {
-        Err(crate::Error::InvalidViewModelMember { kind: "command", id: command_id })
+    fn begin_async(&mut self, command_id: i32, _parameter: Option<String>) -> ::rustolonia::Result<()> {
+        Err(::rustolonia::Error::InvalidViewModelMember { kind: "command", id: command_id })
     }
 }

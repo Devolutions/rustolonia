@@ -152,19 +152,19 @@ pub struct Modifiers(pub i32);
 
 impl Modifiers {
     pub fn alt(self) -> bool {
-        self.0 & crate::key_modifiers::ALT != 0
+        self.0 & crate::KeyModifiers::ALT.bits() != 0
     }
 
     pub fn control(self) -> bool {
-        self.0 & crate::key_modifiers::CONTROL != 0
+        self.0 & crate::KeyModifiers::CONTROL.bits() != 0
     }
 
     pub fn shift(self) -> bool {
-        self.0 & crate::key_modifiers::SHIFT != 0
+        self.0 & crate::KeyModifiers::SHIFT.bits() != 0
     }
 
     pub fn meta(self) -> bool {
-        self.0 & crate::key_modifiers::META != 0
+        self.0 & crate::KeyModifiers::META.bits() != 0
     }
 }
 
@@ -480,7 +480,7 @@ mod tests {
             y: 4.0,
             button: 1,
             buttons: 4,
-            modifiers: crate::key_modifiers::SHIFT | crate::key_modifiers::CONTROL,
+            modifiers: (crate::KeyModifiers::SHIFT | crate::KeyModifiers::CONTROL).bits(),
             click_count: 1,
             delta_x: 0.0,
             delta_y: 0.0,

@@ -21,6 +21,12 @@ pub(crate) fn emit_safe_module(ir: &ProjectionIr) -> String {
              pub struct DataTemplate {\n\
              \x20   pub(crate) raw: sys::ComPtr<sys::IAvnDataTemplate>,\n\
              }\n\n\
+             impl PartialEq for DataTemplate {\n\
+             \x20   fn eq(&self, other: &Self) -> bool {\n\
+             \x20       std::ptr::eq(self.raw.as_raw(), other.raw.as_raw())\n\
+             \x20   }\n\
+             }\n\
+             impl Eq for DataTemplate {}\n\n\
              impl DataTemplate {\n\
              \x20   pub(crate) fn from_raw(raw: sys::ComPtr<sys::IAvnDataTemplate>) -> Self {\n\
              \x20       Self { raw }\n\
@@ -71,6 +77,12 @@ pub(crate) fn emit_safe_module(ir: &ProjectionIr) -> String {
         out.push_str(&emit_gradient_brush());
     }
 
+    let regular_enums: std::collections::HashSet<&str> = ir
+        .enums
+        .iter()
+        .filter(|projected_enum| !projected_enum.is_flags)
+        .map(|projected_enum| projected_enum.full_name.as_str())
+        .collect();
     let flags_enums: std::collections::HashSet<&str> = ir
         .enums
         .iter()
@@ -88,22 +100,10 @@ pub(crate) fn emit_safe_module(ir: &ProjectionIr) -> String {
             }
         }
         if projected_enum.is_flags {
-            out.push_str(&format!(
-                "/// [Flags] ABI bits for `{}`. Combined values are valid.\n",
-                projected_enum.name
-            ));
-            out.push_str(&format!("pub mod {} {{\n", to_snake(&projected_enum.name)));
-            for value in &values {
-                out.push_str(&format!(
-                    "    pub const {}: i32 = {};\n",
-                    value.name.to_ascii_uppercase(),
-                    value.value
-                ));
-            }
-            out.push_str("}\n\n");
+            out.push_str(&emit_flags_struct(projected_enum, &values));
             continue;
         }
-        out.push_str("#[repr(i32)]\n#[derive(Clone, Copy, Debug, PartialEq, Eq)]\n");
+        out.push_str("#[repr(i32)]\n#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]\n");
         out.push_str(&format!("pub enum {} {{\n", projected_enum.name));
         for value in &values {
             out.push_str(&format!("    {} = {},\n", value.name, value.value));
@@ -127,31 +127,7 @@ pub(crate) fn emit_safe_module(ir: &ProjectionIr) -> String {
         );
     }
 
-    let mut event_argument_types = Vec::new();
-    for event in ir.types.iter().flat_map(|ty| ty.events.iter()) {
-        if event.payload_kind == "Args" {
-            let name = simple_name(
-                event
-                    .args_interface_name
-                    .as_deref()
-                    .expect("argsInterfaceName"),
-            )
-            .to_string();
-            if !event_argument_types.contains(&name) {
-                out.push_str(&format!("pub use sys::{name};\n"));
-                event_argument_types.push(name);
-            }
-        } else if !event.parameters.is_empty() {
-            let name = event_arguments_name(event);
-            if !event_argument_types.contains(&name) {
-                out.push_str(&format!("pub use sys::{name};\n"));
-                event_argument_types.push(name);
-            }
-        }
-    }
-    if !event_argument_types.is_empty() {
-        out.push('\n');
-    }
+    out.push_str(&emit_safe_event_types(ir, &flags_enums, &regular_enums));
 
     for collection in unique_collections(ir) {
         out.push_str(&emit_collection(collection));
@@ -159,7 +135,7 @@ pub(crate) fn emit_safe_module(ir: &ProjectionIr) -> String {
     }
 
     for ty in ir.types.iter().filter(|ty| ty.kind == "Class") {
-        out.push_str(&emit_type(ir, ty, &flags_enums));
+        out.push_str(&emit_type(ir, ty, &flags_enums, &regular_enums));
         out.push('\n');
     }
     out.truncate(out.trim_end().len());
@@ -211,11 +187,6 @@ fn emit_brush() -> String {
          impl From<(u8, u8, u8)> for Brush {\n\
          \x20   fn from((r, g, b): (u8, u8, u8)) -> Self {\n\
          \x20       Self::solid(Color::rgb(r, g, b))\n\
-         \x20   }\n\
-         }\n\n\
-         impl From<(u8, u8, u8, u8)> for Brush {\n\
-         \x20   fn from((a, r, g, b): (u8, u8, u8, u8)) -> Self {\n\
-         \x20       Self::solid(Color::new(a, r, g, b))\n\
          \x20   }\n\
          }\n\n",
     )
@@ -483,11 +454,6 @@ fn emit_gradient_brush() -> String {
          \x20       Self::Solid(Brush::solid(Color::rgb(r, g, b)))\n\
          \x20   }\n\
          }\n\n\
-         impl From<(u8, u8, u8, u8)> for Paint {\n\
-         \x20   fn from((a, r, g, b): (u8, u8, u8, u8)) -> Self {\n\
-         \x20       Self::Solid(Brush::solid(Color::new(a, r, g, b)))\n\
-         \x20   }\n\
-         }\n\n\
          impl From<LinearGradientBrush> for Paint {\n\
          \x20   fn from(brush: LinearGradientBrush) -> Self {\n\
          \x20       Self::LinearGradient(brush)\n\
@@ -499,6 +465,303 @@ fn emit_gradient_brush() -> String {
          \x20   }\n\
          }\n\n",
     )
+}
+
+fn emit_flags_struct(
+    projected_enum: &crate::ir::ProjectedEnum,
+    values: &[&crate::ir::ProjectedEnumValue],
+) -> String {
+    let name = &projected_enum.name;
+    let mut out = format!(
+        "/// Bitflags wrapper for `{}`.\n\
+         #[repr(transparent)]\n\
+         #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]\n\
+         pub struct {name}(i32);\n\n\
+         impl {name} {{\n",
+        projected_enum.full_name
+    );
+    if !values.iter().any(|v| v.name.eq_ignore_ascii_case("none")) {
+        out.push_str("    pub const NONE: Self = Self(0);\n");
+    }
+    for value in values {
+        out.push_str(&format!(
+            "    pub const {}: Self = Self({});\n",
+            to_shouty_snake(&value.name),
+            value.value
+        ));
+    }
+    out.push_str(
+        "    pub const fn bits(self) -> i32 { self.0 }\n\
+         \x20   pub const fn from_bits_retain(bits: i32) -> Self { Self(bits) }\n\
+         \x20   pub const fn is_empty(self) -> bool { self.0 == 0 }\n\
+         \x20   pub const fn contains(self, other: Self) -> bool { (self.0 & other.0) == other.0 }\n\
+         }\n\n",
+    );
+    out.push_str(&format!(
+        "impl std::ops::BitOr for {name} {{\n\
+         \x20   type Output = Self;\n\
+         \x20   fn bitor(self, rhs: Self) -> Self {{ Self(self.0 | rhs.0) }}\n\
+         }}\n\
+         impl std::ops::BitOrAssign for {name} {{\n\
+         \x20   fn bitor_assign(&mut self, rhs: Self) {{ self.0 |= rhs.0; }}\n\
+         }}\n\
+         impl std::ops::BitAnd for {name} {{\n\
+         \x20   type Output = Self;\n\
+         \x20   fn bitand(self, rhs: Self) -> Self {{ Self(self.0 & rhs.0) }}\n\
+         }}\n\
+         impl std::ops::BitAndAssign for {name} {{\n\
+         \x20   fn bitand_assign(&mut self, rhs: Self) {{ self.0 &= rhs.0; }}\n\
+         }}\n\
+         impl std::ops::BitXor for {name} {{\n\
+         \x20   type Output = Self;\n\
+         \x20   fn bitxor(self, rhs: Self) -> Self {{ Self(self.0 ^ rhs.0) }}\n\
+         }}\n\
+         impl std::ops::Not for {name} {{\n\
+         \x20   type Output = Self;\n\
+         \x20   fn not(self) -> Self {{ Self(!self.0) }}\n\
+         }}\n\n"
+    ));
+    out
+}
+
+fn to_shouty_snake(name: &str) -> String {
+    to_snake(name).to_ascii_uppercase()
+}
+
+fn emit_safe_event_types(
+    ir: &ProjectionIr,
+    flags_enums: &std::collections::HashSet<&str>,
+    regular_enums: &std::collections::HashSet<&str>,
+) -> String {
+    let mut out = String::new();
+    let mut emitted_args = std::collections::HashSet::new();
+    let mut emitted_fields = std::collections::HashSet::new();
+
+    for event in ir.types.iter().flat_map(|ty| ty.events.iter()) {
+        if event.payload_kind == "Args" {
+            let raw_name = simple_name(
+                event
+                    .args_interface_name
+                    .as_deref()
+                    .expect("argsInterfaceName"),
+            );
+            if !emitted_args.insert(raw_name.to_string()) {
+                continue;
+            }
+            let safe_name = interface_suffix(raw_name);
+            out.push_str(&format!(
+                "#[derive(Clone, Debug, PartialEq)]\n\
+                 pub struct {safe_name} {{\n"
+            ));
+            for param in &event.parameters {
+                out.push_str(&format!(
+                    "    pub {}: Vec<Variant>,\n",
+                    to_snake(&param.name)
+                ));
+            }
+            out.push_str("}\n\n");
+            out.push_str(&format!(
+                "impl {safe_name} {{\n\
+                 \x20   pub(crate) fn from_raw(raw: &sys::ComPtr<sys::{raw_name}>) -> sys::Result<Self> {{\n"
+            ));
+            for param in &event.parameters {
+                let p = to_snake(&param.name);
+                out.push_str(&format!(
+                    "        let {p}_len = raw.{p}_count()?.max(0);\n\
+                     \x20       let mut {p} = Vec::with_capacity({p}_len as usize);\n\
+                     \x20       for index in 0..{p}_len {{\n\
+                     \x20           {p}.push(Variant::from_abi(raw.{p}_at(index)?));\n\
+                     \x20       }}\n"
+                ));
+            }
+            out.push_str("        Ok(Self {\n");
+            for param in &event.parameters {
+                out.push_str(&format!("            {},\n", to_snake(&param.name)));
+            }
+            out.push_str("        })\n    }\n}\n\n");
+        } else if !event.parameters.is_empty() {
+            let args_name = event_arguments_name(event);
+            if !emitted_fields.insert(args_name.clone()) {
+                continue;
+            }
+            out.push_str(&format!(
+                "#[derive(Clone, Debug, PartialEq)]\n\
+                 pub struct {args_name} {{\n"
+            ));
+            for param in &event.parameters {
+                let field = to_snake(&param.name);
+                let ty = safe_event_field_type(param, flags_enums, regular_enums);
+                out.push_str(&format!("    pub {field}: {ty},\n"));
+            }
+            out.push_str("}\n\n");
+            out.push_str(&format!(
+                "impl {args_name} {{\n\
+                 \x20   pub(crate) fn from_sys(raw: &sys::{args_name}) -> sys::Result<Self> {{\n\
+                 \x20       Ok(Self {{\n"
+            ));
+            for param in &event.parameters {
+                let field = to_snake(&param.name);
+                let conv = safe_event_field_from_sys(&field, param, flags_enums, regular_enums);
+                out.push_str(&format!("            {field}: {conv},\n"));
+            }
+            out.push_str("        })\n    }\n");
+            out.push_str(&format!(
+                "    pub(crate) fn write_back(&self, _raw: &mut sys::{args_name}) {{\n"
+            ));
+            for param in event.parameters.iter().filter(|p| p.direction == "InOut") {
+                let field = to_snake(&param.name);
+                let wb = safe_event_field_write_back(&field, param, flags_enums, regular_enums);
+                out.push_str(&format!("        _raw.{field} = {wb};\n"));
+            }
+            out.push_str("    }\n}\n\n");
+        }
+    }
+    out
+}
+
+fn safe_event_field_type(
+    param: &crate::ir::ProjectedParameter,
+    flags_enums: &std::collections::HashSet<&str>,
+    regular_enums: &std::collections::HashSet<&str>,
+) -> String {
+    if let Some(geometry) = geometry::find(&param.kind) {
+        return if param.is_nullable {
+            format!("Option<{}>", geometry.safe_name)
+        } else {
+            geometry.safe_name.to_string()
+        };
+    }
+    match param.kind.as_str() {
+        "Bool" => "bool".to_string(),
+        "I32" => {
+            if let Some(m) = param.managed_type_name.as_deref() {
+                if flags_enums.contains(m) || regular_enums.contains(m) {
+                    return simple_name(m).to_string();
+                }
+            }
+            "i32".to_string()
+        }
+        "StringUtf16" => {
+            if param
+                .managed_type_name
+                .as_deref()
+                .is_some_and(|m| m.contains("System.Decimal"))
+            {
+                if param.is_nullable {
+                    "Option<crate::Decimal>".to_string()
+                } else {
+                    "crate::Decimal".to_string()
+                }
+            } else if param.is_nullable {
+                "Option<String>".to_string()
+            } else {
+                "String".to_string()
+            }
+        }
+        "DateTimeI64" => {
+            if param.is_nullable {
+                "Option<std::time::SystemTime>".to_string()
+            } else {
+                "std::time::SystemTime".to_string()
+            }
+        }
+        "TimeSpanI64" => {
+            if param.is_nullable {
+                "Option<std::time::Duration>".to_string()
+            } else {
+                "std::time::Duration".to_string()
+            }
+        }
+        "Variant" => "Variant".to_string(),
+        other => rust_scalar_kind(other).to_string(),
+    }
+}
+
+fn safe_event_field_from_sys(
+    field: &str,
+    param: &crate::ir::ProjectedParameter,
+    flags_enums: &std::collections::HashSet<&str>,
+    regular_enums: &std::collections::HashSet<&str>,
+) -> String {
+    if let Some(geometry) = geometry::find(&param.kind) {
+        return if param.is_nullable {
+            format!("{}::from_optional_abi(raw.{field})", geometry.safe_name)
+        } else {
+            format!("raw.{field}.into()")
+        };
+    }
+    match param.kind.as_str() {
+        "I32" => {
+            if let Some(m) = param.managed_type_name.as_deref() {
+                let name = simple_name(m);
+                if flags_enums.contains(m) {
+                    return format!("{name}::from_bits_retain(raw.{field})");
+                }
+                if regular_enums.contains(m) {
+                    return format!(
+                        "{name}::try_from(raw.{field}).map_err(|_| sys::Error(sys::E_INVALIDARG))?"
+                    );
+                }
+            }
+            format!("raw.{field}")
+        }
+        "StringUtf16" => {
+            if param
+                .managed_type_name
+                .as_deref()
+                .is_some_and(|m| m.contains("System.Decimal"))
+            {
+                if param.is_nullable {
+                    format!(
+                        "raw.{field}.as_deref().filter(|s| !s.is_empty()).map(crate::Decimal::from_abi_str).transpose().map_err(|_| sys::Error(sys::E_INVALIDARG))?"
+                    )
+                } else {
+                    format!(
+                        "crate::Decimal::from_abi_str(&raw.{field}).map_err(|_| sys::Error(sys::E_INVALIDARG))?"
+                    )
+                }
+            } else {
+                format!("raw.{field}.clone()")
+            }
+        }
+        "DateTimeI64" => {
+            if param.is_nullable {
+                format!("raw.{field}.try_to_date_time()?")
+            } else {
+                format!(
+                    "{{ let u = raw.{field} - sys::DOTNET_EPOCH_OFFSET_TICKS; std::time::UNIX_EPOCH + std::time::Duration::from_nanos((u.clamp(0, i64::MAX) as u64) * 100) }}"
+                )
+            }
+        }
+        "TimeSpanI64" => {
+            if param.is_nullable {
+                format!("raw.{field}.try_to_duration()?")
+            } else {
+                format!("std::time::Duration::from_nanos((raw.{field}.clamp(0, i64::MAX / 100) as u64) * 100)")
+            }
+        }
+        "Variant" => format!("unsafe {{ Variant::from_borrowed_abi(raw.{field})? }}"),
+        _ => format!("raw.{field}"),
+    }
+}
+
+fn safe_event_field_write_back(
+    field: &str,
+    param: &crate::ir::ProjectedParameter,
+    flags_enums: &std::collections::HashSet<&str>,
+    regular_enums: &std::collections::HashSet<&str>,
+) -> String {
+    if param.kind == "I32" {
+        if let Some(m) = param.managed_type_name.as_deref() {
+            if flags_enums.contains(m) {
+                return format!("self.{field}.bits()");
+            }
+            if regular_enums.contains(m) {
+                return format!("self.{field} as i32");
+            }
+        }
+    }
+    format!("self.{field}")
 }
 
 fn emit_collection(property: &ProjectedProperty) -> String {
@@ -532,6 +795,14 @@ fn emit_collection(property: &ProjectedProperty) -> String {
                  \x20   pub fn add(&self, value: impl As{element}) -> Result<()> {{\n\
                  \x20       let value = value.as_{element_snake}()?;\n\
                  \x20       Ok(self.raw.add(&value)?)\n\
+                 \x20   }}\n\
+                 \x20   pub fn insert(&self, index: usize, value: impl As{element}) -> Result<()> {{\n\
+                 \x20       let value = value.as_{element_snake}()?;\n\
+                 \x20       Ok(self.raw.insert(index, &value)?)\n\
+                 \x20   }}\n\
+                 \x20   pub fn index_of(&self, value: impl As{element}) -> Result<Option<usize>> {{\n\
+                 \x20       let value = value.as_{element_snake}()?;\n\
+                 \x20       Ok(self.raw.index_of(&value)?)\n\
                  \x20   }}\n",
                 element_snake = to_snake(element)
             ));
@@ -543,6 +814,10 @@ fn emit_collection(property: &ProjectedProperty) -> String {
              \x20   pub fn add(&self, value: impl AsRef<str>) -> Result<()> {\n\
              \x20       let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();\n\
              \x20       Ok(self.raw.add(&value)?)\n\
+             \x20   }\n\
+             \x20   pub fn insert(&self, index: usize, value: impl AsRef<str>) -> Result<()> {\n\
+             \x20       let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();\n\
+             \x20       Ok(self.raw.insert(index, &value)?)\n\
              \x20   }\n\
              \x20   pub fn contains(&self, value: impl AsRef<str>) -> Result<bool> {\n\
              \x20       let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();\n\
@@ -566,6 +841,10 @@ fn emit_collection(property: &ProjectedProperty) -> String {
              \x20       let value = value.into().to_abi()?;\n\
              \x20       Ok(self.raw.add(*value)?)\n\
              \x20   }\n\
+             \x20   pub fn insert(&self, index: usize, value: impl Into<Variant>) -> Result<()> {\n\
+             \x20       let value = value.into().to_abi()?;\n\
+             \x20       Ok(self.raw.insert(index, *value)?)\n\
+             \x20   }\n\
              \x20   pub fn contains(&self, value: impl Into<Variant>) -> Result<bool> {\n\
              \x20       let value = value.into().to_abi()?;\n\
              \x20       Ok(self.raw.index_of(*value)?.is_some())\n\
@@ -584,6 +863,13 @@ fn emit_collection(property: &ProjectedProperty) -> String {
              \x20           .map(|delta| delta.as_nanos() / 100)\n\
              \x20           .unwrap_or(0) as i64;\n\
              \x20       Ok(self.raw.add(ticks + sys::DOTNET_EPOCH_OFFSET_TICKS)?)\n\
+             \x20   }\n\
+             \x20   pub fn insert(&self, index: usize, value: std::time::SystemTime) -> Result<()> {\n\
+             \x20       let ticks = value\n\
+             \x20           .duration_since(std::time::UNIX_EPOCH)\n\
+             \x20           .map(|delta| delta.as_nanos() / 100)\n\
+             \x20           .unwrap_or(0) as i64;\n\
+             \x20       Ok(self.raw.insert(index, ticks + sys::DOTNET_EPOCH_OFFSET_TICKS)?)\n\
              \x20   }\n\
              \x20   pub fn contains(&self, value: std::time::SystemTime) -> Result<bool> {\n\
              \x20       let ticks = value\n\
@@ -607,6 +893,7 @@ fn emit_type(
     ir: &ProjectionIr,
     ty: &ProjectedType,
     flags_enums: &std::collections::HashSet<&str>,
+    regular_enums: &std::collections::HashSet<&str>,
 ) -> String {
     let safe_name = interface_suffix(&ty.name);
     let has_text_block = ir
@@ -668,23 +955,12 @@ fn emit_type(
         .collect();
     for owner in lineage(ir, ty) {
         for property in &owner.properties {
-            out.push_str(&emit_property(property, &reserved_methods, flags_enums));
-            if property.kind == "ComCollection" && property.name == "Children" {
-                out.push_str(
-                    "    pub fn child(self, value: impl AsControl) -> Result<Self> {\n\
-                     \x20       self.children()?.add(value)?;\n\
-                     \x20       Ok(self)\n\
-                     \x20   }\n",
-                );
-            }
-            if property.kind == "ComCollection" && property.name == "Items" {
-                out.push_str(
-                    "    pub fn item(self, value: impl AsControl) -> Result<Self> {\n\
-                      \x20       self.items()?.add(value)?;\n\
-                      \x20       Ok(self)\n\
-                      \x20   }\n",
-                );
-            }
+            out.push_str(&emit_property(
+                property,
+                &reserved_methods,
+                flags_enums,
+                regular_enums,
+            ));
             if has_text_block
                 && property.can_write
                 && property.kind == "ComInterface"
@@ -693,30 +969,20 @@ fn emit_type(
                 if property.name == "Content" {
                     out.push_str(
                         "    pub fn set_content_text(&self, value: impl AsRef<str>) -> Result<()> {\n\
-                         \x20       let text_block = TextBlock::new()?.text(value)?;\n\
-                         \x20       self.set_content(Some(&text_block))\n\
-                         \x20   }\n\
-                         \x20   pub fn content_text(self, value: impl AsRef<str>) -> Result<Self> {\n\
-                         \x20       self.set_content_text(value)?;\n\
-                         \x20       Ok(self)\n\
+                         \x20       self.set_content(value.as_ref())\n\
                          \x20   }\n",
                     );
                 } else if property.name == "Header" {
                     out.push_str(
                         "    pub fn set_header_text(&self, value: impl AsRef<str>) -> Result<()> {\n\
-                         \x20       let text_block = TextBlock::new()?.text(value)?;\n\
-                         \x20       self.set_header(Some(&text_block))\n\
-                         \x20   }\n\
-                         \x20   pub fn header_text(self, value: impl AsRef<str>) -> Result<Self> {\n\
-                         \x20       self.set_header_text(value)?;\n\
-                         \x20       Ok(self)\n\
+                         \x20       self.set_header(value.as_ref())\n\
                          \x20   }\n",
                     );
                 }
             }
         }
         for method in &owner.methods {
-            out.push_str(&emit_method(ty, method));
+            out.push_str(&emit_method(ty, method, flags_enums, regular_enums));
         }
         for event in &owner.events {
             out.push_str(&emit_event(event));
@@ -727,11 +993,21 @@ fn emit_type(
         .iter()
         .filter(|property| property.owner_name == safe_name)
     {
-        out.push_str(&emit_attached_property(property, ir));
+        out.push_str(&emit_attached_property(
+            property,
+            ir,
+            flags_enums,
+            regular_enums,
+        ));
     }
     if is_control(ir, ty) {
         for property in &ir.attached_properties {
-            out.push_str(&emit_inline_attached_property(property, ir));
+            out.push_str(&emit_inline_attached_property(
+                property,
+                ir,
+                flags_enums,
+                regular_enums,
+            ));
         }
     }
     out.push_str("}\n\n");
@@ -811,12 +1087,20 @@ fn emit_type(
 
     if ty.is_constructible && has_text_block {
         out.push('\n');
-        out.push_str(&emit_el_type(ir, ty, &reserved_methods, flags_enums));
+        out.push_str(&emit_el_type(
+            ir,
+            ty,
+            &reserved_methods,
+            flags_enums,
+            regular_enums,
+        ));
     }
 
     fn emit_inline_attached_property(
         property: &crate::ir::ProjectedAttachedProperty,
         ir: &ProjectionIr,
+        flags_enums: &std::collections::HashSet<&str>,
+        regular_enums: &std::collections::HashSet<&str>,
     ) -> String {
         let owner_type = &property.owner_name;
         let owner = to_snake(owner_type);
@@ -829,23 +1113,17 @@ fn emit_type(
                 "String"
             };
             return format!(
-                "    pub fn get_{owner}_{name}(&self) -> Result<{get_type}> {{\n\
-                 \x20       {owner_type}::get_{accessor}(self)\n\
+                "    pub fn {owner}_{name}(&self) -> Result<{get_type}> {{\n\
+                 \x20       {owner_type}::{accessor}(self)\n\
                  \x20   }}\n\
                  \x20   pub fn set_{owner}_{name}(&self, value: impl AsRef<str>) -> Result<()> {{\n\
                  \x20       {owner_type}::set_{accessor}(self, value)\n\
-                 \x20   }}\n\
-                 \x20   pub fn {owner}_{name}(self, value: impl AsRef<str>) -> Result<Self> {{\n\
-                 \x20       {owner_type}::set_{accessor}(&self, value)?;\n\
-                 \x20       Ok(self)\n\
                  \x20   }}\n"
             );
         }
         let enum_name = simple_name(&property.managed_type_name);
-        let is_enum = ir
-            .enums
-            .iter()
-            .any(|projected_enum| projected_enum.full_name == property.managed_type_name);
+        let is_enum = regular_enums.contains(property.managed_type_name.as_str())
+            || flags_enums.contains(property.managed_type_name.as_str());
         let (get_type, set_arg, set_forward) = if is_enum {
             (
                 enum_name.to_string(),
@@ -877,15 +1155,11 @@ fn emit_type(
             (scalar.clone(), scalar, "value".to_string())
         };
         format!(
-            "    pub fn get_{owner}_{name}(&self) -> Result<{get_type}> {{\n\
-             \x20       {owner_type}::get_{accessor}(self)\n\
+            "    pub fn {owner}_{name}(&self) -> Result<{get_type}> {{\n\
+             \x20       {owner_type}::{accessor}(self)\n\
              \x20   }}\n\
              \x20   pub fn set_{owner}_{name}(&self, value: {set_arg}) -> Result<()> {{\n\
              \x20       {owner_type}::set_{accessor}(self, {set_forward})\n\
-             \x20   }}\n\
-             \x20   pub fn {owner}_{name}(self, value: {set_arg}) -> Result<Self> {{\n\
-             \x20       {owner_type}::set_{accessor}(&self, {set_forward})?;\n\
-             \x20       Ok(self)\n\
              \x20   }}\n"
         )
     }
@@ -893,14 +1167,13 @@ fn emit_type(
     fn emit_attached_property(
         property: &crate::ir::ProjectedAttachedProperty,
         ir: &ProjectionIr,
+        flags_enums: &std::collections::HashSet<&str>,
+        regular_enums: &std::collections::HashSet<&str>,
     ) -> String {
         let owner = to_snake(&property.owner_name);
         let name = to_snake(&property.name);
         let accessor = attached_accessor_name(property, ir);
         if property.kind == "StringUtf16" {
-            // A string attached property is owned by the caller after the get, so it is taken
-            // rather than borrowed. A nullable one reports an absent value as None instead of
-            // an empty string, because "no tip" and "empty tip" are different states.
             let (get_type, get_body) = if property.is_nullable {
                 (
                     "Option<String>",
@@ -913,7 +1186,7 @@ fn emit_type(
                 )
             };
             return format!(
-                "    pub fn get_{accessor}(target: &impl AsControl) -> Result<{get_type}> {{\n\
+                "    pub fn {accessor}(target: &impl AsControl) -> Result<{get_type}> {{\n\
                  \x20       let target = target.as_control()?;\n\
                  \x20       let value = with_factory(|factory| factory.get_{owner}_statics()?.get_{name}(&target))?;\n\
                  {get_body}\n\
@@ -926,11 +1199,9 @@ fn emit_type(
             );
         }
         let enum_name = simple_name(&property.managed_type_name);
-        let is_enum = ir
-            .enums
-            .iter()
-            .any(|projected_enum| projected_enum.full_name == property.managed_type_name);
-        let safe_type = if is_enum {
+        let is_flags = flags_enums.contains(property.managed_type_name.as_str());
+        let is_regular_enum = regular_enums.contains(property.managed_type_name.as_str());
+        let safe_type = if is_flags || is_regular_enum {
             enum_name.to_string()
         } else if property.kind == "TimeSpanI64" {
             "std::time::Duration".to_string()
@@ -943,7 +1214,9 @@ fn emit_type(
         } else {
             rust_scalar_kind(&property.kind).to_string()
         };
-        let raw_get = if is_enum {
+        let raw_get = if is_flags {
+            format!("Ok({enum_name}::from_bits_retain(value))")
+        } else if is_regular_enum {
             format!("{enum_name}::try_from(value)")
         } else if property.kind == "TimeSpanI64" {
             "Ok(std::time::Duration::from_nanos(value.clamp(0, i64::MAX / 100) as u64 * 100))"
@@ -957,7 +1230,9 @@ fn emit_type(
         } else {
             "Ok(value)".to_string()
         };
-        let raw_set = if is_enum {
+        let raw_set = if is_flags {
+            "value.bits()".to_string()
+        } else if is_regular_enum {
             "value as i32".to_string()
         } else if property.kind == "TimeSpanI64" {
             "(value.as_nanos() / 100).clamp(0, i64::MAX as u128) as i64".to_string()
@@ -971,7 +1246,7 @@ fn emit_type(
             "value".to_string()
         };
         format!(
-            "    pub fn get_{accessor}(target: &impl AsControl) -> Result<{safe_type}> {{\n\
+            "    pub fn {accessor}(target: &impl AsControl) -> Result<{safe_type}> {{\n\
              \x20       let target = target.as_control()?;\n\
              \x20       let value = with_factory(|factory| factory.get_{owner}_statics()?.get_{name}(&target))?;\n\
              \x20       {raw_get}\n\
@@ -1003,14 +1278,16 @@ fn attached_accessor_name(
                     .any(|candidate| candidate.name == property.name)
                     || ancestor.methods.iter().any(|method| {
                         let method = to_snake(&method.name);
-                        method == format!("get_{name}") || method == format!("set_{name}")
+                        method == name
+                            || method == format!("get_{name}")
+                            || method == format!("set_{name}")
                     })
             })
         });
     if collision {
         format!("attached_{name}")
     } else {
-        name
+        escape_ident(&name)
     }
 }
 
@@ -1019,6 +1296,7 @@ fn emit_el_type(
     ty: &ProjectedType,
     reserved_methods: &std::collections::HashSet<String>,
     flags_enums: &std::collections::HashSet<&str>,
+    regular_enums: &std::collections::HashSet<&str>,
 ) -> String {
     let safe_name = interface_suffix(&ty.name);
     let mut out = format!("impl crate::view::El<{safe_name}> {{\n");
@@ -1035,7 +1313,7 @@ fn emit_el_type(
     for owner in lineage(ir, ty) {
         for property in &owner.properties {
             let snake = to_snake(&property.name);
-            let builder = if property.kind == "Bool" || property.kind == "NullableBool" {
+            let builder_raw = if property.kind == "Bool" || property.kind == "NullableBool" {
                 match snake.strip_prefix("is_") {
                     Some(stripped) if !reserved_methods.contains(stripped) => stripped,
                     _ => snake.as_str(),
@@ -1043,6 +1321,8 @@ fn emit_el_type(
             } else {
                 snake.as_str()
             };
+            let builder = escape_ident(builder_raw);
+            let getter = getter_name(&snake, reserved_methods);
 
             if property.kind == "ComCollection" && property.name == "Children" {
                 out.push_str(
@@ -1100,7 +1380,7 @@ fn emit_el_type(
                                 "    pub fn {builder}(self, value: impl crate::view::IntoContentEl + 'static) -> Self {{\n\
                                  \x20       self.with_op(move |scope, control| {{\n\
                                  \x20           let built = value.into_content_el().map(|el| el.build(scope)).transpose()?;\n\
-                                 \x20           control.set_{builder}(built.as_ref().map(|c| c as &dyn AsControl))\n\
+                                 \x20           control.set_{builder_raw}(built)\n\
                                  \x20       }})\n\
                                  \x20   }}\n"
                             ));
@@ -1109,21 +1389,27 @@ fn emit_el_type(
                                 "    pub fn {builder}(self, value: impl crate::view::IntoChildEl + 'static) -> Self {{\n\
                                  \x20       self.with_op(move |scope, control| {{\n\
                                  \x20           let built = value.into_child_el().build(scope)?;\n\
-                                 \x20           control.set_{builder}(built)\n\
+                                 \x20           control.set_{builder_raw}(built)\n\
                                  \x20       }})\n\
                                  \x20   }}\n"
                             ));
                         }
                     } else if property.is_nullable {
                         out.push_str(&format!(
-                            "    pub fn {builder}(self, value: Option<{safe}>) -> Self {{\n\
-                             \x20       self.with_op(move |_, control| control.set_{builder}(value.as_ref()))\n\
+                            "    pub fn {builder}<M>(self, value: impl crate::view::IntoProp<Option<{safe}>, M> + 'static) -> Self {{\n\
+                             \x20       let binding = value.into_prop();\n\
+                             \x20       self.with_op(move |_, control| {{\n\
+                             \x20           crate::view::apply_prop(control, binding, |c, v| c.set_{builder_raw}(v.as_ref()))\n\
+                             \x20       }})\n\
                              \x20   }}\n"
                         ));
                     } else {
                         out.push_str(&format!(
-                            "    pub fn {builder}(self, value: {safe}) -> Self {{\n\
-                             \x20       self.with_op(move |_, control| control.set_{builder}(&value))\n\
+                            "    pub fn {builder}<M>(self, value: impl crate::view::IntoProp<{safe}, M> + 'static) -> Self {{\n\
+                             \x20       let binding = value.into_prop();\n\
+                             \x20       self.with_op(move |_, control| {{\n\
+                             \x20           crate::view::apply_prop(control, binding, |c, v| c.set_{builder_raw}(&v))\n\
+                             \x20       }})\n\
                              \x20   }}\n"
                         ));
                     }
@@ -1131,128 +1417,97 @@ fn emit_el_type(
                 "ComCollection" => {}
                 "DataTemplate" => {
                     out.push_str(&format!(
-                        "    pub fn {builder}(self, value: Option<DataTemplate>) -> Self {{\n\
-                         \x20       self.with_op(move |_, control| control.set_{builder}(value.as_ref()))\n\
+                        "    pub fn {builder}<M>(self, value: impl crate::view::IntoProp<Option<DataTemplate>, M> + 'static) -> Self {{\n\
+                         \x20       let binding = value.into_prop();\n\
+                         \x20       self.with_op(move |_, control| {{\n\
+                         \x20           crate::view::apply_prop(control, binding, |c, v| c.set_{builder_raw}(v.as_ref()))\n\
+                         \x20       }})\n\
                          \x20   }}\n"
                     ));
                 }
                 "Command" => {
                     out.push_str(&format!(
-                        "    pub fn {builder}(self, value: impl crate::view::IntoCommandProp + 'static) -> Self {{\n\
+                        "    pub fn {builder}<M>(self, value: impl crate::view::IntoProp<Option<crate::Command>, M> + 'static) -> Self {{\n\
+                         \x20       let binding = value.into_prop();\n\
                          \x20       self.with_op(move |_, control| {{\n\
-                         \x20           let cmd = value.into_command_prop();\n\
-                         \x20           control.set_{builder}(cmd.as_ref())\n\
+                         \x20           crate::view::apply_prop(control, binding, |c, v| c.set_{builder_raw}(v))\n\
                          \x20       }})\n\
                          \x20   }}\n"
                     ));
                 }
                 "ItemFilter" | "TextFilter" | "ItemSelector" | "TextSelector"
                 | "PopupPlacement" | "AsyncPopulator" => {
-                    let full =
-                        simple_name(property.interface_name.as_deref().expect("interfaceName"));
+                    let cb_type = safe_callback_type(&property.kind);
                     out.push_str(&format!(
-                        "    pub fn {builder}(self, value: Option<sys::ComPtr<sys::{full}>>) -> Self {{\n\
-                         \x20       self.with_op(move |_, control| control.set_{builder}(value.as_ref()))\n\
+                        "    pub fn {builder}(self, value: impl Into<Option<{cb_type}>> + 'static) -> Self {{\n\
+                         \x20       let value = value.into();\n\
+                         \x20       self.with_op(move |_, control| control.set_{builder_raw}(value.as_ref()))\n\
                          \x20   }}\n"
                     ));
                 }
                 _ => {
-                    let prop_type = if property.kind == "StringUtf16" {
-                        "String".to_string()
-                    } else if property.kind == "Brush" {
-                        "Option<Brush>".to_string()
-                    } else if property.kind == "Variant" {
-                        "Variant".to_string()
-                    } else if property.kind == "TimeSpanI64" {
-                        "std::time::Duration".to_string()
-                    } else if property.kind == "PixelPointI32" {
-                        "PixelPoint".to_string()
-                    } else {
-                        safe_scalar_type(property, flags_enums)
-                    };
+                    let prop_type = el_prop_type(property, flags_enums, regular_enums);
+                    let set_call = el_setter_expr(property, builder_raw);
 
-                    let supports_two_way = supports_two_way_property(property, has_event);
-                    if supports_two_way && property.name == "Text" {
-                        let event = if has_event("TextChanging") {
-                            "text_changing"
-                        } else {
-                            "text_changed"
-                        };
-                        let get_expr = if property.is_nullable {
-                            "|c: &_| c.get_text().map(|v| v.unwrap_or_default())"
-                        } else {
-                            "|c: &_| c.get_text()"
-                        };
-                        out.push_str(&format!(
-                            "    pub fn {builder}<M>(self, value: impl crate::view::IntoProp<{prop_type}, M> + 'static) -> Self {{\n\
-                             \x20       let binding = value.into_prop();\n\
-                             \x20       self.with_op(move |scope, control| {{\n\
-                             \x20           crate::view::apply_two_way_prop(\n\
-                             \x20               scope,\n\
-                             \x20               control,\n\
-                             \x20               binding,\n\
-                             \x20               |c, v| c.set_{builder}(v),\n\
-                             \x20               {get_expr},\n\
-                             \x20               |c, mut cb| c.subscribe_{event}(move |_| cb()),\n\
-                             \x20           )\n\
-                             \x20       }})\n\
-                             \x20   }}\n"
-                        ));
-                    } else if supports_two_way && property.name == "IsChecked" {
-                        out.push_str(&format!(
-                            "    pub fn {builder}<M>(self, value: impl crate::view::IntoProp<{prop_type}, M> + 'static) -> Self {{\n\
-                             \x20       let binding = value.into_prop();\n\
-                             \x20       self.with_op(move |scope, control| {{\n\
-                             \x20           crate::view::apply_two_way_prop(\n\
-                             \x20               scope,\n\
-                             \x20               control,\n\
-                             \x20               binding,\n\
-                             \x20               |c, v| c.set_{builder}(v),\n\
-                             \x20               |c| c.get_is_checked(),\n\
-                             \x20               |c, mut cb| c.subscribe_is_checked_changed(move |_| cb()),\n\
-                             \x20           )\n\
-                             \x20       }})\n\
-                             \x20   }}\n"
-                        ));
-                    } else if supports_two_way && property.name == "Value" {
-                        out.push_str(&format!(
-                            "    pub fn {builder}<M>(self, value: impl crate::view::IntoProp<{prop_type}, M> + 'static) -> Self {{\n\
-                             \x20       let binding = value.into_prop();\n\
-                             \x20       self.with_op(move |scope, control| {{\n\
-                             \x20           crate::view::apply_two_way_prop(\n\
-                             \x20               scope,\n\
-                             \x20               control,\n\
-                             \x20               binding,\n\
-                             \x20               |c, v| c.set_{builder}(v),\n\
-                             \x20               |c| c.get_value(),\n\
-                             \x20               |c, mut cb| c.subscribe_value_changed(move |_| cb()),\n\
-                             \x20           )\n\
-                             \x20       }})\n\
-                             \x20   }}\n"
-                        ));
-                    } else if supports_two_way && property.name == "SelectedIndex" {
-                        out.push_str(&format!(
-                            "    pub fn {builder}<M>(self, value: impl crate::view::IntoProp<{prop_type}, M> + 'static) -> Self {{\n\
-                             \x20       let binding = value.into_prop();\n\
-                             \x20       self.with_op(move |scope, control| {{\n\
-                             \x20           crate::view::apply_two_way_prop(\n\
-                             \x20               scope,\n\
-                             \x20               control,\n\
-                             \x20               binding,\n\
-                             \x20               |c, v| c.set_{builder}(v),\n\
-                             \x20               |c| c.get_selected_index(),\n\
-                             \x20               |c, mut cb| c.subscribe_selection_changed(move |_| cb()),\n\
-                             \x20           )\n\
-                             \x20       }})\n\
-                             \x20   }}\n"
-                        ));
+                    if let Some(spec) = el_two_way_spec(property, &getter, has_event) {
+                        match spec {
+                            TwoWaySpec::Single { get_expr, event } => {
+                                out.push_str(&format!(
+                                    "    pub fn {builder}<M>(self, value: impl crate::view::IntoProp<{prop_type}, M> + 'static) -> Self {{\n\
+                                     \x20       let binding = value.into_prop();\n\
+                                     \x20       self.with_op(move |scope, control| {{\n\
+                                     \x20           crate::view::apply_two_way_prop(\n\
+                                     \x20               scope,\n\
+                                     \x20               control,\n\
+                                     \x20               binding,\n\
+                                     \x20               {set_call},\n\
+                                     \x20               {get_expr},\n\
+                                     \x20               |c, mut cb| c.subscribe_{event}(move |_| cb()),\n\
+                                     \x20           )\n\
+                                     \x20       }})\n\
+                                     \x20   }}\n"
+                                ));
+                            }
+                            TwoWaySpec::Dual {
+                                get_expr,
+                                event_a,
+                                event_b,
+                            } => {
+                                out.push_str(&format!(
+                                    "    pub fn {builder}<M>(self, value: impl crate::view::IntoProp<{prop_type}, M> + 'static) -> Self {{\n\
+                                     \x20       let binding = value.into_prop();\n\
+                                     \x20       self.with_op(move |scope, control| {{\n\
+                                     \x20           crate::view::apply_two_way_prop_dual(\n\
+                                     \x20               scope,\n\
+                                     \x20               control,\n\
+                                     \x20               binding,\n\
+                                     \x20               {set_call},\n\
+                                     \x20               {get_expr},\n\
+                                     \x20               |c, mut cb| c.subscribe_{event_a}(move |_| cb()),\n\
+                                     \x20               |c, mut cb| c.subscribe_{event_b}(move |_| cb()),\n\
+                                     \x20           )\n\
+                                     \x20       }})\n\
+                                     \x20   }}\n"
+                                ));
+                            }
+                        }
                     } else {
                         out.push_str(&format!(
                             "    pub fn {builder}<M>(self, value: impl crate::view::IntoProp<{prop_type}, M> + 'static) -> Self {{\n\
                              \x20       let binding = value.into_prop();\n\
                              \x20       self.with_op(move |_, control| {{\n\
-                             \x20           crate::view::apply_prop(control, binding, |c, v| c.set_{builder}(v))\n\
+                             \x20           crate::view::apply_prop(control, binding, {set_call})\n\
                              \x20       }})\n\
+                             \x20   }}\n"
+                        ));
+                    }
+
+                    // Also emit `is_*` alias on `El<T>` when `builder_raw != snake` (e.g. `is_checked` alongside `checked`)!
+                    if builder_raw != snake && !reserved_methods.contains(&snake) {
+                        let snake_ident = escape_ident(&snake);
+                        out.push_str(&format!(
+                            "    pub fn {snake_ident}<M>(self, value: impl crate::view::IntoProp<{prop_type}, M> + 'static) -> Self {{\n\
+                             \x20       self.{builder}(value)\n\
                              \x20   }}\n"
                         ));
                     }
@@ -1268,14 +1523,14 @@ fn emit_el_type(
                         .as_deref()
                         .expect("argsInterfaceName"),
                 );
-                format!("&mut sys::ComPtr<sys::{args_name}>")
+                format!("&mut {}", interface_suffix(args_name))
             } else if !event.parameters.is_empty() {
                 format!("&mut {}", event_arguments_name(event))
             } else {
                 "()".to_string()
             };
             out.push_str(&format!(
-                "    pub fn on_{event_name}(self, callback: impl FnMut({arg_type}) + Send + 'static) -> Self {{\n\
+                "    pub fn on_{event_name}<R: crate::IntoEventResult + 'static>(self, callback: impl FnMut({arg_type}) -> R + 'static) -> Self {{\n\
                  \x20       self.with_op(move |scope, control| {{\n\
                  \x20           scope.retain_subscription(control.subscribe_{event_name}(callback)?);\n\
                  \x20           Ok(())\n\
@@ -1290,10 +1545,8 @@ fn emit_el_type(
             let owner = to_snake(&property.owner_name);
             let name = to_snake(&property.name);
             let enum_name = simple_name(&property.managed_type_name);
-            let is_enum = ir
-                .enums
-                .iter()
-                .any(|projected_enum| projected_enum.full_name == property.managed_type_name);
+            let is_enum = regular_enums.contains(property.managed_type_name.as_str())
+                || flags_enums.contains(property.managed_type_name.as_str());
             let prop_type = if property.kind == "StringUtf16" {
                 "String".to_string()
             } else if is_enum {
@@ -1375,20 +1628,233 @@ fn emit_el_type(
     out
 }
 
+enum TwoWaySpec {
+    Single {
+        get_expr: String,
+        event: &'static str,
+    },
+    Dual {
+        get_expr: String,
+        event_a: &'static str,
+        event_b: &'static str,
+    },
+}
+
+fn el_two_way_spec(
+    property: &ProjectedProperty,
+    getter: &str,
+    has_event: impl Fn(&str) -> bool,
+) -> Option<TwoWaySpec> {
+    if !property.can_read {
+        return None;
+    }
+    match (
+        property.name.as_str(),
+        property.kind.as_str(),
+        property.string_converter_type_name.as_deref(),
+    ) {
+        ("Text", "StringUtf16", None) if has_event("TextChanging") || has_event("TextChanged") => {
+            let event = if has_event("TextChanging") {
+                "text_changing"
+            } else {
+                "text_changed"
+            };
+            let get_expr = if property.is_nullable {
+                format!("|c: &_| c.{getter}().map(|v| v.unwrap_or_default())")
+            } else {
+                format!("|c: &_| c.{getter}()")
+            };
+            Some(TwoWaySpec::Single { get_expr, event })
+        }
+        ("IsChecked", "NullableBool", _) | ("IsChecked", "Bool", _)
+            if has_event("IsCheckedChanged") =>
+        {
+            Some(TwoWaySpec::Single {
+                get_expr: format!("|c| c.{getter}()"),
+                event: "is_checked_changed",
+            })
+        }
+        ("Value", "F64", _) if has_event("ValueChanged") => Some(TwoWaySpec::Single {
+            get_expr: format!("|c| c.{getter}()"),
+            event: "value_changed",
+        }),
+        ("Value", "StringUtf16", Some("Avalonia.Host.Com.AvnDecimal"))
+            if has_event("ValueChanged") =>
+        {
+            Some(TwoWaySpec::Single {
+                get_expr: format!("|c| c.{getter}()"),
+                event: "value_changed",
+            })
+        }
+        ("SelectedIndex", "I32", _) if has_event("SelectionChanged") => Some(TwoWaySpec::Single {
+            get_expr: format!("|c| c.{getter}()"),
+            event: "selection_changed",
+        }),
+        ("SelectedPageIndex", "I32", _) if has_event("SelectedIndexChanged") => {
+            Some(TwoWaySpec::Single {
+                get_expr: format!("|c| c.{getter}()"),
+                event: "selected_index_changed",
+            })
+        }
+        ("SelectedItem", "Variant", _) if has_event("SelectionChanged") => {
+            Some(TwoWaySpec::Single {
+                get_expr: format!("|c| c.{getter}()"),
+                event: "selection_changed",
+            })
+        }
+        (
+            "SelectedDate",
+            "StringUtf16",
+            Some("Avalonia.Host.Com.AvnCalendarDate" | "Avalonia.Host.Com.AvnDateTimeOffset"),
+        ) if has_event("SelectedDateChanged") => Some(TwoWaySpec::Single {
+            get_expr: format!("|c| c.{getter}()"),
+            event: "selected_date_changed",
+        }),
+        ("SelectedTime", "StringUtf16", Some("Avalonia.Host.Com.AvnTimeSpan"))
+            if has_event("SelectedTimeChanged") =>
+        {
+            Some(TwoWaySpec::Single {
+                get_expr: format!("|c| c.{getter}()"),
+                event: "selected_time_changed",
+            })
+        }
+        ("IsExpanded", "Bool", _) if has_event("Expanded") && has_event("Collapsed") => {
+            Some(TwoWaySpec::Dual {
+                get_expr: format!("|c: &_| c.{getter}()"),
+                event_a: "expanded",
+                event_b: "collapsed",
+            })
+        }
+        ("IsPaneOpen", "Bool", _) if has_event("PaneOpened") && has_event("PaneClosed") => {
+            Some(TwoWaySpec::Dual {
+                get_expr: format!("|c: &_| c.{getter}()"),
+                event_a: "pane_opened",
+                event_b: "pane_closed",
+            })
+        }
+        ("IsOpen", "Bool", _) if has_event("Opened") && has_event("Closed") => {
+            Some(TwoWaySpec::Dual {
+                get_expr: format!("|c: &_| c.{getter}()"),
+                event_a: "opened",
+                event_b: "closed",
+            })
+        }
+        ("IsDropDownOpen", "Bool", _)
+            if has_event("DropDownOpened") && has_event("DropDownClosed") =>
+        {
+            Some(TwoWaySpec::Dual {
+                get_expr: format!("|c: &_| c.{getter}()"),
+                event_a: "drop_down_opened",
+                event_b: "drop_down_closed",
+            })
+        }
+        _ => None,
+    }
+}
+
+fn el_prop_type(
+    property: &ProjectedProperty,
+    flags_enums: &std::collections::HashSet<&str>,
+    regular_enums: &std::collections::HashSet<&str>,
+) -> String {
+    if let Some((ty, _, _)) = string_converter_mapping(property) {
+        return ty.to_string();
+    }
+    if property.kind == "StringUtf16" {
+        "String".to_string()
+    } else if property.kind == "Brush" {
+        "Option<Paint>".to_string()
+    } else if property.kind == "Variant" {
+        "Variant".to_string()
+    } else if property.kind == "TimeSpanI64" {
+        "std::time::Duration".to_string()
+    } else if property.kind == "PixelPointI32" {
+        "PixelPoint".to_string()
+    } else {
+        safe_scalar_type(property, flags_enums, regular_enums)
+    }
+}
+
+fn el_setter_expr(_property: &ProjectedProperty, builder_raw: &str) -> String {
+    format!("|c, v| c.set_{builder_raw}(v)")
+}
+
+fn safe_callback_type(kind: &str) -> &'static str {
+    match kind {
+        "ItemFilter" => "crate::ItemFilter",
+        "TextFilter" => "crate::TextFilter",
+        "ItemSelector" => "crate::ItemSelector",
+        "TextSelector" => "crate::TextSelector",
+        "PopupPlacement" => "crate::PopupPlacementCallback",
+        "AsyncPopulator" => "crate::AsyncPopulator",
+        _ => unreachable!(),
+    }
+}
+
+fn string_converter_mapping(
+    property: &ProjectedProperty,
+) -> Option<(&'static str, &'static str, &'static str)> {
+    match property.string_converter_type_name.as_deref()? {
+        "Avalonia.Host.Com.AvnColumnDefinitions" | "Avalonia.Host.Com.AvnRowDefinitions" => Some((
+            "crate::GridTracks",
+            "impl crate::view::IntoValue<crate::GridTracks>",
+            "grid_tracks",
+        )),
+        "Avalonia.Host.Com.AvnCalendarDate" | "Avalonia.Host.Com.AvnDateTimeOffset" => Some((
+            "Option<crate::CivilDate>",
+            "impl Into<Option<crate::CivilDate>>",
+            "opt_civil_date",
+        )),
+        "Avalonia.Host.Com.AvnCalendarDateValue" | "Avalonia.Host.Com.AvnDateTimeOffsetValue" => {
+            Some(("crate::CivilDate", "crate::CivilDate", "civil_date"))
+        }
+        "Avalonia.Host.Com.AvnTimeSpan" => Some((
+            "Option<crate::CivilTime>",
+            "impl Into<Option<crate::CivilTime>>",
+            "opt_civil_time",
+        )),
+        "Avalonia.Host.Com.AvnDecimal" => Some((
+            "Option<crate::Decimal>",
+            "impl crate::view::IntoValue<Option<crate::Decimal>>",
+            "opt_decimal",
+        )),
+        "Avalonia.Host.Com.AvnDecimalValue" => Some((
+            "crate::Decimal",
+            "impl crate::view::IntoValue<crate::Decimal>",
+            "decimal",
+        )),
+        _ => None,
+    }
+}
+
+fn getter_name(snake: &str, reserved_methods: &std::collections::HashSet<String>) -> String {
+    if reserved_methods.contains(snake) {
+        format!("get_{snake}")
+    } else {
+        escape_ident(snake)
+    }
+}
+
+fn escape_ident(name: &str) -> String {
+    match name {
+        "as" | "break" | "const" | "continue" | "crate" | "else" | "enum" | "extern" | "false"
+        | "fn" | "for" | "if" | "impl" | "in" | "let" | "loop" | "match" | "mod" | "move"
+        | "mut" | "pub" | "ref" | "return" | "self" | "Self" | "static" | "struct" | "super"
+        | "trait" | "true" | "type" | "unsafe" | "use" | "where" | "while" | "async" | "await"
+        | "dyn" | "box" | "try" => format!("r#{name}"),
+        _ => name.to_string(),
+    }
+}
+
 fn emit_property(
     property: &ProjectedProperty,
     reserved_methods: &std::collections::HashSet<String>,
     flags_enums: &std::collections::HashSet<&str>,
+    regular_enums: &std::collections::HashSet<&str>,
 ) -> String {
     let snake = to_snake(&property.name);
-    let getter = if property.can_write {
-        format!("get_{snake}")
-    } else {
-        snake.clone()
-    };
-    // Bool builders drop the `is_` prefix (`IsEnabled` → `enabled`) unless that
-    // collides with a method on the same type (`IsOpen` vs `Open()`).
-    let builder = if property.kind == "Bool" || property.kind == "NullableBool" {
+    let getter = getter_name(&snake, reserved_methods);
+    let builder_raw = if property.kind == "Bool" || property.kind == "NullableBool" {
         match snake.strip_prefix("is_") {
             Some(stripped) if !reserved_methods.contains(stripped) => stripped,
             _ => snake.as_str(),
@@ -1399,135 +1865,180 @@ fn emit_property(
     let mut out = String::new();
 
     if property.can_read {
-        match property.kind.as_str() {
-            "StringUtf16" if property.is_nullable => out.push_str(&format!(
-                "    pub fn {getter}(&self) -> Result<Option<String>> {{\n\
-                 \x20       unsafe {{ Ok(sys::take_utf16(self.raw.get_{snake}()?)) }}\n\
-                 \x20   }}\n"
-            )),
-            "StringUtf16" => out.push_str(&format!(
-                "    pub fn {getter}(&self) -> Result<String> {{\n\
-                 \x20       unsafe {{ sys::take_utf16(self.raw.get_{snake}()?).ok_or(crate::Error::Abi(sys::Error(sys::E_POINTER))) }}\n\
-                 \x20   }}\n"
-            )),
-            "ComInterface" => {
-                let safe_type = interface_suffix(simple_name(
-                    property.interface_name.as_deref().expect("interfaceName"),
-                ));
-                if property.is_nullable {
-                    out.push_str(&format!(
-                        "    pub fn {getter}(&self) -> Result<Option<{safe_type}>> {{\n\
-                         \x20       Ok(self.raw.get_{snake}()?.map(|raw| {safe_type} {{ raw }}))\n\
-                         \x20   }}\n"
-                    ));
-                } else {
-                    out.push_str(&format!(
-                        "    pub fn {getter}(&self) -> Result<{safe_type}> {{\n\
-                         \x20       Ok({safe_type} {{ raw: self.raw.get_{snake}()? }})\n\
-                         \x20   }}\n"
-                    ));
-                }
-            }
-            "ComCollection" => {
-                let safe_type = interface_suffix(simple_name(
-                    property.interface_name.as_deref().expect("interfaceName"),
-                ));
-                if property.is_nullable {
-                    out.push_str(&format!(
-                        "    pub fn {getter}(&self) -> Result<Option<{safe_type}>> {{\n\
-                         \x20       Ok(self.raw.get_{snake}()?.map(|raw| {safe_type} {{ raw }}))\n\
-                         \x20   }}\n"
-                    ));
-                } else {
-                    out.push_str(&format!(
-                        "    pub fn {getter}(&self) -> Result<{safe_type}> {{\n\
-                         \x20       Ok({safe_type} {{ raw: self.raw.get_{snake}()? }})\n\
-                         \x20   }}\n"
-                    ));
-                }
-            }
-            "Brush" => out.push_str(&format!(
-                "    pub fn {getter}(&self) -> Result<Option<Brush>> {{\n\
-                 \x20       self.raw.get_{snake}()?.as_ref().map(Brush::from_raw).transpose()\n\
-                 \x20   }}\n"
-            )),
-            "Command" => out.push_str(&format!(
-                "    pub fn {getter}(&self) -> Result<Option<sys::ComPtr<sys::IAvnCommand>>> {{\n\
-                 \x20       Ok(self.raw.get_{snake}()?)\n\
-                 \x20   }}\n"
-            )),
-            "DataTemplate" => out.push_str(&format!(
-                "    pub fn {getter}(&self) -> Result<Option<DataTemplate>> {{\n\
-                 \x20       Ok(self.raw.get_{snake}()?.map(|raw| DataTemplate {{ raw }}))\n\
-                 \x20   }}\n"
-            )),
-            "ItemFilter" | "TextFilter" | "ItemSelector" | "TextSelector" | "PopupPlacement"
-            | "AsyncPopulator" => {
-                let full = simple_name(
-                    property.interface_name.as_deref().expect("interfaceName"),
-                );
-                out.push_str(&format!(
-                    "    pub fn {getter}(&self) -> Result<Option<sys::ComPtr<sys::{full}>>> {{\n\
-                     \x20       Ok(self.raw.get_{snake}()?)\n\
+        if let Some((ty, _, conv_tag)) = string_converter_mapping(property) {
+            let body = match conv_tag {
+                "grid_tracks" => format!(
+                    "        let raw = unsafe {{ sys::take_utf16(self.raw.get_{snake}()?).ok_or(crate::Error::Abi(sys::Error(sys::E_POINTER)))? }};\n\
+                     \x20       raw.parse()"
+                ),
+                "opt_civil_date" => format!(
+                    "        let raw = unsafe {{ sys::take_utf16(self.raw.get_{snake}()?) }};\n\
+                     \x20       raw.as_deref().filter(|s| !s.is_empty()).map(crate::CivilDate::from_abi_str).transpose()"
+                ),
+                "civil_date" => format!(
+                    "        let raw = unsafe {{ sys::take_utf16(self.raw.get_{snake}()?).ok_or(crate::Error::Abi(sys::Error(sys::E_POINTER)))? }};\n\
+                     \x20       crate::CivilDate::from_abi_str(&raw)"
+                ),
+                "opt_civil_time" => format!(
+                    "        let raw = unsafe {{ sys::take_utf16(self.raw.get_{snake}()?) }};\n\
+                     \x20       raw.as_deref().filter(|s| !s.is_empty()).map(crate::CivilTime::from_abi_str).transpose()"
+                ),
+                "opt_decimal" => format!(
+                    "        let raw = unsafe {{ sys::take_utf16(self.raw.get_{snake}()?) }};\n\
+                     \x20       raw.as_deref().filter(|s| !s.is_empty()).map(crate::Decimal::from_abi_str).transpose()"
+                ),
+                "decimal" => format!(
+                    "        let raw = unsafe {{ sys::take_utf16(self.raw.get_{snake}()?).ok_or(crate::Error::Abi(sys::Error(sys::E_POINTER)))? }};\n\
+                     \x20       crate::Decimal::from_abi_str(&raw)"
+                ),
+                _ => unreachable!(),
+            };
+            out.push_str(&format!(
+                "    pub fn {getter}(&self) -> Result<{ty}> {{\n{body}\n    }}\n"
+            ));
+        } else {
+            match property.kind.as_str() {
+                "StringUtf16" if property.is_nullable => out.push_str(&format!(
+                    "    pub fn {getter}(&self) -> Result<Option<String>> {{\n\
+                     \x20       unsafe {{ Ok(sys::take_utf16(self.raw.get_{snake}()?)) }}\n\
                      \x20   }}\n"
-                ));
-            }
-            "Variant" => out.push_str(&format!(
-                "    pub fn {getter}(&self) -> Result<Variant> {{\n\
-                 \x20       Ok(Variant::from_abi(self.raw.get_{snake}()?))\n\
-                 \x20   }}\n"
-            )),
-            "TimeSpanI64" => out.push_str(&format!(
-                "    pub fn {getter}(&self) -> Result<std::time::Duration> {{\n\
-                 \x20       let ticks = self.raw.get_{snake}()?;\n\
-                 \x20       Ok(std::time::Duration::from_nanos(ticks.clamp(0, i64::MAX / 100) as u64 * 100))\n\
-                 \x20   }}\n"
-            )),
-            "PixelPointI32" => out.push_str(&format!(
-                "    pub fn {getter}(&self) -> Result<PixelPoint> {{\n\
-                 \x20       Ok(PixelPoint::from_abi(self.raw.get_{snake}()?))\n\
-                 \x20   }}\n"
-            )),
-            "I32" if is_enum_property(property, flags_enums) => {
-                let enum_name = simple_name(property.managed_type_name.as_deref().unwrap());
-                out.push_str(&format!(
-                    "    pub fn {getter}(&self) -> Result<{enum_name}> {{\n\
-                     \x20       let value = self.raw.get_{snake}()?;\n\
-                     \x20       {enum_name}::try_from(value)\n\
+                )),
+                "StringUtf16" => out.push_str(&format!(
+                    "    pub fn {getter}(&self) -> Result<String> {{\n\
+                     \x20       unsafe {{ sys::take_utf16(self.raw.get_{snake}()?).ok_or(crate::Error::Abi(sys::Error(sys::E_POINTER))) }}\n\
                      \x20   }}\n"
-                ));
-            }
-            kind if geometry::is_geometry(kind) => {
-                let safe_type = geometry::find(kind).unwrap().safe_name;
-                if property.is_nullable {
-                    out.push_str(&format!(
-                        "    pub fn {getter}(&self) -> Result<Option<{safe_type}>> {{\n\
-                         \x20       Ok({safe_type}::from_optional_abi(self.raw.get_{snake}()?))\n\
-                         \x20   }}\n"
+                )),
+                "ComInterface" => {
+                    let safe_type = interface_suffix(simple_name(
+                        property.interface_name.as_deref().expect("interfaceName"),
                     ));
-                } else {
+                    if property.is_nullable {
+                        out.push_str(&format!(
+                            "    pub fn {getter}(&self) -> Result<Option<{safe_type}>> {{\n\
+                             \x20       Ok(self.raw.get_{snake}()?.map(|raw| {safe_type} {{ raw }}))\n\
+                             \x20   }}\n"
+                        ));
+                    } else {
+                        out.push_str(&format!(
+                            "    pub fn {getter}(&self) -> Result<{safe_type}> {{\n\
+                             \x20       Ok({safe_type} {{ raw: self.raw.get_{snake}()? }})\n\
+                             \x20   }}\n"
+                        ));
+                    }
+                }
+                "ComCollection" => {
+                    let safe_type = interface_suffix(simple_name(
+                        property.interface_name.as_deref().expect("interfaceName"),
+                    ));
+                    if property.is_nullable {
+                        out.push_str(&format!(
+                            "    pub fn {getter}(&self) -> Result<Option<{safe_type}>> {{\n\
+                             \x20       Ok(self.raw.get_{snake}()?.map(|raw| {safe_type} {{ raw }}))\n\
+                             \x20   }}\n"
+                        ));
+                    } else {
+                        out.push_str(&format!(
+                            "    pub fn {getter}(&self) -> Result<{safe_type}> {{\n\
+                             \x20       Ok({safe_type} {{ raw: self.raw.get_{snake}()? }})\n\
+                             \x20   }}\n"
+                        ));
+                    }
+                }
+                "Brush" => out.push_str(&format!(
+                    "    pub fn {getter}(&self) -> Result<Option<Paint>> {{\n\
+                     \x20       self.raw.get_{snake}()?.as_ref().map(Paint::from_raw).transpose()\n\
+                     \x20   }}\n"
+                )),
+                "Command" => out.push_str(&format!(
+                    "    pub fn {getter}(&self) -> Result<Option<crate::Command>> {{\n\
+                     \x20       Ok(self.raw.get_{snake}()?.map(crate::Command::from_com_ptr))\n\
+                     \x20   }}\n"
+                )),
+                "DataTemplate" => out.push_str(&format!(
+                    "    pub fn {getter}(&self) -> Result<Option<DataTemplate>> {{\n\
+                     \x20       Ok(self.raw.get_{snake}()?.map(|raw| DataTemplate {{ raw }}))\n\
+                     \x20   }}\n"
+                )),
+                "ItemFilter" | "TextFilter" | "ItemSelector" | "TextSelector"
+                | "PopupPlacement" | "AsyncPopulator" => {
+                    let cb_type = safe_callback_type(&property.kind);
                     out.push_str(&format!(
-                        "    pub fn {getter}(&self) -> Result<{safe_type}> {{\n\
-                         \x20       Ok(self.raw.get_{snake}()?.into())\n\
+                        "    pub fn {getter}(&self) -> Result<Option<{cb_type}>> {{\n\
+                         \x20       Ok(self.raw.get_{snake}()?.map(|raw| {cb_type} {{ raw }}))\n\
                          \x20   }}\n"
                     ));
                 }
+                "Variant" => out.push_str(&format!(
+                    "    pub fn {getter}(&self) -> Result<Variant> {{\n\
+                     \x20       Ok(Variant::from_abi(self.raw.get_{snake}()?))\n\
+                     \x20   }}\n"
+                )),
+                "TimeSpanI64" => out.push_str(&format!(
+                    "    pub fn {getter}(&self) -> Result<std::time::Duration> {{\n\
+                     \x20       let ticks = self.raw.get_{snake}()?;\n\
+                     \x20       Ok(std::time::Duration::from_nanos(ticks.clamp(0, i64::MAX / 100) as u64 * 100))\n\
+                     \x20   }}\n"
+                )),
+                "PixelPointI32" => out.push_str(&format!(
+                    "    pub fn {getter}(&self) -> Result<PixelPoint> {{\n\
+                     \x20       Ok(PixelPoint::from_abi(self.raw.get_{snake}()?))\n\
+                     \x20   }}\n"
+                )),
+                "I32"
+                    if property
+                        .managed_type_name
+                        .as_deref()
+                        .is_some_and(|m| flags_enums.contains(m)) =>
+                {
+                    let enum_name = simple_name(property.managed_type_name.as_deref().unwrap());
+                    out.push_str(&format!(
+                        "    pub fn {getter}(&self) -> Result<{enum_name}> {{\n\
+                         \x20       Ok({enum_name}::from_bits_retain(self.raw.get_{snake}()?))\n\
+                         \x20   }}\n"
+                    ));
+                }
+                "I32"
+                    if property
+                        .managed_type_name
+                        .as_deref()
+                        .is_some_and(|m| regular_enums.contains(m)) =>
+                {
+                    let enum_name = simple_name(property.managed_type_name.as_deref().unwrap());
+                    out.push_str(&format!(
+                        "    pub fn {getter}(&self) -> Result<{enum_name}> {{\n\
+                         \x20       let value = self.raw.get_{snake}()?;\n\
+                         \x20       {enum_name}::try_from(value)\n\
+                         \x20   }}\n"
+                    ));
+                }
+                kind if geometry::is_geometry(kind) => {
+                    let safe_type = geometry::find(kind).unwrap().safe_name;
+                    if property.is_nullable {
+                        out.push_str(&format!(
+                            "    pub fn {getter}(&self) -> Result<Option<{safe_type}>> {{\n\
+                             \x20       Ok({safe_type}::from_optional_abi(self.raw.get_{snake}()?))\n\
+                             \x20   }}\n"
+                        ));
+                    } else {
+                        out.push_str(&format!(
+                            "    pub fn {getter}(&self) -> Result<{safe_type}> {{\n\
+                             \x20       Ok(self.raw.get_{snake}()?.into())\n\
+                             \x20   }}\n"
+                        ));
+                    }
+                }
+                _ => out.push_str(&format!(
+                    "    pub fn {getter}(&self) -> Result<{}> {{ Ok(self.raw.get_{snake}()?) }}\n",
+                    safe_scalar_type(property, flags_enums, regular_enums)
+                )),
             }
-            _ => out.push_str(&format!(
-                "    pub fn {getter}(&self) -> Result<{}> {{ Ok(self.raw.get_{snake}()?) }}\n",
-                safe_scalar_type(property, flags_enums)
-            )),
         }
     }
 
     if property.can_write {
-        let (argument, setup, value) = safe_property_input(property, flags_enums);
+        let (argument, setup, value) = safe_property_input(property, flags_enums, regular_enums);
         out.push_str(&format!(
-            "    pub fn set_{builder}(&self, value: {argument}) -> Result<()> {{\n{setup}        Ok(self.raw.set_{snake}({value})?)\n    }}\n\
-             \x20   pub fn {builder}(self, value: {argument}) -> Result<Self> {{\n\
-             \x20       self.set_{builder}(value)?;\n\
-             \x20       Ok(self)\n\
-             \x20   }}\n"
+            "    pub fn set_{builder_raw}(&self, value: {argument}) -> Result<()> {{\n{setup}        Ok(self.raw.set_{snake}({value})?)\n    }}\n"
         ));
     }
     out
@@ -1535,14 +2046,14 @@ fn emit_property(
 
 fn emit_event(event: &ProjectedEvent) -> String {
     if event.payload_kind == "Args" {
-        // The callback receives the args interface wrapper with count/getter methods.
         let event_name = to_snake(&event.name);
-        let args_name = simple_name(
+        let raw_args_name = simple_name(
             event
                 .args_interface_name
                 .as_deref()
                 .expect("argsInterfaceName"),
         );
+        let safe_args = interface_suffix(raw_args_name);
         let handler_name = simple_name(&event.handler_interface_name)
             .strip_prefix("IAvn")
             .unwrap_or_else(|| simple_name(&event.handler_interface_name))
@@ -1550,17 +2061,25 @@ fn emit_event(event: &ProjectedEvent) -> String {
             .unwrap_or_else(|| simple_name(&event.handler_interface_name));
         let handler_function = format!("{}_handler", to_snake(handler_name));
         return format!(
-            "    pub fn subscribe_{event_name}(&self, callback: impl FnMut(&mut sys::ComPtr<sys::{args_name}>) + Send + 'static) -> Result<EventSubscription> {{\n\
-             \x20       let mut callback = callback;\n\
-             \x20       let handler = sys::{handler_function}(move |args| {{ callback(args); Ok(()) }});\n\
+            "    pub fn subscribe_{event_name}<R: crate::IntoEventResult>(&self, mut callback: impl FnMut(&mut {safe_args}) -> R + 'static) -> Result<EventSubscription> {{\n\
+             \x20       let cb = crate::reactive::UiCallbackHandle::new(move |args: &mut {safe_args}| {{\n\
+             \x20           if let Err(err) = callback(args).into_event_result() {{\n\
+             \x20               crate::runtime::report_ui_error(\"{event_name} callback failed\", &err);\n\
+             \x20           }}\n\
+             \x20       }});\n\
+             \x20       let handler = sys::{handler_function}(move |raw_args| {{\n\
+             \x20           let mut safe = {safe_args}::from_raw(raw_args)?;\n\
+             \x20           let _ = cb.with(|f| f(&mut safe));\n\
+             \x20           Ok(())\n\
+             \x20       }});\n\
              \x20       let subscription_id = self.raw.advise_{event_name}(&handler)?;\n\
              \x20       let source = self.raw.clone();\n\
              \x20       Ok(EventSubscription::new(move || source.unadvise_{event_name}(subscription_id)))\n\
              \x20   }}\n\
-             \x20   pub fn on_{event_name}(self, scope: &crate::AppScope, callback: impl FnMut(&mut sys::ComPtr<sys::{args_name}>) + Send + 'static) -> Result<Self> {{\n\
-              \x20       scope.retain_subscription(self.subscribe_{event_name}(callback)?);\n\
-              \x20       Ok(self)\n\
-              \x20   }}\n"
+             \x20   pub fn on_{event_name}<R: crate::IntoEventResult>(&self, scope: &crate::AppScope, callback: impl FnMut(&mut {safe_args}) -> R + 'static) -> Result<()> {{\n\
+             \x20       scope.retain_subscription(self.subscribe_{event_name}(callback)?);\n\
+             \x20       Ok(())\n\
+             \x20   }}\n"
         );
     }
     if !event.parameters.is_empty() {
@@ -1573,16 +2092,25 @@ fn emit_event(event: &ProjectedEvent) -> String {
             .unwrap_or_else(|| simple_name(&event.handler_interface_name));
         let handler_function = format!("{}_handler", to_snake(handler_name));
         return format!(
-            "    pub fn subscribe_{event_name}(&self, callback: impl FnMut(&mut {args_name}) + Send + 'static) -> Result<EventSubscription> {{\n\
-             \x20       let mut callback = callback;\n\
-             \x20       let handler = sys::{handler_function}(move |event| {{ callback(event); Ok(()) }});\n\
+            "    pub fn subscribe_{event_name}<R: crate::IntoEventResult>(&self, mut callback: impl FnMut(&mut {args_name}) -> R + 'static) -> Result<EventSubscription> {{\n\
+             \x20       let cb = crate::reactive::UiCallbackHandle::new(move |ev: &mut {args_name}| {{\n\
+             \x20           if let Err(err) = callback(ev).into_event_result() {{\n\
+             \x20               crate::runtime::report_ui_error(\"{event_name} callback failed\", &err);\n\
+             \x20           }}\n\
+             \x20       }});\n\
+             \x20       let handler = sys::{handler_function}(move |raw_event| {{\n\
+             \x20           let mut safe = {args_name}::from_sys(raw_event)?;\n\
+             \x20           let _ = cb.with(|f| f(&mut safe));\n\
+             \x20           safe.write_back(raw_event);\n\
+             \x20           Ok(())\n\
+             \x20       }});\n\
              \x20       let subscription_id = self.raw.advise_{event_name}(&handler)?;\n\
              \x20       let source = self.raw.clone();\n\
              \x20       Ok(EventSubscription::new(move || source.unadvise_{event_name}(subscription_id)))\n\
              \x20   }}\n\
-             \x20   pub fn on_{event_name}(self, scope: &crate::AppScope, callback: impl FnMut(&mut {args_name}) + Send + 'static) -> Result<Self> {{\n\
-              \x20       scope.retain_subscription(self.subscribe_{event_name}(callback)?);\n\
-             \x20       Ok(self)\n\
+             \x20   pub fn on_{event_name}<R: crate::IntoEventResult>(&self, scope: &crate::AppScope, callback: impl FnMut(&mut {args_name}) -> R + 'static) -> Result<()> {{\n\
+             \x20       scope.retain_subscription(self.subscribe_{event_name}(callback)?);\n\
+             \x20       Ok(())\n\
              \x20   }}\n"
         );
     }
@@ -1599,18 +2127,23 @@ fn emit_event(event: &ProjectedEvent) -> String {
         });
     let handler_function = format!("{}_handler", to_snake(handler_name));
     format!(
-        "    pub fn subscribe_{event_name}(&self, mut callback: impl FnMut(()) + Send + 'static) -> Result<EventSubscription> {{\n\
+        "    pub fn subscribe_{event_name}<R: crate::IntoEventResult>(&self, mut callback: impl FnMut(()) -> R + 'static) -> Result<EventSubscription> {{\n\
+         \x20       let cb = crate::reactive::UiCallbackHandle::new(move || {{\n\
+         \x20           if let Err(err) = callback(()).into_event_result() {{\n\
+         \x20               crate::runtime::report_ui_error(\"{event_name} callback failed\", &err);\n\
+         \x20           }}\n\
+         \x20       }});\n\
          \x20       let handler = sys::{handler_function}(move || {{\n\
-         \x20           callback(());\n\
+         \x20           let _ = cb.with(|f| f());\n\
          \x20           Ok(())\n\
          \x20       }});\n\
          \x20       let subscription_id = self.raw.advise_{event_name}(&handler)?;\n\
          \x20       let source = self.raw.clone();\n\
          \x20       Ok(EventSubscription::new(move || source.unadvise_{event_name}(subscription_id)))\n\
          \x20   }}\n\
-         \x20   pub fn on_{event_name}(self, scope: &crate::AppScope, callback: impl FnMut(()) + Send + 'static) -> Result<Self> {{\n\
+         \x20   pub fn on_{event_name}<R: crate::IntoEventResult>(&self, scope: &crate::AppScope, callback: impl FnMut(()) -> R + 'static) -> Result<()> {{\n\
          \x20       scope.retain_subscription(self.subscribe_{event_name}(callback)?);\n\
-         \x20       Ok(self)\n\
+         \x20       Ok(())\n\
          \x20   }}\n"
     )
 }
@@ -1627,14 +2160,16 @@ fn event_arguments_name(event: &ProjectedEvent) -> String {
     )
 }
 
-fn emit_method(ty: &ProjectedType, method: &crate::ir::ProjectedMethod) -> String {
+fn emit_method(
+    ty: &ProjectedType,
+    method: &crate::ir::ProjectedMethod,
+    flags_enums: &std::collections::HashSet<&str>,
+    regular_enums: &std::collections::HashSet<&str>,
+) -> String {
     let name = to_snake(&method.name);
     if ty.name == "IAvnWindow" && method.name == "Show" {
         return String::new();
     }
-    // A parameter typed as the root control interface accepts any projected control, the same
-    // way a control-valued property setter does. Anything more specific stays concrete, so
-    // `TreeView::expand_sub_tree` still demands a `TreeViewItem` rather than any control.
     let is_any_control = |parameter: &crate::ir::ProjectedParameter| {
         parameter.kind == "ComInterface"
             && parameter
@@ -1674,11 +2209,10 @@ fn emit_method(ty: &ProjectedType, method: &crate::ir::ProjectedMethod) -> Strin
                     format!("{parameter_name}: &{safe}")
                 }
             } else if parameter.kind == "Notification" {
-                let full = simple_name(parameter.interface_name.as_deref().expect("interfaceName"));
                 if parameter.is_nullable {
-                    format!("{parameter_name}: Option<&sys::ComPtr<sys::{full}>>")
+                    format!("{parameter_name}: Option<&crate::Notification>")
                 } else {
-                    format!("{parameter_name}: &sys::ComPtr<sys::{full}>")
+                    format!("{parameter_name}: &crate::Notification")
                 }
             } else if parameter.kind == "Variant" {
                 format!("{parameter_name}: impl Into<Variant>")
@@ -1688,6 +2222,14 @@ fn emit_method(ty: &ProjectedType, method: &crate::ir::ProjectedMethod) -> Strin
                 } else {
                     format!("{parameter_name}: impl AsRef<str>")
                 }
+            } else if parameter.kind == "I32"
+                && parameter
+                    .managed_type_name
+                    .as_deref()
+                    .is_some_and(|m| flags_enums.contains(m) || regular_enums.contains(m))
+            {
+                let enum_name = simple_name(parameter.managed_type_name.as_deref().unwrap());
+                format!("{parameter_name}: {enum_name}")
             } else if let Some(geometry) = geometry::find(&parameter.kind) {
                 format!("{parameter_name}: {}", geometry.safe_name)
             } else {
@@ -1698,7 +2240,11 @@ fn emit_method(ty: &ProjectedType, method: &crate::ir::ProjectedMethod) -> Strin
         .join(", ");
     let setup = ins
         .iter()
-        .filter(|parameter| is_any_control(parameter) || parameter.kind == "StringUtf16")
+        .filter(|parameter| {
+            is_any_control(parameter)
+                || parameter.kind == "StringUtf16"
+                || parameter.kind == "Notification"
+        })
         .map(|parameter| {
             let parameter_name = to_snake(&parameter.name);
             if parameter.kind == "StringUtf16" {
@@ -1706,6 +2252,12 @@ fn emit_method(ty: &ProjectedType, method: &crate::ir::ProjectedMethod) -> Strin
                     format!("        let {parameter_name}: Option<Vec<u16>> = {parameter_name}.map(|value| value.encode_utf16().chain(Some(0)).collect());\n")
                 } else {
                     format!("        let {parameter_name}: Vec<u16> = {parameter_name}.as_ref().encode_utf16().chain(Some(0)).collect();\n")
+                }
+            } else if parameter.kind == "Notification" {
+                if parameter.is_nullable {
+                    format!("        let {parameter_name} = {parameter_name}.map(crate::Notification::to_raw);\n")
+                } else {
+                    format!("        let {parameter_name} = {parameter_name}.to_raw();\n")
                 }
             } else if parameter.is_nullable {
                 format!(
@@ -1733,7 +2285,11 @@ fn emit_method(ty: &ProjectedType, method: &crate::ir::ProjectedMethod) -> Strin
                     format!("&{parameter_name}.raw")
                 }
             } else if parameter.kind == "Notification" {
-                format!("{parameter_name}")
+                if parameter.is_nullable {
+                    format!("{parameter_name}.as_ref()")
+                } else {
+                    format!("&{parameter_name}")
+                }
             } else if parameter.kind == "StringUtf16" {
                 if parameter.is_nullable {
                     format!("{parameter_name}.as_deref()")
@@ -1742,6 +2298,20 @@ fn emit_method(ty: &ProjectedType, method: &crate::ir::ProjectedMethod) -> Strin
                 }
             } else if parameter.kind == "Variant" {
                 format!("*{parameter_name}.into().to_abi()?")
+            } else if parameter.kind == "I32"
+                && parameter
+                    .managed_type_name
+                    .as_deref()
+                    .is_some_and(|m| flags_enums.contains(m))
+            {
+                format!("{parameter_name}.bits()")
+            } else if parameter.kind == "I32"
+                && parameter
+                    .managed_type_name
+                    .as_deref()
+                    .is_some_and(|m| regular_enums.contains(m))
+            {
+                format!("{parameter_name} as i32")
             } else if geometry::is_geometry(&parameter.kind) {
                 format!("{parameter_name}.into()")
             } else {
@@ -1807,7 +2377,43 @@ fn emit_method(ty: &ProjectedType, method: &crate::ir::ProjectedMethod) -> Strin
 fn safe_property_input(
     property: &ProjectedProperty,
     flags_enums: &std::collections::HashSet<&str>,
+    regular_enums: &std::collections::HashSet<&str>,
 ) -> (String, String, String) {
+    if let Some((_, input_ty, conv_tag)) = string_converter_mapping(property) {
+        return match conv_tag {
+            "grid_tracks" => (
+                input_ty.into(),
+                "        let value: Vec<u16> = value.into_value().to_string().encode_utf16().chain(Some(0)).collect();\n".into(),
+                "&value".into(),
+            ),
+            "opt_civil_date" => (
+                input_ty.into(),
+                "        let value: Option<Vec<u16>> = value.into().map(|d: crate::CivilDate| d.to_abi_string().encode_utf16().chain(Some(0)).collect());\n".into(),
+                "value.as_deref()".into(),
+            ),
+            "civil_date" => (
+                input_ty.into(),
+                "        let value: Vec<u16> = value.to_abi_string().encode_utf16().chain(Some(0)).collect();\n".into(),
+                "&value".into(),
+            ),
+            "opt_civil_time" => (
+                input_ty.into(),
+                "        let value: Option<Vec<u16>> = value.into().map(|t: crate::CivilTime| t.to_abi_string().encode_utf16().chain(Some(0)).collect());\n".into(),
+                "value.as_deref()".into(),
+            ),
+            "opt_decimal" => (
+                input_ty.into(),
+                "        let value: Option<Vec<u16>> = value.into_value().map(|d: crate::Decimal| d.to_abi_string().encode_utf16().chain(Some(0)).collect());\n".into(),
+                "value.as_deref()".into(),
+            ),
+            "decimal" => (
+                input_ty.into(),
+                "        let value: Vec<u16> = value.into_value().to_abi_string().encode_utf16().chain(Some(0)).collect();\n".into(),
+                "&value".into(),
+            ),
+            _ => unreachable!(),
+        };
+    }
     if let Some(geometry) = geometry::find(&property.kind) {
         if property.is_nullable {
             return (
@@ -1840,8 +2446,8 @@ fn safe_property_input(
             if safe == "Control" {
                 if property.is_nullable {
                     return (
-                        "Option<&dyn AsControl>".into(),
-                        "        let value = value.map(|value| value.as_control()).transpose()?;\n".into(),
+                        "impl crate::IntoContent".into(),
+                        "        let value = value.into_content_control()?;\n".into(),
                         "value.as_ref()".into(),
                     );
                 }
@@ -1884,14 +2490,14 @@ fn safe_property_input(
             }
         }
         "Brush" => (
-            "impl Into<Option<Brush>>".into(),
-            "        let value = value.into().map(Brush::to_raw).transpose()?;\n".into(),
+            "impl crate::view::IntoValue<Option<Paint>>".into(),
+            "        let value = value.into_value().as_ref().map(Paint::to_raw).transpose()?;\n".into(),
             "value.as_ref()".into(),
         ),
         "Command" => (
-            "Option<&sys::ComPtr<sys::IAvnCommand>>".into(),
-            String::new(),
-            "value".into(),
+            "impl crate::view::IntoCommandProp".into(),
+            "        let value = value.into_command_prop();\n".into(),
+            "value.as_ref()".into(),
         ),
         "DataTemplate" => (
             "Option<&DataTemplate>".into(),
@@ -1899,14 +2505,12 @@ fn safe_property_input(
             "value.map(|value| &value.raw)".into(),
         ),
         "ItemFilter" | "TextFilter" | "ItemSelector" | "TextSelector" | "PopupPlacement"
-            | "AsyncPopulator" => {
-            let full = simple_name(
-                property.interface_name.as_deref().expect("interfaceName"),
-            );
+        | "AsyncPopulator" => {
+            let cb_type = safe_callback_type(&property.kind);
             (
-                format!("Option<&sys::ComPtr<sys::{full}>>"),
+                format!("Option<&{cb_type}>"),
                 String::new(),
-                "value".into(),
+                "value.map(|v| &v.raw)".into(),
             )
         }
         "Variant" => (
@@ -1924,13 +2528,28 @@ fn safe_property_input(
             "        let value = value.into().to_abi();\n".into(),
             "value".into(),
         ),
-        "I32" if is_enum_property(property, flags_enums) => (
+        "I32"
+            if property
+                .managed_type_name
+                .as_deref()
+                .is_some_and(|m| flags_enums.contains(m)) =>
+        (
+            simple_name(property.managed_type_name.as_deref().unwrap()).into(),
+            String::new(),
+            "value.bits()".into(),
+        ),
+        "I32"
+            if property
+                .managed_type_name
+                .as_deref()
+                .is_some_and(|m| regular_enums.contains(m)) =>
+        (
             simple_name(property.managed_type_name.as_deref().unwrap()).into(),
             String::new(),
             "value as i32".into(),
         ),
         _ => (
-            safe_scalar_type(property, flags_enums),
+            safe_scalar_type(property, flags_enums, regular_enums),
             String::new(),
             "value".into(),
         ),
@@ -1954,6 +2573,7 @@ pub(crate) fn supports_two_way_property(
 fn safe_scalar_type(
     property: &ProjectedProperty,
     flags_enums: &std::collections::HashSet<&str>,
+    regular_enums: &std::collections::HashSet<&str>,
 ) -> String {
     if let Some(geometry) = geometry::find(&property.kind) {
         if property.is_nullable {
@@ -1961,7 +2581,12 @@ fn safe_scalar_type(
         } else {
             geometry.safe_name.into()
         }
-    } else if property.kind == "I32" && is_enum_property(property, flags_enums) {
+    } else if property.kind == "I32"
+        && property
+            .managed_type_name
+            .as_deref()
+            .is_some_and(|m| flags_enums.contains(m) || regular_enums.contains(m))
+    {
         simple_name(property.managed_type_name.as_deref().unwrap()).into()
     } else {
         rust_scalar_kind(&property.kind).into()
@@ -1980,18 +2605,6 @@ fn rust_scalar_kind(kind: &str) -> &str {
         "NullableBool" => "Option<bool>",
         _ => "()",
     }
-}
-
-fn is_enum_property(
-    property: &ProjectedProperty,
-    flags_enums: &std::collections::HashSet<&str>,
-) -> bool {
-    property.kind == "I32"
-        && property.managed_type_name.as_deref() != Some("System.Int32")
-        && !property
-            .managed_type_name
-            .as_deref()
-            .is_some_and(|name| flags_enums.contains(name))
 }
 
 fn is_control(ir: &ProjectionIr, ty: &ProjectedType) -> bool {
@@ -2069,12 +2682,11 @@ mod tests {
         let ir: ProjectionIr =
             serde_json::from_str(include_str!("../../projection.ir.json")).unwrap();
         let generated = emit_safe_module(&ir);
-        assert!(generated.contains(
-            "pub fn get_attached_horizontal_scroll_bar_visibility(target: &impl AsControl)"
-        ));
+        assert!(generated
+            .contains("pub fn attached_horizontal_scroll_bar_visibility(target: &impl AsControl)"));
         assert!(generated
             .contains("ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)"));
-        assert!(generated.contains("pub fn get_column(target: &impl AsControl)"));
+        assert!(generated.contains("pub fn column(target: &impl AsControl)"));
     }
 
     #[test]
@@ -2090,7 +2702,12 @@ mod tests {
             }]
         }))
         .unwrap();
-        let mut members = emit_method(&ty, &ty.methods[0]);
+        let mut members = emit_method(
+            &ty,
+            &ty.methods[0],
+            &Default::default(),
+            &Default::default(),
+        );
         for (name, interface, nullable) in [
             ("RequiredControl", "IAvnControl", false),
             ("OptionalControl", "IAvnControl", true),
@@ -2104,6 +2721,7 @@ mod tests {
             .unwrap();
             members.push_str(&emit_property(
                 &property,
+                &Default::default(),
                 &Default::default(),
                 &Default::default(),
             ));

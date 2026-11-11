@@ -27,6 +27,9 @@ public partial interface IAvnControlList
 
     [PreserveSig]
     int Clear();
+
+    [PreserveSig]
+    int Insert(int index, IAvnControl? value);
 }
 
 public static class AvnControlListMarshal

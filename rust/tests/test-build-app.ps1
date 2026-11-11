@@ -49,7 +49,7 @@ function Test-NativeConsumer {
         Set-Content -LiteralPath $cargoManifest -Value $renamedCargoText -NoNewline
         $mainPath = Join-Path $consumer 'src/main.rs'
         $mainText = Get-Content -LiteralPath $mainPath -Raw
-        $renamedMainText = $mainText.Replace('pub use rustolonia::{', "extern crate ui as rustolonia;`n`npub use rustolonia::{")
+        $renamedMainText = $mainText.Replace('use rustolonia::{', "extern crate ui as rustolonia;`n`nuse rustolonia::{")
         Assert-True ($renamedMainText -cne $mainText) 'Cannot alias the static consumer crate.'
         Set-Content -LiteralPath $mainPath -Value $renamedMainText -NoNewline
     }
@@ -1036,7 +1036,7 @@ version = "0.1.0"
     finally { $gzipStream.Dispose() }
 
     $releaseRoot = Join-Path $scratch 'release-root'
-    foreach ($relative in @('rust/rustolonia/Cargo.toml', 'rust/rustolonia-sys/Cargo.toml', 'rust/rustolonia-bindgen/Cargo.toml', 'rust/rustolonia-apk/Cargo.toml', 'rust/release-manifest.json', 'build/SharedVersion.props', 'rust/rustolonia-sys/host-checksums.txt')) {
+    foreach ($relative in @('rust/rustolonia/Cargo.toml', 'rust/rustolonia-macros/Cargo.toml', 'rust/rustolonia-sys/Cargo.toml', 'rust/rustolonia-bindgen/Cargo.toml', 'rust/rustolonia-apk/Cargo.toml', 'rust/release-manifest.json', 'build/SharedVersion.props', 'rust/rustolonia-sys/host-checksums.txt')) {
         $destination = Join-Path $releaseRoot $relative
         New-Item -ItemType Directory -Force -Path (Split-Path -Parent $destination) | Out-Null
         Copy-Item -LiteralPath (Join-Path $root $relative) -Destination $destination

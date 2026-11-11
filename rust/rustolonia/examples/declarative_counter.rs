@@ -1,13 +1,32 @@
-//! Declarative counter and task list example using `rsx!`, `Signal`, `Memo`,
-//! `TwoWay`, `Show`, `For`, and `Command`.
+//! Declarative counter example showcasing `rsx!`, `#[component]`, `Signal`,
+//! `Memo`, `TwoWay`, `StyleSheet`, `color!`, `fmt!`, reactive `show`, and `Command`.
 
 use rustolonia::{
-    rsx, App, Button, CheckBox, Command, Orientation, Result, Show, StackPanel, TextBlock, TextBox,
-    Window,
+    color, component, fmt, rsx, App, Button, CheckBox, Command, Key, Orientation, Result, Shortcut,
+    StackPanel, Style, StyleSheet, TextBlock, TextBox, Window,
 };
 
+#[component]
+fn StatHeader(title: rustolonia::Memo<String>) -> rustolonia::El<TextBlock> {
+    rsx! {
+        TextBlock {
+            font_size: 22.0,
+            text: title,
+        }
+    }
+}
+
 fn main() -> Result<()> {
-    App::load_from_env()?.run(|scope| {
+    let styles = StyleSheet::from([
+        Style::select("Button.accent")
+            .background(color!("#2563eb"))
+            .foreground(color!("#ffffff"))
+            .corner_radius(6.0)
+            .padding((14.0, 6.0)),
+        Style::select("Button.accent:pointerover").background(color!("#1d4ed8")),
+    ]);
+
+    App::load_from_env()?.run_with_styles(styles, |scope| {
         let name = scope.signal(String::from("Avalonia developer"));
         let count = scope.signal(0_i32);
         let show_details = scope.signal(true);
@@ -36,10 +55,7 @@ fn main() -> Result<()> {
                     orientation: Orientation::Vertical,
                     margin: 24.0,
                     spacing: 12.0,
-                    TextBlock {
-                        font_size: 22.0,
-                        text: greeting,
-                    }
+                    StatHeader { title: greeting }
                     TextBox {
                         placeholder_text: "Enter your name",
                         text: name.two_way(),
@@ -48,31 +64,33 @@ fn main() -> Result<()> {
                         orientation: Orientation::Horizontal,
                         spacing: 8.0,
                         Button {
+                            class: "accent",
                             on_click: move |_| count.update(|c| *c += 1),
                             "Increment"
                         }
                         Button {
-                            command: reset_cmd,
+                            command: reset_cmd.clone(),
                             "Reset"
                         }
                         TextBlock {
-                            text: move || format!("Count: {}", count.get()),
+                            text: fmt!("Count: {}", count.get()),
                         }
                     }
                     CheckBox {
                         checked: show_details.two_way(),
                         "Show details"
                     }
-                    {
-                        Show::when_else(
-                            show_details,
-                            move || TextBlock::el().text(move || format!("Double count is {}", count.get() * 2)),
-                            || TextBlock::el().text("Details hidden"),
-                        )
+                    show show_details {
+                        TextBlock {
+                            text: fmt!("Double count is {}", count.get() * 2),
+                        }
+                    } else {
+                        TextBlock { "Details hidden" }
                     }
                 }
             }
-        };
+        }
+        .shortcut(Shortcut::primary(Key::R), reset_cmd);
 
         scope.mount_view(window)?;
         Ok(())

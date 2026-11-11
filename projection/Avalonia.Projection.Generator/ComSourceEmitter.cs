@@ -658,19 +658,42 @@ public static class ComSourceEmitter
         sb.AppendLine("            return null;");
         sb.AppendLine($"        if (value is global::{BrushMarshalling.SolidManagedTypeName} solid)");
         sb.AppendLine($"            return new {className}({colorAbiName}.FromAvalonia(solid.Color), solid.Opacity);");
+        if (ir.GradientBrushInterfaceName is not null)
+        {
+            var linearClass = SimpleName(ir.LinearGradientBrushInterfaceName!)[1..];
+            var radialClass = SimpleName(ir.RadialGradientBrushInterfaceName!)[1..];
+            sb.AppendLine($"        if (value is global::{GradientBrushMarshalling.LinearManagedTypeName} linear)");
+            sb.AppendLine($"            return ({interfaceName}){linearClass}.FromLinearGradientBrush(linear);");
+            sb.AppendLine($"        if (value is global::{GradientBrushMarshalling.RadialManagedTypeName} radial)");
+            sb.AppendLine($"            return ({interfaceName}){radialClass}.FromRadialGradientBrush(radial);");
+        }
         sb.AppendLine("        throw new global::System.NotSupportedException(");
-        sb.AppendLine("            $\"Brush '{value.GetType().FullName}' is not a solid colour brush, so it cannot cross the ABI.\")");
+        sb.AppendLine("            $\"Brush '{value.GetType().FullName}' is not a solid or linear/radial gradient brush, so it cannot cross the ABI.\")");
         sb.AppendLine("        {");
         sb.AppendLine("            HResult = global::Avalonia.Host.HResults.AVN_E_NONSOLIDBRUSH,");
         sb.AppendLine("        };");
         sb.AppendLine("    }");
         sb.AppendLine();
-        sb.AppendLine("    /// <summary>Materialises an immutable solid brush from the colour and opacity carried across.</summary>");
+        sb.AppendLine("    /// <summary>Materialises an immutable solid or gradient brush from the handle carried across.</summary>");
         sb.AppendLine($"    public static global::{BrushMarshalling.ManagedTypeName}? ToBrush({interfaceName}? value)");
         sb.AppendLine("    {");
         sb.AppendLine("        if (value is null)");
         sb.AppendLine("            return null;");
         sb.AppendLine("        var hr = value.GetColor(out var color);");
+        if (ir.GradientBrushInterfaceName is not null)
+        {
+            var linearIface = SimpleName(ir.LinearGradientBrushInterfaceName!);
+            var radialIface = SimpleName(ir.RadialGradientBrushInterfaceName!);
+            var linearClass = linearIface[1..];
+            var radialClass = radialIface[1..];
+            sb.AppendLine("        if (hr == global::Avalonia.Host.HResults.AVN_E_NONSOLIDBRUSH)");
+            sb.AppendLine("        {");
+            sb.AppendLine($"            if (value is {linearIface} linear)");
+            sb.AppendLine($"                return {linearClass}.ToLinearGradientBrush(linear);");
+            sb.AppendLine($"            if (value is {radialIface} radial)");
+            sb.AppendLine($"                return {radialClass}.ToRadialGradientBrush(radial);");
+            sb.AppendLine("        }");
+        }
         sb.AppendLine("        if (hr < 0)");
         sb.AppendLine("            global::System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(hr);");
         sb.AppendLine("        hr = value.GetOpacity(out var opacity);");
@@ -1989,6 +2012,9 @@ public static class ComSourceEmitter
         sb.AppendLine();
         sb.AppendLine("    [PreserveSig]");
         sb.AppendLine("    int Clear();");
+        sb.AppendLine();
+        sb.AppendLine("    [PreserveSig]");
+        sb.AppendLine($"    int Insert(int index, {elementName} value);");
         sb.AppendLine("}");
         var managedCollectionName = CSharpManagedTypeName(collection.ManagedTypeName);
         if (collection.HostImplementationTypeName is { } hostType)
@@ -2048,6 +2074,11 @@ public static class ComSourceEmitter
             initializeOut: "index = -1;");
         EmitCollectionMethod(sb, "RemoveAt", "int index", "_value.RemoveAt(index);");
         EmitCollectionMethod(sb, "Clear", "", "_value.Clear();");
+        EmitCollectionMethod(
+            sb,
+            "Insert",
+            $"int index, {elementName} value",
+            $"_value.Insert(index, {writeElement});");
         sb.AppendLine("}");
         return sb.ToString();
     }

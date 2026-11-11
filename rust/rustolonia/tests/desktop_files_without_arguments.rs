@@ -4,7 +4,7 @@
 //! application lifetime is process-wide: only one `App::run` may happen per
 //! process.
 
-use rustolonia::{App, TextBlock, Window};
+use rustolonia::{App, Window};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -57,9 +57,10 @@ fn explicitly_empty_startup_arguments_produce_no_activation_items() {
             assert!(scope.activation_items()?.is_empty());
             ran_in_handler.store(true, Ordering::SeqCst);
 
-            let window = Window::new()?
-                .title("no activation")?
-                .content(Some(&TextBlock::new()?.text("no activation")?))?;
+            let window = Window::el()
+                .title("no activation")
+                .content("no activation")
+                .build(scope)?;
             scope.mount(window.clone())?;
             scope.post(move || window.close().expect("close the test window"))?;
             Ok(())

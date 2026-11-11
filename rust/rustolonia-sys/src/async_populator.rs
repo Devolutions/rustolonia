@@ -219,6 +219,7 @@ struct StringListVtbl {
     index: unsafe extern "system" fn(*mut IAvnVariantList, AvnVariant, *mut i32) -> i32,
     remove: unsafe extern "system" fn(*mut IAvnVariantList, i32) -> i32,
     clear: unsafe extern "system" fn(*mut IAvnVariantList) -> i32,
+    insert: unsafe extern "system" fn(*mut IAvnVariantList, i32, AvnVariant) -> i32,
 }
 
 #[repr(C)]
@@ -348,6 +349,9 @@ unsafe extern "system" fn list_remove(_: *mut IAvnVariantList, _: i32) -> i32 {
 unsafe extern "system" fn list_clear(_: *mut IAvnVariantList) -> i32 {
     hresult::E_NOTIMPL
 }
+unsafe extern "system" fn list_insert(_: *mut IAvnVariantList, _: i32, _: AvnVariant) -> i32 {
+    hresult::E_NOTIMPL
+}
 
 static STRING_LIST_VTBL: StringListVtbl = StringListVtbl {
     query: list_query,
@@ -359,6 +363,7 @@ static STRING_LIST_VTBL: StringListVtbl = StringListVtbl {
     index: list_index,
     remove: list_remove,
     clear: list_clear,
+    insert: list_insert,
 };
 
 #[cfg(test)]

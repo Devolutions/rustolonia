@@ -311,9 +311,42 @@ pub fn emit_safe_structs() -> String {
             // instead of repeating `255` at every call site.
             out.push_str(&format!(
                 "impl {safe} {{\n\
+                 \x20   pub const TRANSPARENT: Self = Self::new(0, 0, 0, 0);\n\
+                 \x20   pub const BLACK: Self = Self::rgb(0, 0, 0);\n\
+                 \x20   pub const WHITE: Self = Self::rgb(255, 255, 255);\n\n\
                  \x20   /// A fully opaque colour.\n\
                  \x20   pub const fn rgb(r: u8, g: u8, b: u8) -> Self {{\n\
                  \x20       Self::new(255, r, g, b)\n\
+                 \x20   }}\n\n\
+                 \x20   /// A colour specified in Rust-conventional `(r, g, b, a)` channel order.\n\
+                 \x20   pub const fn rgba(r: u8, g: u8, b: u8, a: u8) -> Self {{\n\
+                 \x20       Self::new(a, r, g, b)\n\
+                 \x20   }}\n\n\
+                 \x20   /// A colour specified in Avalonia `(a, r, g, b)` channel order.\n\
+                 \x20   pub const fn argb(a: u8, r: u8, g: u8, b: u8) -> Self {{\n\
+                 \x20       Self::new(a, r, g, b)\n\
+                 \x20   }}\n\n\
+                 \x20   /// Unpacks a `0xRRGGBBAA` integer.\n\
+                 \x20   pub const fn from_rgba_u32(rgba: u32) -> Self {{\n\
+                 \x20       Self::rgba(\n\
+                 \x20           (rgba >> 24) as u8,\n\
+                 \x20           (rgba >> 16) as u8,\n\
+                 \x20           (rgba >> 8) as u8,\n\
+                 \x20           rgba as u8,\n\
+                 \x20       )\n\
+                 \x20   }}\n\n\
+                 \x20   /// Unpacks a `0xAARRGGBB` integer.\n\
+                 \x20   pub const fn from_argb_u32(argb: u32) -> Self {{\n\
+                 \x20       Self::argb(\n\
+                 \x20           (argb >> 24) as u8,\n\
+                 \x20           (argb >> 16) as u8,\n\
+                 \x20           (argb >> 8) as u8,\n\
+                 \x20           argb as u8,\n\
+                 \x20       )\n\
+                 \x20   }}\n\n\
+                 \x20   /// Returns a copy of this colour with its alpha channel replaced by `a`.\n\
+                 \x20   pub const fn with_alpha(self, a: u8) -> Self {{\n\
+                 \x20       Self::new(a, self.r, self.g, self.b)\n\
                  \x20   }}\n\n\
                  \x20   /// Parses `#RGB`, `#ARGB`, `#RRGGBB`, or `#AARRGGBB` (leading `#` optional).\n\
                  \x20   pub fn parse_hex(hex: &str) -> Option<Self> {{\n\
@@ -357,19 +390,9 @@ pub fn emit_safe_structs() -> String {
                  \x20       Self::rgb(r, g, b)\n\
                  \x20   }}\n\
                  }}\n\n\
-                 impl From<(u8, u8, u8, u8)> for {safe} {{\n\
-                 \x20   fn from((a, r, g, b): (u8, u8, u8, u8)) -> Self {{\n\
-                 \x20       Self::new(a, r, g, b)\n\
-                 \x20   }}\n\
-                 }}\n\n\
                  impl From<u32> for {safe} {{\n\
                  \x20   fn from(argb: u32) -> Self {{\n\
-                 \x20       Self::new(\n\
-                 \x20           (argb >> 24) as u8,\n\
-                 \x20           (argb >> 16) as u8,\n\
-                 \x20           (argb >> 8) as u8,\n\
-                 \x20           argb as u8,\n\
-                 \x20       )\n\
+                 \x20       Self::from_argb_u32(argb)\n\
                  \x20   }}\n\
                  }}\n\n"
             ));

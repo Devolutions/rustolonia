@@ -104,11 +104,11 @@ $patchSection = ''
 if (-not $GitRepository) {
     $packageTarget = Join-Path $WorkDirectory 'package-target'
     cargo package --locked --allow-dirty --no-verify --manifest-path (Join-Path $rustDir 'Cargo.toml') `
-        -p rustolonia-sys -p rustolonia-bindgen -p rustolonia --target-dir $packageTarget
+        -p rustolonia-sys -p rustolonia-macros -p rustolonia-bindgen -p rustolonia --target-dir $packageTarget
 
     $cratesDir = Join-Path $WorkDirectory 'crates'
     New-Item -ItemType Directory -Force -Path $cratesDir | Out-Null
-    $patches = foreach ($crate in @('rustolonia-sys', 'rustolonia-bindgen', 'rustolonia')) {
+    $patches = foreach ($crate in @('rustolonia-sys', 'rustolonia-macros', 'rustolonia-bindgen', 'rustolonia')) {
         $crateFile = Join-Path $packageTarget 'package' "$crate-$version.crate"
         if (-not (Test-Path -LiteralPath $crateFile -PathType Leaf)) { throw "Packaged crate not found: $crateFile" }
         tar -xzf $crateFile -C $cratesDir
@@ -148,94 +148,86 @@ $patchSection
 "@ | Set-Content -LiteralPath (Join-Path $appDir 'Cargo.toml')
 
 @'
-use rustolonia::{App, Button, Orientation, StackPanel, TextBlock, Window};
+use rustolonia::{rsx, App, Button, Orientation, StackPanel, TextBlock, Window};
 
 fn main() -> rustolonia::Result<()> {
     App::load_from_env()?.run(|scope| {
-        scope.mount(
-            Window::new()?.title("Standalone rustolonia app")?.content(Some(
-                &StackPanel::new()?
-                    .orientation(Orientation::Vertical)?
-                    .child(TextBlock::new()?.text("Built from the packaged crates")?)?
-                    .child(Button::new()?.content(Some(&TextBlock::new()?.text("Hello")?))?)?,
-            ))?,
-        )
+        scope.mount_view(rsx! {
+            Window {
+                title: "Standalone rustolonia app",
+                StackPanel {
+                    orientation: Orientation::Vertical,
+                    TextBlock { "Built from the packaged crates" }
+                    Button { "Hello" }
+                }
+            }
+        })?;
+        Ok(())
     })
 }
 '@ | Set-Content -LiteralPath (Join-Path $appDir 'src' 'main.rs')
 if ($Rid -cin $script:MuslStaticHostRids) {
     @'
 use rustolonia::{
-    App, Button, OpenFilePickerOptions, Orientation, PickerOutcome, StackPanel, TextBlock, TextBox,
+    rsx, App, Button, OpenFilePickerOptions, Orientation, PickerOutcome, StackPanel, TextBox,
     Window,
 };
 
 fn main() -> rustolonia::Result<()> {
     App::load_from_env()?.run(|scope| {
-        let editor = TextBox::new()?.text("initial")?;
-        let editor_for_event = editor.clone();
-        let editor = editor.on_text_changed(scope, move |_| {
-            println!(
-                "edited={}",
-                editor_for_event.get_text().expect("read text").expect("text is present")
-            );
-        })?;
+        let text_sig = scope.signal(String::from("initial"));
         let shutdown = scope.clone();
-        let button = Button::new()?
-            .height(80.0)?
-            .content(Some(&TextBlock::new()?.text("Stop")?))?
-            .on_click(scope, move |_| {
-                println!("clicked");
-                shutdown.shutdown().expect("shutdown failed");
-            })?;
         let services_scope = scope.clone();
-        let services = Button::new()?
-            .height(80.0)?
-            .content(Some(&TextBlock::new()?.text("Check desktop services")?))?
-            .on_click(scope, move |_| {
-                let task_scope = services_scope.clone();
-                services_scope
-                    .spawn(async move {
-                        let window = task_scope.main_window().expect("main window");
-                        task_scope
-                            .clipboard_set_text(&window, "static-clipboard")
-                            .expect("start clipboard write")
-                            .await
-                            .expect("clipboard write");
-                        let text = task_scope
-                            .clipboard_get_text(&window)
-                            .expect("start clipboard read")
-                            .await
-                            .expect("clipboard read");
-                        println!("clipboard={}", text.expect("clipboard text"));
-                        let result = task_scope
-                            .open_file_picker(
-                                &window,
-                                &OpenFilePickerOptions::new().title("Rustolonia static picker probe"),
-                            )
-                            .expect("start picker")
-                            .await
-                            .expect("picker result");
-                        match result {
-                            PickerOutcome::Cancelled => println!("picker=cancelled"),
-                            PickerOutcome::Selected(_) => panic!("picker unexpectedly selected a file"),
-                        }
-                    })
-                    .expect("spawn desktop services probe");
-            })?;
-        scope.mount(
-            Window::new()?
-                .title("Rustolonia static musl probe")?
-                .width(400.0)?
-                .height(250.0)?
-                .content(Some(
-                    &StackPanel::new()?
-                        .orientation(Orientation::Vertical)?
-                        .child(editor)?
-                        .child(button)?
-                        .child(services)?,
-                ))?,
-        )
+        scope.mount_view(rsx! {
+            Window {
+                title: "Rustolonia static musl probe",
+                width: 400.0,
+                height: 250.0,
+                StackPanel {
+                    orientation: Orientation::Vertical,
+                    TextBox {
+                        text: text_sig.two_way(),
+                        on_text_changed: move |_| {
+                            println!("edited={}", text_sig.get_untracked());
+                        },
+                    }
+                    Button {
+                        height: 80.0,
+                        on_click: move |_| {
+                            println!("clicked");
+                            shutdown.shutdown()
+                        },
+                        "Stop"
+                    }
+                    Button {
+                        height: 80.0,
+                        on_click_async: move || {
+                            let s = services_scope.clone();
+                            async move {
+                                s.set_clipboard_text("static-clipboard").await?;
+                                let text = s.clipboard_text().await?;
+                                println!("clipboard={}", text.expect("clipboard text"));
+                                let result = s
+                                    .open_files(
+                                        &OpenFilePickerOptions::new()
+                                            .title("Rustolonia static picker probe"),
+                                    )
+                                    .await?;
+                                match result {
+                                    PickerOutcome::Cancelled => println!("picker=cancelled"),
+                                    PickerOutcome::Selected(_) => {
+                                        panic!("picker unexpectedly selected a file")
+                                    }
+                                }
+                                Ok(())
+                            }
+                        },
+                        "Check desktop services"
+                    }
+                }
+            }
+        })?;
+        Ok(())
     })?;
     println!("stopped");
     Ok(())

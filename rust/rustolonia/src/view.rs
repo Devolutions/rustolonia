@@ -3,20 +3,21 @@
 
 use crate::reactive::{
     on_scope_cleanup, provide_context, Effect, Memo, NodeRef, PathTwoWay, PropertyPath,
-    ReactiveScope, Resource, Signal, TwoWay,
+    ReactiveScope, Resource, ResourceState, Signal, TwoWay, UiCallbackHandle,
 };
 use crate::{
-    AppScope, AsControl, Border, Brush, Color, ContentControl, Control, CornerRadius, DataTemplate,
-    Decorator, EventSubscription, ItemsControl, LinearGradientBrush, Paint, Panel, PixelPoint,
-    Point, RadialGradientBrush, Rect, ResourceValue, Result, Size, StackPanel, StyledElement,
-    TextBlock, ThemeVariant, Thickness, Upcast, Variant, Vector, Window,
+    AppScope, AsControl, Border, Brush, CivilDate, CivilTime, Color, ContentControl, Control,
+    CornerRadius, DataTemplate, Decimal, Decorator, EventSubscription, GridLength, GridTrack,
+    GridTracks, ItemsControl, LinearGradientBrush, Paint, Panel, PixelPoint, Point,
+    RadialGradientBrush, Rect, ResourceValue, Result, Size, StackPanel, StyledElement, TextBlock,
+    ThemeVariant, Thickness, Upcast, Variant, Vector, Window,
 };
 use rustolonia_sys as sys;
 use std::cell::RefCell;
 use std::future::Future;
 use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 /// Ergonomic value conversions into projected Avalonia property types.
 pub trait IntoValue<T> {
@@ -215,12 +216,6 @@ impl IntoValue<Color> for (u8, u8, u8) {
     }
 }
 
-impl IntoValue<Color> for (u8, u8, u8, u8) {
-    fn into_value(self) -> Color {
-        Color::new(self.0, self.1, self.2, self.3)
-    }
-}
-
 impl IntoValue<Color> for u32 {
     fn into_value(self) -> Color {
         Color::from(self)
@@ -239,12 +234,6 @@ impl IntoValue<Brush> for (u8, u8, u8) {
     }
 }
 
-impl IntoValue<Brush> for (u8, u8, u8, u8) {
-    fn into_value(self) -> Brush {
-        Brush::solid(Color::new(self.0, self.1, self.2, self.3))
-    }
-}
-
 impl IntoValue<Option<Brush>> for Brush {
     fn into_value(self) -> Option<Brush> {
         Some(self)
@@ -260,12 +249,6 @@ impl IntoValue<Option<Brush>> for Color {
 impl IntoValue<Option<Brush>> for (u8, u8, u8) {
     fn into_value(self) -> Option<Brush> {
         Some(Brush::solid(Color::rgb(self.0, self.1, self.2)))
-    }
-}
-
-impl IntoValue<Option<Brush>> for (u8, u8, u8, u8) {
-    fn into_value(self) -> Option<Brush> {
-        Some(Brush::solid(Color::new(self.0, self.1, self.2, self.3)))
     }
 }
 
@@ -299,9 +282,173 @@ impl IntoValue<Paint> for (u8, u8, u8) {
     }
 }
 
-impl IntoValue<Paint> for (u8, u8, u8, u8) {
-    fn into_value(self) -> Paint {
-        Paint::Solid(Brush::solid(Color::new(self.0, self.1, self.2, self.3)))
+impl IntoValue<Option<Paint>> for Paint {
+    fn into_value(self) -> Option<Paint> {
+        Some(self)
+    }
+}
+
+impl IntoValue<Option<Paint>> for Brush {
+    fn into_value(self) -> Option<Paint> {
+        Some(Paint::Solid(self))
+    }
+}
+
+impl IntoValue<Option<Paint>> for Option<Brush> {
+    fn into_value(self) -> Option<Paint> {
+        self.map(Paint::Solid)
+    }
+}
+
+impl IntoValue<Option<Paint>> for Color {
+    fn into_value(self) -> Option<Paint> {
+        Some(Paint::Solid(Brush::solid(self)))
+    }
+}
+
+impl IntoValue<Option<Paint>> for LinearGradientBrush {
+    fn into_value(self) -> Option<Paint> {
+        Some(Paint::LinearGradient(self))
+    }
+}
+
+impl IntoValue<Option<Paint>> for RadialGradientBrush {
+    fn into_value(self) -> Option<Paint> {
+        Some(Paint::RadialGradient(self))
+    }
+}
+
+impl IntoValue<Option<Paint>> for (u8, u8, u8) {
+    fn into_value(self) -> Option<Paint> {
+        Some(Paint::Solid(Brush::solid(Color::rgb(
+            self.0, self.1, self.2,
+        ))))
+    }
+}
+
+impl IntoValue<Option<Command>> for Command {
+    fn into_value(self) -> Option<Command> {
+        Some(self)
+    }
+}
+
+impl IntoValue<Option<Command>> for &Command {
+    fn into_value(self) -> Option<Command> {
+        Some(self.clone())
+    }
+}
+
+impl IntoValue<Option<DataTemplate>> for DataTemplate {
+    fn into_value(self) -> Option<DataTemplate> {
+        Some(self)
+    }
+}
+
+impl IntoValue<Option<DataTemplate>> for &DataTemplate {
+    fn into_value(self) -> Option<DataTemplate> {
+        Some(self.clone())
+    }
+}
+
+impl IntoValue<GridTracks> for &str {
+    fn into_value(self) -> GridTracks {
+        self.parse().unwrap_or_default()
+    }
+}
+
+impl IntoValue<GridTracks> for String {
+    fn into_value(self) -> GridTracks {
+        self.parse().unwrap_or_default()
+    }
+}
+
+impl IntoValue<GridTracks> for &String {
+    fn into_value(self) -> GridTracks {
+        self.parse().unwrap_or_default()
+    }
+}
+
+impl IntoValue<GridTracks> for Vec<GridTrack> {
+    fn into_value(self) -> GridTracks {
+        GridTracks(self)
+    }
+}
+
+impl IntoValue<GridTracks> for &[GridTrack] {
+    fn into_value(self) -> GridTracks {
+        GridTracks(self.to_vec())
+    }
+}
+
+impl<const N: usize> IntoValue<GridTracks> for [GridTrack; N] {
+    fn into_value(self) -> GridTracks {
+        GridTracks::from(self)
+    }
+}
+
+impl<const N: usize> IntoValue<GridTracks> for [GridLength; N] {
+    fn into_value(self) -> GridTracks {
+        GridTracks::from(self)
+    }
+}
+
+impl IntoValue<String> for GridTracks {
+    fn into_value(self) -> String {
+        self.to_string()
+    }
+}
+
+impl<const N: usize> IntoValue<String> for [GridTrack; N] {
+    fn into_value(self) -> String {
+        GridTracks::from(self).to_string()
+    }
+}
+
+impl<const N: usize> IntoValue<String> for [GridLength; N] {
+    fn into_value(self) -> String {
+        GridTracks::from(self).to_string()
+    }
+}
+
+impl IntoValue<Option<CivilDate>> for CivilDate {
+    fn into_value(self) -> Option<CivilDate> {
+        Some(self)
+    }
+}
+
+impl IntoValue<Option<CivilTime>> for CivilTime {
+    fn into_value(self) -> Option<CivilTime> {
+        Some(self)
+    }
+}
+
+impl IntoValue<Decimal> for i32 {
+    fn into_value(self) -> Decimal {
+        Decimal::from(self)
+    }
+}
+
+impl IntoValue<Decimal> for i64 {
+    fn into_value(self) -> Decimal {
+        Decimal::from(self)
+    }
+}
+
+impl IntoValue<Option<Decimal>> for Decimal {
+    fn into_value(self) -> Option<Decimal> {
+        Some(self)
+    }
+}
+
+impl IntoValue<Option<Decimal>> for i32 {
+    fn into_value(self) -> Option<Decimal> {
+        Some(Decimal::from(self))
+    }
+}
+
+impl IntoValue<Option<Decimal>> for i64 {
+    fn into_value(self) -> Option<Decimal> {
+        Some(Decimal::from(self))
     }
 }
 
@@ -375,7 +522,7 @@ pub(crate) fn set_unless_updating<T>(
 /// Type-erased adapter for two-way signal bindings.
 pub struct TwoWayAdapter<T> {
     pub(crate) bind_to_control: Box<dyn FnOnce(SetterFn<T>, Arc<AtomicBool>) -> Result<()>>,
-    pub(crate) set_from_control: Box<dyn Fn(T) -> Result<()> + Send + 'static>,
+    pub(crate) set_from_control: Box<dyn Fn(T) -> Result<()> + 'static>,
 }
 
 /// A static, reactive, or two-way property binding.
@@ -420,6 +567,71 @@ impl IntoProp<Option<bool>, markers::SignalOptionMarker> for Signal<bool> {
     }
 }
 
+impl IntoProp<Option<CivilDate>, markers::SignalOptionMarker> for Signal<CivilDate> {
+    fn into_prop(self) -> PropBinding<Option<CivilDate>> {
+        let signal = self;
+        PropBinding::Reactive(Box::new(move || Some(signal.get())))
+    }
+}
+
+impl IntoProp<Option<CivilTime>, markers::SignalOptionMarker> for Signal<CivilTime> {
+    fn into_prop(self) -> PropBinding<Option<CivilTime>> {
+        let signal = self;
+        PropBinding::Reactive(Box::new(move || Some(signal.get())))
+    }
+}
+
+impl IntoProp<Option<Decimal>, markers::SignalOptionMarker> for Signal<Decimal> {
+    fn into_prop(self) -> PropBinding<Option<Decimal>> {
+        let signal = self;
+        PropBinding::Reactive(Box::new(move || Some(signal.get())))
+    }
+}
+
+impl IntoProp<Option<Paint>, markers::SignalOptionMarker> for Signal<Option<Brush>> {
+    fn into_prop(self) -> PropBinding<Option<Paint>> {
+        let signal = self;
+        PropBinding::Reactive(Box::new(move || signal.get().map(Paint::Solid)))
+    }
+}
+
+impl IntoProp<Option<Paint>, markers::SignalOptionMarker> for Signal<Brush> {
+    fn into_prop(self) -> PropBinding<Option<Paint>> {
+        let signal = self;
+        PropBinding::Reactive(Box::new(move || Some(Paint::Solid(signal.get()))))
+    }
+}
+
+impl IntoProp<Option<Paint>, markers::SignalOptionMarker> for Signal<Paint> {
+    fn into_prop(self) -> PropBinding<Option<Paint>> {
+        let signal = self;
+        PropBinding::Reactive(Box::new(move || Some(signal.get())))
+    }
+}
+
+impl IntoProp<Option<Paint>, markers::SignalOptionMarker> for Signal<Color> {
+    fn into_prop(self) -> PropBinding<Option<Paint>> {
+        let signal = self;
+        PropBinding::Reactive(Box::new(move || {
+            Some(Paint::Solid(Brush::solid(signal.get())))
+        }))
+    }
+}
+
+impl IntoProp<Option<Command>, markers::SignalOptionMarker> for Signal<Command> {
+    fn into_prop(self) -> PropBinding<Option<Command>> {
+        let signal = self;
+        PropBinding::Reactive(Box::new(move || Some(signal.get())))
+    }
+}
+
+impl IntoProp<Option<DataTemplate>, markers::SignalOptionMarker> for Signal<DataTemplate> {
+    fn into_prop(self) -> PropBinding<Option<DataTemplate>> {
+        let signal = self;
+        PropBinding::Reactive(Box::new(move || Some(signal.get())))
+    }
+}
+
 impl<T: Clone + PartialEq + 'static> IntoProp<T, markers::MemoMarker> for Memo<T> {
     fn into_prop(self) -> PropBinding<T> {
         let memo = self;
@@ -436,6 +648,71 @@ impl IntoProp<Option<String>, markers::MemoOptionMarker> for Memo<String> {
 
 impl IntoProp<Option<bool>, markers::MemoOptionMarker> for Memo<bool> {
     fn into_prop(self) -> PropBinding<Option<bool>> {
+        let memo = self;
+        PropBinding::Reactive(Box::new(move || Some(memo.get())))
+    }
+}
+
+impl IntoProp<Option<CivilDate>, markers::MemoOptionMarker> for Memo<CivilDate> {
+    fn into_prop(self) -> PropBinding<Option<CivilDate>> {
+        let memo = self;
+        PropBinding::Reactive(Box::new(move || Some(memo.get())))
+    }
+}
+
+impl IntoProp<Option<CivilTime>, markers::MemoOptionMarker> for Memo<CivilTime> {
+    fn into_prop(self) -> PropBinding<Option<CivilTime>> {
+        let memo = self;
+        PropBinding::Reactive(Box::new(move || Some(memo.get())))
+    }
+}
+
+impl IntoProp<Option<Decimal>, markers::MemoOptionMarker> for Memo<Decimal> {
+    fn into_prop(self) -> PropBinding<Option<Decimal>> {
+        let memo = self;
+        PropBinding::Reactive(Box::new(move || Some(memo.get())))
+    }
+}
+
+impl IntoProp<Option<Paint>, markers::MemoOptionMarker> for Memo<Option<Brush>> {
+    fn into_prop(self) -> PropBinding<Option<Paint>> {
+        let memo = self;
+        PropBinding::Reactive(Box::new(move || memo.get().map(Paint::Solid)))
+    }
+}
+
+impl IntoProp<Option<Paint>, markers::MemoOptionMarker> for Memo<Brush> {
+    fn into_prop(self) -> PropBinding<Option<Paint>> {
+        let memo = self;
+        PropBinding::Reactive(Box::new(move || Some(Paint::Solid(memo.get()))))
+    }
+}
+
+impl IntoProp<Option<Paint>, markers::MemoOptionMarker> for Memo<Paint> {
+    fn into_prop(self) -> PropBinding<Option<Paint>> {
+        let memo = self;
+        PropBinding::Reactive(Box::new(move || Some(memo.get())))
+    }
+}
+
+impl IntoProp<Option<Paint>, markers::MemoOptionMarker> for Memo<Color> {
+    fn into_prop(self) -> PropBinding<Option<Paint>> {
+        let memo = self;
+        PropBinding::Reactive(Box::new(move || {
+            Some(Paint::Solid(Brush::solid(memo.get())))
+        }))
+    }
+}
+
+impl IntoProp<Option<Command>, markers::MemoOptionMarker> for Memo<Command> {
+    fn into_prop(self) -> PropBinding<Option<Command>> {
+        let memo = self;
+        PropBinding::Reactive(Box::new(move || Some(memo.get())))
+    }
+}
+
+impl IntoProp<Option<DataTemplate>, markers::MemoOptionMarker> for Memo<DataTemplate> {
+    fn into_prop(self) -> PropBinding<Option<DataTemplate>> {
         let memo = self;
         PropBinding::Reactive(Box::new(move || Some(memo.get())))
     }
@@ -537,6 +814,69 @@ impl IntoProp<String, markers::TwoWayOptionMarker> for TwoWay<Option<String>> {
     }
 }
 
+impl IntoProp<Option<CivilDate>, markers::TwoWayOptionMarker> for TwoWay<CivilDate> {
+    fn into_prop(self) -> PropBinding<Option<CivilDate>> {
+        let signal = self.signal;
+        PropBinding::TwoWay(TwoWayAdapter {
+            bind_to_control: Box::new(move |setter, updating| {
+                Effect::new(move || {
+                    let value = signal.get();
+                    set_unless_updating(&updating, &*setter, Some(value))
+                })
+                .map(|_| ())
+            }),
+            set_from_control: Box::new(move |value: Option<CivilDate>| {
+                if let Some(d) = value {
+                    signal.set_if_changed(d);
+                }
+                Ok(())
+            }),
+        })
+    }
+}
+
+impl IntoProp<Option<CivilTime>, markers::TwoWayOptionMarker> for TwoWay<CivilTime> {
+    fn into_prop(self) -> PropBinding<Option<CivilTime>> {
+        let signal = self.signal;
+        PropBinding::TwoWay(TwoWayAdapter {
+            bind_to_control: Box::new(move |setter, updating| {
+                Effect::new(move || {
+                    let value = signal.get();
+                    set_unless_updating(&updating, &*setter, Some(value))
+                })
+                .map(|_| ())
+            }),
+            set_from_control: Box::new(move |value: Option<CivilTime>| {
+                if let Some(t) = value {
+                    signal.set_if_changed(t);
+                }
+                Ok(())
+            }),
+        })
+    }
+}
+
+impl IntoProp<Option<Decimal>, markers::TwoWayOptionMarker> for TwoWay<Decimal> {
+    fn into_prop(self) -> PropBinding<Option<Decimal>> {
+        let signal = self.signal;
+        PropBinding::TwoWay(TwoWayAdapter {
+            bind_to_control: Box::new(move |setter, updating| {
+                Effect::new(move || {
+                    let value = signal.get();
+                    set_unless_updating(&updating, &*setter, Some(value))
+                })
+                .map(|_| ())
+            }),
+            set_from_control: Box::new(move |value: Option<Decimal>| {
+                if let Some(d) = value {
+                    signal.set_if_changed(d);
+                }
+                Ok(())
+            }),
+        })
+    }
+}
+
 pub(crate) fn apply_prop<C, T>(
     control: &C,
     binding: PropBinding<T>,
@@ -577,11 +917,11 @@ pub(crate) fn apply_two_way_prop<C, T>(
     control: &C,
     binding: PropBinding<T>,
     set: impl Fn(&C, T) -> Result<()> + 'static,
-    get: impl Fn(&C) -> Result<T> + Send + 'static,
-    subscribe: impl FnOnce(&C, Box<dyn FnMut() + Send + 'static>) -> Result<EventSubscription>,
+    get: impl Fn(&C) -> Result<T> + 'static,
+    subscribe: impl FnOnce(&C, Box<dyn FnMut() + 'static>) -> Result<EventSubscription>,
 ) -> Result<()>
 where
-    C: Clone + Send + 'static,
+    C: Clone + 'static,
     T: 'static,
 {
     match binding {
@@ -622,16 +962,92 @@ where
                     match get(&control_for_get) {
                         Ok(value) => {
                             if let Err(error) = set_from_control(value) {
-                                eprintln!("two-way binding update failed: {error}");
+                                crate::runtime::report_ui_error(
+                                    "two-way binding update failed",
+                                    &error,
+                                );
                             }
                         }
-                        Err(error) => eprintln!("two-way binding read failed: {error}"),
+                        Err(error) => {
+                            crate::runtime::report_ui_error("two-way binding read failed", &error)
+                        }
                     }
                 }),
             )?;
             scope.retain_subscription(subscription);
             Ok(())
         }
+    }
+}
+
+pub(crate) fn apply_two_way_prop_dual<C, T>(
+    scope: &AppScope,
+    control: &C,
+    binding: PropBinding<T>,
+    set: impl Fn(&C, T) -> Result<()> + 'static,
+    get: impl Fn(&C) -> Result<T> + Clone + 'static,
+    subscribe_a: impl FnOnce(&C, Box<dyn FnMut() + 'static>) -> Result<EventSubscription>,
+    subscribe_b: impl FnOnce(&C, Box<dyn FnMut() + 'static>) -> Result<EventSubscription>,
+) -> Result<()>
+where
+    C: Clone + 'static,
+    T: 'static,
+{
+    match binding {
+        PropBinding::TwoWay(adapter) => {
+            let updating = Arc::new(AtomicBool::new(false));
+            let control_for_set = control.clone();
+            (adapter.bind_to_control)(
+                Box::new(move |value| set(&control_for_set, value)),
+                updating.clone(),
+            )?;
+
+            let set_from_control: Rc<dyn Fn(T) -> Result<()>> = Rc::from(adapter.set_from_control);
+            fn make_listener<C: 'static, T: 'static, G: Fn(&C) -> Result<T> + 'static>(
+                ctrl: C,
+                getter: G,
+                upd: Arc<AtomicBool>,
+                sink: Rc<dyn Fn(T) -> Result<()>>,
+            ) -> Box<dyn FnMut() + 'static> {
+                Box::new(move || {
+                    if upd.swap(true, Ordering::AcqRel) {
+                        return;
+                    }
+                    let _guard = ResetUpdating(&upd);
+                    match getter(&ctrl) {
+                        Ok(value) => {
+                            if let Err(error) = sink(value) {
+                                crate::runtime::report_ui_error(
+                                    "two-way binding update failed",
+                                    &error,
+                                );
+                            }
+                        }
+                        Err(error) => {
+                            crate::runtime::report_ui_error("two-way binding read failed", &error)
+                        }
+                    }
+                })
+            }
+
+            let sub_a = subscribe_a(
+                control,
+                make_listener(
+                    control.clone(),
+                    get.clone(),
+                    updating.clone(),
+                    set_from_control.clone(),
+                ),
+            )?;
+            scope.retain_subscription(sub_a);
+            let sub_b = subscribe_b(
+                control,
+                make_listener(control.clone(), get, updating, set_from_control),
+            )?;
+            scope.retain_subscription(sub_b);
+            Ok(())
+        }
+        other => apply_prop(control, other, set),
     }
 }
 
@@ -708,11 +1124,38 @@ impl<T: 'static> El<T> {
         self
     }
 
+    /// Subscribes to incoming file/folder drags directly on this declarative element.
+    pub fn on_file_drop<R: crate::IntoEventResult + 'static>(
+        self,
+        accepted_effects: crate::DragDropEffects,
+        mut callback: impl FnMut(crate::FileDropEvent) -> R + 'static,
+    ) -> Self
+    where
+        T: AsControl,
+    {
+        self.with_op(move |scope, control| {
+            scope.on_file_drop(control, accepted_effects, move |ev| callback(ev))
+        })
+    }
+
     /// Materializes the control and applies all deferred properties, children,
     /// and event subscriptions within `scope`.
     pub fn build(self, scope: &AppScope) -> Result<T> {
         crate::runtime::with_view_subscription_scope(|| {
             let instance = (self.create)()?;
+            if let Some(window) = (&instance as &dyn std::any::Any).downcast_ref::<Window>() {
+                let win_clone = window.clone();
+                let mut ops = self.ops;
+                let window_scope = ReactiveScope::new();
+                window_scope.run(|| {
+                    provide_context(win_clone);
+                    for op in ops.drain(..) {
+                        op(scope, &instance)?;
+                    }
+                    Ok::<(), crate::Error>(())
+                })?;
+                return Ok(instance);
+            }
             for op in self.ops {
                 op(scope, &instance)?;
             }
@@ -730,7 +1173,7 @@ impl<T: 'static> El<T> {
         T: AsControl,
     {
         let built = self.build(scope)?;
-        host.upcast_ref().set_content(Some(&built))?;
+        host.upcast_ref().set_content(&built)?;
         Ok(built)
     }
 
@@ -741,7 +1184,7 @@ impl<T: 'static> El<T> {
         T: AsControl,
     {
         let built = self.build(scope)?;
-        host.upcast_ref().set_child(Some(&built))?;
+        host.upcast_ref().set_child(&built)?;
         Ok(built)
     }
 
@@ -753,6 +1196,96 @@ impl<T: 'static> El<T> {
         let built = self.build(scope)?;
         host.upcast_ref().children()?.add(&built)?;
         Ok(built)
+    }
+
+    /// Mounts `then_view` directly into this [`Panel`]'s `children()` collection
+    /// without an intermediate `Border` wrapper when `condition` is `true`, and
+    /// unmounts/disposes it when `false` (preserving `Grid.row`, `DockPanel.dock`,
+    /// and `WrapPanel` sibling layout).
+    pub fn child_when<M, F, E>(
+        self,
+        condition: impl IntoProp<bool, M> + 'static,
+        mut then_view: F,
+    ) -> Self
+    where
+        T: Upcast<Panel> + Clone + 'static,
+        F: FnMut() -> E + 'static,
+        E: IntoChildEl + 'static,
+    {
+        let binding = condition.into_prop();
+        self.with_op(move |scope, panel_owner| {
+            let panel: Panel = panel_owner.upcast();
+            let scope = scope.clone();
+            let slot_index = panel.children()?.len()?;
+            let mounted: Rc<RefCell<Option<(Control, ReactiveScope)>>> =
+                Rc::new(RefCell::new(None));
+
+            let mut update = move |show: bool| -> Result<()> {
+                if show {
+                    if mounted.borrow().is_some() {
+                        return Ok(());
+                    }
+                    let branch_scope = ReactiveScope::new();
+                    let ctrl = match branch_scope.run(|| then_view().into_child_el().build(&scope))
+                    {
+                        Ok(ctrl) => ctrl,
+                        Err(err) => {
+                            branch_scope.dispose();
+                            return Err(err);
+                        }
+                    };
+                    let children = panel.children()?;
+                    let len = children.len()?;
+                    let res = if slot_index < len {
+                        children.insert(slot_index, &ctrl)
+                    } else {
+                        children.add(&ctrl)
+                    };
+                    if let Err(err) = res {
+                        branch_scope.dispose();
+                        return Err(err);
+                    }
+                    *mounted.borrow_mut() = Some((ctrl, branch_scope));
+                } else if let Some((ctrl, prev_scope)) = mounted.borrow_mut().take() {
+                    let children = panel.children()?;
+                    let target_id = ctrl.object_id()?;
+                    let len = children.len()?;
+                    for idx in 0..len {
+                        if children.get(idx)?.object_id()? == target_id {
+                            children.remove(idx)?;
+                            break;
+                        }
+                    }
+                    prev_scope.dispose();
+                }
+                Ok(())
+            };
+
+            match binding {
+                PropBinding::Static(state) => update(state),
+                PropBinding::Reactive(mut compute) => {
+                    Effect::new(move || update(compute())).map(|_| ())
+                }
+                PropBinding::Fallible(mut compute) => {
+                    Effect::new(move || update(compute()?)).map(|_| ())
+                }
+                PropBinding::FallibleOptional(mut compute) => Effect::new(move || {
+                    if let Some(state) = compute()? {
+                        update(state)?;
+                    }
+                    Ok(())
+                })
+                .map(|_| ()),
+                PropBinding::TwoWay(adapter) => {
+                    let updating = Arc::new(AtomicBool::new(false));
+                    let update_cell = Rc::new(RefCell::new(update));
+                    (adapter.bind_to_control)(
+                        Box::new(move |state| (update_cell.borrow_mut())(state)),
+                        updating,
+                    )
+                }
+            }
+        })
     }
 
     /// Reactively binds a keyed list of items to a [`Panel`]'s `children()` collection.
@@ -792,11 +1325,14 @@ impl<T: 'static> El<T> {
                             let previous = (0..list.len()?)
                                 .map(|index| list.get(index))
                                 .collect::<Result<Vec<_>>>()?;
-                            replace_collection(
+                            reconcile_collection(
                                 &previous,
                                 controls,
+                                |c| c.object_id(),
                                 || list.clear(),
                                 |control| list.add(control),
+                                |idx, control| list.insert(idx, control),
+                                |idx| list.remove(idx),
                             )
                         },
                     )?;
@@ -872,11 +1408,14 @@ impl<T: 'static> El<T> {
                             let previous = (0..list.len()?)
                                 .map(|index| list.get(index))
                                 .collect::<Result<Vec<_>>>()?;
-                            replace_collection(
+                            reconcile_collection(
                                 &previous,
                                 controls,
+                                |c| c.object_id(),
                                 || list.clear(),
                                 |control| list.add(control),
+                                |idx, control| list.insert(idx, control),
+                                |idx| list.remove(idx),
                             )
                         },
                     )?;
@@ -919,6 +1458,71 @@ impl<T: 'static> El<T> {
     }
 }
 
+fn reconcile_collection<V>(
+    previous: &[V],
+    next: &[V],
+    id_of: impl Fn(&V) -> Result<i64>,
+    mut clear: impl FnMut() -> Result<()>,
+    mut add: impl FnMut(&V) -> Result<()>,
+    mut insert: impl FnMut(usize, &V) -> Result<()>,
+    mut remove: impl FnMut(usize) -> Result<()>,
+) -> Result<()> {
+    let apply_diff = |add: &mut dyn FnMut(&V) -> Result<()>,
+                      insert: &mut dyn FnMut(usize, &V) -> Result<()>,
+                      remove: &mut dyn FnMut(usize) -> Result<()>|
+     -> Result<()> {
+        let mut working: Vec<i64> = previous.iter().map(&id_of).collect::<Result<Vec<_>>>()?;
+        let next_ids: Vec<i64> = next.iter().map(&id_of).collect::<Result<Vec<_>>>()?;
+
+        for idx in (0..working.len()).rev() {
+            if !next_ids.contains(&working[idx]) {
+                remove(idx)?;
+                working.remove(idx);
+            }
+        }
+
+        for (target_idx, (&want_id, item)) in next_ids.iter().zip(next.iter()).enumerate() {
+            if working.get(target_idx) == Some(&want_id) {
+                continue;
+            }
+            if let Some(rel) = working[target_idx..].iter().position(|&id| id == want_id) {
+                let from_idx = target_idx + rel;
+                remove(from_idx)?;
+                working.remove(from_idx);
+            }
+            if target_idx == working.len() {
+                add(item)?;
+                working.push(want_id);
+            } else {
+                insert(target_idx, item)?;
+                working.insert(target_idx, want_id);
+            }
+        }
+        Ok(())
+    };
+
+    match apply_diff(&mut add, &mut insert, &mut remove) {
+        Ok(()) => Ok(()),
+        Err(update) => {
+            let mut restore = || -> Result<()> {
+                clear()?;
+                for value in previous {
+                    add(value)?;
+                }
+                Ok(())
+            };
+            match restore() {
+                Ok(()) => Err(update),
+                Err(rollback) => Err(crate::Error::CollectionUpdateRollback {
+                    update: Box::new(update),
+                    rollback: Box::new(rollback),
+                }),
+            }
+        }
+    }
+}
+
+#[cfg(test)]
 fn replace_collection<V>(
     previous: &[V],
     next: &[V],
@@ -1388,7 +1992,7 @@ impl Show {
                     next_el.map(|el| el.build(&scope)).transpose()
                 })?;
                 *active_scope.borrow_mut() = Some(branch_scope);
-                border.set_child(built.as_ref().map(|c| c as &dyn AsControl))
+                border.set_child(built)
             };
 
             match binding {
@@ -1438,6 +2042,25 @@ impl For {
         E: IntoChildEl + 'static,
     {
         StackPanel::el().children_for(items, key_fn, view_fn)
+    }
+
+    /// Renders a reactive keyed list inside a caller-chosen [`Panel`] (for example
+    /// `WrapPanel::el()`, `UniformGrid::el()`, or a horizontal `StackPanel`).
+    pub fn in_panel<P, Item, K, M, KF, VF, E>(
+        panel: El<P>,
+        items: impl IntoProp<Vec<Item>, M> + 'static,
+        key_fn: KF,
+        view_fn: VF,
+    ) -> El<P>
+    where
+        P: Upcast<Panel> + Clone + 'static,
+        Item: Clone + PartialEq + 'static,
+        K: Eq + Clone + 'static,
+        KF: FnMut(&Item) -> K + 'static,
+        VF: FnMut(Signal<Item>) -> E + 'static,
+        E: IntoChildEl + 'static,
+    {
+        panel.children_for(items, key_fn, view_fn)
     }
 }
 
@@ -1501,7 +2124,7 @@ impl ControlSlot {
                     return Err(error);
                 }
             };
-        if let Err(error) = border.set_child(built.as_ref().map(|c| c as &dyn AsControl)) {
+        if let Err(error) = border.set_child(built) {
             next_scope.dispose();
             return Err(error);
         }
@@ -1741,7 +2364,8 @@ impl ItemsView {
 /// or reactive closures.
 #[derive(Clone, Debug)]
 pub struct Command {
-    pub(crate) raw: sys::Command,
+    pub(crate) ptr: sys::ComPtr<sys::IAvnCommand>,
+    owned: Option<sys::Command>,
     can_execute_flag: Arc<AtomicBool>,
     _effect: Option<Effect>,
 }
@@ -1750,26 +2374,40 @@ fn command_callback_error(error: crate::Error) -> sys::Error {
     match error {
         crate::Error::Abi(error) => error,
         error => {
-            eprintln!("command callback failed: {error}");
+            crate::runtime::report_ui_error("command callback failed", &error);
             sys::Error(sys::E_FAIL)
         }
     }
 }
 
+impl PartialEq for Command {
+    fn eq(&self, other: &Self) -> bool {
+        std::ptr::eq(self.ptr.as_raw(), other.ptr.as_raw())
+    }
+}
+impl Eq for Command {}
+
 impl Command {
-    /// Creates an always-enabled command that invokes `execute` with the command parameter.
-    pub fn new(mut execute: impl FnMut(Variant) -> Result<()> + Send + 'static) -> Self {
+    /// Creates an always-enabled command that invokes `execute` on the UI thread
+    /// with the command parameter.
+    pub fn new(execute: impl FnMut(Variant) -> Result<()> + 'static) -> Self {
         let can_execute_flag = Arc::new(AtomicBool::new(true));
         let flag_for_query = can_execute_flag.clone();
+        let exec_cb = UiCallbackHandle::new(execute);
         let raw = sys::command(
             move |variant| {
                 let variant = unsafe { Variant::from_borrowed_abi(variant)? };
-                execute(variant).map_err(command_callback_error)
+                exec_cb
+                    .with(|cb| cb(variant))
+                    .map_err(command_callback_error)?
+                    .map_err(command_callback_error)
             },
             move |_| Ok(flag_for_query.load(Ordering::Acquire)),
         );
+        let ptr = raw.as_com_ptr().clone();
         Self {
-            raw,
+            ptr,
+            owned: Some(raw),
             can_execute_flag,
             _effect: None,
         }
@@ -1780,7 +2418,7 @@ impl Command {
     /// `CanExecuteChanged` when the state changes.
     pub fn with_can_execute<M>(
         can_execute: impl IntoProp<bool, M> + 'static,
-        execute: impl FnMut(Variant) -> Result<()> + Send + 'static,
+        execute: impl FnMut(Variant) -> Result<()> + 'static,
     ) -> Result<Self> {
         Self::with_can_execute_parameter(can_execute, |_| Ok(true), execute)
     }
@@ -1790,22 +2428,30 @@ impl Command {
     /// when predicate dependencies other than the global gate change.
     pub fn with_can_execute_parameter<M>(
         can_execute: impl IntoProp<bool, M> + 'static,
-        mut predicate: impl FnMut(Variant) -> Result<bool> + Send + 'static,
-        mut execute: impl FnMut(Variant) -> Result<()> + Send + 'static,
+        predicate: impl FnMut(Variant) -> Result<bool> + 'static,
+        execute: impl FnMut(Variant) -> Result<()> + 'static,
     ) -> Result<Self> {
         let can_execute_flag = Arc::new(AtomicBool::new(true));
         let flag_for_query = can_execute_flag.clone();
+        let exec_cb = UiCallbackHandle::new(execute);
+        let pred_cb = UiCallbackHandle::new(predicate);
         let raw = sys::command(
             move |variant| {
                 let variant = unsafe { Variant::from_borrowed_abi(variant)? };
-                execute(variant).map_err(command_callback_error)
+                exec_cb
+                    .with(|cb| cb(variant))
+                    .map_err(command_callback_error)?
+                    .map_err(command_callback_error)
             },
             move |variant| {
                 if !flag_for_query.load(Ordering::Acquire) {
                     return Ok(false);
                 }
                 let variant = unsafe { Variant::from_borrowed_abi(variant)? };
-                predicate(variant).map_err(command_callback_error)
+                pred_cb
+                    .with(|cb| cb(variant))
+                    .map_err(command_callback_error)?
+                    .map_err(command_callback_error)
             },
         );
 
@@ -1869,8 +2515,10 @@ impl Command {
             }
         };
 
+        let ptr = raw.as_com_ptr().clone();
         Ok(Self {
-            raw,
+            ptr,
+            owned: Some(raw),
             can_execute_flag,
             _effect: effect,
         })
@@ -1887,18 +2535,23 @@ impl Command {
     /// Notification failures are written to stderr. Use [`Command::try_notify`]
     /// to handle them directly.
     pub fn notify(&self) {
-        self.raw.notify();
+        if let Some(owned) = &self.owned {
+            owned.notify();
+        }
     }
 
     /// Manually fires `CanExecuteChanged` notifications and returns the first
     /// notification failure after attempting all subscribed controls.
     pub fn try_notify(&self) -> Result<()> {
-        Ok(self.raw.try_notify()?)
+        if let Some(owned) = &self.owned {
+            owned.try_notify()?;
+        }
+        Ok(())
     }
 
     /// Invokes the command directly from Rust with `parameter`.
     pub fn execute(&self, parameter: impl Into<Variant>) -> Result<()> {
-        Self::execute_interface(self.raw.as_com_ptr(), parameter)
+        Self::execute_interface(&self.ptr, parameter)
     }
 
     /// Invokes a command interface obtained from a control property.
@@ -1912,7 +2565,43 @@ impl Command {
 
     /// Queries the command for a particular parameter.
     pub fn can_execute(&self, parameter: impl Into<Variant>) -> Result<bool> {
-        Self::can_execute_interface(self.raw.as_com_ptr(), parameter)
+        Self::can_execute_interface(&self.ptr, parameter)
+    }
+
+    /// Creates an asynchronous UI command whose `CanExecute` state automatically
+    /// disables while an invocation is in flight and re-enables on completion.
+    pub fn new_async<Fut, R>(
+        scope: &AppScope,
+        mut execute: impl FnMut(Variant) -> Fut + 'static,
+    ) -> Result<Self>
+    where
+        Fut: Future<Output = R> + 'static,
+        R: crate::IntoEventResult + 'static,
+    {
+        let idle = Signal::new(true);
+        let scope = scope.clone();
+        Self::with_can_execute(idle, move |param| {
+            if !idle.get_untracked() {
+                return Ok(());
+            }
+            idle.set(false);
+            struct IdleReset(crate::reactive::RawSignalId);
+            impl Drop for IdleReset {
+                fn drop(&mut self) {
+                    if let Ok(sig) = Signal::<bool>::try_from_raw(self.0) {
+                        if sig.is_alive() {
+                            sig.set(true);
+                        }
+                    }
+                }
+            }
+            let reset = IdleReset(idle.raw_id());
+            let fut = execute(param);
+            scope.spawn_local(async move {
+                let _guard = reset;
+                fut.await
+            })
+        })
     }
 
     /// Queries a command interface obtained from a control property.
@@ -1925,7 +2614,16 @@ impl Command {
     }
 
     pub fn as_com_ptr(&self) -> &sys::ComPtr<sys::IAvnCommand> {
-        self.raw.as_com_ptr()
+        &self.ptr
+    }
+
+    pub(crate) fn from_com_ptr(ptr: sys::ComPtr<sys::IAvnCommand>) -> Self {
+        Self {
+            ptr,
+            owned: None,
+            can_execute_flag: Arc::new(AtomicBool::new(true)),
+            _effect: None,
+        }
     }
 }
 
@@ -1936,19 +2634,19 @@ pub trait IntoCommandProp {
 
 impl IntoCommandProp for Command {
     fn into_command_prop(self) -> Option<sys::ComPtr<sys::IAvnCommand>> {
-        Some(self.raw.as_com_ptr().clone())
+        Some(self.ptr)
     }
 }
 
 impl IntoCommandProp for &Command {
     fn into_command_prop(self) -> Option<sys::ComPtr<sys::IAvnCommand>> {
-        Some(self.raw.as_com_ptr().clone())
+        Some(self.ptr.clone())
     }
 }
 
 impl IntoCommandProp for Option<Command> {
     fn into_command_prop(self) -> Option<sys::ComPtr<sys::IAvnCommand>> {
-        self.map(|cmd| cmd.raw.as_com_ptr().clone())
+        self.map(|cmd| cmd.ptr)
     }
 }
 
@@ -2011,6 +2709,14 @@ impl AnyEl {
                     raw: control.as_control()?,
                 })
             }),
+        }
+    }
+
+    /// Creates a deferred [`AnyEl`] whose builder closure runs when mounted into
+    /// an [`AppScope`] (preserving enclosing reactive scope & context).
+    pub fn from_deferred(build: impl FnOnce(&AppScope) -> Result<Control> + 'static) -> Self {
+        Self {
+            build: Box::new(build),
         }
     }
 
@@ -2099,38 +2805,31 @@ impl<T: Into<AnyEl>> IntoContentEl for T {
 /// `Signal<Variant>` in place without allocating new COM controls.
 pub fn data_template_reactive<E>(
     scope: &AppScope,
-    mut matches: impl FnMut(&Variant) -> bool + Send + 'static,
-    mut build_view: impl FnMut(Signal<Variant>) -> E + Send + 'static,
+    mut matches: impl FnMut(&Variant) -> bool + 'static,
+    mut build_view: impl FnMut(Signal<Variant>) -> E + 'static,
 ) -> Result<DataTemplate>
 where
     E: Into<AnyEl>,
 {
     let scope = scope.clone();
-    let last_item: Arc<Mutex<Variant>> = Arc::new(Mutex::new(Variant::None));
+    let last_item: Rc<RefCell<Variant>> = Rc::new(RefCell::new(Variant::None));
     let last_item_for_match = last_item.clone();
-    let pool: Arc<Mutex<Vec<(Control, Signal<Variant>)>>> = Arc::new(Mutex::new(Vec::new()));
+    let pool: Rc<RefCell<Vec<(Control, Signal<Variant>)>>> = Rc::new(RefCell::new(Vec::new()));
 
     crate::data_template(
         move |variant| {
             let matched = matches(&variant);
             if matched {
-                if let Ok(mut slot) = last_item_for_match.lock() {
-                    *slot = variant;
-                }
+                *last_item_for_match.borrow_mut() = variant;
             }
             matched
         },
         move || {
-            let item = last_item
-                .lock()
-                .map(|slot| slot.clone())
-                .unwrap_or(Variant::None);
+            let item = last_item.borrow().clone();
 
-            if let Ok(mut pooled) = pool.lock() {
-                if let Some((control, signal)) = pooled.pop() {
-                    signal.set(item);
-                    return Ok(control);
-                }
+            if let Some((control, signal)) = pool.borrow_mut().pop() {
+                signal.set(item);
+                return Ok(control);
             }
 
             let signal = Signal::new(item);
@@ -2138,9 +2837,9 @@ where
             let pool_for_detach = pool.clone();
             let control_for_detach = control.clone();
             let subscription = control.subscribe_detached_from_logical_tree(move |_| {
-                if let Ok(mut pooled) = pool_for_detach.lock() {
-                    pooled.push((control_for_detach.clone(), signal));
-                }
+                pool_for_detach
+                    .borrow_mut()
+                    .push((control_for_detach.clone(), signal));
             })?;
             scope.retain_subscription(subscription);
             Ok(control)
@@ -2177,8 +2876,13 @@ impl AppScope {
         ControlSlot::new()
     }
 
-    /// Creates an asynchronous reactive [`Resource<T>`] that runs `fetcher` on a
-    /// background task whenever the value returned by `source` changes.
+    /// Creates an asynchronous reactive [`Resource<T>`] that runs `fetcher`
+    /// whenever the value returned by `source` changes.
+    ///
+    /// When the `tokio` Cargo feature is enabled and a Tokio runtime is active,
+    /// `fetcher` is spawned onto that Tokio runtime; otherwise it is polled via
+    /// [`AppScope::spawn_local`]. For CPU-bound or synchronous I/O work without
+    /// Tokio, prefer [`AppScope::create_blocking_resource`].
     ///
     /// If `source` changes again while a previous fetch is still in flight, the
     /// stale result is discarded automatically.
@@ -2193,6 +2897,8 @@ impl AppScope {
         Fut: Future<Output = std::result::Result<T, String>> + Send + 'static,
     {
         let resource = Resource::<T>::pending();
+        let raw_state = resource.state_raw_id();
+        let raw_gen = resource.generation_raw_id();
         let scope = self.clone();
         let last_source: Rc<RefCell<Option<S>>> = Rc::new(RefCell::new(None));
 
@@ -2203,20 +2909,94 @@ impl AppScope {
             }
             *last_source.borrow_mut() = Some(next_source.clone());
 
-            let gen = resource.next_generation();
-            resource.set_loading();
+            let gen = Signal::<u64>::try_from_raw(raw_gen)?
+                .get_untracked()
+                .wrapping_add(1);
+            Signal::<u64>::try_from_raw(raw_gen)?.set(gen);
+            Signal::<ResourceState<T>>::try_from_raw(raw_state)?.set(ResourceState::Loading);
+
             let fut = fetcher(next_source);
-            let scope_for_post = scope.clone();
-            scope.spawn(async move {
-                let outcome = fut.await;
-                let _ = scope_for_post.post(move || {
-                    if resource.current_generation() == gen {
+            let apply_outcome = move |outcome: std::result::Result<T, String>| {
+                if let (Ok(gen_sig), Ok(state_sig)) = (
+                    Signal::<u64>::try_from_raw(raw_gen),
+                    Signal::<ResourceState<T>>::try_from_raw(raw_state),
+                ) {
+                    if gen_sig.is_alive() && state_sig.is_alive() && gen_sig.get_untracked() == gen
+                    {
                         match outcome {
-                            Ok(value) => resource.set_ready(value),
-                            Err(error) => resource.set_error(error),
+                            Ok(value) => state_sig.set(ResourceState::Ready(value)),
+                            Err(error) => state_sig.set(ResourceState::Error(error)),
                         }
                     }
+                }
+            };
+
+            #[cfg(feature = "tokio")]
+            if let Ok(handle) = tokio::runtime::Handle::try_current() {
+                let scope_for_post = scope.clone();
+                handle.spawn(async move {
+                    let outcome = fut.await;
+                    let _ = scope_for_post.post(move || apply_outcome(outcome));
                 });
+                return Ok(());
+            }
+
+            scope.spawn_local(async move {
+                let outcome = fut.await;
+                apply_outcome(outcome);
+            })
+        })?;
+
+        Ok(resource)
+    }
+
+    /// Creates a reactive [`Resource<T>`] whose `fetcher` runs on a background
+    /// OS thread via [`AppScope::run_blocking`] whenever `source` changes.
+    pub fn create_blocking_resource<S, T>(
+        &self,
+        mut source: impl FnMut() -> S + 'static,
+        fetcher: impl Fn(S) -> Result<T> + Send + Sync + 'static,
+    ) -> Result<Resource<T>>
+    where
+        S: PartialEq + Clone + Send + 'static,
+        T: Clone + Send + 'static,
+    {
+        let fetcher = Arc::new(fetcher);
+        let resource = Resource::<T>::pending();
+        let raw_state = resource.state_raw_id();
+        let raw_gen = resource.generation_raw_id();
+        let scope = self.clone();
+        let last_source: Rc<RefCell<Option<S>>> = Rc::new(RefCell::new(None));
+
+        Effect::new(move || {
+            let next_source = source();
+            if last_source.borrow().as_ref() == Some(&next_source) {
+                return Ok(());
+            }
+            *last_source.borrow_mut() = Some(next_source.clone());
+
+            let gen = Signal::<u64>::try_from_raw(raw_gen)?
+                .get_untracked()
+                .wrapping_add(1);
+            Signal::<u64>::try_from_raw(raw_gen)?.set(gen);
+            Signal::<ResourceState<T>>::try_from_raw(raw_state)?.set(ResourceState::Loading);
+
+            let f = fetcher.clone();
+            let op = scope.run_blocking(move || f(next_source));
+            scope.spawn_local(async move {
+                let outcome = op.await;
+                if let (Ok(gen_sig), Ok(state_sig)) = (
+                    Signal::<u64>::try_from_raw(raw_gen),
+                    Signal::<ResourceState<T>>::try_from_raw(raw_state),
+                ) {
+                    if gen_sig.is_alive() && state_sig.is_alive() && gen_sig.get_untracked() == gen
+                    {
+                        match outcome {
+                            Ok(value) => state_sig.set(ResourceState::Ready(value)),
+                            Err(error) => state_sig.set(ResourceState::Error(error.to_string())),
+                        }
+                    }
+                }
             })
         })?;
 
@@ -2289,268 +3069,75 @@ impl AppScope {
     }
 }
 
-#[doc(hidden)]
-#[macro_export]
-macro_rules! __rsx_attached {
-    ($el:ident, Canvas, left, $val:expr) => {
-        $el.canvas_left($val)
-    };
-    ($el:ident, Canvas, Left, $val:expr) => {
-        $el.canvas_left($val)
-    };
-    ($el:ident, Canvas, top, $val:expr) => {
-        $el.canvas_top($val)
-    };
-    ($el:ident, Canvas, Top, $val:expr) => {
-        $el.canvas_top($val)
-    };
-    ($el:ident, Canvas, right, $val:expr) => {
-        $el.canvas_right($val)
-    };
-    ($el:ident, Canvas, Right, $val:expr) => {
-        $el.canvas_right($val)
-    };
-    ($el:ident, Canvas, bottom, $val:expr) => {
-        $el.canvas_bottom($val)
-    };
-    ($el:ident, Canvas, Bottom, $val:expr) => {
-        $el.canvas_bottom($val)
-    };
-    ($el:ident, DockPanel, dock, $val:expr) => {
-        $el.dock_panel_dock($val)
-    };
-    ($el:ident, DockPanel, Dock, $val:expr) => {
-        $el.dock_panel_dock($val)
-    };
-    ($el:ident, Grid, column, $val:expr) => {
-        $el.grid_column($val)
-    };
-    ($el:ident, Grid, Column, $val:expr) => {
-        $el.grid_column($val)
-    };
-    ($el:ident, Grid, row, $val:expr) => {
-        $el.grid_row($val)
-    };
-    ($el:ident, Grid, Row, $val:expr) => {
-        $el.grid_row($val)
-    };
-    ($el:ident, Grid, column_span, $val:expr) => {
-        $el.grid_column_span($val)
-    };
-    ($el:ident, Grid, ColumnSpan, $val:expr) => {
-        $el.grid_column_span($val)
-    };
-    ($el:ident, Grid, row_span, $val:expr) => {
-        $el.grid_row_span($val)
-    };
-    ($el:ident, Grid, RowSpan, $val:expr) => {
-        $el.grid_row_span($val)
-    };
-    ($el:ident, Grid, is_shared_size_scope, $val:expr) => {
-        $el.grid_is_shared_size_scope($val)
-    };
-    ($el:ident, Grid, IsSharedSizeScope, $val:expr) => {
-        $el.grid_is_shared_size_scope($val)
-    };
-    ($el:ident, RelativePanel, align_left_with_panel, $val:expr) => {
-        $el.relative_panel_align_left_with_panel($val)
-    };
-    ($el:ident, RelativePanel, AlignLeftWithPanel, $val:expr) => {
-        $el.relative_panel_align_left_with_panel($val)
-    };
-    ($el:ident, RelativePanel, align_right_with_panel, $val:expr) => {
-        $el.relative_panel_align_right_with_panel($val)
-    };
-    ($el:ident, RelativePanel, AlignRightWithPanel, $val:expr) => {
-        $el.relative_panel_align_right_with_panel($val)
-    };
-    ($el:ident, RelativePanel, align_top_with_panel, $val:expr) => {
-        $el.relative_panel_align_top_with_panel($val)
-    };
-    ($el:ident, RelativePanel, AlignTopWithPanel, $val:expr) => {
-        $el.relative_panel_align_top_with_panel($val)
-    };
-    ($el:ident, RelativePanel, align_bottom_with_panel, $val:expr) => {
-        $el.relative_panel_align_bottom_with_panel($val)
-    };
-    ($el:ident, RelativePanel, AlignBottomWithPanel, $val:expr) => {
-        $el.relative_panel_align_bottom_with_panel($val)
-    };
-    ($el:ident, RelativePanel, align_horizontal_center_with_panel, $val:expr) => {
-        $el.relative_panel_align_horizontal_center_with_panel($val)
-    };
-    ($el:ident, RelativePanel, AlignHorizontalCenterWithPanel, $val:expr) => {
-        $el.relative_panel_align_horizontal_center_with_panel($val)
-    };
-    ($el:ident, RelativePanel, align_vertical_center_with_panel, $val:expr) => {
-        $el.relative_panel_align_vertical_center_with_panel($val)
-    };
-    ($el:ident, RelativePanel, AlignVerticalCenterWithPanel, $val:expr) => {
-        $el.relative_panel_align_vertical_center_with_panel($val)
-    };
-    ($el:ident, ToolTip, tip, $val:expr) => {
-        $el.tool_tip_tip($val)
-    };
-    ($el:ident, ToolTip, Tip, $val:expr) => {
-        $el.tool_tip_tip($val)
-    };
-    ($el:ident, ToolTip, is_open, $val:expr) => {
-        $el.tool_tip_is_open($val)
-    };
-    ($el:ident, ToolTip, IsOpen, $val:expr) => {
-        $el.tool_tip_is_open($val)
-    };
-    ($el:ident, ToolTip, placement, $val:expr) => {
-        $el.tool_tip_placement($val)
-    };
-    ($el:ident, ToolTip, Placement, $val:expr) => {
-        $el.tool_tip_placement($val)
-    };
-    ($el:ident, ToolTip, horizontal_offset, $val:expr) => {
-        $el.tool_tip_horizontal_offset($val)
-    };
-    ($el:ident, ToolTip, HorizontalOffset, $val:expr) => {
-        $el.tool_tip_horizontal_offset($val)
-    };
-    ($el:ident, ToolTip, vertical_offset, $val:expr) => {
-        $el.tool_tip_vertical_offset($val)
-    };
-    ($el:ident, ToolTip, VerticalOffset, $val:expr) => {
-        $el.tool_tip_vertical_offset($val)
-    };
-    ($el:ident, ToolTip, show_delay, $val:expr) => {
-        $el.tool_tip_show_delay($val)
-    };
-    ($el:ident, ToolTip, ShowDelay, $val:expr) => {
-        $el.tool_tip_show_delay($val)
-    };
-    ($el:ident, ToolTip, between_show_delay, $val:expr) => {
-        $el.tool_tip_between_show_delay($val)
-    };
-    ($el:ident, ToolTip, BetweenShowDelay, $val:expr) => {
-        $el.tool_tip_between_show_delay($val)
-    };
-    ($el:ident, ToolTip, show_on_disabled, $val:expr) => {
-        $el.tool_tip_show_on_disabled($val)
-    };
-    ($el:ident, ToolTip, ShowOnDisabled, $val:expr) => {
-        $el.tool_tip_show_on_disabled($val)
-    };
-    ($el:ident, ToolTip, service_enabled, $val:expr) => {
-        $el.tool_tip_service_enabled($val)
-    };
-    ($el:ident, ToolTip, ServiceEnabled, $val:expr) => {
-        $el.tool_tip_service_enabled($val)
-    };
+/// Resolves the enclosing [`Window`] from reactive scope context, falling back
+/// to [`AppScope::main_window`].
+pub fn use_window(scope: &AppScope) -> Result<Window> {
+    scope.resolve_window()
 }
 
-#[doc(hidden)]
-#[macro_export]
-macro_rules! __rsx_body {
-    ($el:ident $(,)*) => {
-        $el
+#[derive(Clone, Copy)]
+struct AmbientThemeSignal(crate::reactive::RawSignalId);
+
+/// Returns a reactive [`Signal<ThemeVariant>`] tracking the active theme of the
+/// enclosing [`Window`] (or application theme when no window is mounted yet),
+/// without requiring callers to thread `&Window` manually.
+pub fn use_theme(scope: &AppScope) -> Result<Signal<ThemeVariant>> {
+    if let Some(cached) = crate::reactive::use_context::<AmbientThemeSignal>() {
+        if let Ok(sig) = Signal::<ThemeVariant>::try_from_raw(cached.0) {
+            if sig.is_alive() {
+                return Ok(sig);
+            }
+        }
+    }
+    let sig = if let Ok(window) = scope.resolve_window() {
+        scope.theme_variant_signal(&window)?
+    } else {
+        Signal::new(scope.actual_theme_variant()?)
     };
-    ($el:ident, ref : $val:expr , $($rest:tt)*) => {{
-        let $el = $el.node_ref($val);
-        $crate::__rsx_body!($el, $($rest)*)
-    }};
-    ($el:ident, ref : $val:expr) => {{
-        $el.node_ref($val)
-    }};
-    ($el:ident, $owner:ident . $prop:ident : $val:expr , $($rest:tt)*) => {{
-        let $el = $crate::__rsx_attached!($el, $owner, $prop, $val);
-        $crate::__rsx_body!($el, $($rest)*)
-    }};
-    ($el:ident, $owner:ident . $prop:ident : $val:expr) => {{
-        $crate::__rsx_attached!($el, $owner, $prop, $val)
-    }};
-    ($el:ident, $prop:ident : $val:expr , $($rest:tt)*) => {{
-        let $el = $el.$prop($val);
-        $crate::__rsx_body!($el, $($rest)*)
-    }};
-    ($el:ident, $prop:ident : $val:expr) => {{
-        $el.$prop($val)
-    }};
-    ($el:ident, if ($cond:expr) { $($then_body:tt)* } else { $($else_body:tt)* } $(,)? $($rest:tt)*) => {{
-        let $el = if $cond {
-            $crate::__rsx_body!($el, $($then_body)*)
-        } else {
-            $crate::__rsx_body!($el, $($else_body)*)
-        };
-        $crate::__rsx_body!($el, $($rest)*)
-    }};
-    ($el:ident, if $cond:ident { $($then_body:tt)* } else { $($else_body:tt)* } $(,)? $($rest:tt)*) => {{
-        let $el = if $cond {
-            $crate::__rsx_body!($el, $($then_body)*)
-        } else {
-            $crate::__rsx_body!($el, $($else_body)*)
-        };
-        $crate::__rsx_body!($el, $($rest)*)
-    }};
-    ($el:ident, if ($cond:expr) { $($then_body:tt)* } $(,)? $($rest:tt)*) => {{
-        let $el = if $cond {
-            $crate::__rsx_body!($el, $($then_body)*)
-        } else {
-            $el
-        };
-        $crate::__rsx_body!($el, $($rest)*)
-    }};
-    ($el:ident, if $cond:ident { $($then_body:tt)* } $(,)? $($rest:tt)*) => {{
-        let $el = if $cond {
-            $crate::__rsx_body!($el, $($then_body)*)
-        } else {
-            $el
-        };
-        $crate::__rsx_body!($el, $($rest)*)
-    }};
-    ($el:ident, for $pat:pat in ($iter:expr) { $($loop_body:tt)* } $(,)? $($rest:tt)*) => {{
-        let mut __acc = $el;
-        for $pat in $iter {
-            __acc = $crate::__rsx_body!(__acc, $($loop_body)*);
-        }
-        let $el = __acc;
-        $crate::__rsx_body!($el, $($rest)*)
-    }};
-    ($el:ident, for $pat:pat in $iter:ident { $($loop_body:tt)* } $(,)? $($rest:tt)*) => {{
-        let mut __acc = $el;
-        for $pat in $iter {
-            __acc = $crate::__rsx_body!(__acc, $($loop_body)*);
-        }
-        let $el = __acc;
-        $crate::__rsx_body!($el, $($rest)*)
-    }};
-    ($el:ident, $ns:ident :: $child:ident { $($child_body:tt)* } $(,)? $($rest:tt)*) => {{
-        let $el = $el.rsx_child($crate::rsx!($ns::$child { $($child_body)* }));
-        $crate::__rsx_body!($el, $($rest)*)
-    }};
-    ($el:ident, $child:ident { $($child_body:tt)* } $(,)? $($rest:tt)*) => {{
-        let $el = $el.rsx_child($crate::rsx!($child { $($child_body)* }));
-        $crate::__rsx_body!($el, $($rest)*)
-    }};
-    ($el:ident, $lit:literal $(,)? $($rest:tt)*) => {{
-        let $el = $el.rsx_child($lit);
-        $crate::__rsx_body!($el, $($rest)*)
-    }};
-    ($el:ident, { $expr:expr } $(,)? $($rest:tt)*) => {{
-        let $el = $el.rsx_child($expr);
-        $crate::__rsx_body!($el, $($rest)*)
-    }};
+    provide_context(AmbientThemeSignal(sig.raw_id()));
+    Ok(sig)
 }
 
-/// Declarative XAML-like macro for building [`El<T>`](crate::view::El) trees in pure Rust.
-///
-/// Supports properties (`width: 100.0`), attached properties (`Grid.row: 1`,
-/// `DockPanel.dock: Dock::Top`), event handlers (`on_click: move |_| ...`),
-/// node references (`ref: my_ref`), style classes (`class: "primary"`),
-/// string/expression children (`"Submit"`, `{ expr }`), and inline `if`/`for` blocks.
-#[macro_export]
-macro_rules! rsx {
-    ($control:ident { $($body:tt)* }) => {{
-        let __el = $control::el();
-        $crate::__rsx_body!(__el, $($body)*)
-    }};
-    ($ns:ident :: $control:ident { $($body:tt)* }) => {{
-        let __el = $ns::$control::el();
-        $crate::__rsx_body!(__el, $($body)*)
-    }};
+impl El<crate::Button> {
+    /// Attaches an asynchronous click handler that automatically disables the
+    /// button while `handler`'s future is running and re-enables it upon completion.
+    pub fn on_click_async<Fut, R>(self, mut handler: impl FnMut() -> Fut + 'static) -> Self
+    where
+        Fut: Future<Output = R> + 'static,
+        R: crate::IntoEventResult + 'static,
+    {
+        self.with_op(move |scope, button| {
+            let scope_for_click = scope.clone();
+            let button_for_click = button.clone();
+            let busy = Rc::new(std::cell::Cell::new(false));
+            let sub = button.subscribe_click(move |_| {
+                if busy.get() {
+                    return;
+                }
+                busy.set(true);
+                let _ = button_for_click.set_enabled(false);
+                struct ReenableGuard {
+                    button: crate::Button,
+                    busy: Rc<std::cell::Cell<bool>>,
+                }
+                impl Drop for ReenableGuard {
+                    fn drop(&mut self) {
+                        self.busy.set(false);
+                        let _ = self.button.set_enabled(true);
+                    }
+                }
+                let guard = ReenableGuard {
+                    button: button_for_click.clone(),
+                    busy: busy.clone(),
+                };
+                let fut = handler();
+                let _ = scope_for_click.spawn_local(async move {
+                    let _guard = guard;
+                    fut.await
+                });
+            })?;
+            scope.retain_subscription(sub);
+            Ok(())
+        })
+    }
 }

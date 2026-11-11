@@ -425,6 +425,7 @@ dependencies = [
 name = "rustolonia"
 version = "12.1.6"
 dependencies = [
+ "rustolonia-macros",
  "rustolonia-sys",
 ]
 
@@ -434,6 +435,10 @@ version = "0.1.0"
 dependencies = [
  "rustolonia",
 ]
+
+[[package]]
+name = "rustolonia-macros"
+version = "12.1.6"
 
 [[package]]
 name = "rustolonia-sys"

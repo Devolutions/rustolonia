@@ -67,6 +67,22 @@ fn color_packs_argb_like_avalonia_media_color() {
         Color::from(sys::AvnColor { argb: 0x8000_FF00 }),
         Color::new(0x80, 0x00, 0xFF, 0x00)
     );
+    assert_eq!(
+        Color::rgba(0x34, 0x56, 0x78, 0x12),
+        Color::argb(0x12, 0x34, 0x56, 0x78)
+    );
+    assert_eq!(
+        Color::from_rgba_u32(0x3456_7812),
+        Color::rgba(0x34, 0x56, 0x78, 0x12)
+    );
+    assert_eq!(
+        Color::from_argb_u32(0x1234_5678),
+        Color::argb(0x12, 0x34, 0x56, 0x78)
+    );
+    assert_eq!(
+        Color::rgb(0x10, 0x20, 0x30).with_alpha(0x80),
+        Color::rgba(0x10, 0x20, 0x30, 0x80)
+    );
 }
 
 #[test]

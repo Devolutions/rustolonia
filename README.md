@@ -12,7 +12,7 @@ pinned `avalonia-src` producer submodule at upstream Avalonia `12.1.6` (commit
 |---|---|
 | `avalonia-src/` | Avalonia producer pinned to the upstream `12.1.6` tag (`cf8e564674700348947e93ab19105f27afe859a9`), cloned from `AvaloniaUI/Avalonia` |
 | `avalonia-patches/` | Additive framework patches applied onto the pinned checkout (see its README + UPSTREAM.md) |
-| `rust/` | The Rust workspace: `rustolonia` (safe bindings), `rustolonia-sys` (ABI bindings), `rustolonia-bindgen` (IR to Rust generator), `rustolonia-apk` (Cargo-only Android APK packager), `avalonia-sample` (flagship sample's application-owned view-model API), templates, build scripts, and the checked-in IR |
+| `rust/` | The Rust workspace: `rustolonia` (safe bindings), `rustolonia-macros` (`rsx!`, `#[component]`, `#[derive(Lens)]`, `color!`, `tracks!`, `fmt!`), `rustolonia-sys` (ABI bindings), `rustolonia-bindgen` (IR to Rust generator), `rustolonia-apk` (Cargo-only Android APK packager), `avalonia-sample` (flagship sample's application-owned view-model API), templates, build scripts, and the checked-in IR |
 | `host/` | `Avalonia.Host` - the C# NativeAOT host that serves the ABI, plus its generated object model |
 | `projection/` | The projection pipeline: IR extraction, C#/header emitters, and the generator tools |
 | `interop/` | `Avalonia.Rust` and `Avalonia.Rust.Interop` - the managed-side view-model interop layer |

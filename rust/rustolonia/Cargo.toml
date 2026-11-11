@@ -39,7 +39,12 @@ linux-drm = ["rustolonia-sys/linux-drm"]
 static-host = ["rustolonia-sys/static-host"]
 
 [dependencies]
+rustolonia-macros = { version = "=12.1.6", path = "../rustolonia-macros" }
 rustolonia-sys = { version = "=12.1.6", path = "../rustolonia-sys", default-features = false }
+chrono = { version = "0.4", default-features = false, optional = true }
+time = { version = "0.3", default-features = false, optional = true }
+rust_decimal = { version = "1", default-features = false, optional = true }
+tokio = { version = "1", default-features = false, features = ["rt"], optional = true }
 
 [dev-dependencies]
 avalonia-sample = { path = "../avalonia-sample" }

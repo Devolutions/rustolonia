@@ -2351,9 +2351,10 @@ struct IAvnControlListVtbl {
     AvnHResult (AVN_CALL *index_of)(IAvnControlList* self, IAvnControl* value, int32_t* index); /* slot 6 */
     AvnHResult (AVN_CALL *remove_at)(IAvnControlList* self, int32_t index); /* slot 7 */
     AvnHResult (AVN_CALL *clear)(IAvnControlList* self); /* slot 8 */
+    AvnHResult (AVN_CALL *insert)(IAvnControlList* self, int32_t index, IAvnControl* value); /* slot 9 */
 };
 struct IAvnControlList { const IAvnControlListVtbl* vtbl; };
-#define I_AVN_CONTROL_LIST_VTABLE_SLOTS 9
+#define I_AVN_CONTROL_LIST_VTABLE_SLOTS 10
 
 static const AvnGuid I_AVN_DATE_TIME_LIST_IID = {
     0x511C9984,
@@ -2371,9 +2372,10 @@ struct IAvnDateTimeListVtbl {
     AvnHResult (AVN_CALL *index_of)(IAvnDateTimeList* self, int64_t value, int32_t* index); /* slot 6 */
     AvnHResult (AVN_CALL *remove_at)(IAvnDateTimeList* self, int32_t index); /* slot 7 */
     AvnHResult (AVN_CALL *clear)(IAvnDateTimeList* self); /* slot 8 */
+    AvnHResult (AVN_CALL *insert)(IAvnDateTimeList* self, int32_t index, int64_t value); /* slot 9 */
 };
 struct IAvnDateTimeList { const IAvnDateTimeListVtbl* vtbl; };
-#define I_AVN_DATE_TIME_LIST_VTABLE_SLOTS 9
+#define I_AVN_DATE_TIME_LIST_VTABLE_SLOTS 10
 
 static const AvnGuid I_AVN_ITEM_LIST_IID = {
     0x3EF79620,
@@ -2391,9 +2393,10 @@ struct IAvnItemListVtbl {
     AvnHResult (AVN_CALL *index_of)(IAvnItemList* self, IAvnControl* value, int32_t* index); /* slot 6 */
     AvnHResult (AVN_CALL *remove_at)(IAvnItemList* self, int32_t index); /* slot 7 */
     AvnHResult (AVN_CALL *clear)(IAvnItemList* self); /* slot 8 */
+    AvnHResult (AVN_CALL *insert)(IAvnItemList* self, int32_t index, IAvnControl* value); /* slot 9 */
 };
 struct IAvnItemList { const IAvnItemListVtbl* vtbl; };
-#define I_AVN_ITEM_LIST_VTABLE_SLOTS 9
+#define I_AVN_ITEM_LIST_VTABLE_SLOTS 10
 
 static const AvnGuid I_AVN_SELECTED_VARIANT_LIST_IID = {
     0x94A1E0A8,
@@ -2411,9 +2414,10 @@ struct IAvnSelectedVariantListVtbl {
     AvnHResult (AVN_CALL *index_of)(IAvnSelectedVariantList* self, AvnVariant value, int32_t* index); /* slot 6 */
     AvnHResult (AVN_CALL *remove_at)(IAvnSelectedVariantList* self, int32_t index); /* slot 7 */
     AvnHResult (AVN_CALL *clear)(IAvnSelectedVariantList* self); /* slot 8 */
+    AvnHResult (AVN_CALL *insert)(IAvnSelectedVariantList* self, int32_t index, AvnVariant value); /* slot 9 */
 };
 struct IAvnSelectedVariantList { const IAvnSelectedVariantListVtbl* vtbl; };
-#define I_AVN_SELECTED_VARIANT_LIST_VTABLE_SLOTS 9
+#define I_AVN_SELECTED_VARIANT_LIST_VTABLE_SLOTS 10
 
 static const AvnGuid I_AVN_STRING_LIST_IID = {
     0x9B89BB33,
@@ -2431,9 +2435,10 @@ struct IAvnStringListVtbl {
     AvnHResult (AVN_CALL *index_of)(IAvnStringList* self, const uint16_t* value, int32_t* index); /* slot 6 */
     AvnHResult (AVN_CALL *remove_at)(IAvnStringList* self, int32_t index); /* slot 7 */
     AvnHResult (AVN_CALL *clear)(IAvnStringList* self); /* slot 8 */
+    AvnHResult (AVN_CALL *insert)(IAvnStringList* self, int32_t index, const uint16_t* value); /* slot 9 */
 };
 struct IAvnStringList { const IAvnStringListVtbl* vtbl; };
-#define I_AVN_STRING_LIST_VTABLE_SLOTS 9
+#define I_AVN_STRING_LIST_VTABLE_SLOTS 10
 
 static const AvnGuid I_AVN_VARIANT_LIST_IID = {
     0x3C11D7D7,
@@ -2451,9 +2456,10 @@ struct IAvnVariantListVtbl {
     AvnHResult (AVN_CALL *index_of)(IAvnVariantList* self, AvnVariant value, int32_t* index); /* slot 6 */
     AvnHResult (AVN_CALL *remove_at)(IAvnVariantList* self, int32_t index); /* slot 7 */
     AvnHResult (AVN_CALL *clear)(IAvnVariantList* self); /* slot 8 */
+    AvnHResult (AVN_CALL *insert)(IAvnVariantList* self, int32_t index, AvnVariant value); /* slot 9 */
 };
 struct IAvnVariantList { const IAvnVariantListVtbl* vtbl; };
-#define I_AVN_VARIANT_LIST_VTABLE_SLOTS 9
+#define I_AVN_VARIANT_LIST_VTABLE_SLOTS 10
 
 static const AvnGuid I_AVN_ARC_IID = {
     0x043F157A,

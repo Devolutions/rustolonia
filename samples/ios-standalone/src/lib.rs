@@ -1,48 +1,48 @@
 use rustolonia::{
-    AppScope, Button, HorizontalAlignment, Orientation, Result, StackPanel, TextBlock, TextBox,
-    Thickness, VerticalAlignment,
+    fmt, rsx, AppScope, Button, HorizontalAlignment, Orientation, Result, StackPanel, TextBlock,
+    TextBox, VerticalAlignment,
 };
-use std::sync::atomic::{AtomicU32, Ordering};
-use std::sync::Arc;
 
 rustolonia::ios_application!(build_view);
 
 fn build_view(scope: &AppScope) -> Result<StackPanel> {
-    let count = Arc::new(AtomicU32::new(0));
-    let label = TextBlock::new()?.text("Taps: 0")?.font_size(28.0)?;
-    let input = TextBox::new()?.text("Editable from Rust")?;
-    let button = Button::new()?
-        .content(Some(&TextBlock::new()?.text("Tap me")?))?
-        .on_click(scope, {
-            let label = label.clone();
-            move |()| {
-                let value = count.fetch_add(1, Ordering::Relaxed) + 1;
-                if let Err(error) = label.set_text(format!("Taps: {value}")) {
-                    eprintln!("failed to update the counter: {error}");
-                }
-            }
-        })?;
+    let count = scope.signal(0_u32);
+    let label_ref = scope.node_ref::<TextBlock>();
+    let input_ref = scope.node_ref::<TextBox>();
 
-    let root = StackPanel::new()?
-        .orientation(Orientation::Vertical)?
-        .horizontal_alignment(HorizontalAlignment::Center)?
-        .vertical_alignment(VerticalAlignment::Center)?
-        .margin(Thickness::uniform(24.0))?
-        .child(
-            TextBlock::new()?
-                .text("Standalone Rustolonia app")?
-                .font_size(20.0)?,
-        )?
-        .child(label.clone())?
-        .child(input.clone())?
-        .child(button)?;
+    let root = rsx! {
+        StackPanel {
+            orientation: Orientation::Vertical,
+            horizontal_alignment: HorizontalAlignment::Center,
+            vertical_alignment: VerticalAlignment::Center,
+            margin: 24.0,
+            TextBlock {
+                font_size: 20.0,
+                "Standalone Rustolonia app"
+            }
+            TextBlock {
+                ref: label_ref,
+                font_size: 28.0,
+                text: fmt!("Taps: {}", count.get()),
+            }
+            TextBox {
+                ref: input_ref,
+                text: "Editable from Rust",
+            }
+            Button {
+                on_click: move |_| count.update(|c| *c += 1),
+                "Tap me"
+            }
+        }
+    }
+    .build(scope)?;
 
     #[cfg(feature = "smoke")]
-    let root = {
+    {
         let dispatcher = std::ops::Deref::deref(scope).clone();
         let root_for_test = root.clone();
-        let label = label.clone();
-        let input = input.clone();
+        let label = label_ref.get().expect("label built");
+        let input = input_ref.get().expect("input built");
         let mut ran = false;
         root.on_loaded(scope, move |()| {
             if std::mem::replace(&mut ran, true) {
@@ -56,29 +56,19 @@ fn build_view(scope: &AppScope) -> Result<StackPanel> {
                     if !root.is_loaded().map_err(|error| error.to_string())? {
                         return Err("the root view was not loaded".into());
                     }
-                    let check_box = rustolonia::CheckBox::new()
-                        .and_then(|control| control.checked(Some(true)))
-                        .map_err(|error| error.to_string())?;
-                    if check_box
-                        .get_is_checked()
-                        .map_err(|error| error.to_string())?
-                        != Some(true)
-                    {
+                    let check_box = rustolonia::CheckBox::new().map_err(|e| e.to_string())?;
+                    check_box.set_checked(Some(true)).map_err(|e| e.to_string())?;
+                    if check_box.is_checked().map_err(|error| error.to_string())? != Some(true) {
                         return Err("check box round trip failed".into());
                     }
-                    let slider = rustolonia::Slider::new()
-                        .and_then(|control| control.value(42.0))
-                        .map_err(|error| error.to_string())?;
-                    if slider.get_value().map_err(|error| error.to_string())? != 42.0 {
+                    let slider = rustolonia::Slider::new().map_err(|e| e.to_string())?;
+                    slider.set_value(42.0).map_err(|e| e.to_string())?;
+                    if slider.value().map_err(|error| error.to_string())? != 42.0 {
                         return Err("slider round trip failed".into());
                     }
                     rustolonia::ComboBox::new().map_err(|error| error.to_string())?;
                     rustolonia::Grid::new().map_err(|error| error.to_string())?;
-                    if label
-                        .get_text()
-                        .map_err(|error| error.to_string())?
-                        .as_deref()
-                        != Some("Taps: 0")
+                    if label.text().map_err(|error| error.to_string())?.as_deref() != Some("Taps: 0")
                     {
                         return Err("unexpected initial label".into());
                     }
@@ -86,7 +76,7 @@ fn build_view(scope: &AppScope) -> Result<StackPanel> {
                         .set_text("Verified from Rust")
                         .map_err(|error| error.to_string())?;
                     if input
-                        .get_text()
+                        .text()
                         .map_err(|error| error.to_string())?
                         .as_deref()
                         != Some("Verified from Rust")
@@ -102,8 +92,8 @@ fn build_view(scope: &AppScope) -> Result<StackPanel> {
             }) {
                 write_smoke_result(Err(format!("failed to post the Rust callback: {error}")));
             }
-        })?
-    };
+        })?;
+    }
 
     Ok(root)
 }

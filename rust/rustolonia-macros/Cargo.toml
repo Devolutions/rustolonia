@@ -1,0 +1,15 @@
+[package]
+name = "rustolonia-macros"
+version = "12.1.6"
+edition = "2021"
+license = "MIT"
+description = "Procedural macros (rsx!, #[component], color!, tracks!, #[derive(Lens)]) for Rustolonia"
+repository = "https://github.com/Devolutions/rustolonia"
+readme = "README.md"
+rust-version = "1.88"
+keywords = ["avalonia", "gui", "ui", "macros", "rsx"]
+categories = ["gui", "development-tools::procedural-macro-helpers"]
+include = ["/src/**", "/README.md", "/LICENSE"]
+
+[lib]
+proc-macro = true

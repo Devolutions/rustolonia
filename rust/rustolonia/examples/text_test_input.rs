@@ -1,56 +1,50 @@
 use rustolonia::{
-    App, Button, Dock, DockPanel, Orientation, ScrollViewer, StackPanel, TextBlock, TextBox, Window,
+    rsx, App, Button, Dock, DockPanel, Orientation, Result, ScrollViewer, StackPanel, TextBlock,
+    TextBox, Window,
 };
 
-fn main() -> rustolonia::Result<()> {
+fn main() -> Result<()> {
     App::load_from_env()?.run(|scope| {
-        let preview = TextBlock::new()?.text("Hello!")?;
-        let preview_for_handler = preview.clone();
-
-        let editor = TextBox::new()?
-            .text("Hello!")?
-            .placeholder_text("Text to preview")?;
-        let editor_for_handler = editor.clone();
-        let editor_for_window = editor.clone();
-        let editor = editor.on_text_changed(scope, move |_| {
-            let text = editor_for_handler
-                .get_text()
-                .expect("failed to read edited text")
-                .unwrap_or_default();
-            preview_for_handler
-                .set_text(text)
-                .expect("failed to update text preview");
-        })?;
-
+        let text = scope.signal(String::from("Hello!"));
         let child_scope = scope.clone();
-        let new_window = Button::new()?
-            .content(Some(&TextBlock::new()?.text("+")?))?
-            .on_click(scope, move |_| {
-                let text = editor_for_window
-                    .get_text()
-                    .expect("failed to read edited text")
-                    .unwrap_or_default();
-                Window::new()
-                    .and_then(|window| window.title("Text Test App"))
-                    .and_then(|window| window.content(Some(&TextBlock::new()?.text(text)?)))
-                    .and_then(|window| child_scope.mount(window))
-                    .expect("failed to open text preview window");
-            })?;
 
-        let toolbar = StackPanel::new()?
-            .orientation(Orientation::Horizontal)?
-            .spacing(8.0)?
-            .child(TextBlock::new()?.text("Text:")?)?
-            .child(editor)?
-            .child(new_window)?;
-        DockPanel::set_dock(&toolbar, Dock::Top)?;
-
-        scope.mount(
-            Window::new()?.title("Text Test App")?.content(Some(
-                &DockPanel::new()?
-                    .child(toolbar)?
-                    .child(ScrollViewer::new()?.content(Some(&preview))?)?,
-            ))?,
-        )
+        scope.mount_view(rsx! {
+            Window {
+                title: "Text Test App",
+                DockPanel {
+                    StackPanel {
+                        dock_panel_dock: Dock::Top,
+                        orientation: Orientation::Horizontal,
+                        spacing: 8.0,
+                        margin: 8.0,
+                        TextBlock { "Text:" }
+                        TextBox {
+                            placeholder_text: "Text to preview",
+                            text: text.two_way(),
+                        }
+                        Button {
+                            on_click: move |_| -> Result<()> {
+                                let snapshot = text.get_untracked();
+                                child_scope.mount_view(rsx! {
+                                    Window {
+                                        title: "Text Test App",
+                                        TextBlock { margin: 16.0, text: snapshot }
+                                    }
+                                })?;
+                                Ok(())
+                            },
+                            "+"
+                        }
+                    }
+                    ScrollViewer {
+                        TextBlock {
+                            margin: 8.0,
+                            text: text,
+                        }
+                    }
+                }
+            }
+        })?;
+        Ok(())
     })
 }

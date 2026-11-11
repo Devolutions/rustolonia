@@ -59,7 +59,7 @@ public class ViewModelTrayEmitterTests
             ViewModelSourceEmitter.EmitRust(ir),
             StringComparison.Ordinal);
         Assert.Contains(
-            "pub fn mount_notify(scope: &crate::AppScope, model: impl ShellViewModel) -> crate::Result<()> { scope.mount_dynamic_tray(3, ShellViewModelDispatch { model }) }",
+            "pub fn mount_notify(scope: &::rustolonia::AppScope, model: impl ShellViewModel) -> ::rustolonia::Result<()> { scope.mount_dynamic_tray(3, ShellViewModelDispatch { model }) }",
             ViewModelSourceEmitter.EmitRust(ir, externalConsumer: true),
             StringComparison.Ordinal);
     }
@@ -74,7 +74,7 @@ public class ViewModelTrayEmitterTests
         };
 
         Assert.Contains(
-            "pub fn mount_main_window_hidden(scope: &crate::AppScope, model: impl ShellViewModel) -> crate::Result<()> { scope.mount_dynamic_view_model_hidden(1, ShellViewModelDispatch { model }).map(drop) }",
+            "pub fn mount_main_window_hidden(scope: &::rustolonia::AppScope, model: impl ShellViewModel) -> ::rustolonia::Result<()> { scope.mount_dynamic_view_model_hidden(1, ShellViewModelDispatch { model }).map(drop) }",
             ViewModelSourceEmitter.EmitRust(ir, externalConsumer: true),
             StringComparison.Ordinal);
     }

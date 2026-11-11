@@ -11,18 +11,13 @@ specifications.
 The native ownership contract and the MicroCom-versus-handle-table decision
 are documented in [OWNERSHIP.md](OWNERSHIP.md).
 Geometry value types (`Thickness`, `CornerRadius`, `Size`, `Point`, `Rect`,
-`Color`) cross the ABI as blittable structs, an `IBrush` crosses as a read-only
-solid-colour `IAvnBrush`, and the projected layout members (`Margin`, `Padding`,
-alignments, min/max sizes, `IsVisible`, `Opacity`, `Name`, `CanResize`,
-`WindowState`), chrome members (`Background`, `BorderBrush`,
-`BorderThickness`, `CornerRadius`, `Foreground`, `FontSize`, `FontWeight`,
-`TextAlignment`) and control members (`ClickMode`, `IsDefault`, `IsCancel`,
-`IsPressed`, `IsThreeState`, content alignments, `SelectionMode`, `SelectAll`,
-`UnselectAll`, `IsDropDownOpen`, `IsEditable`, `MaxDropDownHeight`) are
-documented in [MARSHALLING.md](MARSHALLING.md). `Grid.ColumnDefinitions` and
-`Grid.RowDefinitions` cross as the same comma-separated length list AXAML uses —
-`grid.set_column_definitions("*,Auto,120")?` — which is normalising rather than
-byte-preserving and carries only each track's length; see
+`Color`) cross the ABI as blittable structs, chrome brushes (`Background`,
+`BorderBrush`, `Foreground`, `Fill`, `Stroke`, `PaneBackground`) cross as
+`Paint` spanning solid `IAvnBrush` and linear/radial gradient brushes, and the
+projected layout, chrome, and control members are documented in
+[MARSHALLING.md](MARSHALLING.md). `Grid.ColumnDefinitions` and
+`Grid.RowDefinitions` accept typed [`GridTracks`] (`tracks![auto, 1*, 240px]`)
+or AXAML track strings and return `GridTracks`; see
 [Grid track definitions](MARSHALLING.md#grid-track-definitions).
 `Image`, `TabControl`/`TabItem`, `TreeView`/`TreeViewItem` and the `ToolTip`
 attached properties are projected too. `Image.Source` crosses as the **source
@@ -37,19 +32,17 @@ only; a control-valued tip reads back as `null`. See
 `Popup`, `TrayIcon`, `WindowNotificationManager`, `NotificationCard` and
 `RefreshContainer` are projected too.
 Shapes (`Rectangle`, `Ellipse`, `Line`, `Path`, `Polygon`, `Polyline`, `Arc`,
-`Sector`) are projected too. Fill/Stroke are brushes; `Path.Data` is path markup.
-`LinearGradientBrush` and `RadialGradientBrush` are projected as additive,
-directly-constructible safe types built on the `IAvnControlFactory` creators
-`create_linear_gradient_brush`/`create_radial_gradient_brush`; a `Paint` enum
-spans solid and gradient shapes. Existing `Brush`-typed properties
-(`Background`, `BorderBrush`, `Foreground`) are unchanged and stay solid-only;
-see [Gradient brushes](MARSHALLING.md#gradient-brushes).
+`Sector`) are projected too. Fill/Stroke accept `Paint` (solid or gradient);
+`Path.Data` is path markup.
+`LinearGradientBrush` and `RadialGradientBrush` are projected as directly
+constructible safe types built on `IAvnControlFactory`, unified with solid
+`Brush` through `Paint`; see [Gradient brushes](MARSHALLING.md#gradient-brushes).
 `Carousel`, `TransitioningContentControl`, `Label`, `Separator`, `GroupBox`,
 `UserControl` and `LayoutTransformControl` are projected too.
-`Calendar` and `CalendarDatePicker` are projected too. Calendar days cross as
-`yyyy-MM-dd`. `NumericUpDown`, `AutoCompleteBox`, `MaskedTextBox`,
-`SelectableTextBlock` and `ButtonSpinner` are projected too. Decimals cross as
-invariant strings.
+`Calendar` and `CalendarDatePicker` are projected too, using typed `CivilDate`
+values (`yyyy-MM-dd` over the ABI). `NumericUpDown`, `AutoCompleteBox`,
+`MaskedTextBox`, `SelectableTextBlock` and `ButtonSpinner` are projected too,
+using typed fixed-point `Decimal` values.
 `RepeatButton`, `DropDownButton`, `SplitButton`, `ToggleSplitButton`,
 `HyperlinkButton`, `ContextMenu` and `MenuFlyout` are projected too.
 `HyperlinkButton.NavigateUri` is a URI string; `SplitButton.Flyout` is not.
@@ -58,13 +51,10 @@ invariant strings.
 `Align*WithPanel` bools cross as attached properties; object-valued `Above`/`LeftOf`
 stay gaps. `FlexPanel` is newer than the pinned Avalonia 12.1.x line.
 `Flyout`, the imperative `Menu`/`MenuItem` pair, `SplitView`, `DatePicker` and
-`TimePicker` are projected too. A flyout is an `AvaloniaObject` rather than a
-`Control`, and it reaches a control through `flyout.show_at_with_control(&button)?`
-rather than through an attached property — a COM-valued attached property has no
-ABI shape yet. `SelectedDate` and `SelectedTime` cross as **ISO-8601 strings**;
-`MenuItem.Command`, `HotKey` and `InputGesture` do not cross at all. See
-[Flyouts](MARSHALLING.md#flyouts), [Menus as controls](MARSHALLING.md#menus-as-controls),
-[SplitView](MARSHALLING.md#splitview) and [Dates and times](MARSHALLING.md#dates-and-times).
+`TimePicker` are projected too (`SelectedDate` / `SelectedTime` use `CivilDate`
+and `CivilTime`). Pure-Rust `StyleSheet` rules (`Style::select("Button.accent:pointerover")`),
+window `Shortcut` key bindings, and reactive `MenuBar` builders are also
+provided directly in `rustolonia`.
 The executor-neutral completion ABI and clipboard integration are documented
 in [ASYNC.md](ASYNC.md).
 Desktop file integration (pickers, drag/drop, "open with", file associations)

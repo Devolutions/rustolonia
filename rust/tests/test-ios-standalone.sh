@@ -36,8 +36,8 @@ trap 'rm -rf "$scratch"' EXIT
 work="$scratch/external consumer"
 mkdir -p "$work/crates" "$work/app/src"
 cargo package --locked --allow-dirty --no-verify --manifest-path "$root/rust/Cargo.toml" \
-    -p rustolonia-sys -p rustolonia --target-dir "$work/package-target"
-for crate in rustolonia-sys rustolonia; do
+    -p rustolonia-sys -p rustolonia-macros -p rustolonia --target-dir "$work/package-target"
+for crate in rustolonia-sys rustolonia-macros rustolonia; do
     tar -xzf "$work/package-target/package/$crate-$version.crate" -C "$work/crates"
 done
 
@@ -74,6 +74,7 @@ rustolonia = { version = "=$version", default-features = false }
 
 [patch.crates-io]
 rustolonia = { path = "../crates/rustolonia-$version" }
+rustolonia-macros = { path = "../crates/rustolonia-macros-$version" }
 rustolonia-sys = { path = "../crates/rustolonia-sys-$version" }
 
 [workspace]

@@ -229,24 +229,16 @@ fn classify(
     Ok(result)
 }
 
-fn definition_count(definitions: &str) -> usize {
-    if definitions.is_empty() {
-        0
-    } else {
-        definitions.split(',').count()
-    }
-}
-
 fn position(value: i32, name: &str) -> Result<usize> {
     usize::try_from(value)
         .map_err(|_| Error::Binding(format!("FormGrid {name} must not be negative")))
 }
 
 fn item(control: &Control, grid_visible: bool) -> Result<Item> {
-    let row = position(Grid::get_row(control)?, "row")?;
-    let column = position(Grid::get_column(control)?, "column")?;
-    let row_span = position(Grid::get_row_span(control)?, "row span")?;
-    let column_span = position(Grid::get_column_span(control)?, "column span")?;
+    let row = position(Grid::row(control)?, "row")?;
+    let column = position(Grid::column(control)?, "column")?;
+    let row_span = position(Grid::row_span(control)?, "row span")?;
+    let column_span = position(Grid::column_span(control)?, "column span")?;
     if row_span == 0 || column_span == 0 {
         return Err(Error::Binding("FormGrid spans must be positive".into()));
     }
@@ -265,7 +257,7 @@ fn item(control: &Control, grid_visible: bool) -> Result<Item> {
         column,
         end_row,
         end_column,
-        visible: grid_visible && control.get_is_visible()?,
+        visible: grid_visible && control.is_visible()?,
         label,
         classes: Classes::read(control)?,
     })
@@ -308,8 +300,8 @@ impl FormGridState {
 
         let classes = classify(
             &items,
-            definition_count(&grid.get_row_definitions()?),
-            definition_count(&grid.get_column_definitions()?),
+            grid.row_definitions()?.len(),
+            grid.column_definitions()?.len(),
             options.treat_empty_cells_as_controls,
         )?;
         for (id, classes) in current.into_iter().zip(classes) {
@@ -365,7 +357,7 @@ impl TrackedChild {
             ChildStyle::Other
         };
         Ok(Self {
-            original_margin: control.get_margin()?,
+            original_margin: control.margin()?,
             control,
             managed_margin: false,
             style,
@@ -452,24 +444,24 @@ impl ChildStyle {
             || <Control as Downcast<TextBox>>::is_instance(control)
         {
             return Ok(Self::Input {
-                height: control.get_height()?,
-                min_height: control.get_min_height()?,
-                alignment: control.get_vertical_alignment()?,
+                height: control.height()?,
+                min_height: control.min_height()?,
+                alignment: control.vertical_alignment()?,
             });
         }
         if let Some(label) = <Control as Downcast<Label>>::downcast(control) {
             return Ok(Self::Label {
-                padding: label.get_padding()?,
-                max_height: control.get_max_height()?,
-                alignment: control.get_vertical_alignment()?,
-                content_alignment: label.get_vertical_content_alignment()?,
+                padding: label.padding()?,
+                max_height: control.max_height()?,
+                alignment: control.vertical_alignment()?,
+                content_alignment: label.vertical_content_alignment()?,
                 label,
             });
         }
         if let Some(text) = <Control as Downcast<TextBlock>>::downcast(control) {
             return Ok(Self::Text {
-                padding: text.get_padding()?,
-                max_height: control.get_max_height()?,
+                padding: text.padding()?,
+                max_height: control.max_height()?,
                 text,
             });
         }
@@ -480,24 +472,24 @@ impl ChildStyle {
         match self {
             Self::Input { .. } => {
                 set_height(control, compact_height)?;
-                if control.get_min_height()? != compact_height {
+                if control.min_height()? != compact_height {
                     control.set_min_height(compact_height)?;
                 }
                 set_alignment(control, VerticalAlignment::Top)?;
             }
             Self::Text { text, .. } => {
                 set_max_height(control, compact_height)?;
-                if text.get_padding()? != Thickness::uniform(3.0) {
+                if text.padding()? != Thickness::uniform(3.0) {
                     text.set_padding(Thickness::uniform(3.0))?;
                 }
             }
             Self::Label { label, .. } => {
                 set_max_height(control, compact_height)?;
                 set_alignment(control, VerticalAlignment::Top)?;
-                if label.get_padding()? != Thickness::symmetric(3.0, 0.0) {
+                if label.padding()? != Thickness::symmetric(3.0, 0.0) {
                     label.set_padding(Thickness::symmetric(3.0, 0.0))?;
                 }
-                if label.get_vertical_content_alignment()? != VerticalAlignment::Center {
+                if label.vertical_content_alignment()? != VerticalAlignment::Center {
                     label.set_vertical_content_alignment(VerticalAlignment::Center)?;
                 }
             }
@@ -514,7 +506,7 @@ impl ChildStyle {
                 alignment,
             } => {
                 set_height(control, *height)?;
-                if control.get_min_height()? != *min_height {
+                if control.min_height()? != *min_height {
                     control.set_min_height(*min_height)?;
                 }
                 set_alignment(control, *alignment)?;
@@ -525,7 +517,7 @@ impl ChildStyle {
                 max_height,
             } => {
                 set_max_height(control, *max_height)?;
-                if text.get_padding()? != *padding {
+                if text.padding()? != *padding {
                     text.set_padding(*padding)?;
                 }
             }
@@ -538,10 +530,10 @@ impl ChildStyle {
             } => {
                 set_max_height(control, *max_height)?;
                 set_alignment(control, *alignment)?;
-                if label.get_padding()? != *padding {
+                if label.padding()? != *padding {
                     label.set_padding(*padding)?;
                 }
-                if label.get_vertical_content_alignment()? != *content_alignment {
+                if label.vertical_content_alignment()? != *content_alignment {
                     label.set_vertical_content_alignment(*content_alignment)?;
                 }
             }
@@ -552,7 +544,7 @@ impl ChildStyle {
 }
 
 fn set_margin(control: &Control, value: Thickness) -> Result<()> {
-    if control.get_margin()? != value {
+    if control.margin()? != value {
         control.set_margin(value)?;
     }
     Ok(())
@@ -563,21 +555,21 @@ fn same_float(left: f64, right: f64) -> bool {
 }
 
 fn set_height(control: &Control, value: f64) -> Result<()> {
-    if !same_float(control.get_height()?, value) {
+    if !same_float(control.height()?, value) {
         control.set_height(value)?;
     }
     Ok(())
 }
 
 fn set_max_height(control: &Control, value: f64) -> Result<()> {
-    if !same_float(control.get_max_height()?, value) {
+    if !same_float(control.max_height()?, value) {
         control.set_max_height(value)?;
     }
     Ok(())
 }
 
 fn set_alignment(control: &Control, value: VerticalAlignment) -> Result<()> {
-    if control.get_vertical_alignment()? != value {
+    if control.vertical_alignment()? != value {
         control.set_vertical_alignment(value)?;
     }
     Ok(())

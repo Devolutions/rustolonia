@@ -172,4 +172,20 @@ public sealed unsafe partial class AvnObjectList : IAvnVariantList, IAvnSelected
             return Marshal.GetHRForException(e);
         }
     }
+
+    public int Insert(int index, AvnVariant value)
+    {
+        try
+        {
+            var shadow = Materialize();
+            if (index < 0 || index > shadow.Count)
+                return unchecked((int)0x80070057);
+            shadow.Insert(index, value.ToObject());
+            return HResults.S_OK;
+        }
+        catch (Exception e)
+        {
+            return Marshal.GetHRForException(e);
+        }
+    }
 }

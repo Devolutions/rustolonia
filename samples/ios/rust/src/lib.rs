@@ -1,71 +1,58 @@
 #[cfg(feature = "smoke")]
 use rustolonia::{App, HostExports};
 use rustolonia::{
-    AppScope, Button, HorizontalAlignment, Orientation, Result, StackPanel, TextBlock, Thickness,
+    rsx, AppScope, Button, HorizontalAlignment, Key, Orientation, Result, StackPanel, TextBlock,
     VerticalAlignment,
 };
-use std::sync::atomic::{AtomicU32, Ordering};
-use std::sync::Arc;
 
 fn build_view(scope: &AppScope) -> Result<StackPanel> {
-    let count = Arc::new(AtomicU32::new(0));
-    let label = TextBlock::new()?
-        .text("Preparing...")?
-        .font_size(28.0)?
-        .horizontal_alignment(HorizontalAlignment::Center)?;
-    let button = Button::new()?
-        .content(Some(&TextBlock::new()?.text("Tap me")?))?
-        .horizontal_alignment(HorizontalAlignment::Center)?;
-    let button_handle = button.clone();
-    let button = button.on_click(scope, {
-        let label = label.clone();
-        let count = count.clone();
-        move |()| {
-            let value = count.fetch_add(1, Ordering::Relaxed) + 1;
-            let update = label.set_text(format!("Taps: {value}")).and_then(|_| {
-                let caption = TextBlock::new()?.text("Tap again")?;
-                button_handle.set_content(Some(&caption))
-            });
-            if let Err(error) = update {
-                eprintln!("failed to update the counter: {error}");
-            }
-        }
-    })?;
-    let button = button.on_key_down(scope, {
-        let label = label.clone();
-        move |event| {
-            if matches!(event.key_symbol.as_deref(), Some("r" | "R")) {
-                count.store(0, Ordering::Relaxed);
-                event.handled = true;
-                if let Err(error) = label.set_text("Taps: 0") {
-                    eprintln!("failed to reset the counter: {error}");
-                }
-            }
-        }
-    })?;
+    let count = scope.signal(0_u32);
+    let status = scope.signal(String::from("Preparing..."));
+    let caption = scope.signal(String::from("Tap me"));
 
-    let ready_label = label.clone();
-    let view = StackPanel::new()?
-        .orientation(Orientation::Vertical)?
-        .horizontal_alignment(HorizontalAlignment::Center)?
-        .vertical_alignment(VerticalAlignment::Center)?
-        .margin(Thickness::uniform(24.0))?
-        .child(
-            TextBlock::new()?
-                .text("Hello from Rustolonia on iOS")?
-                .font_size(20.0)?,
-        )?
-        .child(label)?
-        .child(button)?
-        .child(
-            TextBlock::new()?
-                .text("Hardware keyboard: R resets")?
-                .font_size(14.0)?
-                .horizontal_alignment(HorizontalAlignment::Center)?,
-        )?;
-    scope.post(move || {
-        if let Err(error) = ready_label.set_text("Taps: 0") {
-            eprintln!("failed to initialize the counter: {error}");
+    let view = rsx! {
+        StackPanel {
+            orientation: Orientation::Vertical,
+            horizontal_alignment: HorizontalAlignment::Center,
+            vertical_alignment: VerticalAlignment::Center,
+            margin: 24.0,
+            TextBlock {
+                font_size: 20.0,
+                "Hello from Rustolonia on iOS"
+            }
+            TextBlock {
+                font_size: 28.0,
+                horizontal_alignment: HorizontalAlignment::Center,
+                text: status,
+            }
+            Button {
+                horizontal_alignment: HorizontalAlignment::Center,
+                on_click: move |_| {
+                    count.update(|c| *c += 1);
+                    status.set(format!("Taps: {}", count.get_untracked()));
+                    caption.set(String::from("Tap again"));
+                },
+                on_key_down: move |event| {
+                    if event.key == Key::R || matches!(event.key_symbol.as_deref(), Some("r" | "R")) {
+                        count.set(0);
+                        event.handled = true;
+                        status.set(String::from("Taps: 0"));
+                    }
+                },
+                TextBlock { text: caption }
+            }
+            TextBlock {
+                font_size: 14.0,
+                horizontal_alignment: HorizontalAlignment::Center,
+                "Hardware keyboard: R resets"
+            }
+        }
+    }
+    .build(scope)?;
+    scope.post({
+        let writer = status.writer(scope);
+        move || {
+            let _ = writer.set(String::from("Taps: 0"));
         }
     })?;
     Ok(view)

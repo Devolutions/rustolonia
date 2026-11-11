@@ -25,7 +25,7 @@ fn a_colour_converts_into_a_solid_brush() {
 
 #[test]
 fn opacity_is_carried_alongside_the_colour() {
-    let brush = Brush::new(Color::new(0x80, 0xAA, 0xBB, 0xCC), 0.25);
+    let brush = Brush::new(Color::rgba(0xAA, 0xBB, 0xCC, 0x80), 0.25);
 
     assert_eq!(brush.opacity, 0.25);
     assert_eq!(sys::AvnColor::from(brush.color).argb, 0x80AA_BBCC);

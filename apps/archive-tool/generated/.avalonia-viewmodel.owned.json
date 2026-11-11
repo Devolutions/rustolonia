@@ -3,7 +3,7 @@
   "files": [
     {
       "path": "generated_view_models.rs",
-      "sha256": "6c5ded6447354792db8434c5ae599106ad8a0311413202653270f934a94d4bb0"
+      "sha256": "37847c447113b1babee9b94dad7e3c808dd56544b875cb4adc102f3d0c7286cf"
     },
     {
       "path": "RustViewRegistry.g.cs",
