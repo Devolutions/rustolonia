@@ -236,6 +236,7 @@ pub fn compile_axaml_to_rust_with_options(
 
     let mut refs = Vec::new();
     let mut bindings = Vec::new();
+    collect_optional_object_bindings(&root, &mut bindings)?;
     let mut handlers = Vec::new();
     let mut state = GenerationState {
         view_stem: view_stem.clone(),
@@ -1654,6 +1655,10 @@ fn format_property_value(
         return format_binding_expr(&parsed, &rust_type, bindings);
     }
 
+    if let Some(converter) = property.string_converter_type_name.as_deref() {
+        return format_string_converted_literal(converter, raw);
+    }
+
     match property.kind.as_str() {
         "StringUtf16" => {
             let literal = raw.strip_prefix("{}").unwrap_or(raw);
@@ -1670,6 +1675,9 @@ fn format_property_value(
         "Point" => format_pair_literal("Point", raw),
         "Vector" => format_pair_literal("Vector", raw),
         "Brush" => format_brush_literal(raw),
+        "I32" if is_flags_property(property, flags_enums) => {
+            format_flags_literal(ir, property.managed_type_name.as_deref().unwrap(), raw)
+        }
         "I32" if is_enum_property(property, flags_enums) => {
             format_enum_literal(ir, property.managed_type_name.as_deref().unwrap(), raw)
         }
@@ -1802,6 +1810,26 @@ fn property_rust_type(
     property: &ProjectedProperty,
     flags_enums: &std::collections::HashSet<&str>,
 ) -> String {
+    if let Some(converter) = property.string_converter_type_name.as_deref() {
+        if let Some(rust_type) = match converter {
+            "Avalonia.Host.Com.AvnColumnDefinitions" | "Avalonia.Host.Com.AvnRowDefinitions" => {
+                Some("rustolonia::GridTracks".to_string())
+            }
+            "Avalonia.Host.Com.AvnCalendarDate" | "Avalonia.Host.Com.AvnDateTimeOffset" => {
+                Some("Option<rustolonia::CivilDate>".to_string())
+            }
+            "Avalonia.Host.Com.AvnCalendarDateValue"
+            | "Avalonia.Host.Com.AvnDateTimeOffsetValue" => {
+                Some("rustolonia::CivilDate".to_string())
+            }
+            "Avalonia.Host.Com.AvnTimeSpan" => Some("Option<rustolonia::CivilTime>".to_string()),
+            "Avalonia.Host.Com.AvnDecimal" => Some("Option<rustolonia::Decimal>".to_string()),
+            "Avalonia.Host.Com.AvnDecimalValue" => Some("rustolonia::Decimal".to_string()),
+            _ => None,
+        } {
+            return rust_type;
+        }
+    }
     match property.kind.as_str() {
         "StringUtf16" => "String".to_string(),
         "Brush" => "Option<rustolonia::Brush>".to_string(),
@@ -1814,7 +1842,10 @@ fn property_rust_type(
             }
         }
         "TimeSpanI64" => "std::time::Duration".to_string(),
-        "I32" if is_enum_property(property, flags_enums) => {
+        "I32"
+            if is_flags_property(property, flags_enums)
+                || is_enum_property(property, flags_enums) =>
+        {
             format!(
                 "rustolonia::{}",
                 simple_name(property.managed_type_name.as_deref().unwrap())
@@ -1903,6 +1934,42 @@ fn register_binding(
             is_signal: true,
             is_copy: true,
         });
+    }
+    Ok(())
+}
+
+fn collect_optional_object_bindings(
+    node: &XmlNode,
+    bindings: &mut Vec<BindingField>,
+) -> Result<(), GenerationError> {
+    for attribute in &node.attributes {
+        let Ok(Some(binding)) = parse_binding_extension(&attribute.value) else {
+            continue;
+        };
+        if !matches!(
+            binding
+                .converter
+                .as_deref()
+                .and_then(BuiltinBoolConverter::from_reference),
+            Some(BuiltinBoolConverter::ObjectIsNotNull | BuiltinBoolConverter::ObjectIsNull)
+        ) {
+            continue;
+        }
+        let field_name = binding_field_name(&binding.path)?;
+        if binding.path.contains('.') {
+            register_value_binding(
+                bindings,
+                &field_name,
+                ANY_OPTION_PATH_TYPE,
+                &binding.path,
+                false,
+            )?;
+        } else {
+            register_binding(bindings, &field_name, ANY_OPTION_TYPE, &binding.path)?;
+        }
+    }
+    for child in &node.children {
+        collect_optional_object_bindings(child, bindings)?;
     }
     Ok(())
 }
@@ -2641,6 +2708,17 @@ fn parse_named_color(name: &str) -> Option<(u8, u8, u8, u8)> {
     }
 }
 
+fn is_flags_property(
+    property: &ProjectedProperty,
+    flags_enums: &std::collections::HashSet<&str>,
+) -> bool {
+    property.kind == "I32"
+        && property
+            .managed_type_name
+            .as_deref()
+            .is_some_and(|name| flags_enums.contains(name))
+}
+
 fn format_enum_literal(
     ir: &ProjectionIr,
     managed_type_name: &str,
@@ -2659,6 +2737,187 @@ fn format_enum_literal(
         )));
     }
     Ok(format!("rustolonia::{}::{}", enum_def.name, trimmed))
+}
+
+fn format_flags_literal(
+    ir: &ProjectionIr,
+    managed_type_name: &str,
+    raw: &str,
+) -> Result<String, GenerationError> {
+    let enum_def = ir
+        .enums
+        .iter()
+        .find(|e| e.full_name == managed_type_name)
+        .ok_or_else(|| GenerationError::Invalid(format!("Unknown enum '{managed_type_name}'")))?;
+    let trimmed = raw.trim();
+    if let Ok(bits) = trimmed.parse::<i32>() {
+        return Ok(format!(
+            "rustolonia::{}::from_bits_retain({bits})",
+            enum_def.name
+        ));
+    }
+    let names = trimmed
+        .split(',')
+        .map(str::trim)
+        .filter(|name| !name.is_empty())
+        .collect::<Vec<_>>();
+    if names.is_empty() {
+        return Ok(format!("rustolonia::{}::NONE", enum_def.name));
+    }
+    let mut constants = Vec::with_capacity(names.len());
+    for name in names {
+        let Some(value) = enum_def
+            .values
+            .iter()
+            .find(|value| value.name.eq_ignore_ascii_case(name))
+        else {
+            return Err(GenerationError::Invalid(format!(
+                "Invalid flag '{name}' for enum '{}'",
+                enum_def.name
+            )));
+        };
+        constants.push(format!(
+            "rustolonia::{}::{}",
+            enum_def.name,
+            to_snake(&value.name).to_ascii_uppercase()
+        ));
+    }
+    Ok(constants.join(" | "))
+}
+
+fn format_string_converted_literal(converter: &str, raw: &str) -> Result<String, GenerationError> {
+    let value = raw.trim();
+    match converter {
+        "Avalonia.Host.Com.AvnColumnDefinitions" | "Avalonia.Host.Com.AvnRowDefinitions" => {
+            Ok(format!("rustolonia::tracks![{value:?}]"))
+        }
+        "Avalonia.Host.Com.AvnCalendarDate" | "Avalonia.Host.Com.AvnDateTimeOffset" => {
+            if value.is_empty() {
+                Ok("None".to_string())
+            } else {
+                let (year, month, day) = validate_date_literal(value)?;
+                Ok(format!(
+                    "Some(rustolonia::CivilDate::new({year}, {month}, {day}).expect(\"validated AXAML date\"))"
+                ))
+            }
+        }
+        "Avalonia.Host.Com.AvnCalendarDateValue" | "Avalonia.Host.Com.AvnDateTimeOffsetValue" => {
+            let (year, month, day) = validate_date_literal(value)?;
+            Ok(format!(
+                "rustolonia::CivilDate::new({year}, {month}, {day}).expect(\"validated AXAML date\")"
+            ))
+        }
+        "Avalonia.Host.Com.AvnTimeSpan" => {
+            if value.is_empty() {
+                Ok("None".to_string())
+            } else {
+                let (hour, minute, second) = validate_time_literal(value)?;
+                Ok(format!(
+                    "Some(rustolonia::CivilTime::new({hour}, {minute}, {second}).expect(\"validated AXAML time\"))"
+                ))
+            }
+        }
+        "Avalonia.Host.Com.AvnDecimal" => {
+            if value.is_empty() {
+                Ok("None".to_string())
+            } else {
+                validate_decimal_literal(value)?;
+                Ok(format!(
+                    "Some({value:?}.parse::<rustolonia::Decimal>().expect(\"validated AXAML decimal\"))"
+                ))
+            }
+        }
+        "Avalonia.Host.Com.AvnDecimalValue" => {
+            validate_decimal_literal(value)?;
+            Ok(format!(
+                "{value:?}.parse::<rustolonia::Decimal>().expect(\"validated AXAML decimal\")"
+            ))
+        }
+        _ => Err(GenerationError::Invalid(format!(
+            "Unsupported string converter '{converter}'"
+        ))),
+    }
+}
+
+fn validate_date_literal(value: &str) -> Result<(i32, u8, u8), GenerationError> {
+    let invalid = || {
+        GenerationError::Invalid(format!(
+            "Invalid AXAML date '{value}'; expected a valid YYYY-MM-DD date"
+        ))
+    };
+    if value.len() != 10 || !value.is_ascii() || &value[4..5] != "-" || &value[7..8] != "-" {
+        return Err(invalid());
+    }
+    let year = value[..4].parse::<i32>().map_err(|_| invalid())?;
+    let month = value[5..7].parse::<u8>().map_err(|_| invalid())?;
+    let day = value[8..10].parse::<u8>().map_err(|_| invalid())?;
+    let leap = year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
+    let days = match month {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 if leap => 29,
+        2 => 28,
+        _ => 0,
+    };
+    if day == 0 || day > days {
+        return Err(invalid());
+    }
+    Ok((year, month, day))
+}
+
+fn validate_time_literal(value: &str) -> Result<(u8, u8, u8), GenerationError> {
+    let invalid = || {
+        GenerationError::Invalid(format!(
+            "Invalid AXAML time '{value}'; expected HH:MM or HH:MM:SS"
+        ))
+    };
+    let parts = value.split(':').collect::<Vec<_>>();
+    if !value.is_ascii() || !matches!(parts.len(), 2 | 3) {
+        return Err(invalid());
+    }
+    let hour = parts[0].parse::<u8>().map_err(|_| invalid())?;
+    let minute = parts[1].parse::<u8>().map_err(|_| invalid())?;
+    let second = if parts.len() == 3 {
+        parts[2].parse::<u8>().map_err(|_| invalid())?
+    } else {
+        0
+    };
+    if parts[0].len() != 2
+        || parts[1].len() != 2
+        || parts.get(2).is_some_and(|part| part.len() != 2)
+        || hour >= 24
+        || minute >= 60
+        || second >= 60
+    {
+        return Err(invalid());
+    }
+    Ok((hour, minute, second))
+}
+
+fn validate_decimal_literal(value: &str) -> Result<(), GenerationError> {
+    let invalid = || GenerationError::Invalid(format!("Invalid AXAML decimal '{value}'"));
+    let trimmed = value.trim();
+    let digits = trimmed
+        .strip_prefix('-')
+        .or_else(|| trimmed.strip_prefix('+'))
+        .unwrap_or(trimmed);
+    let (integer, fraction) = digits.split_once('.').unwrap_or((digits, ""));
+    if digits.is_empty()
+        || integer.is_empty()
+        || !integer.bytes().all(|byte| byte.is_ascii_digit())
+        || !fraction.bytes().all(|byte| byte.is_ascii_digit())
+        || fraction.len() > 28
+        || digits.matches('.').count() > 1
+    {
+        return Err(invalid());
+    }
+    let magnitude = format!("{integer}{fraction}")
+        .parse::<u128>()
+        .map_err(|_| invalid())?;
+    if magnitude > 79_228_162_514_264_337_593_543_950_335_u128 {
+        return Err(invalid());
+    }
+    Ok(())
 }
 
 fn format_scalar_literal(kind: &str, raw: &str) -> Result<String, GenerationError> {
@@ -4493,5 +4752,75 @@ mod tests {
             .expect_err("one ControlSlot cannot refer to two hosts")
             .to_string()
             .contains("each ControlSlot needs its own host"));
+    }
+
+    #[test]
+    fn flags_enums_and_string_converted_properties_emit_typed_literals() {
+        let axaml = r#"
+<StackPanel xmlns="https://github.com/avaloniaui">
+  <ListBox SelectionMode="Multiple,AlwaysSelected" />
+  <Grid ColumnDefinitions="*,Auto,120" />
+  <CalendarDatePicker SelectedDate="2024-02-29" />
+  <TimePicker SelectedTime="09:30:15" />
+  <NumericUpDown Value="12.50" />
+</StackPanel>"#;
+        let generated = compile_test_axaml(axaml).expect("typed literals");
+        assert!(generated.contains(
+            "rustolonia::SelectionMode::MULTIPLE | rustolonia::SelectionMode::ALWAYS_SELECTED"
+        ));
+        assert!(generated.contains("rustolonia::tracks![\"*,Auto,120\"]"));
+        assert!(generated.contains("CivilDate::new(2024, 2, 29)"));
+        assert!(generated.contains("CivilTime::new(9, 30, 15)"));
+        assert!(generated.contains("12.50"));
+    }
+
+    #[test]
+    fn optional_string_converter_bindings_are_order_independent() {
+        let cases = [
+            r#"
+<StackPanel xmlns="https://github.com/avaloniaui"
+            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <TextBlock IsVisible="{Binding Name, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+  <TextBlock IsVisible="{Binding Name, Converter={x:Static ObjectConverters.IsNotNull}}" />
+</StackPanel>"#,
+            r#"
+<StackPanel xmlns="https://github.com/avaloniaui"
+            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <TextBlock IsVisible="{Binding Name, Converter={x:Static ObjectConverters.IsNotNull}}" />
+  <TextBlock IsVisible="{Binding Name, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+</StackPanel>"#,
+        ];
+        for axaml in cases {
+            let generated = compile_test_axaml(axaml).expect("compatible optional bindings");
+            assert!(generated.contains("rustolonia::Signal<Option<String>>"));
+            assert!(generated.contains("as_deref().is_some_and"));
+        }
+    }
+
+    #[test]
+    fn brush_paths_bind_to_paint_properties() {
+        let axaml = r#"
+<Border xmlns="https://github.com/avaloniaui"
+        Background="{Binding Item.Background}" />"#;
+        let generated = compile_test_axaml(axaml).expect("brush property path");
+        assert!(generated.contains("PropertyPath<Option<rustolonia::Brush>>"));
+        assert!(generated.contains(".background(bindings.item_background"));
+    }
+
+    #[test]
+    fn rejects_invalid_string_converted_literals() {
+        let invalid_date = r#"
+<CalendarDatePicker xmlns="https://github.com/avaloniaui" SelectedDate="2023-02-29" />"#;
+        assert!(compile_test_axaml(invalid_date)
+            .expect_err("invalid date")
+            .to_string()
+            .contains("Invalid AXAML date"));
+
+        let invalid_decimal = r#"
+<NumericUpDown xmlns="https://github.com/avaloniaui" Value="1.2.3" />"#;
+        assert!(compile_test_axaml(invalid_decimal)
+            .expect_err("invalid decimal")
+            .to_string()
+            .contains("Invalid AXAML decimal"));
     }
 }

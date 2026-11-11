@@ -26,6 +26,12 @@ use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
+#[component]
+fn MutatingComponent(mut value: u32) -> El<StackPanel> {
+    value += 1;
+    StackPanel::el().child(TextBlock::el().text(value.to_string()))
+}
+
 #[test]
 fn geometry_and_color_ergonomic_conversions_match_constructors() {
     assert_eq!(Thickness::from(8.0), Thickness::uniform(8.0));
@@ -111,6 +117,11 @@ fn geometry_and_color_ergonomic_conversions_match_constructors() {
 
     let opt_brush: Option<Brush> = (0x10_u8, 0x20_u8, 0x30_u8).into_value();
     assert_eq!(opt_brush, Some(Brush::solid(Color::rgb(0x10, 0x20, 0x30))));
+}
+
+#[test]
+fn component_preserves_mutable_function_parameters() {
+    let _element = MutatingComponent::el().value(1).into_el();
 }
 
 #[test]

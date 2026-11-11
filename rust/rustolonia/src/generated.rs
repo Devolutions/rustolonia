@@ -14407,9 +14407,9 @@ impl crate::view::El<Canvas> {
         })
     }
     pub fn child(self, value: impl crate::view::IntoChildEl + 'static) -> Self {
-        self.with_op(move |scope, control| {
+        self.with_panel_child_op(move |scope, control, slot| {
             let built = value.into_child_el().build(scope)?;
-            control.children()?.add(built)
+            slot.mount(control, &built)
         })
     }
     pub fn children_iter<I, C>(mut self, children: I) -> Self
@@ -35107,9 +35107,9 @@ impl crate::view::El<DockPanel> {
         })
     }
     pub fn child(self, value: impl crate::view::IntoChildEl + 'static) -> Self {
-        self.with_op(move |scope, control| {
+        self.with_panel_child_op(move |scope, control, slot| {
             let built = value.into_child_el().build(scope)?;
-            control.children()?.add(built)
+            slot.mount(control, &built)
         })
     }
     pub fn children_iter<I, C>(mut self, children: I) -> Self
@@ -39375,16 +39375,16 @@ impl Grid {
         let raw = unsafe { sys::take_utf16(self.raw.get_column_definitions()?).ok_or(crate::Error::Abi(sys::Error(sys::E_POINTER)))? };
         raw.parse()
     }
-    pub fn set_column_definitions(&self, value: impl crate::view::IntoValue<crate::GridTracks>) -> Result<()> {
-        let value: Vec<u16> = value.into_value().to_string().encode_utf16().chain(Some(0)).collect();
+    pub fn set_column_definitions(&self, value: impl crate::view::TryIntoGridTracks) -> Result<()> {
+        let value: Vec<u16> = crate::view::TryIntoGridTracks::try_into_grid_tracks(&value)?.to_string().encode_utf16().chain(Some(0)).collect();
         Ok(self.raw.set_column_definitions(&value)?)
     }
     pub fn row_definitions(&self) -> Result<crate::GridTracks> {
         let raw = unsafe { sys::take_utf16(self.raw.get_row_definitions()?).ok_or(crate::Error::Abi(sys::Error(sys::E_POINTER)))? };
         raw.parse()
     }
-    pub fn set_row_definitions(&self, value: impl crate::view::IntoValue<crate::GridTracks>) -> Result<()> {
-        let value: Vec<u16> = value.into_value().to_string().encode_utf16().chain(Some(0)).collect();
+    pub fn set_row_definitions(&self, value: impl crate::view::TryIntoGridTracks) -> Result<()> {
+        let value: Vec<u16> = crate::view::TryIntoGridTracks::try_into_grid_tracks(&value)?.to_string().encode_utf16().chain(Some(0)).collect();
         Ok(self.raw.set_row_definitions(&value)?)
     }
     pub fn update_layout(&self) -> Result<()> { Ok(self.raw.update_layout()?) }
@@ -39980,9 +39980,9 @@ impl crate::view::El<Grid> {
         })
     }
     pub fn child(self, value: impl crate::view::IntoChildEl + 'static) -> Self {
-        self.with_op(move |scope, control| {
+        self.with_panel_child_op(move |scope, control, slot| {
             let built = value.into_child_el().build(scope)?;
-            control.children()?.add(built)
+            slot.mount(control, &built)
         })
     }
     pub fn children_iter<I, C>(mut self, children: I) -> Self
@@ -65889,9 +65889,9 @@ impl crate::view::El<Panel> {
         })
     }
     pub fn child(self, value: impl crate::view::IntoChildEl + 'static) -> Self {
-        self.with_op(move |scope, control| {
+        self.with_panel_child_op(move |scope, control, slot| {
             let built = value.into_child_el().build(scope)?;
-            control.children()?.add(built)
+            slot.mount(control, &built)
         })
     }
     pub fn children_iter<I, C>(mut self, children: I) -> Self
@@ -82759,9 +82759,9 @@ impl crate::view::El<UniformGrid> {
         })
     }
     pub fn child(self, value: impl crate::view::IntoChildEl + 'static) -> Self {
-        self.with_op(move |scope, control| {
+        self.with_panel_child_op(move |scope, control, slot| {
             let built = value.into_child_el().build(scope)?;
-            control.children()?.add(built)
+            slot.mount(control, &built)
         })
     }
     pub fn children_iter<I, C>(mut self, children: I) -> Self
@@ -88617,9 +88617,9 @@ impl crate::view::El<RelativePanel> {
         })
     }
     pub fn child(self, value: impl crate::view::IntoChildEl + 'static) -> Self {
-        self.with_op(move |scope, control| {
+        self.with_panel_child_op(move |scope, control, slot| {
             let built = value.into_child_el().build(scope)?;
-            control.children()?.add(built)
+            slot.mount(control, &built)
         })
     }
     pub fn children_iter<I, C>(mut self, children: I) -> Self
@@ -112308,9 +112308,9 @@ impl crate::view::El<StackPanel> {
         })
     }
     pub fn child(self, value: impl crate::view::IntoChildEl + 'static) -> Self {
-        self.with_op(move |scope, control| {
+        self.with_panel_child_op(move |scope, control, slot| {
             let built = value.into_child_el().build(scope)?;
-            control.children()?.add(built)
+            slot.mount(control, &built)
         })
     }
     pub fn children_iter<I, C>(mut self, children: I) -> Self
@@ -140857,9 +140857,9 @@ impl crate::view::El<WrapPanel> {
         })
     }
     pub fn child(self, value: impl crate::view::IntoChildEl + 'static) -> Self {
-        self.with_op(move |scope, control| {
+        self.with_panel_child_op(move |scope, control, slot| {
             let built = value.into_child_el().build(scope)?;
-            control.children()?.add(built)
+            slot.mount(control, &built)
         })
     }
     pub fn children_iter<I, C>(mut self, children: I) -> Self

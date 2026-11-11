@@ -4,6 +4,7 @@ use proc_macro::{Delimiter, Span, TokenStream, TokenTree};
 struct ComponentParam {
     name: String,
     ty_src: String,
+    fn_param_src: String,
     default_kind: DefaultKind,
     is_children_vec: bool,
 }
@@ -134,7 +135,7 @@ pub fn expand_component(attr: TokenStream, item: TokenStream) -> Result<TokenStr
     let impl_fn_name = format!("__rustolonia_component_{}", to_snake_case(&comp_name));
     let fn_params = params
         .iter()
-        .map(|p| format!("{}: {}", p.name, p.ty_src))
+        .map(|p| p.fn_param_src.clone())
         .collect::<Vec<_>>()
         .join(", ");
 
@@ -301,9 +302,10 @@ fn parse_component_params(stream: TokenStream) -> Result<Vec<ComponentParam>, Ma
         if i >= tokens.len() {
             break;
         }
-        // Optional `mut` before param ident (strip `mut` for struct field, keep simple)
+        let mut is_mut = false;
         if let TokenTree::Ident(id) = &tokens[i] {
             if id.to_string() == "mut" {
+                is_mut = true;
                 i += 1;
             }
         }
@@ -343,10 +345,17 @@ fn parse_component_params(stream: TokenStream) -> Result<Vec<ComponentParam>, Ma
             .cloned()
             .collect::<TokenStream>()
             .to_string();
+        let fn_param_src = format!("{}{}: {}", if is_mut { "mut " } else { "" }, name, ty_src);
         let is_children_vec = name == "children";
         let is_option = is_option_type(&ty_tokens);
 
         let default_kind = match attr_default {
+            Some(DefaultKind::OptionNone) if !is_option => {
+                return Err(MacroError::new(
+                    param_ident.span(),
+                    "`#[prop(optional)]` requires an `Option<T>` component parameter",
+                ));
+            }
             Some(kind) => kind,
             None if is_option => DefaultKind::OptionNone,
             None => DefaultKind::Required,
@@ -355,6 +364,7 @@ fn parse_component_params(stream: TokenStream) -> Result<Vec<ComponentParam>, Ma
         out.push(ComponentParam {
             name,
             ty_src,
+            fn_param_src,
             default_kind,
             is_children_vec,
         });
@@ -409,6 +419,7 @@ fn parse_prop_attr(stream: TokenStream, span: Span) -> Result<DefaultKind, Macro
                 ))
             }
         }
+
         _ => Err(MacroError::new(
             inner.span(),
             "expected `default`, `default = <expr>`, or `optional` inside `#[prop(...)]`",

@@ -6,6 +6,7 @@
 //! builders accept strings, `GridTracks`, `[GridTrack; N]`, `[GridLength; N]`, or `tracks!`,
 //! while getters return `Result<GridTracks>`.
 
+use rustolonia::view::{markers, IntoProp, PropBinding, TryIntoGridTracks};
 use rustolonia::{tracks, El, Error, Grid, GridLength, GridTrack, GridTracks, Result, Signal};
 
 #[allow(dead_code)]
@@ -36,6 +37,13 @@ fn definitions_chain_on_declarative_el_builders(reactive_rows: Signal<GridTracks
     Grid::el()
         .column_definitions(tracks![*, Auto, 120])
         .row_definitions(reactive_rows)
+}
+
+#[allow(dead_code)]
+fn string_definitions_chain_on_declarative_el_builders() -> El<Grid> {
+    Grid::el()
+        .column_definitions("*,Auto,120")
+        .row_definitions(|| String::from("Auto,2*"))
 }
 
 #[test]
@@ -88,6 +96,29 @@ fn grid_tracks_parse_format_and_match_tracks_macro() {
     ));
     assert!(matches!(
         "Auto@A@B".parse::<GridTracks>(),
+        Err(Error::InvalidValue(_))
+    ));
+}
+
+#[test]
+fn invalid_grid_track_strings_are_reported_by_static_and_reactive_bindings() {
+    let static_binding =
+        <&str as IntoProp<GridTracks, markers::GridTracksStringMarker>>::into_prop("Auto@@Bad");
+    let PropBinding::Fallible(mut compute) = static_binding else {
+        panic!("string grid definitions must use fallible conversion");
+    };
+    assert!(matches!(compute(), Err(Error::InvalidValue(_))));
+
+    let binding = <_ as IntoProp<GridTracks, markers::GridTracksStringMarker>>::into_prop(|| {
+        String::from("Auto@@Bad")
+    });
+    let PropBinding::Fallible(mut compute) = binding else {
+        panic!("reactive string grid definitions must use fallible conversion");
+    };
+    assert!(matches!(compute(), Err(Error::InvalidValue(_))));
+
+    assert!(matches!(
+        TryIntoGridTracks::try_into_grid_tracks(&"Auto@@Bad"),
         Err(Error::InvalidValue(_))
     ));
 }

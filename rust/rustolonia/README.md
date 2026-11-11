@@ -5,18 +5,21 @@ Idiomatic Rust API for building GUI applications with
 
 ```toml
 [dependencies]
-rustolonia = { git = "https://github.com/Devolutions/rustolonia", tag = "v12.1.0" }
+rustolonia = { git = "https://github.com/Devolutions/rustolonia", tag = "v12.1.6" }
 ```
 
-Use this dependency once the `v12.1.0` GitHub release is published. Cargo
-resolves `rustolonia-sys` from the same git revision automatically; no
-registry patches or crates.io publication are required. The final tag includes
-the checksums of the actual release build.
-Rust 1.88 or newer is required. Rustolonia `12.1.0` uses Avalonia `12.1.3`:
-major/minor identify the Avalonia line, while the patch counts Rustolonia
-releases independently. The API is still experimental; use an exact release
-tag to avoid unintended upgrades. After crates.io publication,
-`rustolonia = "=12.1.0"` is also supported.
+This exact release tag is the recommended dependency for published apps. The
+quickstart below uses APIs from the current source revision that are not yet in
+`v12.1.6`; to try them before release, follow the
+[template development setup](../../templates/README.md#development-setup) for
+a local source override and matching host. Cargo resolves `rustolonia-sys`
+from the same git revision automatically; no registry patches or crates.io
+publication are required. The final tag includes the checksums of the actual
+release build.
+Rust 1.88 or newer is required. Rustolonia `12.1.x` tracks the Avalonia `12.1`
+line, while the patch counts Rustolonia releases independently. The API is
+still experimental; use an exact release tag to avoid unintended upgrades.
+After crates.io publication, `rustolonia = "=12.1.6"` is also supported.
 
 ```rust,no_run
 use rustolonia::{
@@ -45,7 +48,7 @@ fn main() -> rustolonia::Result<()> {
                     Button {
                         class: "primary",
                         on_click: move |_| clicks.update(|c| *c += 1),
-                        text: fmt!("Clicked {} times", clicks.get())
+                        content: fmt!("Clicked {} times", clicks.get())
                     }
                 }
             }
@@ -59,7 +62,7 @@ fn main() -> rustolonia::Result<()> {
 
 ## Declarative UI, Reactivity, and Async
 
-- **Declarative `rsx!` & `#[component]`**: Author control trees with `rsx!`, inline `"string"` children, `class:`, `ref:`, `show cond { ... } else { ... }`, `for item in signal key |x| x.id { ... }`, compile-time `color!("#rrggbb")`, `tracks![auto, 1*, 240px]`, reactive `fmt!(...)`, and `#[derive(Lens)]` / `lens!`.
+- **Declarative `rsx!` & `#[component]`**: Author control trees with `rsx!`, inline `"string"` children, `class:`, `ref:`, `show cond { ... } else { ... }`, `for each item in signal key |x| x.id { ... }`, compile-time `color!("#rrggbb")`, `tracks![auto, 1*, 240px]`, reactive `fmt!(...)`, and `#[derive(Lens)]` / `lens!`.
 - **UI-thread reactive state**: `Signal<T>`, `Memo<T>`, and `NodeRef<T>` are `Copy` UI-thread handles, so UI event closures need no `Send` bounds or `Arc<Mutex<...>>`. Background threads update UI state through `signal.writer(scope)` (`SignalWriter<T>`) or `scope.channel(...)` (`UiSender<M>`).
 - **Single-step async & off-thread work**: `scope.spawn_local(...)` polls `!Send` UI futures on the dispatcher; `scope.run_blocking(...)` / `scope.spawn_blocking(...)` run CPU or blocking I/O work off the UI thread; `scope.open_files(...)`, `scope.save_file(...)`, `scope.clipboard_text()`, and `scope.show_modal(&dialog)` resolve the active window automatically and return a single `Future<Output = Result<T>>`.
 - **Pure-Rust styling & menus**: `StyleSheet` / `Style::select(...)` target Avalonia selector classes and pseudo-classes (`:pointerover`, `:pressed`, `:focus`, `:disabled`) with `Paint` (solid or linear/radial gradients), metrics, shadows, and property transitions. `MenuBar` and `Shortcut` bind native menus and window `KeyBinding`s reactively without integer command IDs.

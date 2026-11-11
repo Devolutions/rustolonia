@@ -1,28 +1,24 @@
 # Minimal desktop app
 
-A standalone, code-first starting point: one window, a greeting, and a
-**Say hello** button. Uses the published Rustolonia **v12.1.0** bindings and
-prebuilt host. No .NET SDK, local checkout dependency, or generation required.
+A code-first starting point: one window, a greeting, and a **Say hello**
+button. It uses pre-release APIs from the current Rustolonia source revision;
+the published **v12.1.6** dependency tag does not contain those APIs.
 
 ## Start
 
 Copy this whole directory anywhere, including `.cargo`, `.gitignore`, and
-`Cargo.lock`, but excluding `target`. Install Rust 1.88 or newer and the native
-linker toolchain for your platform, then run from your copied directory:
+`Cargo.lock`, but excluding `target`. Before building, complete the
+[template development setup](../README.md#development-setup). Then install
+Rust 1.88 or newer and the native linker toolchain, and run:
 
 ```powershell
-cargo run --locked
+cargo run
 ```
 
-The first build fetches the tagged Rust bindings and downloads the matching
-host from GitHub, verifies its SHA-256, and caches it. Cargo may fetch the
-tagged repository's submodules but does not build them.
-
-Run Cargo from this directory so `.cargo/config.toml` enables release host
-downloads even inside the original repository. If you previously configured
-a local host or mirror, unset `RUSTOLONIA_NO_DOWNLOAD`, `RUSTOLONIA_HOST_DIR`,
-`RUSTOLONIA_HOST_LIB`, `RUSTOLONIA_HOST_BASE_URL`, and
-`RUSTOLONIA_HOST_CHECKSUMS`.
+The pinned release tag is only a dependency seed; the local source override and
+host must be from the same revision. Set `RUSTOLONIA_HOST_DIR` to the matching
+host directory before running. Run Cargo from this directory so its
+`.cargo/config.toml` is loaded.
 
 ## Extend
 
@@ -30,7 +26,7 @@ a local host or mirror, unset `RUSTOLONIA_NO_DOWNLOAD`, `RUSTOLONIA_HOST_DIR`,
 | --- | --- |
 | `src/main.rs` | Load the native runtime and start the application |
 | `src/ui.rs` | Compose the window and register its button callback |
-| `Cargo.toml` | Your package metadata and pinned release dependency |
+| `Cargo.toml` | Your package metadata and pinned dependency seed |
 | `Cargo.lock` | Reproducible dependency graph; keep in version control |
 
 Change the package name and description, window title, and greeting. Run
@@ -53,12 +49,12 @@ Avoid moving branch dependencies: bindings and host versions must match.
 
 Supports Windows/macOS/Linux glibc, x64 and arm64. Linux requires X11/XWayland
 and fontconfig; see the
-[platform requirements](https://github.com/Devolutions/rustolonia/blob/v12.1.0/rust/PLATFORMS.md#prebuilt-host-platform-floors).
+[platform requirements](https://github.com/Devolutions/rustolonia/blob/v12.1.6/rust/PLATFORMS.md#prebuilt-host-platform-floors).
 
 The default development feature loads the host from its build-time cache,
 even in release-profile builds. For a portable app, set
 `default-features = false` on the dependency, rebuild, and ship the extracted
 matching host, native dependencies, and notices beside the executable (or
 `../Frameworks` in a macOS bundle). See the
-[distribution guide](https://github.com/Devolutions/rustolonia/blob/v12.1.0/rust/rustolonia/README.md).
+[distribution guide](https://github.com/Devolutions/rustolonia/blob/v12.1.6/rust/rustolonia/README.md).
 This template is code-first; compiled AXAML requires a source-built host.

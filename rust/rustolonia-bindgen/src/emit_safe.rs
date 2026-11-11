@@ -1327,9 +1327,9 @@ fn emit_el_type(
             if property.kind == "ComCollection" && property.name == "Children" {
                 out.push_str(
                     "    pub fn child(self, value: impl crate::view::IntoChildEl + 'static) -> Self {\n\
-                     \x20       self.with_op(move |scope, control| {\n\
+                     \x20       self.with_panel_child_op(move |scope, control, slot| {\n\
                      \x20           let built = value.into_child_el().build(scope)?;\n\
-                     \x20           control.children()?.add(built)\n\
+                     \x20           slot.mount(control, &built)\n\
                      \x20       })\n\
                      \x20   }\n\
                      \x20   pub fn children_iter<I, C>(mut self, children: I) -> Self\n\
@@ -1797,7 +1797,7 @@ fn string_converter_mapping(
     match property.string_converter_type_name.as_deref()? {
         "Avalonia.Host.Com.AvnColumnDefinitions" | "Avalonia.Host.Com.AvnRowDefinitions" => Some((
             "crate::GridTracks",
-            "impl crate::view::IntoValue<crate::GridTracks>",
+            "impl crate::view::TryIntoGridTracks",
             "grid_tracks",
         )),
         "Avalonia.Host.Com.AvnCalendarDate" | "Avalonia.Host.Com.AvnDateTimeOffset" => Some((
@@ -2383,7 +2383,7 @@ fn safe_property_input(
         return match conv_tag {
             "grid_tracks" => (
                 input_ty.into(),
-                "        let value: Vec<u16> = value.into_value().to_string().encode_utf16().chain(Some(0)).collect();\n".into(),
+                "        let value: Vec<u16> = crate::view::TryIntoGridTracks::try_into_grid_tracks(&value)?.to_string().encode_utf16().chain(Some(0)).collect();\n".into(),
                 "&value".into(),
             ),
             "opt_civil_date" => (

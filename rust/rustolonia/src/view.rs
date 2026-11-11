@@ -350,21 +350,97 @@ impl IntoValue<Option<DataTemplate>> for &DataTemplate {
     }
 }
 
-impl IntoValue<GridTracks> for &str {
-    fn into_value(self) -> GridTracks {
-        self.parse().unwrap_or_default()
+/// Converts values accepted by grid track setters, reporting invalid strings.
+pub trait TryIntoGridTracks {
+    fn try_into_grid_tracks(&self) -> Result<GridTracks>;
+}
+
+pub trait GridTracksString: TryIntoGridTracks {}
+
+impl TryIntoGridTracks for GridTracks {
+    fn try_into_grid_tracks(&self) -> Result<GridTracks> {
+        Ok(self.clone())
     }
 }
 
-impl IntoValue<GridTracks> for String {
-    fn into_value(self) -> GridTracks {
-        self.parse().unwrap_or_default()
+impl TryIntoGridTracks for &str {
+    fn try_into_grid_tracks(&self) -> Result<GridTracks> {
+        self.parse()
     }
 }
 
-impl IntoValue<GridTracks> for &String {
-    fn into_value(self) -> GridTracks {
-        self.parse().unwrap_or_default()
+impl GridTracksString for &str {}
+
+impl TryIntoGridTracks for String {
+    fn try_into_grid_tracks(&self) -> Result<GridTracks> {
+        self.parse()
+    }
+}
+
+impl GridTracksString for String {}
+
+impl TryIntoGridTracks for &String {
+    fn try_into_grid_tracks(&self) -> Result<GridTracks> {
+        self.parse()
+    }
+}
+
+impl GridTracksString for &String {}
+
+impl TryIntoGridTracks for Vec<GridTrack> {
+    fn try_into_grid_tracks(&self) -> Result<GridTracks> {
+        Ok(GridTracks(self.clone()))
+    }
+}
+
+impl TryIntoGridTracks for &[GridTrack] {
+    fn try_into_grid_tracks(&self) -> Result<GridTracks> {
+        Ok(GridTracks(self.to_vec()))
+    }
+}
+
+impl<const N: usize> TryIntoGridTracks for [GridTrack; N] {
+    fn try_into_grid_tracks(&self) -> Result<GridTracks> {
+        Ok(GridTracks::from(self.clone()))
+    }
+}
+
+impl<const N: usize> TryIntoGridTracks for [GridLength; N] {
+    fn try_into_grid_tracks(&self) -> Result<GridTracks> {
+        Ok(GridTracks::from(*self))
+    }
+}
+
+impl IntoProp<GridTracks, markers::GridTracksStringMarker> for &str {
+    fn into_prop(self) -> PropBinding<GridTracks> {
+        let value = self.to_owned();
+        PropBinding::Fallible(Box::new(move || value.parse()))
+    }
+}
+
+impl IntoProp<GridTracks, markers::GridTracksStringMarker> for String {
+    fn into_prop(self) -> PropBinding<GridTracks> {
+        PropBinding::Fallible(Box::new(move || self.parse()))
+    }
+}
+
+impl IntoProp<GridTracks, markers::GridTracksStringMarker> for &String {
+    fn into_prop(self) -> PropBinding<GridTracks> {
+        let value = self.clone();
+        PropBinding::Fallible(Box::new(move || value.parse()))
+    }
+}
+
+impl<F, V> IntoProp<GridTracks, markers::GridTracksStringMarker> for F
+where
+    F: FnMut() -> V + 'static,
+    V: GridTracksString + 'static,
+{
+    fn into_prop(mut self) -> PropBinding<GridTracks> {
+        PropBinding::Fallible(Box::new(move || {
+            let value = self();
+            TryIntoGridTracks::try_into_grid_tracks(&value)
+        }))
     }
 }
 
@@ -485,6 +561,7 @@ impl IntoValue<Variant> for f64 {
 /// Phantom markers used to disambiguate [`IntoProp`] implementations.
 pub mod markers {
     pub struct ValueMarker;
+    pub struct GridTracksStringMarker;
     pub struct SignalMarker;
     pub struct SignalOptionMarker;
     pub struct MemoMarker;
@@ -731,6 +808,18 @@ where
 impl<T: 'static> IntoProp<T, markers::PathMarker> for PropertyPath<T> {
     fn into_prop(self) -> PropBinding<T> {
         PropBinding::Fallible(Box::new(move || self.get()))
+    }
+}
+
+impl IntoProp<Option<Paint>, markers::PathMarker> for PropertyPath<Option<Brush>> {
+    fn into_prop(self) -> PropBinding<Option<Paint>> {
+        PropBinding::Fallible(Box::new(move || Ok(self.get()?.map(Paint::from))))
+    }
+}
+
+impl IntoProp<Paint, markers::PathMarker> for PropertyPath<Brush> {
+    fn into_prop(self) -> PropBinding<Paint> {
+        PropBinding::Fallible(Box::new(move || Ok(Paint::from(self.get()?))))
     }
 }
 
@@ -1061,6 +1150,7 @@ type ElOp<T> = Box<dyn FnOnce(&AppScope, &T) -> Result<()>>;
 pub struct El<T> {
     create: Box<dyn FnOnce() -> Result<T>>,
     ops: Vec<ElOp<T>>,
+    panel_child_slots: Rc<RefCell<Vec<Option<i64>>>>,
 }
 
 impl<T: 'static> El<T> {
@@ -1068,11 +1158,31 @@ impl<T: 'static> El<T> {
         Self {
             create: Box::new(create),
             ops: Vec::new(),
+            panel_child_slots: Rc::new(RefCell::new(Vec::new())),
         }
     }
 
     pub fn with_op(mut self, op: impl FnOnce(&AppScope, &T) -> Result<()> + 'static) -> Self {
         self.ops.push(Box::new(op));
+        self
+    }
+
+    pub fn with_panel_child_op(
+        mut self,
+        op: impl FnOnce(&AppScope, &T, PanelChildSlot) -> Result<()> + 'static,
+    ) -> Self {
+        let index = {
+            let mut slots = self.panel_child_slots.borrow_mut();
+            let index = slots.len();
+            slots.push(None);
+            index
+        };
+        let slot = PanelChildSlot {
+            slots: self.panel_child_slots.clone(),
+            index,
+        };
+        self.ops
+            .push(Box::new(move |scope, panel| op(scope, panel, slot)));
         self
     }
 
@@ -1147,13 +1257,40 @@ impl<T: 'static> El<T> {
                 let win_clone = window.clone();
                 let mut ops = self.ops;
                 let window_scope = ReactiveScope::new();
-                window_scope.run(|| {
+                let inherited_theme = crate::reactive::use_context::<AmbientThemeSignal>();
+                let result = window_scope.run(|| {
                     provide_context(win_clone);
+                    let theme = if let Some(ambient) =
+                        inherited_theme.as_ref().filter(|ambient| !ambient.1.get())
+                    {
+                        let signal = Signal::<ThemeVariant>::try_from_raw(ambient.0)?;
+                        let app_scope = scope.clone();
+                        let signal_for_event = signal;
+                        let subscription =
+                            window.subscribe_actual_theme_variant_changed(move |_| {
+                                if let Ok(variant) = app_scope.actual_theme_variant() {
+                                    signal_for_event.set_if_changed(variant);
+                                }
+                            })?;
+                        scope.retain_subscription(subscription);
+                        ambient.1.set(true);
+                        signal
+                    } else {
+                        scope.theme_variant_signal(window)?
+                    };
+                    provide_context(AmbientThemeSignal(
+                        theme.raw_id(),
+                        Rc::new(std::cell::Cell::new(true)),
+                    ));
                     for op in ops.drain(..) {
                         op(scope, &instance)?;
                     }
                     Ok::<(), crate::Error>(())
-                })?;
+                });
+                if let Err(error) = result {
+                    window_scope.dispose();
+                    return Err(error);
+                }
                 return Ok(instance);
             }
             for op in self.ops {
@@ -1213,10 +1350,9 @@ impl<T: 'static> El<T> {
         E: IntoChildEl + 'static,
     {
         let binding = condition.into_prop();
-        self.with_op(move |scope, panel_owner| {
+        self.with_panel_child_op(move |scope, panel_owner, slot| {
             let panel: Panel = panel_owner.upcast();
             let scope = scope.clone();
-            let slot_index = panel.children()?.len()?;
             let mounted: Rc<RefCell<Option<(Control, ReactiveScope)>>> =
                 Rc::new(RefCell::new(None));
 
@@ -1234,28 +1370,13 @@ impl<T: 'static> El<T> {
                             return Err(err);
                         }
                     };
-                    let children = panel.children()?;
-                    let len = children.len()?;
-                    let res = if slot_index < len {
-                        children.insert(slot_index, &ctrl)
-                    } else {
-                        children.add(&ctrl)
-                    };
-                    if let Err(err) = res {
+                    if let Err(err) = slot.mount(&panel, &ctrl) {
                         branch_scope.dispose();
                         return Err(err);
                     }
                     *mounted.borrow_mut() = Some((ctrl, branch_scope));
                 } else if let Some((ctrl, prev_scope)) = mounted.borrow_mut().take() {
-                    let children = panel.children()?;
-                    let target_id = ctrl.object_id()?;
-                    let len = children.len()?;
-                    for idx in 0..len {
-                        if children.get(idx)?.object_id()? == target_id {
-                            children.remove(idx)?;
-                            break;
-                        }
-                    }
+                    slot.unmount(&panel, &ctrl)?;
                     prev_scope.dispose();
                 }
                 Ok(())
@@ -3075,8 +3196,8 @@ pub fn use_window(scope: &AppScope) -> Result<Window> {
     scope.resolve_window()
 }
 
-#[derive(Clone, Copy)]
-struct AmbientThemeSignal(crate::reactive::RawSignalId);
+#[derive(Clone)]
+struct AmbientThemeSignal(crate::reactive::RawSignalId, Rc<std::cell::Cell<bool>>);
 
 /// Returns a reactive [`Signal<ThemeVariant>`] tracking the active theme of the
 /// enclosing [`Window`] (or application theme when no window is mounted yet),
@@ -3089,13 +3210,65 @@ pub fn use_theme(scope: &AppScope) -> Result<Signal<ThemeVariant>> {
             }
         }
     }
-    let sig = if let Ok(window) = scope.resolve_window() {
-        scope.theme_variant_signal(&window)?
+    let (sig, attached) = if let Some(window) = crate::reactive::use_context::<Window>() {
+        (scope.theme_variant_signal(&window)?, true)
+    } else if let Ok(window) = scope.resolve_window() {
+        (scope.theme_variant_signal(&window)?, true)
     } else {
-        Signal::new(scope.actual_theme_variant()?)
+        (Signal::new(scope.actual_theme_variant()?), false)
     };
-    provide_context(AmbientThemeSignal(sig.raw_id()));
+    provide_context(AmbientThemeSignal(
+        sig.raw_id(),
+        Rc::new(std::cell::Cell::new(attached)),
+    ));
     Ok(sig)
+}
+
+#[derive(Clone)]
+pub struct PanelChildSlot {
+    slots: Rc<RefCell<Vec<Option<i64>>>>,
+    index: usize,
+}
+
+impl PanelChildSlot {
+    pub fn mount(&self, panel_owner: &impl Upcast<Panel>, child: &impl AsControl) -> Result<()> {
+        let panel = panel_owner.upcast_ref();
+        let child_id = child.as_control()?.object_id()?;
+        let mut slots = self.slots.borrow_mut();
+        if slots[self.index] == Some(child_id) {
+            return Ok(());
+        }
+        let insert_at = slots[..self.index]
+            .iter()
+            .filter(|slot| slot.is_some())
+            .count();
+        let children = panel.children()?;
+        if insert_at < children.len()? {
+            children.insert(insert_at, child)?;
+        } else {
+            children.add(child)?;
+        }
+        slots[self.index] = Some(child_id);
+        Ok(())
+    }
+
+    pub fn unmount(&self, panel_owner: &impl Upcast<Panel>, child: &impl AsControl) -> Result<()> {
+        let child_id = child.as_control()?.object_id()?;
+        let mut slots = self.slots.borrow_mut();
+        if slots.get(self.index).copied().flatten() != Some(child_id) {
+            return Ok(());
+        }
+        let children = panel_owner.upcast_ref().children()?;
+        for index in 0..children.len()? {
+            if children.get(index)?.object_id()? == child_id {
+                children.remove(index)?;
+                slots[self.index] = None;
+                return Ok(());
+            }
+        }
+        slots[self.index] = None;
+        Ok(())
+    }
 }
 
 impl El<crate::Button> {

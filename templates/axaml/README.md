@@ -7,7 +7,7 @@ an application-specific managed host.
 
 ## Development setup
 
-The template's `v12.1.5` dependency tag predates the compiler and runtime APIs
+The template's `v12.1.6` dependency tag predates the compiler and runtime APIs
 used here. Until a release includes these changes, use a checkout containing
 this revision and override the tagged dependencies. The checkout needs neither
 an initialized Avalonia submodule nor .NET tooling.
@@ -33,7 +33,7 @@ cargo update -p rustolonia -p rustolonia-bindgen -p rustolonia-sys
 ```
 
 Obtain a prebuilt host built from the same revision as the checkout; the
-published v12.1.5 host predates these changes. Point `RUSTOLONIA_HOST_DIR` at
+published v12.1.6 host predates these changes. Point `RUSTOLONIA_HOST_DIR` at
 the directory containing the host library before running `cargo run` from the
 copied directory. For example:
 

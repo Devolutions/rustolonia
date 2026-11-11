@@ -119,6 +119,7 @@ impl Drop for UiCallbackDrop {
 /// is dropped from a background thread.
 pub(crate) struct UiCallbackHandle<F: 'static> {
     inner: Arc<UiCallbackDrop>,
+    scope: ReactiveScope,
     _marker: PhantomData<fn() -> F>,
 }
 
@@ -126,6 +127,7 @@ impl<F: 'static> Clone for UiCallbackHandle<F> {
     fn clone(&self) -> Self {
         Self {
             inner: self.inner.clone(),
+            scope: self.scope,
             _marker: PhantomData,
         }
     }
@@ -153,12 +155,16 @@ impl<F: 'static> UiCallbackHandle<F> {
         });
         Self {
             inner: Arc::new(UiCallbackDrop { thread, id }),
+            scope: ReactiveScope::current(),
             _marker: PhantomData,
         }
     }
 
     pub(crate) fn with<R>(&self, invoke: impl FnOnce(&mut F) -> R) -> Result<R> {
         if std::thread::current().id() != self.inner.thread {
+            return Err(Error::NoUiContext);
+        }
+        if !self.scope.is_active() {
             return Err(Error::NoUiContext);
         }
         drain_orphaned_ui_callbacks_for_current_thread();
@@ -171,7 +177,7 @@ impl<F: 'static> UiCallbackHandle<F> {
         });
         let cell = cell.ok_or(Error::NoUiContext)?;
         let mut guard = cell.borrow_mut();
-        Ok(invoke(&mut *guard))
+        Ok(self.scope.run(|| invoke(&mut *guard)))
     }
 }
 
@@ -1017,6 +1023,16 @@ impl Default for ReactiveScope {
 }
 
 impl ReactiveScope {
+    fn is_active(self) -> bool {
+        RUNTIME.with(|runtime| {
+            runtime
+                .borrow()
+                .scopes
+                .get(self.id)
+                .is_some_and(|scope| scope.active)
+        })
+    }
+
     pub(crate) fn current() -> Self {
         RUNTIME.with(|runtime| {
             let mut rt = runtime.borrow_mut();

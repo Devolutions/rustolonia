@@ -399,6 +399,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "roxmltree"
+version = "0.21.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9da7f59328b09405b181fee1018925fad50f157afb43c0c0f5c522c256dd5907"
+dependencies = [
+ "memchr",
+]
+
+[[package]]
 name = "rustls"
 version = "0.23.46"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -435,8 +444,8 @@ dependencies = [
 
 [[package]]
 name = "rustolonia"
-version = "12.1.5"
-source = "git+https://github.com/Devolutions/rustolonia?tag=v12.1.5#00f3775cabec4010f64e2a9a4299d40c652d5b82"
+version = "12.1.6"
+source = "git+https://github.com/Devolutions/rustolonia?tag=v12.1.6#4a43ff8d7f85945ef4a2df84baa85a4a4383b7d0"
 dependencies = [
  "rustolonia-sys",
 ]
@@ -451,9 +460,10 @@ dependencies = [
 
 [[package]]
 name = "rustolonia-bindgen"
-version = "12.1.5"
-source = "git+https://github.com/Devolutions/rustolonia?tag=v12.1.5#00f3775cabec4010f64e2a9a4299d40c652d5b82"
+version = "12.1.6"
+source = "git+https://github.com/Devolutions/rustolonia?tag=v12.1.6#4a43ff8d7f85945ef4a2df84baa85a4a4383b7d0"
 dependencies = [
+ "roxmltree",
  "serde",
  "serde_json",
  "sha2",
@@ -461,8 +471,8 @@ dependencies = [
 
 [[package]]
 name = "rustolonia-sys"
-version = "12.1.5"
-source = "git+https://github.com/Devolutions/rustolonia?tag=v12.1.5#00f3775cabec4010f64e2a9a4299d40c652d5b82"
+version = "12.1.6"
+source = "git+https://github.com/Devolutions/rustolonia?tag=v12.1.6#4a43ff8d7f85945ef4a2df84baa85a4a4383b7d0"
 dependencies = [
  "dirs",
  "flate2",

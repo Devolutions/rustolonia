@@ -71,7 +71,8 @@ pub use values::{CivilDate, CivilTime, Decimal, GridLength, GridTrack, GridTrack
 pub use view::{
     data_template_reactive, theme_brush, use_theme, use_window, AnyEl, Command, ControlSlot, El,
     For, IntoChildEl, IntoCommandProp, IntoContentEl, IntoProp, IntoValue, ItemNameScope,
-    ItemsView, KeyedListReconciler, PropBinding, Show, ViewRegistry,
+    ItemsView, KeyedListReconciler, PanelChildSlot, PropBinding, Show, TryIntoGridTracks,
+    ViewRegistry,
 };
 
 impl Variant {

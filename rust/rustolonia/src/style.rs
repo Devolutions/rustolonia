@@ -775,12 +775,12 @@ impl AppScope {
             ));
         };
         let gesture: Vec<u16> = shortcut.into().encode_utf16().chain(Some(0)).collect();
-        let abi_param = parameter.into().to_abi()?.into_owned_abi();
+        let abi_param = parameter.into().to_abi()?;
         let id = self.application().add_window_key_binding(
             &window.raw,
             &gesture,
             &cmd_ptr,
-            abi_param,
+            *abi_param,
         )?;
         let app = self.application().clone();
         let win_raw = window.raw.clone();

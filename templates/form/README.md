@@ -1,26 +1,25 @@
 # Input form app
 
-A standalone form skeleton with a name field, **Submit** and **Clear**
-actions, and inline validation. It uses the published Rustolonia **v12.1.0**
-bindings and prebuilt host, without the .NET SDK or local source dependencies.
+A form skeleton with a name field, **Submit** and **Clear** actions, and inline
+validation. It uses pre-release APIs from the current Rustolonia source
+revision; the published **v12.1.6** dependency tag does not contain those APIs.
 
 ## Start
 
 Copy this entire directory outside the repository, including `.cargo`,
-`.gitignore`, and `Cargo.lock`, but excluding `target`. Install Rust 1.88 or
-newer and your platform's native linker toolchain. From the copied directory:
+`.gitignore`, and `Cargo.lock`, but excluding `target`. Before building,
+complete the source override and matching-host steps in the
+[template development setup](../README.md#development-setup). Install Rust
+1.88 or newer and your platform's native linker toolchain, then run:
 
 ```powershell
-cargo run --locked
+cargo run
 ```
 
-The first build fetches the tagged bindings, downloads the matching host from
-GitHub, verifies its SHA-256, and caches it. Tagged source submodules may be
-fetched by Cargo but are not built. Run from this directory for Cargo to load
-the included release-download configuration.
-If you configured a local host or mirror, unset `RUSTOLONIA_NO_DOWNLOAD`,
-`RUSTOLONIA_HOST_DIR`, `RUSTOLONIA_HOST_LIB`, `RUSTOLONIA_HOST_BASE_URL`, and
-`RUSTOLONIA_HOST_CHECKSUMS` first.
+The pinned release tag is only a dependency seed; the local source override and
+host must be from the same revision. Set `RUSTOLONIA_HOST_DIR` to the matching
+host directory before running. Run Cargo from this directory for its
+`.cargo/config.toml` to be loaded.
 
 ## Extend
 
@@ -54,11 +53,11 @@ and lockfile. Do not track `master` or mix host and bindings versions.
 
 Supported release platforms are Windows/macOS/Linux glibc on x64 and arm64.
 Linux needs X11/XWayland and fontconfig; see the
-[platform requirements](https://github.com/Devolutions/rustolonia/blob/v12.1.0/rust/PLATFORMS.md#prebuilt-host-platform-floors).
+[platform requirements](https://github.com/Devolutions/rustolonia/blob/v12.1.6/rust/PLATFORMS.md#prebuilt-host-platform-floors).
 
 The development host-cache feature is enabled even for release builds.
 To distribute, set `default-features = false` on the Rustolonia dependency,
 rebuild, and copy the matching release host, native dependencies, and notices
 beside the executable (or `../Frameworks` in a macOS bundle). Follow the
-[distribution guide](https://github.com/Devolutions/rustolonia/blob/v12.1.0/rust/rustolonia/README.md).
+[distribution guide](https://github.com/Devolutions/rustolonia/blob/v12.1.6/rust/rustolonia/README.md).
 Compiled AXAML is not part of this code-first template.
