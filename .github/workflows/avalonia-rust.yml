@@ -73,6 +73,7 @@ jobs:
       - name: Check static musl-gcc linking
         if: runner.os == 'Linux'
         run: |
+          sudo ./rust/use-ubuntu-mirror.sh
           sudo apt-get update
           sudo apt-get install --yes musl-tools
           rustup target add x86_64-unknown-linux-musl
@@ -155,7 +156,7 @@ jobs:
 
       - name: Install Linux smoke-test display
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install --yes xvfb
+        run: sudo ./rust/use-ubuntu-mirror.sh && sudo apt-get update && sudo apt-get install --yes xvfb
 
       - name: Restore packages (retries on NuGet flakes)
         shell: pwsh
@@ -532,7 +533,7 @@ jobs:
 
       - name: Install Linux cross toolchain
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install --yes gcc-aarch64-linux-gnu
+        run: sudo ./rust/use-ubuntu-mirror.sh && sudo apt-get update && sudo apt-get install --yes gcc-aarch64-linux-gnu
 
       - name: Set Linux cross-linker
         if: runner.os == 'Linux'
