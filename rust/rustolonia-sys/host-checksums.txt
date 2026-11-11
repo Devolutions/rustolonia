@@ -3,3 +3,26 @@
 # cargo-rustolonia-apk refuse to use a downloaded host whose hash is not
 # listed here. rust/prepare-release.ps1 fills this in from the release build
 # before the consumer tag or crates are published.
+4bbd141cbb17852ac5752aea0d982df05c2e8de08111001a25a65b29e53fe106  rustolonia-host-12.1.7-android.apk
+baa047cc589857ccdd129962ace2cf9b1570efc41a4c35ccfa43947fe5789c4d  rustolonia-host-12.1.7-browser-wasm.tar.gz
+b7d8d940b33b4e088b3c069bb2f4a112072fd97202b2922126b8f69882c1cba6  rustolonia-host-12.1.7-ios-arm64.tar.gz
+d9c2930e1b021c6d0894895735d9a86527c86c4c2c182c1781dbaef80f9241cf  rustolonia-host-12.1.7-iossimulator-arm64.tar.gz
+e5d1b3fd3f0f43f551a33ae3ae9f4b424d88d2fe7fc17dcb6599196c5b7bd1e5  rustolonia-host-12.1.7-iossimulator-x64.tar.gz
+93f7e39968b06e3745b2a3bfb8c36de99d19051783a632ca512ea96e6c5b98e0  rustolonia-host-12.1.7-linux-arm64-drm-static.tar.gz
+21ec26e513975799491239d6cd8d206ea7a7c9b71a3f7a99569d6df2fcfd34e1  rustolonia-host-12.1.7-linux-arm64-drm.tar.gz
+7c9abd434c935bf2e07418439945b92fce90cd9a49be9d4833ab1fb15639b641  rustolonia-host-12.1.7-linux-arm64-static.tar.gz
+ba04974330fc4f2b77a0904542f9e290723a7b1e0dd41e74127d984f1a48b4fa  rustolonia-host-12.1.7-linux-arm64.tar.gz
+d2e2b23047544848bb7548f422561fbf10295d7390df7263ab10fcb0a7cb3a0d  rustolonia-host-12.1.7-linux-musl-arm64-static.tar.gz
+5750ece201ed4c56b099ee1307e99fc75c528851df44f64338defe66b3e2bed9  rustolonia-host-12.1.7-linux-musl-x64-static.tar.gz
+72d8fc788d63ab3b451628073162bb124d96165724131eae062446b4aff71a30  rustolonia-host-12.1.7-linux-x64-drm-static.tar.gz
+5d291981fdcda2863028b9ff8491d39791f25a07ae1896e38ec54c67c2a36fed  rustolonia-host-12.1.7-linux-x64-drm.tar.gz
+16ae6d62854f2f6e37ee0418daf88f0c370bef17523ee85d56ef82acc891616d  rustolonia-host-12.1.7-linux-x64-static.tar.gz
+b0eda1defad5dd43abb631945a84d4ec2ea1eb20d892400b1a640664a1a320e1  rustolonia-host-12.1.7-linux-x64.tar.gz
+0747e5d1592f0320b6212bbd426f6844b92cc73d7d2a84fc614d9a267d7a8b1a  rustolonia-host-12.1.7-osx-arm64-static.tar.gz
+bb6be539989b10b137df86f12f402d26677fafb9eef30b50fcc3320b96b611c9  rustolonia-host-12.1.7-osx-arm64.tar.gz
+2bc6fa118e9f3e2a7aa6b865279658f1f9a2c46823b7825735d6696fe93d6bd7  rustolonia-host-12.1.7-osx-x64-static.tar.gz
+9e05f9b6b2906c2b8f6882b5c149d0071faef407dd6200a9ebbb5a66f804341c  rustolonia-host-12.1.7-osx-x64.tar.gz
+84538170401a5aedf71f8bf0f4fe57136869e154828460efdfd1aeb8b4ec5959  rustolonia-host-12.1.7-win-arm64-static.tar.gz
+4d1626f0c4ca21dc148ac592755fbd2280703fd15e7c007ed15b44c12f1d3221  rustolonia-host-12.1.7-win-arm64.tar.gz
+a1a4755961a84b33b070eb7b7ce026e2752a83a22301d5fbc6808a15eeb0ce84  rustolonia-host-12.1.7-win-x64-static.tar.gz
+fe0507fe2e8aa08bba21a69498d16be7cfbd1da81ed2b974867b76160d82bb86  rustolonia-host-12.1.7-win-x64.tar.gz
