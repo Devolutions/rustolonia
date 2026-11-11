@@ -94,6 +94,19 @@ jobs:
         # crate with the same version but an older API.
         run: cargo package --locked -p rustolonia-sys -p rustolonia-macros -p rustolonia-bindgen -p rustolonia --config 'patch.crates-io.rustolonia-sys.path="rustolonia-sys"' --config 'patch.crates-io.rustolonia-macros.path="rustolonia-macros"'
 
+  ubuntu-apt-mirror:
+    name: Ubuntu 22.04 APT mirror
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Ubuntu mirror source handling
+        run: python3 ./rust/tests/test-ubuntu-mirror.py
+      - name: Update and install through the Ubuntu mirror
+        run: |
+          sudo ./rust/use-ubuntu-mirror.sh
+          sudo apt-get -o APT::Update::Error-Mode=any update
+          sudo apt-get install --yes musl-tools
+
   release-gate:
     name: ${{ matrix.rid }}
     runs-on: ${{ matrix.os }}

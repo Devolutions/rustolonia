@@ -11,21 +11,31 @@ case "$architecture" in
         ;;
 esac
 
-python3 - "$mirror" <<'PY'
+python3 - "$mirror" "${1:-/etc/apt}" <<'PY'
 from pathlib import Path
 import re
 import sys
 
 mirror = sys.argv[1]
-source_files = [Path("/etc/apt/sources.list")]
-source_files.extend(Path("/etc/apt/sources.list.d").glob("*.list"))
-source_files.extend(Path("/etc/apt/sources.list.d").glob("*.sources"))
-ubuntu_uri = re.compile(r"https?://[^/\s]*ubuntu\.com/ubuntu(?:-ports)?/?")
+apt_dir = Path(sys.argv[2])
+source_files = [apt_dir / "sources.list"]
+source_files.extend((apt_dir / "sources.list.d").glob("*.list"))
+source_files.extend((apt_dir / "sources.list.d").glob("*.sources"))
+ubuntu_uri = re.compile(
+    r"https?://[^/\s]*ubuntu\.com/ubuntu(?:-ports)?/?"
+    r"|mirror\+file:(?://)?/etc/apt/apt-mirrors\.txt(?=\s|$)"
+)
+selected_uri = re.compile(re.escape(mirror.rstrip("/")) + r"/?(?=\s|$)")
 
+configured = False
 for source_file in source_files:
     if source_file.is_file():
         content = source_file.read_text()
         updated = ubuntu_uri.sub(mirror, content)
+        configured |= bool(selected_uri.search(updated))
         if updated != content:
             source_file.write_text(updated)
+
+if not configured:
+    sys.exit(f"No supported Ubuntu APT sources found in {apt_dir}")
 PY
