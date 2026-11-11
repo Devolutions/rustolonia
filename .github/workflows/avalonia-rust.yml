@@ -105,7 +105,7 @@ jobs:
         run: |
           sudo ./rust/use-ubuntu-mirror.sh
           sudo apt-get update
-          if ! sudo apt-get install --yes musl-tools; then
+          if ! sudo apt-get install --yes musl-tools xdotool clang generate-ninja ninja-build pkg-config; then
             apt-cache policy musl-tools
             apt-cache policy
             ls -lh /var/lib/apt/lists
