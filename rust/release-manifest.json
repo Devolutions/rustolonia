@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "rustoloniaVersion": "12.1.6",
+  "rustoloniaVersion": "12.1.7",
   "producerPin": "cf8e564674700348947e93ab19105f27afe859a9",
   "producerRemote": "https://github.com/AvaloniaUI/Avalonia",
   "patches": [

@@ -1,6 +1,6 @@
 [package]
 name = "rustolonia-apk"
-version = "12.1.6"
+version = "12.1.7"
 edition = "2021"
 license = "MIT"
 description = "Build code-first Rustolonia apps into Android APKs with Cargo alone, from the prebuilt host APK"
