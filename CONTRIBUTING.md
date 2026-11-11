@@ -42,6 +42,12 @@ Quick script, package-helper and scaffold cases do not compile native code:
 pwsh .\rust\tests\test-build-app.ps1
 ```
 
+The Ubuntu APT mirror helper has a fixture test that does not modify the host:
+
+```sh
+python3 rust/tests/test-ubuntu-mirror.py
+```
+
 The standalone AXAML template has a copy-out Cargo check that blocks .NET:
 
 ```sh
