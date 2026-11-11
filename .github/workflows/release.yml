@@ -163,6 +163,7 @@ jobs:
       - name: Install Linux static-link dependencies
         if: runner.os == 'Linux'
         run: |
+          sudo ./rust/use-ubuntu-mirror.sh
           sudo apt-get update
           sudo apt-get install --yes clang build-essential generate-ninja ninja-build pkg-config libfontconfig1-dev libfreetype6-dev libpng-dev libexpat1-dev zlib1g-dev libbrotli-dev uuid-dev
 
@@ -263,6 +264,7 @@ jobs:
 
       - name: Install static consumer and display tools
         run: |
+          sudo ./rust/use-ubuntu-mirror.sh
           sudo apt-get update
           sudo apt-get install --yes musl-tools xvfb xdotool strace binutils
           rustup target add "${{ matrix.rust-target }}"
@@ -659,7 +661,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Install Linux smoke-test display
-        run: sudo apt-get update && sudo apt-get install --yes xvfb
+        run: sudo ./rust/use-ubuntu-mirror.sh && sudo apt-get update && sudo apt-get install --yes xvfb
 
       - name: Validate the staged build
         shell: pwsh
