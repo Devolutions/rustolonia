@@ -27,6 +27,9 @@ public partial interface IAvnItemList
 
     [PreserveSig]
     int Clear();
+
+    [PreserveSig]
+    int Insert(int index, IAvnControl? value);
 }
 [GeneratedComClass]
 public sealed partial class AvnItemList : IAvnItemList
@@ -120,6 +123,20 @@ public sealed partial class AvnItemList : IAvnItemList
         {
             global::Avalonia.Threading.Dispatcher.UIThread.VerifyAccess();
             _value.Clear();
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int Insert(int index, IAvnControl? value)
+    {
+        try
+        {
+            global::Avalonia.Threading.Dispatcher.UIThread.VerifyAccess();
+            _value.Insert(index, (global::Avalonia.Controls.Control)ProjectionRuntime.Unwrap(value)!);
             return global::Avalonia.Host.HResults.S_OK;
         }
         catch (global::System.Exception e)

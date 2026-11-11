@@ -1,5 +1,5 @@
 use crate::async_runtime::{decode_none, decode_string, TaskScope};
-use crate::reactive::on_scope_cleanup;
+use crate::reactive::{on_scope_cleanup, RawSignalId, UiCallbackHandle};
 use crate::{AsyncOperation, Error, Result, Signal, Window};
 use rustolonia_sys as sys;
 use std::any::Any;
@@ -11,8 +11,63 @@ use std::marker::PhantomData;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
+
+/// Return-type polymorphism for UI event handlers, allowing callbacks to either
+/// return `()` or propagate `rustolonia::Result<()>` via `?`.
+pub trait IntoEventResult {
+    fn into_event_result(self) -> Result<()>;
+}
+
+impl IntoEventResult for () {
+    fn into_event_result(self) -> Result<()> {
+        Ok(())
+    }
+}
+
+impl IntoEventResult for Result<()> {
+    fn into_event_result(self) -> Result<()> {
+        self
+    }
+}
+
+type UiErrorHandler = Arc<dyn Fn(&str, &Error) + Send + Sync>;
+
+thread_local! {
+    static UI_ERROR_HANDLER: RefCell<Option<UiErrorHandler>> = const { RefCell::new(None) };
+}
+
+pub(crate) fn report_ui_error(context: &str, error: &Error) {
+    let custom = UI_ERROR_HANDLER.with(|slot| slot.borrow().clone());
+    if let Some(handler) = custom {
+        handler(context, error);
+    } else {
+        eprintln!("{context}: {error}");
+    }
+}
+
+/// Installs an error handler for UI callbacks/effects for the duration of `run`.
+pub fn with_ui_error_handler<R>(
+    handler: impl Fn(&str, &Error) + Send + Sync + 'static,
+    run: impl FnOnce() -> R,
+) -> R {
+    let handler: UiErrorHandler = Arc::new(handler);
+    let previous = UI_ERROR_HANDLER.with(|slot| slot.borrow_mut().replace(handler));
+    struct RestoreGuard(Option<UiErrorHandler>);
+    impl Drop for RestoreGuard {
+        fn drop(&mut self) {
+            let prev = self.0.take();
+            UI_ERROR_HANDLER.with(|slot| {
+                *slot.borrow_mut() = prev;
+            });
+        }
+    }
+    let _guard = RestoreGuard(previous);
+    run()
+}
 
 #[repr(i32)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -39,14 +94,14 @@ pub struct LocalizationResources {
 
 struct LocalizationState {
     default_culture: String,
-    current_culture: Signal<String>,
+    current_culture: RawSignalId,
     catalog: Mutex<LocalizationCatalog>,
 }
 
 #[derive(Default)]
 struct LocalizationCatalog {
     values: HashMap<(String, String), String>,
-    signals: Vec<(String, Signal<String>)>,
+    signals: Vec<(String, RawSignalId)>,
     revision: u64,
 }
 
@@ -64,7 +119,7 @@ impl LocalizationResources {
         }
         Ok(Self {
             state: Arc::new(LocalizationState {
-                current_culture: Signal::new(default_culture.clone()),
+                current_culture: Signal::new(default_culture.clone()).raw_id(),
                 default_culture,
                 catalog: Mutex::new(LocalizationCatalog::default()),
             }),
@@ -85,7 +140,8 @@ impl LocalizationResources {
                 "localization culture and key cannot be empty".to_string(),
             ));
         }
-        let current_culture = self.state.current_culture.get_untracked();
+        let current_culture =
+            Signal::<String>::try_from_raw(self.state.current_culture)?.get_untracked();
         let (revision, updates) = {
             let mut catalog = lock_localization_catalog(&self.state)?;
             catalog.values.insert((culture, key), value.into());
@@ -104,19 +160,22 @@ impl LocalizationResources {
                 "localization culture cannot be empty".to_string(),
             ));
         }
+        let current_sig = Signal::<String>::try_from_raw(self.state.current_culture)?;
         let (revision, updates) = {
             let mut catalog = lock_localization_catalog(&self.state)?;
             let updates = localized_updates(&self.state, &catalog, &culture)?;
             catalog.revision = catalog.revision.wrapping_add(1);
             (catalog.revision, updates)
         };
-        self.state.current_culture.set_if_changed(culture);
+        current_sig.set_if_changed(culture);
         self.apply_updates(revision, updates)
     }
 
     /// Returns the active culture identifier.
     pub fn culture(&self) -> String {
-        self.state.current_culture.get()
+        Signal::<String>::try_from_raw(self.state.current_culture)
+            .expect("LocalizationResources::culture must be called on the UI thread")
+            .get()
     }
 
     /// Creates a reactive string signal, returning an error if the key has no
@@ -128,11 +187,12 @@ impl LocalizationResources {
                 "localization key cannot be empty".to_string(),
             ));
         }
-        let culture = self.state.current_culture.get_untracked();
+        let culture = Signal::<String>::try_from_raw(self.state.current_culture)?.get_untracked();
         let mut catalog = lock_localization_catalog(&self.state)?;
         let initial = localized_value(&self.state, &catalog, &key, &culture)?;
         let signal = Signal::new(initial);
-        catalog.signals.push((key, signal));
+        let raw_signal = signal.raw_id();
+        catalog.signals.push((key, raw_signal));
         drop(catalog);
         let state = Arc::downgrade(&self.state);
         on_scope_cleanup(move || {
@@ -146,18 +206,21 @@ impl LocalizationResources {
                 };
                 catalog
                     .signals
-                    .retain(|(_, registered)| *registered != signal);
+                    .retain(|(_, registered)| *registered != raw_signal);
             }
-            signal.dispose_value();
+            if let Ok(sig) = Signal::<String>::try_from_raw(raw_signal) {
+                sig.dispose_value();
+            }
         });
         Ok(signal)
     }
 
-    fn apply_updates(&self, revision: u64, updates: Vec<(Signal<String>, String)>) -> Result<()> {
-        for (signal, value) in updates {
+    fn apply_updates(&self, revision: u64, updates: Vec<(RawSignalId, String)>) -> Result<()> {
+        for (raw_signal, value) in updates {
             if lock_localization_catalog(&self.state)?.revision != revision {
                 break;
             }
+            let signal = Signal::<String>::try_from_raw(raw_signal)?;
             if signal.is_alive() {
                 signal.set_if_changed(value);
             }
@@ -199,7 +262,7 @@ fn localized_updates(
     state: &LocalizationState,
     catalog: &LocalizationCatalog,
     culture: &str,
-) -> Result<Vec<(Signal<String>, String)>> {
+) -> Result<Vec<(RawSignalId, String)>> {
     catalog
         .signals
         .iter()
@@ -366,7 +429,54 @@ pub struct App {
     controls: sys::ComPtr<sys::IAvnControlFactory>,
     dispatcher: sys::ComPtr<sys::IAvnDispatcher>,
     startup_arguments: Option<Vec<String>>,
+    error_handler: Option<UiErrorHandler>,
     _host: sys::Host,
+}
+
+/// A `Clone + Send + Sync` sender that delivers messages from background threads
+/// to a UI-thread handler registered with [`AppScope::channel`].
+pub struct UiSender<M: Send + 'static> {
+    tx: mpsc::Sender<M>,
+    scheduled: Arc<AtomicBool>,
+    context: AppContext,
+    drain: UiCallbackHandle<Box<dyn FnMut()>>,
+}
+
+impl<M: Send + 'static> Clone for UiSender<M> {
+    fn clone(&self) -> Self {
+        Self {
+            tx: self.tx.clone(),
+            scheduled: self.scheduled.clone(),
+            context: self.context.clone(),
+            drain: self.drain.clone(),
+        }
+    }
+}
+
+impl<M: Send + 'static> fmt::Debug for UiSender<M> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("UiSender").finish_non_exhaustive()
+    }
+}
+
+impl<M: Send + 'static> UiSender<M> {
+    /// Enqueues `message` and schedules a coalesced drain on the UI dispatcher.
+    pub fn send(&self, message: M) -> Result<()> {
+        self.tx
+            .send(message)
+            .map_err(|_| Error::Binding("UI channel receiver has been closed".to_string()))?;
+        if !self.scheduled.swap(true, Ordering::AcqRel) {
+            let drain = self.drain.clone();
+            let scheduled = self.scheduled.clone();
+            if let Err(err) = self.context.post(move || {
+                let _ = drain.with(|cb| cb());
+            }) {
+                scheduled.store(false, Ordering::Release);
+                return Err(err);
+            }
+        }
+        Ok(())
+    }
 }
 
 /// A running single-view application owned by the platform's UI thread.
@@ -441,6 +551,9 @@ impl AppScope {
     }
 
     pub fn mount(&self, window: Window) -> Result<()> {
+        if crate::reactive::use_context::<Window>().is_none() {
+            crate::reactive::provide_context(window.clone());
+        }
         window.raw.show()?;
         self.record_window(window);
         Ok(())
@@ -542,10 +655,198 @@ impl AppScope {
         )
     }
 
+    pub(crate) fn clone_context(&self) -> AppContext {
+        self.context.clone()
+    }
+
+    /// Creates a `Send + Sync + Clone` [`UiSender<M>`] that delivers background
+    /// messages in batches to a UI-thread `handler` (which may freely capture
+    /// `!Send` [`Signal`]s, `Rc`, or `RefCell` state).
+    pub fn channel<M, R>(&self, mut handler: impl FnMut(M) -> R + 'static) -> UiSender<M>
+    where
+        M: Send + 'static,
+        R: IntoEventResult,
+    {
+        let (tx, rx) = mpsc::channel::<M>();
+        let scheduled = Arc::new(AtomicBool::new(false));
+        let scheduled_for_drain = scheduled.clone();
+        let drain_fn: Box<dyn FnMut()> = Box::new(move || loop {
+            scheduled_for_drain.store(false, Ordering::Release);
+            let mut processed = false;
+            while let Ok(msg) = rx.try_recv() {
+                processed = true;
+                if let Err(err) = handler(msg).into_event_result() {
+                    report_ui_error("UI channel handler failed", &err);
+                }
+            }
+            if !processed || !scheduled_for_drain.load(Ordering::Acquire) {
+                break;
+            }
+        });
+        let drain = UiCallbackHandle::new(drain_fn);
+        self.retain_object(drain.clone());
+        UiSender {
+            tx,
+            scheduled,
+            context: self.context.clone(),
+            drain,
+        }
+    }
+
     pub fn spawn(&self, future: impl Future<Output = ()> + Send + 'static) -> Result<()> {
         self.state
             .tasks
             .spawn(self.context.dispatcher.clone(), future)
+    }
+
+    /// Spawns a `!Send` UI-thread future polled on the Avalonia dispatcher.
+    ///
+    /// The future may freely capture [`Signal`]s, `Rc`, `RefCell`, and controls,
+    /// and may return either `()` or `rustolonia::Result<()>` (via `?`).
+    pub fn spawn_local<R: IntoEventResult + 'static>(
+        &self,
+        future: impl Future<Output = R> + 'static,
+    ) -> Result<()> {
+        self.state
+            .tasks
+            .spawn_local(self.context.dispatcher.clone(), async move {
+                if let Err(err) = future.await.into_event_result() {
+                    report_ui_error("UI task failed", &err);
+                }
+            })
+    }
+
+    /// Runs `work` on a background OS thread and returns a future resolving on
+    /// the polling executor (such as [`AppScope::spawn_local`]).
+    pub fn run_blocking<T: Send + 'static>(
+        &self,
+        work: impl FnOnce() -> Result<T> + Send + 'static,
+    ) -> crate::async_runtime::BlockingOperation<T> {
+        crate::async_runtime::BlockingOperation::spawn(work)
+    }
+
+    /// Runs `work` on a background OS thread and delivers its result to
+    /// `on_complete` on the UI thread.
+    pub fn spawn_blocking<T, R>(
+        &self,
+        work: impl FnOnce() -> Result<T> + Send + 'static,
+        mut on_complete: impl FnMut(Result<T>) -> R + 'static,
+    ) -> Result<()>
+    where
+        T: Send + 'static,
+        R: IntoEventResult + 'static,
+    {
+        let op = self.run_blocking(work);
+        self.spawn_local(async move {
+            let result = op.await;
+            on_complete(result)
+        })
+    }
+
+    /// Resolves the enclosing [`Window`] from reactive scope context, falling
+    /// back to [`AppScope::main_window`].
+    pub fn resolve_window(&self) -> Result<Window> {
+        crate::reactive::use_context::<Window>()
+            .or_else(|| self.main_window())
+            .ok_or_else(|| {
+                Error::Binding("no active Window in scope or mounted on AppScope".to_string())
+            })
+    }
+
+    /// Single-`Result` async sleep on the host timer.
+    pub async fn delay_async(&self, duration: Duration) -> Result<()> {
+        self.delay(duration)?.await
+    }
+
+    /// Reads clipboard text using the enclosing or main [`Window`].
+    pub async fn clipboard_text(&self) -> Result<Option<String>> {
+        let window = self.resolve_window()?;
+        self.clipboard_get_text(&window)?.await
+    }
+
+    /// Reads clipboard text using an explicit `window`.
+    pub async fn clipboard_text_on(&self, window: &Window) -> Result<Option<String>> {
+        self.clipboard_get_text(window)?.await
+    }
+
+    /// Writes clipboard text using the enclosing or main [`Window`].
+    pub async fn set_clipboard_text(&self, text: impl AsRef<str>) -> Result<()> {
+        let window = self.resolve_window()?;
+        self.clipboard_set_text(&window, text)?.await
+    }
+
+    /// Writes clipboard text using an explicit `window`.
+    pub async fn set_clipboard_text_on(
+        &self,
+        window: &Window,
+        text: impl AsRef<str>,
+    ) -> Result<()> {
+        self.clipboard_set_text(window, text)?.await
+    }
+
+    /// Opens the file picker attached to the enclosing or main [`Window`].
+    pub async fn open_files(
+        &self,
+        options: &crate::OpenFilePickerOptions,
+    ) -> Result<crate::PickerOutcome> {
+        let window = self.resolve_window()?;
+        self.open_file_picker(&window, options)?.await
+    }
+
+    /// Opens the file picker attached to an explicit `window`.
+    pub async fn open_files_on(
+        &self,
+        window: &Window,
+        options: &crate::OpenFilePickerOptions,
+    ) -> Result<crate::PickerOutcome> {
+        self.open_file_picker(window, options)?.await
+    }
+
+    /// Opens the folder picker attached to the enclosing or main [`Window`].
+    pub async fn pick_folder(
+        &self,
+        options: &crate::FolderPickerOptions,
+    ) -> Result<crate::PickerOutcome> {
+        let window = self.resolve_window()?;
+        self.open_folder_picker(&window, options)?.await
+    }
+
+    /// Opens the folder picker attached to an explicit `window`.
+    pub async fn pick_folder_on(
+        &self,
+        window: &Window,
+        options: &crate::FolderPickerOptions,
+    ) -> Result<crate::PickerOutcome> {
+        self.open_folder_picker(window, options)?.await
+    }
+
+    /// Opens the save-file picker attached to the enclosing or main [`Window`].
+    pub async fn save_file(
+        &self,
+        options: &crate::SaveFilePickerOptions,
+    ) -> Result<crate::PickerOutcome> {
+        let window = self.resolve_window()?;
+        self.save_file_picker(&window, options)?.await
+    }
+
+    /// Opens the save-file picker attached to an explicit `window`.
+    pub async fn save_file_on(
+        &self,
+        window: &Window,
+        options: &crate::SaveFilePickerOptions,
+    ) -> Result<crate::PickerOutcome> {
+        self.save_file_picker(window, options)?.await
+    }
+
+    /// Shows `dialog` modally over the enclosing or main [`Window`].
+    pub async fn show_modal(&self, dialog: &Window) -> Result<Option<String>> {
+        let owner = self.resolve_window()?;
+        self.show_dialog(&owner, dialog)?.await
+    }
+
+    /// Shows `dialog` modally over an explicit `owner` window.
+    pub async fn show_modal_on(&self, owner: &Window, dialog: &Window) -> Result<Option<String>> {
+        self.show_dialog(owner, dialog)?.await
     }
 
     /// Retains an event subscription until the current reactive view is disposed,
@@ -827,8 +1128,21 @@ impl App {
             controls,
             dispatcher,
             startup_arguments: None,
+            error_handler: None,
             _host: host,
         })
+    }
+
+    /// Installs a custom handler for errors returned by UI event callbacks,
+    /// reactive effects, two-way bindings, and commands.
+    ///
+    /// When unset, errors are printed to `stderr`.
+    pub fn with_error_handler(
+        mut self,
+        handler: impl Fn(&str, &Error) + Send + Sync + 'static,
+    ) -> Self {
+        self.error_handler = Some(Arc::new(handler));
+        self
     }
 
     /// Creates the root control for an already-initialized single-view
@@ -948,8 +1262,12 @@ impl App {
         // host stay alive for the page or process lifetime: the startup callback
         // releases its scope clone once it returns, so this one keeps the
         // retained subscriptions and objects registered.
+        let error_handler = self.error_handler.clone();
         #[cfg(any(target_os = "emscripten", target_os = "android"))]
         {
+            if let Some(handler) = error_handler {
+                UI_ERROR_HANDLER.with(|slot| *slot.borrow_mut() = Some(handler));
+            }
             FACTORY.with(|current| current.replace(Some(controls)));
             let result = self.application.run(&handler);
             std::mem::forget(cleanup_scope);
@@ -959,10 +1277,15 @@ impl App {
         }
         #[cfg(not(any(target_os = "emscripten", target_os = "android")))]
         FACTORY.with(|current| {
+            let previous_err = UI_ERROR_HANDLER.with(|slot| slot.borrow_mut().clone());
+            if let Some(handler) = error_handler {
+                UI_ERROR_HANDLER.with(|slot| *slot.borrow_mut() = Some(handler));
+            }
             let previous = current.replace(Some(controls));
             let result = self.application.run(&handler);
             cleanup_scope.clear();
             current.replace(previous);
+            UI_ERROR_HANDLER.with(|slot| *slot.borrow_mut() = previous_err);
             Ok(result?)
         })
     }
@@ -1038,6 +1361,7 @@ fn to_abi_error(error: Error) -> sys::Error {
         | Error::ControlSlotAlreadyMounted
         | Error::InvalidViewRegistry(_)
         | Error::InvalidViewModelMember { .. }
+        | Error::InvalidValue(_)
         | Error::Async { .. } => sys::Error(sys::E_FAIL),
     }
 }

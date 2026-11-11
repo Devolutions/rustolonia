@@ -1,3 +1,4 @@
+use crate::reactive::UiCallbackHandle;
 use crate::{Error, Result};
 use rustolonia_sys as sys;
 use std::future::Future;
@@ -342,6 +343,82 @@ impl ScopedTask {
 impl Wake for ScopedTask {
     fn wake(self: Arc<Self>) {
         let _ = self.schedule();
+    }
+}
+
+/// Future returned by [`crate::AppScope::run_blocking`] that runs blocking
+/// Rust work on a background OS thread and wakes the polling executor on completion.
+pub struct BlockingOperation<T> {
+    state: Arc<Mutex<CompletionSlot<T>>>,
+}
+
+impl<T: Send + 'static> BlockingOperation<T> {
+    pub(crate) fn spawn(work: impl FnOnce() -> Result<T> + Send + 'static) -> Self {
+        let state = Arc::new(Mutex::new(CompletionSlot::default()));
+        let completion_state = state.clone();
+        std::thread::spawn(move || {
+            let outcome = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(work)) {
+                Ok(Ok(value)) => Ok(value),
+                Ok(Err(err)) => Err(AsyncFailure {
+                    hresult: sys::E_FAIL,
+                    message: err.to_string(),
+                }),
+                Err(_) => Err(AsyncFailure {
+                    hresult: sys::E_FAIL,
+                    message: "blocking task panicked".to_string(),
+                }),
+            };
+            let _ = CompletionSlot::publish(&completion_state, outcome);
+        });
+        Self { state }
+    }
+}
+
+impl<T> Future for BlockingOperation<T> {
+    type Output = Result<T>;
+
+    fn poll(self: Pin<&mut Self>, context: &mut Context<'_>) -> Poll<Self::Output> {
+        CompletionSlot::poll(&self.state, context)
+    }
+}
+
+impl TaskScope {
+    /// Schedules a `!Send` UI-thread future to be polled exclusively on `dispatcher`.
+    pub(crate) fn spawn_local(
+        self: &Arc<Self>,
+        dispatcher: sys::ComPtr<sys::IAvnDispatcher>,
+        future: impl Future<Output = ()> + 'static,
+    ) -> Result<()> {
+        let boxed: Pin<Box<dyn Future<Output = ()>>> = Box::pin(future);
+        let ui_future = UiCallbackHandle::new(Some(boxed));
+        self.spawn(dispatcher, LocalFutureAdapter { ui_future })
+    }
+}
+
+struct LocalFutureAdapter {
+    ui_future: UiCallbackHandle<Option<Pin<Box<dyn Future<Output = ()>>>>>,
+}
+
+impl Future for LocalFutureAdapter {
+    type Output = ();
+
+    fn poll(self: Pin<&mut Self>, context: &mut Context<'_>) -> Poll<Self::Output> {
+        match self.ui_future.with(|slot| {
+            let Some(fut) = slot.as_mut() else {
+                return Poll::Ready(());
+            };
+            let poll = fut.as_mut().poll(context);
+            if poll.is_ready() {
+                *slot = None;
+            }
+            poll
+        }) {
+            Ok(poll) => poll,
+            Err(err) => {
+                crate::runtime::report_ui_error("local UI future polled outside UI thread", &err);
+                Poll::Ready(())
+            }
+        }
     }
 }
 

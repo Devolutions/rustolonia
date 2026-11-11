@@ -243,6 +243,7 @@ fn emit_collection(collection: &ProjectedProperty) -> String {
          \x20   index_of: unsafe extern \"system\" fn(*mut {interface_name}, {abi_type}, *mut i32) -> i32,\n\
          \x20   remove_at: unsafe extern \"system\" fn(*mut {interface_name}, i32) -> i32,\n\
          \x20   clear: unsafe extern \"system\" fn(*mut {interface_name}) -> i32,\n\
+         \x20   insert: unsafe extern \"system\" fn(*mut {interface_name}, i32, {abi_type}) -> i32,\n\
          }}\n\n\
          #[repr(C)]\n\
          pub struct {interface_name} {{\n\
@@ -280,6 +281,9 @@ fn emit_collection(collection: &ProjectedProperty) -> String {
                  \x20   pub fn add(&self, value: &ComPtr<{element_name}>) -> Result<()> {{\n\
                  \x20       unsafe {{ hresult::check(((*self.as_raw()).vtbl.as_ref().unwrap().add)(self.as_raw(), value.as_raw())) }}\n\
                  \x20   }}\n\
+                 \x20   pub fn insert(&self, index: usize, value: &ComPtr<{element_name}>) -> Result<()> {{\n\
+                 \x20       unsafe {{ hresult::check(((*self.as_raw()).vtbl.as_ref().unwrap().insert)(self.as_raw(), index as i32, value.as_raw())) }}\n\
+                 \x20   }}\n\
                  \x20   pub fn index_of(&self, value: &ComPtr<{element_name}>) -> Result<Option<usize>> {{\n\
                  \x20       unsafe {{\n\
                  \x20           let mut index = -1;\n\
@@ -301,6 +305,10 @@ fn emit_collection(collection: &ProjectedProperty) -> String {
              \x20       let value = crate::terminated_utf16(value);\n\
              \x20       unsafe { hresult::check(((*self.as_raw()).vtbl.as_ref().unwrap().add)(self.as_raw(), value.as_ptr().cast_mut())) }\n\
              \x20   }\n\
+             \x20   pub fn insert(&self, index: usize, value: &[u16]) -> Result<()> {\n\
+             \x20       let value = crate::terminated_utf16(value);\n\
+             \x20       unsafe { hresult::check(((*self.as_raw()).vtbl.as_ref().unwrap().insert)(self.as_raw(), index as i32, value.as_ptr().cast_mut())) }\n\
+             \x20   }\n\
              \x20   pub fn index_of(&self, value: &[u16]) -> Result<Option<usize>> {\n\
              \x20       let value = crate::terminated_utf16(value);\n\
              \x20       unsafe {\n\
@@ -321,6 +329,9 @@ fn emit_collection(collection: &ProjectedProperty) -> String {
              \x20   pub fn add(&self, value: AvnVariant) -> Result<()> {\n\
              \x20       unsafe { hresult::check(((*self.as_raw()).vtbl.as_ref().unwrap().add)(self.as_raw(), value)) }\n\
              \x20   }\n\
+             \x20   pub fn insert(&self, index: usize, value: AvnVariant) -> Result<()> {\n\
+             \x20       unsafe { hresult::check(((*self.as_raw()).vtbl.as_ref().unwrap().insert)(self.as_raw(), index as i32, value)) }\n\
+             \x20   }\n\
              \x20   pub fn index_of(&self, value: AvnVariant) -> Result<Option<usize>> {\n\
              \x20       unsafe {\n\
              \x20           let mut index = -1;\n\
@@ -339,6 +350,9 @@ fn emit_collection(collection: &ProjectedProperty) -> String {
              \x20   }\n\
              \x20   pub fn add(&self, value: i64) -> Result<()> {\n\
              \x20       unsafe { hresult::check(((*self.as_raw()).vtbl.as_ref().unwrap().add)(self.as_raw(), value)) }\n\
+             \x20   }\n\
+             \x20   pub fn insert(&self, index: usize, value: i64) -> Result<()> {\n\
+             \x20       unsafe { hresult::check(((*self.as_raw()).vtbl.as_ref().unwrap().insert)(self.as_raw(), index as i32, value)) }\n\
              \x20   }\n\
              \x20   pub fn index_of(&self, value: i64) -> Result<Option<usize>> {\n\
              \x20       unsafe {\n\

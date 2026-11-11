@@ -27,6 +27,9 @@ public partial interface IAvnDateTimeList
 
     [PreserveSig]
     int Clear();
+
+    [PreserveSig]
+    int Insert(int index, long value);
 }
 
 public static class AvnDateTimeListMarshal

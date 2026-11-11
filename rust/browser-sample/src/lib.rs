@@ -4,12 +4,9 @@
 //! host calls [`rustolonia_main`] on startup; `App::run` returns as soon as
 //! the browser lifetime is started, and the page's event loop drives the UI.
 
-use std::sync::atomic::{AtomicI32, Ordering};
-use std::sync::Arc;
-
 use rustolonia::{
-    App, AppScope, Button, HorizontalAlignment, Orientation, Result, StackPanel, TextBlock,
-    TextBox, Thickness, VerticalAlignment,
+    fmt, rsx, App, AppScope, Button, HorizontalAlignment, Orientation, Result, StackPanel,
+    TextBlock, TextBox, VerticalAlignment,
 };
 
 /// Entry point the browser host imports from `rustolonia_app.a`.
@@ -25,77 +22,51 @@ pub extern "C" fn rustolonia_main() -> i32 {
 }
 
 fn build_ui(scope: &AppScope) -> Result<()> {
-    let count = Arc::new(AtomicI32::new(0));
+    let count = scope.signal(0_i32);
+    let input = scope.signal(String::new());
 
-    let heading = TextBlock::new()?
-        .text("Rustolonia in the browser")?
-        .font_size(24.0)?
-        .horizontal_alignment(HorizontalAlignment::Center)?;
-
-    let count_label = TextBlock::new()?
-        .text("0")?
-        .font_size(48.0)?
-        .horizontal_alignment(HorizontalAlignment::Center)?;
-
-    let increment = Button::new()?
-        .content(Some(&TextBlock::new()?.text("Increment")?))?
-        .margin(Thickness::uniform(4.0))?
-        .on_click(scope, {
-            let count = Arc::clone(&count);
-            let count_label = count_label.clone();
-            move |_| {
-                let value = count.fetch_add(1, Ordering::Relaxed) + 1;
-                let _ = count_label.set_text(value.to_string());
+    let root = rsx! {
+        StackPanel {
+            orientation: Orientation::Vertical,
+            spacing: 12.0,
+            horizontal_alignment: HorizontalAlignment::Center,
+            vertical_alignment: VerticalAlignment::Center,
+            TextBlock {
+                font_size: 24.0,
+                horizontal_alignment: HorizontalAlignment::Center,
+                "Rustolonia in the browser"
             }
-        })?;
-
-    let reset = Button::new()?
-        .content(Some(&TextBlock::new()?.text("Reset")?))?
-        .margin(Thickness::uniform(4.0))?
-        .on_click(scope, {
-            let count = Arc::clone(&count);
-            let count_label = count_label.clone();
-            move |_| {
-                count.store(0, Ordering::Relaxed);
-                let _ = count_label.set_text("0");
+            TextBlock {
+                font_size: 48.0,
+                horizontal_alignment: HorizontalAlignment::Center,
+                text: fmt!("{}", count.get()),
             }
-        })?;
-
-    let buttons = StackPanel::new()?
-        .orientation(Orientation::Horizontal)?
-        .horizontal_alignment(HorizontalAlignment::Center)?;
-    buttons.children()?.add(increment)?;
-    buttons.children()?.add(reset)?;
-
-    let echo = TextBlock::new()?
-        .text("Echo: ")?
-        .horizontal_alignment(HorizontalAlignment::Center)?;
-    let input = TextBox::new()?
-        .placeholder_text("Type here")?
-        .width(240.0)?;
-    let input_reader = input.clone();
-    let input = input.on_text_changed(scope, {
-        let echo = echo.clone();
-        move |_| {
-            let text = input_reader
-                .get_text()
-                .unwrap_or_default()
-                .unwrap_or_default();
-            let _ = echo.set_text(format!("Echo: {text}"));
+            StackPanel {
+                orientation: Orientation::Horizontal,
+                horizontal_alignment: HorizontalAlignment::Center,
+                Button {
+                    margin: 4.0,
+                    on_click: move |_| count.update(|c| *c += 1),
+                    "Increment"
+                }
+                Button {
+                    margin: 4.0,
+                    on_click: move |_| count.set(0),
+                    "Reset"
+                }
+            }
+            TextBox {
+                placeholder_text: "Type here",
+                width: 240.0,
+                text: input.two_way(),
+            }
+            TextBlock {
+                horizontal_alignment: HorizontalAlignment::Center,
+                text: fmt!("Echo: {}", input.get()),
+            }
         }
-    })?;
-
-    let root = StackPanel::new()?
-        .orientation(Orientation::Vertical)?
-        .spacing(12.0)?
-        .horizontal_alignment(HorizontalAlignment::Center)?
-        .vertical_alignment(VerticalAlignment::Center)?;
-    let children = root.children()?;
-    children.add(heading)?;
-    children.add(count_label)?;
-    children.add(buttons)?;
-    children.add(input)?;
-    children.add(echo)?;
+    }
+    .build(scope)?;
 
     scope.set_main_view(&root)
 }

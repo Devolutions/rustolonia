@@ -8,11 +8,11 @@ description = "Standalone Rust application using the Rust-only AXAML compiler"
 build = "build.rs"
 
 [dependencies]
-# The v12.1.5 tag predates this template's APIs. Until a release includes them,
+# The v12.1.6 tag predates this template's APIs. Until a release includes them,
 # override the three Rustolonia crates with this revision via .cargo/config.toml.
-rustolonia = { git = "https://github.com/Devolutions/rustolonia", tag = "v12.1.5" }
+rustolonia = { git = "https://github.com/Devolutions/rustolonia", tag = "v12.1.6" }
 
 [build-dependencies]
-rustolonia-bindgen = { git = "https://github.com/Devolutions/rustolonia", tag = "v12.1.5" }
+rustolonia-bindgen = { git = "https://github.com/Devolutions/rustolonia", tag = "v12.1.6" }
 
 [workspace]

@@ -81,8 +81,8 @@ mod macos {
             .with_application_name(&name)?
             .without_startup_arguments()
             .run(move |scope| {
-                let first = Window::new()?.title("First name-test window")?;
-                let second = Window::new()?.title("Second name-test window")?;
+                let first = Window::el().title("First name-test window").build(scope)?;
+                let second = Window::el().title("Second name-test window").build(scope)?;
                 scope.mount(first.clone())?;
                 scope.mount(second.clone())?;
                 unsafe {

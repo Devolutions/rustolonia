@@ -190,7 +190,7 @@ mod macos {
                 app_menu.set_items(&[NativeMenuItem::command(ABOUT, "About Menu Harness")])?;
                 scope.set_application_menu(Some(&app_menu))?;
 
-                let window = Window::new()?.title("Native menu harness")?;
+                let window = Window::el().title("Native menu harness").build(scope)?;
                 scope.set_window_menu(&window, Some(&menu))?;
                 scope.mount(window.clone())?;
                 unsafe { activate(ns_app(), sel(c"activateIgnoringOtherApps:"), true) };

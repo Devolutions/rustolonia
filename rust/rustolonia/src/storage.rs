@@ -10,7 +10,8 @@
 //! and the file-association packaging metadata.
 
 use crate::async_runtime::{AsyncFailure, CompletionSlot};
-use crate::runtime::{AsControl, EventSubscription};
+use crate::reactive::UiCallbackHandle;
+use crate::runtime::{report_ui_error, AsControl, EventSubscription, IntoEventResult};
 use crate::{AppContext, AppScope, Error, Result, Window};
 use rustolonia_sys as sys;
 use std::fmt;
@@ -738,19 +739,23 @@ impl AppContext {
     ///
     /// `accepted_effects` is the conservative mask the host uses to answer the
     /// platform synchronously; Rust is never called inside the drag loop.
-    pub fn subscribe_file_drop(
+    pub fn subscribe_file_drop<R: IntoEventResult>(
         &self,
         target: &impl AsControl,
         accepted_effects: DragDropEffects,
-        callback: impl FnMut(FileDropEvent) + Send + 'static,
+        mut callback: impl FnMut(FileDropEvent) -> R + 'static,
     ) -> Result<EventSubscription> {
         let target = target.as_control()?;
         let desktop = self.application().clone();
-        let mut callback = callback;
+        let cb = UiCallbackHandle::new(move |event: FileDropEvent| {
+            if let Err(err) = callback(event).into_event_result() {
+                report_ui_error("file drop callback failed", &err);
+            }
+        });
         let handler = sys::file_drop_handler(move |arguments| {
             let event =
                 FileDropEvent::from_abi(arguments).map_err(|_| sys::Error(sys::E_INVALIDARG))?;
-            callback(event);
+            let _ = cb.with(|f| f(event));
             Ok(())
         });
         let subscription_id =
@@ -761,16 +766,20 @@ impl AppContext {
     }
 
     /// Subscribes to post-startup activation.
-    pub fn subscribe_activation(
+    pub fn subscribe_activation<R: IntoEventResult>(
         &self,
-        callback: impl FnMut(ActivationEvent) + Send + 'static,
+        mut callback: impl FnMut(ActivationEvent) -> R + 'static,
     ) -> Result<EventSubscription> {
         let desktop = self.application().clone();
-        let mut callback = callback;
+        let cb = UiCallbackHandle::new(move |event: ActivationEvent| {
+            if let Err(err) = callback(event).into_event_result() {
+                report_ui_error("activation callback failed", &err);
+            }
+        });
         let handler = sys::activation_handler(move |arguments| {
             let event =
                 ActivationEvent::from_abi(arguments).map_err(|_| sys::Error(sys::E_INVALIDARG))?;
-            callback(event);
+            let _ = cb.with(|f| f(event));
             Ok(())
         });
         let subscription_id = desktop.advise_activation(Some(&handler))?;
@@ -806,12 +815,12 @@ impl AppContext {
 
 impl AppScope {
     /// Subscribes to incoming file drags and keeps the subscription alive for
-    /// the whole application scope.
-    pub fn on_file_drop(
+    /// the enclosing view or application scope.
+    pub fn on_file_drop<R: IntoEventResult>(
         &self,
         target: &impl AsControl,
         accepted_effects: DragDropEffects,
-        callback: impl FnMut(FileDropEvent) + Send + 'static,
+        callback: impl FnMut(FileDropEvent) -> R + 'static,
     ) -> Result<()> {
         let subscription = self.subscribe_file_drop(target, accepted_effects, callback)?;
         self.retain_subscription(subscription);
@@ -819,9 +828,9 @@ impl AppScope {
     }
 
     /// Subscribes to post-startup activation for the whole application scope.
-    pub fn on_activation(
+    pub fn on_activation<R: IntoEventResult>(
         &self,
-        callback: impl FnMut(ActivationEvent) + Send + 'static,
+        callback: impl FnMut(ActivationEvent) -> R + 'static,
     ) -> Result<()> {
         let subscription = self.subscribe_activation(callback)?;
         self.retain_subscription(subscription);

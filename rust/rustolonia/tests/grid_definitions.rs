@@ -1,38 +1,124 @@
-//! The safe surface for `Grid`'s track definitions.
+//! The safe surface for `Grid`'s track definitions (`GridTracks`, `GridTrack`, `GridLength`,
+//! and `tracks!`).
 //!
-//! Parsing is owned by the managed `ColumnDefinitions`/`RowDefinitions`, so a real round trip
-//! needs a live host and is covered by `nativeaot_object_model`. These tests pin the shape of
-//! the safe API itself: a definition list is a plain string in Rust, written from anything
-//! string-like and read back as an owned `String` that is never optional.
+//! Managed `ColumnDefinitions`/`RowDefinitions` round-tripping across a live host is covered by
+//! `nativeaot_object_model`. These tests verify the typed Rust API: setters and `El<Grid>`
+//! builders accept strings, `GridTracks`, `[GridTrack; N]`, `[GridLength; N]`, or `tracks!`,
+//! while getters return `Result<GridTracks>`.
 
-use rustolonia::{Grid, Result};
+use rustolonia::view::{markers, IntoProp, PropBinding, TryIntoGridTracks};
+use rustolonia::{tracks, El, Error, Grid, GridLength, GridTrack, GridTracks, Result, Signal};
 
 #[allow(dead_code)]
-fn definitions_are_written_from_anything_string_like(grid: &Grid) -> Result<()> {
+fn definitions_are_written_from_strings_arrays_and_tracks_macro(grid: &Grid) -> Result<()> {
     let owned = String::from("Auto,*");
     grid.set_column_definitions("*,Auto,120")?;
     grid.set_row_definitions(String::from("Auto,2*"))?;
     grid.set_column_definitions(&owned)?;
-    // An empty list clears the tracks; there is no `None` to pass.
-    grid.set_row_definitions("")
+    grid.set_column_definitions(tracks![*, Auto, 120])?;
+    grid.set_row_definitions([GridTrack::auto(), GridTrack::star(2.0)])?;
+    grid.set_column_definitions([
+        GridLength::Star(1.0),
+        GridLength::Auto,
+        GridLength::Px(120.0),
+    ])?;
+    // An empty list clears the tracks.
+    grid.set_row_definitions("")?;
+    grid.set_row_definitions(GridTracks::new())
 }
 
 #[allow(dead_code)]
-fn definitions_are_read_back_as_owned_strings(grid: &Grid) -> Result<(String, String)> {
-    Ok((grid.get_column_definitions()?, grid.get_row_definitions()?))
+fn definitions_are_read_back_as_typed_grid_tracks(grid: &Grid) -> Result<(GridTracks, GridTracks)> {
+    Ok((grid.column_definitions()?, grid.row_definitions()?))
 }
 
 #[allow(dead_code)]
-fn definitions_chain_as_builders(grid: Grid) -> Result<Grid> {
-    grid.column_definitions("*,Auto,120")?
-        .row_definitions("Auto,2*")
+fn definitions_chain_on_declarative_el_builders(reactive_rows: Signal<GridTracks>) -> El<Grid> {
+    Grid::el()
+        .column_definitions(tracks![*, Auto, 120])
+        .row_definitions(reactive_rows)
+}
+
+#[allow(dead_code)]
+fn string_definitions_chain_on_declarative_el_builders() -> El<Grid> {
+    Grid::el()
+        .column_definitions("*,Auto,120")
+        .row_definitions(|| String::from("Auto,2*"))
 }
 
 #[test]
-fn a_definition_list_is_a_string_rather_than_a_projected_collection() {
-    // The generated safe getters return `String`, not a collection handle, so the whole
-    // feature is expressible without any definition object crossing the ABI. If that ever
-    // changed, the signatures above would stop compiling.
-    fn assert_string_shaped<F: Fn(&Grid) -> Result<(String, String)>>(_: F) {}
-    assert_string_shaped(definitions_are_read_back_as_owned_strings);
+fn grid_getters_return_typed_grid_tracks() {
+    fn assert_tracks_shaped<F: Fn(&Grid) -> Result<(GridTracks, GridTracks)>>(_: F) {}
+    assert_tracks_shaped(definitions_are_read_back_as_typed_grid_tracks);
+}
+
+#[test]
+fn grid_tracks_parse_format_and_match_tracks_macro() {
+    let built = tracks![*, Auto@Labels, 120, 2.5*];
+    assert_eq!(built.len(), 4);
+    assert!(!built.is_empty());
+    assert_eq!(
+        built.as_slice(),
+        &[
+            GridTrack::star(1.0),
+            GridTrack::auto().shared_group("Labels"),
+            GridTrack::px(120.0),
+            GridTrack::star(2.5),
+        ]
+    );
+    assert_eq!(built.to_string(), "*,Auto@Labels,120,2.5*");
+    assert_eq!(
+        "1*, Auto@Labels, 120, 2.5*".parse::<GridTracks>().unwrap(),
+        built
+    );
+    assert_eq!(
+        "1*,Auto,120".parse::<GridTracks>().unwrap().to_string(),
+        "*,Auto,120"
+    );
+    assert_eq!(tracks!["*,Auto,120"].to_string(), "*,Auto,120");
+
+    let empty: GridTracks = "".parse().unwrap();
+    assert!(empty.is_empty());
+    assert_eq!(empty, tracks![]);
+    assert_eq!(empty.to_string(), "");
+
+    assert!(matches!(
+        "-5".parse::<GridTracks>(),
+        Err(Error::InvalidValue(_))
+    ));
+    assert!(matches!(
+        "-1*".parse::<GridTracks>(),
+        Err(Error::InvalidValue(_))
+    ));
+    assert!(matches!(
+        "Auto@".parse::<GridTracks>(),
+        Err(Error::InvalidValue(_))
+    ));
+    assert!(matches!(
+        "Auto@A@B".parse::<GridTracks>(),
+        Err(Error::InvalidValue(_))
+    ));
+}
+
+#[test]
+fn invalid_grid_track_strings_are_reported_by_static_and_reactive_bindings() {
+    let static_binding =
+        <&str as IntoProp<GridTracks, markers::GridTracksStringMarker>>::into_prop("Auto@@Bad");
+    let PropBinding::Fallible(mut compute) = static_binding else {
+        panic!("string grid definitions must use fallible conversion");
+    };
+    assert!(matches!(compute(), Err(Error::InvalidValue(_))));
+
+    let binding = <_ as IntoProp<GridTracks, markers::GridTracksStringMarker>>::into_prop(|| {
+        String::from("Auto@@Bad")
+    });
+    let PropBinding::Fallible(mut compute) = binding else {
+        panic!("reactive string grid definitions must use fallible conversion");
+    };
+    assert!(matches!(compute(), Err(Error::InvalidValue(_))));
+
+    assert!(matches!(
+        TryIntoGridTracks::try_into_grid_tracks(&"Auto@@Bad"),
+        Err(Error::InvalidValue(_))
+    ));
 }

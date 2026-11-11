@@ -89,9 +89,9 @@ jobs:
       - name: Check the publishable crates package and build standalone
         if: runner.os == 'Linux'
         working-directory: rust
-        # Verify against the matching unpublished sys sources, not a released
+        # Verify against the matching unpublished sys/macros sources, not a released
         # crate with the same version but an older API.
-        run: cargo package --locked -p rustolonia-sys -p rustolonia-bindgen -p rustolonia --config 'patch.crates-io.rustolonia-sys.path="rustolonia-sys"'
+        run: cargo package --locked -p rustolonia-sys -p rustolonia-macros -p rustolonia-bindgen -p rustolonia --config 'patch.crates-io.rustolonia-sys.path="rustolonia-sys"' --config 'patch.crates-io.rustolonia-macros.path="rustolonia-macros"'
 
   release-gate:
     name: ${{ matrix.rid }}

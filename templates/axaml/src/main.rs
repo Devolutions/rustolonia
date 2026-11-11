@@ -6,8 +6,8 @@ mod components;
 use generated_filter_editor::{build_filter_editor, FilterEditorBindings};
 use generated_main_window::{build_main_window, MainWindowBindings, MainWindowHandlers};
 use rustolonia::{
-    ConversionDirection, Error, PropertyPath, RegisteredValueConverter, ScalarKind, ScalarPath,
-    ScalarValue, ValueConverterDispatch, Variant,
+    ConversionDirection, Error, Lens, PropertyPath, RegisteredValueConverter, ScalarKind,
+    ScalarPath, ScalarValue, ValueConverterDispatch, Variant,
 };
 use std::sync::Arc;
 
@@ -23,7 +23,7 @@ pub struct EditableContact {
     pub name: rustolonia::Signal<String>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Lens)]
 struct Profile {
     title: String,
     message: String,
@@ -43,13 +43,10 @@ impl ValueConverterDispatch for SampleConverters {
         _culture: &str,
     ) -> rustolonia::Result<ScalarValue> {
         match (converter_id, direction, value) {
-            (1, ConversionDirection::Convert, ScalarValue::String(value)) => {
-                Ok(ScalarValue::Boolean(!value.is_empty()))
-            }
-            (2, ConversionDirection::Convert, ScalarValue::Int64(value)) => {
+            (1, ConversionDirection::Convert, ScalarValue::Int64(value)) => {
                 Ok(ScalarValue::String(value.to_string()))
             }
-            (2, ConversionDirection::ConvertBack, ScalarValue::String(value)) => value
+            (1, ConversionDirection::ConvertBack, ScalarValue::String(value)) => value
                 .parse::<i64>()
                 .map(ScalarValue::Int64)
                 .map_err(|_| Error::Binding("enter a whole number".to_string())),
@@ -149,18 +146,8 @@ fn build(scope: &rustolonia::AppScope) -> rustolonia::Result<()> {
         child_view,
         recent_contacts,
         contacts_item_refs_1: rustolonia::ItemNameScope::default(),
-        profile_title: PropertyPath::read_only(move || Ok(profile.get().title)),
-        profile_message: PropertyPath::read_only(move || Ok(profile.get().message)),
-        profile_message_converter_source: ScalarPath::new(
-            ScalarKind::String,
-            PropertyPath::read_only(move || Ok(ScalarValue::String(profile.get().message))),
-        )?,
-        converter_static_string_converters_is_not_null_or_empty: RegisteredValueConverter::new(
-            "x:Static StringConverters.IsNotNullOrEmpty",
-            1,
-            converters.clone(),
-            culture,
-        )?,
+        profile_title: Profile::lens_title(profile),
+        profile_message: Profile::lens_message(profile),
         set_ports_command: scope.signal(Some(command)),
         profile_port_command_parameter: PropertyPath::read_only(move || {
             Ok(Variant::Utf16(profile.get().port))
@@ -181,7 +168,7 @@ fn build(scope: &rustolonia::AppScope) -> rustolonia::Result<()> {
         )?,
         converter_resource_integer_converter: RegisteredValueConverter::new(
             "StaticResource IntegerConverter",
-            2,
+            1,
             converters,
             culture,
         )?,
@@ -217,7 +204,7 @@ fn build(scope: &rustolonia::AppScope) -> rustolonia::Result<()> {
     refs.custom_editor
         .get()
         .ok_or_else(|| Error::Binding("custom editor host was not built".into()))?
-        .set_content(Some(&editor))?;
+        .set_content(&editor)?;
     child_view.bind(scope, selected_child, child_views)?;
     let theme = scope.theme_variant_signal(&window)?;
     let resources_for_theme = theme_resources.clone();

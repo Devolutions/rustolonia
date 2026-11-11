@@ -359,4 +359,31 @@ public partial interface IAvnApplication
     /// </summary>
     [PreserveSig]
     int CreateNativeMenuBar(out IAvnControl? bar);
+
+    // Code-first declarative styles and window key bindings.
+
+    /// <summary>
+    /// Compiles and attaches a JSON-encoded style sheet to <paramref name="scopeControl"/>
+    /// (or to <c>Application.Current.Styles</c> when <paramref name="scopeControl"/> is null),
+    /// returning a handle removable via <see cref="RemoveStyles"/>.
+    /// </summary>
+    [PreserveSig]
+    int ApplyStyles(IAvnControl? scopeControl, string? rulesJson, out long styleHandle);
+
+    /// <summary>Removes a style sheet previously registered with <see cref="ApplyStyles"/>.</summary>
+    [PreserveSig]
+    int RemoveStyles(long styleHandle);
+
+    /// <summary>Adds a <c>KeyBinding</c> to <paramref name="window"/>.</summary>
+    [PreserveSig]
+    int AddWindowKeyBinding(
+        IAvnWindow? window,
+        string? gesture,
+        IAvnCommand? command,
+        AvnVariant parameter,
+        out long bindingId);
+
+    /// <summary>Removes a <c>KeyBinding</c> previously added to <paramref name="window"/>.</summary>
+    [PreserveSig]
+    int RemoveWindowKeyBinding(IAvnWindow? window, long bindingId);
 }

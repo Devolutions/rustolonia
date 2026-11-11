@@ -42,19 +42,30 @@ public sealed partial class AvnBrush : IAvnBrush
             return null;
         if (value is global::Avalonia.Media.ISolidColorBrush solid)
             return new AvnBrush(AvnColor.FromAvalonia(solid.Color), solid.Opacity);
+        if (value is global::Avalonia.Media.ILinearGradientBrush linear)
+            return (IAvnBrush)AvnLinearGradientBrush.FromLinearGradientBrush(linear);
+        if (value is global::Avalonia.Media.IRadialGradientBrush radial)
+            return (IAvnBrush)AvnRadialGradientBrush.FromRadialGradientBrush(radial);
         throw new global::System.NotSupportedException(
-            $"Brush '{value.GetType().FullName}' is not a solid colour brush, so it cannot cross the ABI.")
+            $"Brush '{value.GetType().FullName}' is not a solid or linear/radial gradient brush, so it cannot cross the ABI.")
         {
             HResult = global::Avalonia.Host.HResults.AVN_E_NONSOLIDBRUSH,
         };
     }
 
-    /// <summary>Materialises an immutable solid brush from the colour and opacity carried across.</summary>
+    /// <summary>Materialises an immutable solid or gradient brush from the handle carried across.</summary>
     public static global::Avalonia.Media.IBrush? ToBrush(IAvnBrush? value)
     {
         if (value is null)
             return null;
         var hr = value.GetColor(out var color);
+        if (hr == global::Avalonia.Host.HResults.AVN_E_NONSOLIDBRUSH)
+        {
+            if (value is IAvnLinearGradientBrush linear)
+                return AvnLinearGradientBrush.ToLinearGradientBrush(linear);
+            if (value is IAvnRadialGradientBrush radial)
+                return AvnRadialGradientBrush.ToRadialGradientBrush(radial);
+        }
         if (hr < 0)
             global::System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(hr);
         hr = value.GetOpacity(out var opacity);

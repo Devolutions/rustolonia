@@ -103,7 +103,7 @@ impl<T: PickerValue> EnumPickerBuilder<T> {
                     return;
                 }
                 let result = (|| -> Result<()> {
-                    let index = callback_combo.get_selected_index()?;
+                    let index = callback_combo.selected_index()?;
                     if index == -1 {
                         return Ok(());
                     }
@@ -159,7 +159,9 @@ impl<T: PickerValue> EnumPickerBuilder<T> {
                     let items = combo.items()?;
                     items.clear()?;
                     for value in &choices {
-                        items.add(TextBlock::new()?.text(value.label(&current_culture))?)?;
+                        let tb = TextBlock::new()?;
+                        tb.set_text(value.label(&current_culture))?;
+                        items.add(tb)?;
                     }
                     *visible
                         .lock()
@@ -172,7 +174,7 @@ impl<T: PickerValue> EnumPickerBuilder<T> {
                         .map_err(|_| Error::Binding("EnumPicker has too many choices".into()))?,
                     None => -1,
                 };
-                if combo.get_selected_index()? != index {
+                if combo.selected_index()? != index {
                     combo.set_selected_index(index)?;
                 }
                 Ok(())

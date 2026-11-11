@@ -112,12 +112,12 @@ public unsafe class BrushMemberComTests
     }
 
     [Fact]
-    public void A_non_solid_brush_fails_explicitly_instead_of_picking_a_nearest_colour()
+    public void An_unsupported_brush_fails_explicitly_instead_of_picking_a_nearest_colour()
     {
         var factory = new AvnControlFactory();
         Assert.Equal(0, factory.CreateBorder(out var projected));
         Assert.NotNull(projected);
-        Target<Border>(projected).Background = new LinearGradientBrush
+        Target<Border>(projected).Background = new ConicGradientBrush
         {
             GradientStops =
             {
@@ -128,6 +128,44 @@ public unsafe class BrushMemberComTests
 
         Through<IAvnBorder>(projected, value =>
             Assert.Equal(HResults.AVN_E_NONSOLIDBRUSH, value.GetBackground(out _)));
+    }
+
+    [Fact]
+    public void Linear_and_radial_gradient_brushes_round_trip_through_chrome_properties()
+    {
+        var factory = new AvnControlFactory();
+        Assert.Equal(0, factory.CreateBorder(out var projected));
+        Assert.NotNull(projected);
+
+        var stops = new AvnGradientStopBuffer();
+        stops[0] = new AvnGradientStop { Offset = 0.0, Color = AvnColor.FromAvalonia(Colors.Crimson) };
+        stops[1] = new AvnGradientStop { Offset = 1.0, Color = AvnColor.FromAvalonia(Colors.Gold) };
+        Assert.Equal(
+            0,
+            factory.CreateLinearGradientBrush(
+                0.85,
+                0,
+                2,
+                stops,
+                new AvnRelativePoint { X = 0, Y = 0, Unit = 0 },
+                new AvnRelativePoint { X = 1, Y = 1, Unit = 0 },
+                out var linear));
+        Assert.NotNull(linear);
+
+        Through<IAvnBorder>(projected, value =>
+        {
+            Assert.Equal(0, value.SetBackground((IAvnBrush)linear));
+            Assert.Equal(0, value.GetBackground(out var readBack));
+            Assert.NotNull(readBack);
+            Assert.Equal(HResults.AVN_E_NONSOLIDBRUSH, readBack.GetColor(out _));
+            var asLinear = Assert.IsAssignableFrom<IAvnLinearGradientBrush>(readBack);
+            Assert.Equal(0, asLinear.GetStopCount(out var count));
+            Assert.Equal(2, count);
+            Assert.Equal(0, asLinear.GetOpacity(out var opacity));
+            Assert.Equal(0.85, opacity, 5);
+        });
+
+        Assert.IsAssignableFrom<ILinearGradientBrush>(Target<Border>(projected).Background);
     }
 
     [Fact]

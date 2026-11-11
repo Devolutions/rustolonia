@@ -18,6 +18,7 @@ cat >>"$app/.cargo/config.toml" <<TOML
 
 [patch."https://github.com/Devolutions/rustolonia"]
 rustolonia = { path = "$root/rust/rustolonia" }
+rustolonia-macros = { path = "$root/rust/rustolonia-macros" }
 rustolonia-bindgen = { path = "$root/rust/rustolonia-bindgen" }
 rustolonia-sys = { path = "$root/rust/rustolonia-sys" }
 TOML

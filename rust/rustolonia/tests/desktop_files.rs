@@ -1,4 +1,4 @@
-﻿//! Safe-API desktop file integration against the published NativeAOT host.
+//! Safe-API desktop file integration against the published NativeAOT host.
 //!
 //! No platform dialog is ever opened: this covers capability discovery,
 //! startup/open-with argument forwarding, activation normalization, drop and
@@ -9,9 +9,7 @@
 //! exactly one application; the companion `desktop_files_without_arguments.rs`
 //! integration test runs in its own binary for the same reason.
 
-use rustolonia::{
-    App, DragDropEffects, Error, OpenFilePickerOptions, StorageItemKind, TextBlock, Window,
-};
+use rustolonia::{App, DragDropEffects, Error, OpenFilePickerOptions, StorageItemKind, Window};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -97,9 +95,10 @@ fn desktop_file_integration_runs_through_nativeaot() {
         assert_eq!("myapp://open/7", items[1].uri());
         assert_eq!(None, items[1].local_path());
 
-        let window = Window::new()?
-            .title("desktop files")?
-            .content(Some(&TextBlock::new()?.text("desktop files")?))?;
+        let window = Window::el()
+            .title("desktop files")
+            .content("desktop files")
+            .build(scope)?;
         scope.mount(window.clone())?;
 
         // Mounted windows are tracked so a Rust view model can parent a picker.

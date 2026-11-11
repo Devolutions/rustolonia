@@ -92,6 +92,8 @@ pub struct ProjectedAttachedProperty {
     pub managed_type_name: String,
     #[serde(default)]
     pub is_nullable: bool,
+    #[serde(default)]
+    pub string_converter_type_name: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -175,6 +177,8 @@ pub struct ProjectedProperty {
     pub managed_type_name: Option<String>,
     #[serde(default)]
     pub is_nullable: bool,
+    #[serde(default)]
+    pub string_converter_type_name: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]

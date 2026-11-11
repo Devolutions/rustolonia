@@ -1,14 +1,19 @@
 use rustolonia::{
-    selection_mode, App, Border, Brush, Button, ClickMode, Color, ComboBox, ComboBoxItem,
-    ContextMenu, CornerRadius, DatePicker, Dock, DockPanel, DropDownButton, ExpandDirection,
-    Expander, Flyout, FlyoutShowMode, FontWeight, Grid, GridResizeBehavior, GridResizeDirection,
-    GridSplitter, HorizontalAlignment, HyperlinkButton, Image, ListBox, ListBoxItem, Menu,
-    MenuFlyout, MenuItem, MenuItemToggleType, Orientation, PlacementMode, ProgressBar, RadioButton,
-    RelativePanel, RepeatButton, ScrollViewer, SplitButton, SplitView, SplitViewDisplayMode,
-    SplitViewPanePlacement, StackPanel, Stretch, StretchDirection, TabControl, TabItem,
-    TextAlignment, TextBlock, TextBox, ThemeVariant, Thickness, TimePicker, ToggleSplitButton,
-    ToggleSwitch, ToolTip, TreeView, TreeViewItem, UniformGrid, VerticalAlignment, Viewbox, Window,
-    WindowState, WrapPanel, WrapPanelItemsAlignment,
+    tracks, AnyEl, App, AutoCompleteBox, Border, Brush, Button, CivilDate, CivilTime, ClickMode,
+    Color, ComboBox, ComboBoxItem, Command, ContextMenu, CornerRadius, DatePicker, Decimal, Dock,
+    DockPanel, DropDownButton, ExpandDirection, Expander, Flyout, FlyoutShowMode, FontWeight,
+    GradientStop, Grid, GridResizeBehavior, GridResizeDirection, GridSplitter, HorizontalAlignment,
+    HyperlinkButton, Image, ItemFilter, ItemSelector, Key, LinearGradientBrush, ListBox,
+    ListBoxItem, Menu, MenuFlyout, MenuItem, MenuItemToggleType, NumericUpDown, Orientation, Paint,
+    PlacementMode, PopupAnchor, PopupGravity, PopupPlacementCallback, PopupPlacementOutput,
+    PopupPositionerConstraintAdjustment, ProgressBar, RadialGradientBrush, RadioButton,
+    RelativePanel, RelativePoint, RelativeScalar, RelativeUnit, RepeatButton, ScrollViewer,
+    SelectingItemsControlSelectionChangedArgs, SelectionMode, Shortcut, SplitButton, SplitView,
+    SplitViewDisplayMode, SplitViewPanePlacement, SpreadMethod, StackPanel, Stretch,
+    StretchDirection, Style, StyleSheet, TabControl, TabItem, TextAlignment, TextBlock, TextBox,
+    TextFilter, TextSelector, ThemeVariant, Thickness, TimePicker, ToggleSplitButton, ToggleSwitch,
+    ToolTip, TreeView, TreeViewItem, UniformGrid, Variant, Vector, VerticalAlignment, Viewbox,
+    Window, WindowState, WrapPanel, WrapPanelItemsAlignment,
 };
 use std::future::Future;
 use std::path::PathBuf;
@@ -119,118 +124,140 @@ fn builders_create_a_real_window_through_nativeaot() {
             scope.find_resource("__missing_rust_resource__", ThemeVariant::Dark)?,
             None
         );
-        let button = Button::new()?.content(Some(&TextBlock::new()?.text("Close")?))?;
+        let button = Button::el()
+            .content("Close")
+            .background(Brush::solid(Color::rgb(0x00, 0x7A, 0xCC)))
+            .foreground(Brush::solid(Color::rgb(0xFF, 0xFF, 0xFF)))
+            .border_thickness(Thickness::uniform(1.0))
+            .corner_radius(CornerRadius::uniform(3.0))
+            .font_size(14.0)
+            .click_mode(ClickMode::Press)
+            .default(true)
+            .cancel(false)
+            .horizontal_content_alignment(HorizontalAlignment::Center)
+            .vertical_content_alignment(VerticalAlignment::Center)
+            .build(scope)?;
         let classes = button.classes()?;
         classes.add("primary")?;
         assert!(classes.contains("primary")?);
         assert!(classes.remove_value("primary")?);
         Grid::set_row(&button, 1)?;
-        assert_eq!(Grid::get_row(&button)?, 1);
+        assert_eq!(Grid::row(&button)?, 1);
         button.subscribe_click(|_| {})?.unsubscribe()?;
-        let button = button
-            .on_click(scope, |_| {})?
-            .background(Brush::solid(Color::rgb(0x00, 0x7A, 0xCC)))?
-            .foreground(Brush::solid(Color::rgb(0xFF, 0xFF, 0xFF)))?
-            .border_thickness(Thickness::uniform(1.0))?
-            .corner_radius(CornerRadius::uniform(3.0))?
-            .font_size(14.0)?
-            .click_mode(ClickMode::Press)?
-            .default(true)?
-            .cancel(false)?
-            .horizontal_content_alignment(HorizontalAlignment::Center)?
-            .vertical_content_alignment(VerticalAlignment::Center)?;
-        assert_eq!(button.get_font_size()?, 14.0);
-        assert_eq!(button.get_click_mode()?, ClickMode::Press);
-        assert!(button.get_is_default()?);
-        assert!(!button.get_is_cancel()?);
+        button.on_click(scope, |_| {})?;
+        let btn_cmd = Command::new(|_| Ok(()));
+        button.set_command(Some(btn_cmd))?;
+        assert!(button.command()?.is_some());
+        button.set_command(Option::<Command>::None)?;
+        assert!(button.command()?.is_none());
+        assert_eq!(button.font_size()?, 14.0);
+        assert_eq!(button.click_mode()?, ClickMode::Press);
+        assert!(button.is_default()?);
+        assert!(!button.is_cancel()?);
         // IsPressed is raised by Avalonia's input handling, so it reads back but never sets.
         assert!(!button.is_pressed()?);
         assert_eq!(
-            button.get_horizontal_content_alignment()?,
+            button.horizontal_content_alignment()?,
             HorizontalAlignment::Center
         );
         assert_eq!(
-            button.get_vertical_content_alignment()?,
+            button.vertical_content_alignment()?,
             VerticalAlignment::Center
         );
         assert_eq!(
-            button.get_background()?,
-            Some(Brush::solid(Color::rgb(0x00, 0x7A, 0xCC)))
+            button.background()?,
+            Some(Paint::Solid(Brush::solid(Color::rgb(0x00, 0x7A, 0xCC))))
         );
         assert_eq!(
-            button.get_foreground()?,
-            Some(Brush::solid(Color::rgb(0xFF, 0xFF, 0xFF)))
+            button.foreground()?,
+            Some(Paint::Solid(Brush::solid(Color::rgb(0xFF, 0xFF, 0xFF))))
         );
-        assert_eq!(button.get_corner_radius()?, CornerRadius::uniform(3.0));
+        assert_eq!(button.corner_radius()?, CornerRadius::uniform(3.0));
 
-        let text_box = TextBox::new()?
-            .text("before")?
-            .on_text_changed(scope, move |_| {
+        let text_box = TextBox::el()
+            .text("before")
+            .on_text_changed(move |_| {
                 text_changed_from_handler.store(true, Ordering::SeqCst);
-            })?;
+            })
+            .build(scope)?;
         DockPanel::set_dock(&text_box, Dock::Top)?;
-        assert_eq!(DockPanel::get_dock(&text_box)?, Dock::Top);
+        assert_eq!(DockPanel::dock(&text_box)?, Dock::Top);
         let text_box_for_post = text_box.clone();
-        let text_box = ScrollViewer::new()?.content(Some(&DockPanel::new()?.child(text_box)?))?;
+        let dock_panel = DockPanel::new()?;
+        dock_panel.children()?.add(&text_box)?;
+        let text_box = ScrollViewer::new()?;
+        text_box.set_content(&dock_panel)?;
 
-        let toggle = ToggleSwitch::new()?
-            .content(Some(&TextBlock::new()?.text("ToggleSwitch")?))?
-            .on_content(Some(&TextBlock::new()?.text("On")?))?
-            .off_content(Some(&TextBlock::new()?.text("Off")?))?
-            .checked(Some(true))?
-            .three_state(true)?
-            .on_is_checked_changed(scope, move |_| {
+        let toggle = ToggleSwitch::el()
+            .content("ToggleSwitch")
+            .on_content("On")
+            .off_content("Off")
+            .checked(Some(true))
+            .three_state(true)
+            .on_is_checked_changed(move |_| {
                 toggle_changed_from_handler.store(true, Ordering::SeqCst);
-            })?;
-        assert!(toggle.get_is_three_state()?);
+            })
+            .build(scope)?;
+        assert!(toggle.is_three_state()?);
         let toggle_for_post = toggle.clone();
 
-        let radio_one = RadioButton::new()?
-            .group_name("TestGroup")?
-            .content(Some(&TextBlock::new()?.text("One")?))?
-            .checked(Some(true))?;
-        let radio_two = RadioButton::new()?
-            .group_name("TestGroup")?
-            .content(Some(&TextBlock::new()?.text("Two")?))?;
+        let radio_one = RadioButton::el()
+            .group_name("TestGroup")
+            .content("One")
+            .checked(Some(true))
+            .build(scope)?;
+        let radio_two = RadioButton::el()
+            .group_name("TestGroup")
+            .content("Two")
+            .build(scope)?;
         let radio_one_for_post = radio_one.clone();
         let radio_two_for_post = radio_two.clone();
-        let radio_buttons = StackPanel::new()?.child(radio_one)?.child(radio_two)?;
+        let radio_buttons = StackPanel::el()
+            .child(AnyEl::from_control(radio_one))
+            .child(AnyEl::from_control(radio_two))
+            .build(scope)?;
 
-        let expander = Expander::new()?
-            .header(Some(&TextBlock::new()?.text("Header")?))?
-            .content(Some(&TextBlock::new()?.text("Content")?))?
-            .expand_direction(ExpandDirection::Down)?
-            .expanded(true)?;
-        assert_eq!(expander.get_expand_direction()?, ExpandDirection::Down);
-        assert!(expander.get_is_expanded()?);
+        let expander = Expander::el()
+            .header("Header")
+            .content("Content")
+            .expand_direction(ExpandDirection::Down)
+            .expanded(true)
+            .build(scope)?;
+        assert_eq!(expander.expand_direction()?, ExpandDirection::Down);
+        assert!(expander.is_expanded()?);
         expander.subscribe_expanded(|_| {})?.unsubscribe()?;
 
-        let combo_box = ComboBox::new()?
-            .placeholder_text("Pick")?
-            .max_drop_down_height(240.0)?
-            .item(ComboBoxItem::new()?.content(Some(&TextBlock::new()?.text("First")?))?)?
-            .item(ComboBoxItem::new()?.content(Some(&TextBlock::new()?.text("Second")?))?)?
-            .on_selection_changed(scope, move |_| {
+        let combo_box = ComboBox::el()
+            .placeholder_text("Pick")
+            .max_drop_down_height(240.0)
+            .item(ComboBoxItem::el().content("First"))
+            .item(ComboBoxItem::el().content("Second"))
+            .on_selection_changed(move |_| {
                 combo_changed_from_handler.store(true, Ordering::SeqCst);
-            })?;
+            })
+            .build(scope)?;
         assert_eq!(combo_box.items()?.len()?, 2);
-        assert!(!combo_box.get_is_editable()?);
-        assert!(!combo_box.get_is_drop_down_open()?);
-        assert_eq!(combo_box.get_max_drop_down_height()?, 240.0);
+        assert!(!combo_box.is_editable()?);
+        assert!(!combo_box.is_drop_down_open()?);
+        assert_eq!(combo_box.max_drop_down_height()?, 240.0);
         let combo_box_for_post = combo_box.clone();
 
-        let list_box = ListBox::new()?
-            .selection_mode(selection_mode::MULTIPLE)?
-            .item(ListBoxItem::new()?.content(Some(&TextBlock::new()?.text("First")?))?)?
-            .item(ListBoxItem::new()?.content(Some(&TextBlock::new()?.text("Second")?))?)?
-            .on_selection_changed(scope, move |_| {
-                list_changed_from_handler.store(true, Ordering::SeqCst);
-            })?;
+        let list_box = ListBox::el()
+            .selection_mode(SelectionMode::MULTIPLE)
+            .item(ListBoxItem::el().content("First"))
+            .item(ListBoxItem::el().content("Second"))
+            .on_selection_changed(
+                move |args: &mut SelectingItemsControlSelectionChangedArgs| {
+                    let _ = (&args.added_items, &args.removed_items);
+                    list_changed_from_handler.store(true, Ordering::SeqCst);
+                },
+            )
+            .build(scope)?;
         assert_eq!(list_box.items()?.len()?, 2);
-        assert_eq!(list_box.get_selection_mode()?, selection_mode::MULTIPLE);
+        assert_eq!(list_box.selection_mode()?, SelectionMode::MULTIPLE);
         let list_box_for_post = list_box.clone();
 
-        let hover_panel = Border::new()?.child(Some(&TextBlock::new()?.text("Hover")?))?;
+        let hover_panel = Border::el().child("Hover").build(scope)?;
         hover_panel
             .subscribe_pointer_entered(|_| {})?
             .unsubscribe()?;
@@ -238,124 +265,158 @@ fn builders_create_a_real_window_through_nativeaot() {
             .subscribe_pointer_exited(|_| {})?
             .unsubscribe()?;
 
-        let progress = ProgressBar::new()?
-            .minimum(0.0)?
-            .maximum(100.0)?
-            .value(40.0)?
-            .show_progress_text(true)?
-            .progress_text_format("{0:0}%")?;
-        assert_eq!(progress.get_value()?, 40.0);
-        assert!(progress.get_show_progress_text()?);
+        let progress = ProgressBar::el()
+            .minimum(0.0)
+            .maximum(100.0)
+            .value(40.0)
+            .show_progress_text(true)
+            .progress_text_format("{0:0}%")
+            .build(scope)?;
+        assert_eq!(progress.value()?, 40.0);
+        assert!(progress.show_progress_text()?);
 
-        let text_readout = TextBlock::new()?
-            .text("Laid out from Rust")?
-            .name("layout_readout")?
-            .margin(Thickness::symmetric(12.0, 4.0))?
-            .horizontal_alignment(HorizontalAlignment::Right)?
-            .vertical_alignment(VerticalAlignment::Bottom)?
-            .min_width(64.0)?
-            .min_height(16.0)?
-            .max_width(320.0)?
-            .max_height(96.0)?
-            .opacity(0.75)?
-            .font_size(18.0)?
-            .font_weight(FontWeight::Bold)?
-            .text_alignment(TextAlignment::Center)?
-            .padding(Thickness::symmetric(3.0, 5.0))?
-            .foreground(Brush::solid(Color::rgb(0xFF, 0xFF, 0xFF)))?;
-        assert_eq!(text_readout.get_font_size()?, 18.0);
-        assert_eq!(text_readout.get_font_weight()?, FontWeight::Bold);
-        assert_eq!(text_readout.get_text_alignment()?, TextAlignment::Center);
+        let text_readout = TextBlock::el()
+            .text("Laid out from Rust")
+            .name("layout_readout")
+            .margin(Thickness::symmetric(12.0, 4.0))
+            .horizontal_alignment(HorizontalAlignment::Right)
+            .vertical_alignment(VerticalAlignment::Bottom)
+            .min_width(64.0)
+            .min_height(16.0)
+            .max_width(320.0)
+            .max_height(96.0)
+            .opacity(0.75)
+            .font_size(18.0)
+            .font_weight(FontWeight::Bold)
+            .text_alignment(TextAlignment::Center)
+            .padding(Thickness::symmetric(3.0, 5.0))
+            .foreground(Brush::solid(Color::rgb(0xFF, 0xFF, 0xFF)))
+            .build(scope)?;
+        assert_eq!(text_readout.font_size()?, 18.0);
+        assert_eq!(text_readout.font_weight()?, FontWeight::Bold);
+        assert_eq!(text_readout.text_alignment()?, TextAlignment::Center);
+        assert_eq!(text_readout.padding()?, Thickness::new(3.0, 5.0, 3.0, 5.0));
         assert_eq!(
-            text_readout.get_padding()?,
-            Thickness::new(3.0, 5.0, 3.0, 5.0)
-        );
-        assert_eq!(
-            text_readout.get_foreground()?,
-            Some(Brush::solid(Color::rgb(0xFF, 0xFF, 0xFF)))
+            text_readout.foreground()?,
+            Some(Paint::Solid(Brush::solid(Color::rgb(0xFF, 0xFF, 0xFF))))
         );
 
-        let laid_out = Border::new()?
-            .padding(Thickness::uniform(6.0))?
-            .background(Brush::solid(Color::rgb(0x33, 0x66, 0x99)))?
-            .border_brush(Brush::new(Color::rgb(0xAA, 0xBB, 0xCC), 0.5))?
-            .border_thickness(Thickness::uniform(2.0))?
-            .corner_radius(CornerRadius::uniform(4.0))?
-            .child(Some(&text_readout))?;
-        assert_eq!(laid_out.get_padding()?, Thickness::uniform(6.0));
+        let laid_out = Border::el()
+            .padding(Thickness::uniform(6.0))
+            .background(Brush::solid(Color::rgb(0x33, 0x66, 0x99)))
+            .border_brush(Brush::new(Color::rgb(0xAA, 0xBB, 0xCC), 0.5))
+            .border_thickness(Thickness::uniform(2.0))
+            .corner_radius(CornerRadius::uniform(4.0))
+            .child(AnyEl::from_control(text_readout))
+            .build(scope)?;
+        assert_eq!(laid_out.padding()?, Thickness::uniform(6.0));
         assert_eq!(
-            laid_out.get_background()?,
-            Some(Brush::solid(Color::rgb(0x33, 0x66, 0x99)))
+            laid_out.background()?,
+            Some(Paint::Solid(Brush::solid(Color::rgb(0x33, 0x66, 0x99))))
         );
         assert_eq!(
-            laid_out.get_border_brush()?,
-            Some(Brush::new(Color::rgb(0xAA, 0xBB, 0xCC), 0.5))
+            laid_out.border_brush()?,
+            Some(Paint::Solid(Brush::new(Color::rgb(0xAA, 0xBB, 0xCC), 0.5)))
         );
-        assert_eq!(laid_out.get_border_thickness()?, Thickness::uniform(2.0));
-        assert_eq!(laid_out.get_corner_radius()?, CornerRadius::uniform(4.0));
+        assert_eq!(laid_out.border_thickness()?, Thickness::uniform(2.0));
+        assert_eq!(laid_out.corner_radius()?, CornerRadius::uniform(4.0));
+
+        // LinearGradientBrush and RadialGradientBrush round-trip directly on Border::background.
+        let linear_bg = LinearGradientBrush {
+            opacity: 0.85,
+            spread_method: SpreadMethod::Reflect,
+            stops: vec![
+                GradientStop::new(0.0, Color::rgb(0xFF, 0x00, 0x00)),
+                GradientStop::new(1.0, Color::rgb(0x00, 0x00, 0xFF)),
+            ],
+            start_point: RelativePoint::new(0.0, 0.0, RelativeUnit::Relative),
+            end_point: RelativePoint::new(1.0, 1.0, RelativeUnit::Relative),
+        };
+        laid_out.set_background(linear_bg.clone())?;
+        assert_eq!(
+            laid_out.background()?,
+            Some(Paint::LinearGradient(linear_bg))
+        );
+
+        let radial_bg = RadialGradientBrush {
+            opacity: 0.75,
+            spread_method: SpreadMethod::Repeat,
+            stops: vec![
+                GradientStop::new(0.0, Color::rgb(0x10, 0x20, 0x30)),
+                GradientStop::new(1.0, Color::rgb(0xAA, 0xBB, 0xCC)),
+            ],
+            center: RelativePoint::new(0.5, 0.5, RelativeUnit::Relative),
+            gradient_origin: RelativePoint::new(0.25, 0.25, RelativeUnit::Relative),
+            radius_x: RelativeScalar::new(0.5, RelativeUnit::Relative),
+            radius_y: RelativeScalar::new(0.5, RelativeUnit::Relative),
+        };
+        laid_out.set_background(radial_bg.clone())?;
+        assert_eq!(
+            laid_out.background()?,
+            Some(Paint::RadialGradient(radial_bg))
+        );
+        laid_out.set_background(Brush::solid(Color::rgb(0x33, 0x66, 0x99)))?;
 
         // Clearing a brush is a first-class state, not a transparent colour.
-        laid_out.set_border_brush(None)?;
-        assert_eq!(laid_out.get_border_brush()?, None);
+        laid_out.set_border_brush(Option::<Paint>::None)?;
+        assert_eq!(laid_out.border_brush()?, None);
         laid_out.set_border_brush(Brush::new(Color::rgb(0xAA, 0xBB, 0xCC), 0.5))?;
 
-        let readout = laid_out.get_child()?.expect("border child");
-        assert_eq!(readout.get_margin()?, Thickness::new(12.0, 4.0, 12.0, 4.0));
-        assert_eq!(
-            readout.get_horizontal_alignment()?,
-            HorizontalAlignment::Right
-        );
-        assert_eq!(readout.get_vertical_alignment()?, VerticalAlignment::Bottom);
-        assert_eq!(readout.get_min_width()?, 64.0);
-        assert_eq!(readout.get_max_height()?, 96.0);
-        assert_eq!(readout.get_opacity()?, 0.75);
-        assert_eq!(readout.get_name()?.as_deref(), Some("layout_readout"));
-        assert!(readout.get_is_visible()?);
+        let readout = laid_out.child()?.expect("border child");
+        assert_eq!(readout.margin()?, Thickness::new(12.0, 4.0, 12.0, 4.0));
+        assert_eq!(readout.horizontal_alignment()?, HorizontalAlignment::Right);
+        assert_eq!(readout.vertical_alignment()?, VerticalAlignment::Bottom);
+        assert_eq!(readout.min_width()?, 64.0);
+        assert_eq!(readout.max_height()?, 96.0);
+        assert_eq!(readout.opacity()?, 0.75);
+        assert_eq!(readout.name()?.as_deref(), Some("layout_readout"));
+        assert!(readout.is_visible()?);
         readout.set_visible(false)?;
-        assert!(!readout.get_is_visible()?);
+        assert!(!readout.is_visible()?);
         readout.set_visible(true)?;
 
-        // Grid tracks cross as the comma-separated length list Avalonia already parses. `*` is
-        // shorthand for `1*`, so the getter reports the list Avalonia normalised rather than the
-        // exact characters that were written; writing that list back is a fixed point.
-        let tracks = Grid::new()?
-            .column_definitions("*,Auto,120")?
-            .row_definitions("Auto,2*")?
-            .column_spacing(4.0)?
-            .row_spacing(2.0)?;
-        assert_eq!(tracks.get_column_definitions()?, "1*,Auto,120");
-        assert_eq!(tracks.get_row_definitions()?, "Auto,2*");
-        tracks.set_column_definitions(tracks.get_column_definitions()?)?;
-        assert_eq!(tracks.get_column_definitions()?, "1*,Auto,120");
+        // Grid tracks round-trip as typed `GridTracks`; Avalonia's `1*` normalises to `Star(1.0)`
+        // (`"*"` when formatted back to text), and writing `GridTracks` back is a fixed point.
+        let grid_tracks = Grid::el()
+            .column_definitions("*,Auto,120")
+            .row_definitions(tracks![Auto, 2*])
+            .column_spacing(4.0)
+            .row_spacing(2.0)
+            .build(scope)?;
+        assert_eq!(grid_tracks.column_definitions()?, tracks![*, Auto, 120]);
+        assert_eq!(grid_tracks.column_definitions()?.to_string(), "*,Auto,120");
+        assert_eq!(grid_tracks.row_definitions()?, tracks![Auto, 2*]);
+        assert_eq!(grid_tracks.row_definitions()?.to_string(), "Auto,2*");
+        grid_tracks.set_column_definitions(grid_tracks.column_definitions()?)?;
+        assert_eq!(grid_tracks.column_definitions()?, tracks![*, Auto, 120]);
 
-        // Clearing the tracks is an empty list, not a null.
-        tracks.set_row_definitions("")?;
-        assert_eq!(tracks.get_row_definitions()?, "");
-        tracks.set_row_definitions("Auto,2*")?;
+        // Clearing the tracks yields an empty `GridTracks`.
+        grid_tracks.set_row_definitions("")?;
+        assert!(grid_tracks.row_definitions()?.is_empty());
+        grid_tracks.set_row_definitions(tracks![Auto, 2*])?;
 
-        let cell = TextBlock::new()?.text("Cell")?;
+        let cell = TextBlock::el().text("Cell").build(scope)?;
         Grid::set_column(&cell, 1)?;
         Grid::set_row(&cell, 1)?;
-        assert_eq!(Grid::get_column(&cell)?, 1);
-        let tracks = tracks.child(cell)?;
+        assert_eq!(Grid::column(&cell)?, 1);
+        assert_eq!(Grid::row(&cell)?, 1);
+        grid_tracks.children()?.add(&cell)?;
 
         // Image.Source crosses as the source string the host resolves into a bitmap, so the
         // getter hands back the exact path that was set rather than the bitmap's type name.
         let image_path = one_pixel_png_path();
         let image_path_text = image_path.to_string_lossy().into_owned();
-        let image = Image::new()?
-            .source(&image_path_text)?
-            .stretch(Stretch::UniformToFill)?
-            .stretch_direction(StretchDirection::DownOnly)?;
-        assert_eq!(
-            image.get_source()?.as_deref(),
-            Some(image_path_text.as_str())
-        );
-        assert_eq!(image.get_stretch()?, Stretch::UniformToFill);
-        assert_eq!(image.get_stretch_direction()?, StretchDirection::DownOnly);
+        let image = Image::el()
+            .source(image_path_text.clone())
+            .stretch(Stretch::UniformToFill)
+            .stretch_direction(StretchDirection::DownOnly)
+            .build(scope)?;
+        assert_eq!(image.source()?.as_deref(), Some(image_path_text.as_str()));
+        assert_eq!(image.stretch()?, Stretch::UniformToFill);
+        assert_eq!(image.stretch_direction()?, StretchDirection::DownOnly);
         // Clearing the source is a first-class state, not an empty path.
         image.set_source("")?;
-        assert_eq!(image.get_source()?, None);
+        assert_eq!(image.source()?, None);
         image.set_source(&image_path_text)?;
 
         // ToolTip.Tip is an attached property that carries text and nothing else.
@@ -363,76 +424,75 @@ fn builders_create_a_real_window_through_nativeaot() {
         ToolTip::set_show_delay(&image, 250)?;
         ToolTip::set_placement(&image, PlacementMode::Top)?;
         assert_eq!(
-            ToolTip::get_tip(&image)?.as_deref(),
+            ToolTip::tip(&image)?.as_deref(),
             Some("One pixel, loaded from Rust")
         );
-        assert_eq!(ToolTip::get_show_delay(&image)?, 250);
-        assert_eq!(ToolTip::get_placement(&image)?, PlacementMode::Top);
+        assert_eq!(ToolTip::show_delay(&image)?, 250);
+        assert_eq!(ToolTip::placement(&image)?, PlacementMode::Top);
 
-        let tabs = TabControl::new()?
-            .tab_strip_placement(Dock::Top)?
-            .item(
-                TabItem::new()?
-                    .header(Some(&TextBlock::new()?.text("First")?))?
-                    .content(Some(&TextBlock::new()?.text("First page")?))?,
-            )?
-            .item(
-                TabItem::new()?
-                    .header(Some(&TextBlock::new()?.text("Second")?))?
-                    .content(Some(&TextBlock::new()?.text("Second page")?))?,
-            )?
-            .selected_index(1)?;
+        let tabs = TabControl::el()
+            .tab_strip_placement(Dock::Top)
+            .item(TabItem::el().header("First").content("First page"))
+            .item(TabItem::el().header("Second").content("Second page"))
+            .selected_index(1)
+            .build(scope)?;
         assert_eq!(tabs.items()?.len()?, 2);
-        assert_eq!(tabs.get_tab_strip_placement()?, Dock::Top);
-        assert_eq!(tabs.get_selected_index()?, 1);
+        assert_eq!(tabs.tab_strip_placement()?, Dock::Top);
+        assert_eq!(tabs.selected_index()?, 1);
 
         // A TreeViewItem is an ItemsControl, so children go into the inherited Items slot and
         // Level is maintained by the control rather than written from Rust.
-        let leaf = TreeViewItem::new()?.header(Some(&TextBlock::new()?.text("Leaf")?))?;
-        let branch = TreeViewItem::new()?
-            .header(Some(&TextBlock::new()?.text("Branch")?))?
-            .item(leaf)?
-            .expanded(true)?;
-        assert!(branch.get_is_expanded()?);
+        let leaf = TreeViewItem::el().header("Leaf");
+        let branch = TreeViewItem::el()
+            .header("Branch")
+            .item(leaf)
+            .expanded(true)
+            .on_collapsed(move |_| {
+                tree_collapsed_from_handler.store(true, Ordering::SeqCst);
+            })
+            .build(scope)?;
+        assert!(branch.is_expanded()?);
         assert_eq!(branch.level()?, 0);
         branch.subscribe_expanded(|_| {})?.unsubscribe()?;
-        let branch = branch.on_collapsed(scope, move |_| {
-            tree_collapsed_from_handler.store(true, Ordering::SeqCst);
-        })?;
-        let tree = TreeView::new()?
-            .selection_mode(selection_mode::SINGLE)?
-            .auto_scroll_to_selected_item(false)?
-            .item(branch.clone())?;
+        let tree = TreeView::el()
+            .selection_mode(SelectionMode::SINGLE)
+            .auto_scroll_to_selected_item(false)
+            .item(AnyEl::from_control(branch.clone()))
+            .build(scope)?;
         assert_eq!(tree.items()?.len()?, 1);
-        assert_eq!(tree.get_selection_mode()?, selection_mode::SINGLE);
-        assert!(!tree.get_auto_scroll_to_selected_item()?);
+        assert_eq!(tree.selection_mode()?, SelectionMode::SINGLE);
+        assert!(!tree.auto_scroll_to_selected_item()?);
         tree.subscribe_selection_changed(|_| {})?.unsubscribe()?;
         tree.collapse_sub_tree_with_tree_view_item(&branch)?;
-        assert!(!branch.get_is_expanded()?);
+        assert!(!branch.is_expanded()?);
         tree.unselect_all()?;
 
         // Wave B. A Menu is an imperative ItemsControl, not the view-model NativeMenu: it opens
         // and closes through methods and its items are real controls.
-        let save_item = MenuItem::new()?
-            .header(Some(&TextBlock::new()?.text("Save")?))?
-            .icon(Some(&Image::new()?))?
-            .toggle_type(MenuItemToggleType::CheckBox)?
-            .checked(true)?
-            .group_name("edits")?;
-        assert!(save_item.get_is_checked()?);
-        assert_eq!(save_item.get_toggle_type()?, MenuItemToggleType::CheckBox);
-        assert_eq!(save_item.get_group_name()?.as_deref(), Some("edits"));
+        let save_item = MenuItem::el()
+            .header("Save")
+            .icon(Image::el())
+            .toggle_type(MenuItemToggleType::CheckBox)
+            .checked(true)
+            .group_name("edits")
+            .build(scope)?;
+        assert!(save_item.is_checked()?);
+        assert_eq!(save_item.toggle_type()?, MenuItemToggleType::CheckBox);
+        assert_eq!(save_item.group_name()?.as_deref(), Some("edits"));
         save_item.subscribe_click(|_| {})?.unsubscribe()?;
-        let file_menu_item = MenuItem::new()?
-            .header(Some(&TextBlock::new()?.text("File")?))?
-            .item(save_item)?;
+        let file_menu_item = MenuItem::el()
+            .header("File")
+            .item(AnyEl::from_control(save_item))
+            .build(scope)?;
         assert_eq!(file_menu_item.items()?.len()?, 1);
 
-        let menu = Menu::new()?.item(file_menu_item)?;
+        let menu = Menu::el()
+            .item(AnyEl::from_control(file_menu_item))
+            .on_opened(move |_| {
+                menu_opened_from_handler.store(true, Ordering::SeqCst);
+            })
+            .build(scope)?;
         assert!(!menu.is_open()?);
-        let menu = menu.on_opened(scope, move |_| {
-            menu_opened_from_handler.store(true, Ordering::SeqCst);
-        })?;
         menu.subscribe_closed(|_| {})?.unsubscribe()?;
         menu.open()?;
         assert!(menu.is_open()?);
@@ -441,18 +501,24 @@ fn builders_create_a_real_window_through_nativeaot() {
 
         // A flyout is an AvaloniaObject rather than a Control, so it is not a child of anything;
         // it reaches a control through show_at instead of through an attached property.
-        let flyout = Flyout::new()?
-            .content(Some(&TextBlock::new()?.text("Flyout body")?))?
-            .placement(PlacementMode::BottomEdgeAlignedLeft)?
-            .show_mode(FlyoutShowMode::Transient)?
-            .horizontal_offset(6.0)?;
-        assert_eq!(
-            flyout.get_placement()?,
-            PlacementMode::BottomEdgeAlignedLeft
-        );
-        assert_eq!(flyout.get_show_mode()?, FlyoutShowMode::Transient);
-        assert!(!flyout.get_is_open()?);
+        let placement_cb = PopupPlacementCallback::new(|input| PopupPlacementOutput {
+            offset: Vector::new(0.0, input.anchor_rect.height),
+            anchor: PopupAnchor::TOP_LEFT,
+            gravity: PopupGravity::BOTTOM_RIGHT,
+            constraint_adjustment: PopupPositionerConstraintAdjustment::FLIP_X,
+        });
+        let flyout = Flyout::el()
+            .content("Flyout body")
+            .placement(PlacementMode::BottomEdgeAlignedLeft)
+            .show_mode(FlyoutShowMode::Transient)
+            .horizontal_offset(6.0)
+            .custom_popup_placement_callback(placement_cb)
+            .build(scope)?;
+        assert_eq!(flyout.placement()?, PlacementMode::BottomEdgeAlignedLeft);
+        assert_eq!(flyout.show_mode()?, FlyoutShowMode::Transient);
+        assert!(!flyout.is_open()?);
         assert!(flyout.target()?.is_none());
+        assert!(flyout.custom_popup_placement_callback()?.is_some());
         flyout.subscribe_opened(|_| {})?.unsubscribe()?;
         flyout
             .subscribe_closing(|arguments| arguments.cancel = false)?
@@ -460,186 +526,244 @@ fn builders_create_a_real_window_through_nativeaot() {
         // Hiding a flyout that was never shown is a no-op rather than an error.
         flyout.hide()?;
 
-        let split_view = SplitView::new()?
-            .display_mode(SplitViewDisplayMode::CompactOverlay)?
-            .pane_placement(SplitViewPanePlacement::Left)?
-            .open_pane_length(220.0)?
-            .compact_pane_length(48.0)?
-            .pane(Some(
-                &StackPanel::new()?.child(TextBlock::new()?.text("Pane")?)?,
-            ))?
-            .pane_background(Brush::solid(Color::rgb(0x22, 0x22, 0x22)))?
-            .content(Some(&TextBlock::new()?.text("Body")?))?;
+        let split_view = SplitView::el()
+            .display_mode(SplitViewDisplayMode::CompactOverlay)
+            .pane_placement(SplitViewPanePlacement::Left)
+            .open_pane_length(220.0)
+            .compact_pane_length(48.0)
+            .pane(StackPanel::el().child("Pane"))
+            .pane_background(Brush::solid(Color::rgb(0x22, 0x22, 0x22)))
+            .content("Body")
+            .build(scope)?;
         split_view.subscribe_pane_opened(|_| {})?.unsubscribe()?;
         split_view.set_pane_open(true)?;
-        assert!(split_view.get_is_pane_open()?);
+        assert!(split_view.is_pane_open()?);
         assert_eq!(
-            split_view.get_display_mode()?,
+            split_view.display_mode()?,
             SplitViewDisplayMode::CompactOverlay
         );
-        assert_eq!(split_view.get_open_pane_length()?, 220.0);
-        assert!(split_view.get_pane()?.is_some());
+        assert_eq!(split_view.open_pane_length()?, 220.0);
+        assert!(split_view.pane()?.is_some());
         assert_eq!(
-            split_view.get_pane_background()?,
-            Some(Brush::solid(Color::rgb(0x22, 0x22, 0x22)))
+            split_view.pane_background()?,
+            Some(Paint::Solid(Brush::solid(Color::rgb(0x22, 0x22, 0x22))))
         );
 
-        // A DateTimeOffset has no ABI shape here, so a date crosses as ISO-8601 text. Writing
-        // accepts a bare yyyy-MM-dd; reading always produces the round-trip "o" form, so the
-        // getter is not the string that was written.
-        let date_picker = DatePicker::new()?
-            .min_year("2000-01-01T00:00:00.0000000+00:00")?
-            .max_year("2100-12-31T00:00:00.0000000+00:00")?
-            .selected_date("2027-01-15T08:30:00.0000000+02:00")?
-            .month_format("MMMM")?;
-        assert_eq!(
-            date_picker.get_selected_date()?.as_deref(),
-            Some("2027-01-15T08:30:00.0000000+02:00")
-        );
-        assert_eq!(
-            date_picker.get_min_year()?,
-            "2000-01-01T00:00:00.0000000+00:00"
-        );
-        // A locale spelling is ambiguous, so it fails the call rather than being guessed at.
-        assert!(date_picker.set_selected_date("03/09/2026").is_err());
-        // Clearing the selection is a first-class state; MinYear has no such state.
-        date_picker.set_selected_date("")?;
-        assert_eq!(date_picker.get_selected_date()?, None);
-        assert!(date_picker.set_min_year("").is_err());
+        // DatePicker, TimePicker, and NumericUpDown use typed CivilDate, CivilTime, and Decimal values.
+        let min_date = CivilDate::new(2000, 1, 1)?;
+        let max_date = CivilDate::new(2100, 12, 31)?;
+        let chosen_date = CivilDate::new(2027, 1, 15)?;
+        let date_picker = DatePicker::el()
+            .min_year(min_date)
+            .max_year(max_date)
+            .selected_date(chosen_date)
+            .month_format("MMMM")
+            .build(scope)?;
+        assert_eq!(date_picker.selected_date()?, Some(chosen_date));
+        assert_eq!(date_picker.min_year()?, min_date);
+        assert_eq!(date_picker.max_year()?, max_date);
+        assert!("03/09/2026".parse::<CivilDate>().is_err());
+        date_picker.set_selected_date(None)?;
+        assert_eq!(date_picker.selected_date()?, None);
         date_picker.clear()?;
 
-        // A TimePicker selection is a time of day, so it crosses as ISO-8601 HH:mm:ss rather
-        // than as an ISO-8601 duration.
-        let time_picker = TimePicker::new()?
-            .minute_increment(15)?
-            .clock_identifier("24HourClock")?
-            .selected_time("17:04")?;
+        let chosen_time = CivilTime::hm(17, 4).unwrap();
+        let time_picker = TimePicker::el()
+            .minute_increment(15)
+            .clock_identifier("24HourClock")
+            .selected_time(chosen_time)
+            .build(scope)?;
         assert_eq!(
-            time_picker.get_selected_time()?.as_deref(),
-            Some("17:04:00")
+            time_picker.selected_time()?,
+            Some(CivilTime::hms(17, 4, 0).unwrap())
         );
-        assert!(time_picker.set_selected_time("PT8H15M").is_err());
-        time_picker.set_selected_time("")?;
-        assert_eq!(time_picker.get_selected_time()?, None);
+        assert!("PT8H15M".parse::<CivilTime>().is_err());
+        time_picker.set_selected_time(None)?;
+        assert_eq!(time_picker.selected_time()?, None);
         time_picker.clear()?;
+
+        let numeric = NumericUpDown::el()
+            .minimum(0)
+            .maximum(100)
+            .increment(Decimal::new(25, 1)?)
+            .value(Decimal::new(125, 1)?)
+            .build(scope)?;
+        assert_eq!(numeric.minimum()?, Decimal::from(0));
+        assert_eq!(numeric.maximum()?, Decimal::from(100));
+        assert_eq!(numeric.increment()?, Decimal::new(25, 1)?);
+        assert_eq!(numeric.value()?, Some(Decimal::new(125, 1)?));
+        numeric.set_value(Option::<Decimal>::None)?;
+        assert_eq!(numeric.value()?, None);
+
+        let auto_complete = AutoCompleteBox::el()
+            .placeholder_text("Search")
+            .item_filter(ItemFilter::new(
+                |search, item| matches!(item, Variant::Utf16(s) if s.contains(search)),
+            ))
+            .text_filter(TextFilter::new(|search, text| text.contains(search)))
+            .item_selector(ItemSelector::new(|_, item| format!("{item:?}")))
+            .text_selector(TextSelector::new(|_, text| text.to_owned()))
+            .build(scope)?;
+        assert!(auto_complete.item_filter()?.is_some());
+        assert!(auto_complete.text_filter()?.is_some());
+        assert!(auto_complete.item_selector()?.is_some());
+        assert!(auto_complete.text_selector()?.is_some());
 
         // Wave C. Remaining layout panels: a WrapPanel carries spacing as doubles and
         // ItemsAlignment as a closed enum; RelativePanel's Align*WithPanel bools cross as
-        // attached properties; object-valued Above/LeftOf stay gaps.
-        let wrap = WrapPanel::new()?
-            .orientation(Orientation::Horizontal)?
-            .item_spacing(8.0)?
-            .line_spacing(4.0)?
-            .items_alignment(WrapPanelItemsAlignment::Center)?
-            .item_width(80.0)?
-            .child(TextBlock::new()?.text("Wrap")?)?;
-        assert_eq!(wrap.get_item_spacing()?, 8.0);
-        assert_eq!(wrap.get_items_alignment()?, WrapPanelItemsAlignment::Center);
+        // attached properties.
+        let wrap = WrapPanel::el()
+            .orientation(Orientation::Horizontal)
+            .item_spacing(8.0)
+            .line_spacing(4.0)
+            .items_alignment(WrapPanelItemsAlignment::Center)
+            .item_width(80.0)
+            .child("Wrap")
+            .build(scope)?;
+        assert_eq!(wrap.item_spacing()?, 8.0);
+        assert_eq!(wrap.items_alignment()?, WrapPanelItemsAlignment::Center);
 
-        let uniform = UniformGrid::new()?
-            .rows(2)?
-            .columns(3)?
-            .first_column(1)?
-            .row_spacing(6.0)?
-            .column_spacing(8.0)?;
-        assert_eq!(uniform.get_rows()?, 2);
-        assert_eq!(uniform.get_columns()?, 3);
+        let uniform = UniformGrid::el()
+            .rows(2)
+            .columns(3)
+            .first_column(1)
+            .row_spacing(6.0)
+            .column_spacing(8.0)
+            .build(scope)?;
+        assert_eq!(uniform.rows()?, 2);
+        assert_eq!(uniform.columns()?, 3);
 
-        let relative_child = TextBlock::new()?.text("Pinned")?;
+        let relative_child = TextBlock::el().text("Pinned").build(scope)?;
         RelativePanel::set_align_left_with_panel(&relative_child, true)?;
         RelativePanel::set_align_top_with_panel(&relative_child, true)?;
-        assert!(RelativePanel::get_align_left_with_panel(&relative_child)?);
-        let relative = RelativePanel::new()?.child(relative_child)?;
+        assert!(RelativePanel::align_left_with_panel(&relative_child)?);
+        let relative = RelativePanel::el()
+            .child(AnyEl::from_control(relative_child))
+            .build(scope)?;
 
-        let viewbox = Viewbox::new()?
-            .stretch(Stretch::Uniform)?
-            .stretch_direction(StretchDirection::Both)?
-            .child(Some(&TextBlock::new()?.text("Scaled")?))?;
-        assert_eq!(viewbox.get_stretch()?, Stretch::Uniform);
-        assert!(viewbox.get_child()?.is_some());
+        let viewbox = Viewbox::el()
+            .stretch(Stretch::Uniform)
+            .stretch_direction(StretchDirection::Both)
+            .child("Scaled")
+            .build(scope)?;
+        assert_eq!(viewbox.stretch()?, Stretch::Uniform);
+        assert!(viewbox.child()?.is_some());
 
-        let splitter = GridSplitter::new()?
-            .resize_direction(GridResizeDirection::Columns)?
-            .resize_behavior(GridResizeBehavior::PreviousAndNext)?
-            .shows_preview(true)?
-            .keyboard_increment(20.0)?;
+        let splitter = GridSplitter::el()
+            .resize_direction(GridResizeDirection::Columns)
+            .resize_behavior(GridResizeBehavior::PreviousAndNext)
+            .shows_preview(true)
+            .keyboard_increment(20.0)
+            .build(scope)?;
+        assert_eq!(splitter.resize_direction()?, GridResizeDirection::Columns);
+        assert!(splitter.shows_preview()?);
+
+        let repeat = RepeatButton::el().delay(400).interval(50).build(scope)?;
+        assert_eq!(repeat.delay()?, 400);
+        let hyperlink = HyperlinkButton::el()
+            .navigate_uri("https://avaloniaui.net")
+            .visited(true)
+            .build(scope)?;
         assert_eq!(
-            splitter.get_resize_direction()?,
-            GridResizeDirection::Columns
-        );
-        assert!(splitter.get_shows_preview()?);
-
-        let repeat = RepeatButton::new()?.delay(400)?.interval(50)?;
-        assert_eq!(repeat.get_delay()?, 400);
-        let hyperlink = HyperlinkButton::new()?
-            .navigate_uri("https://avaloniaui.net")?
-            .visited(true)?;
-        assert_eq!(
-            hyperlink.get_navigate_uri()?.as_deref(),
+            hyperlink.navigate_uri()?.as_deref(),
             Some("https://avaloniaui.net")
         );
-        let toggle_split = ToggleSplitButton::new()?.checked(true)?;
-        assert!(toggle_split.get_is_checked()?);
-        let context_menu = ContextMenu::new()?
-            .horizontal_offset(8.0)?
-            .placement(PlacementMode::Bottom)?;
-        assert_eq!(context_menu.get_horizontal_offset()?, 8.0);
-        let menu_flyout = MenuFlyout::new()?.item(MenuItem::new()?)?;
+        let toggle_split = ToggleSplitButton::el().checked(true).build(scope)?;
+        assert!(toggle_split.is_checked()?);
+        let context_menu = ContextMenu::el()
+            .horizontal_offset(8.0)
+            .placement(PlacementMode::Bottom)
+            .build(scope)?;
+        assert_eq!(context_menu.horizontal_offset()?, 8.0);
+        let menu_flyout = MenuFlyout::el().item(MenuItem::el()).build(scope)?;
         assert_eq!(menu_flyout.items()?.len()?, 1);
         let split = SplitButton::new()?;
         let drop_down = DropDownButton::new()?;
 
-        let panel = StackPanel::new()?
-            .orientation(Orientation::Vertical)?
-            .spacing(8.0)?
-            .background(Brush::solid(Color::rgb(0x1E, 0x1E, 0x1E)))?
-            .child(TextBlock::new()?.text("Hello from Rust")?)?
-            .child(text_box)?
-            .child(toggle)?
-            .child(combo_box)?
-            .child(list_box)?
-            .child(radio_buttons)?
-            .child(expander)?
-            .child(hover_panel)?
-            .child(progress)?
-            .child(laid_out)?
-            .child(tracks)?
-            .child(image)?
-            .child(tabs)?
-            .child(tree)?
-            .child(menu)?
-            .child(split_view)?
-            .child(date_picker)?
-            .child(time_picker)?
-            .child(wrap)?
-            .child(uniform)?
-            .child(relative)?
-            .child(viewbox)?
-            .child(splitter)?
-            .child(repeat)?
-            .child(hyperlink)?
-            .child(toggle_split)?
-            .child(context_menu)?
-            .child(split)?
-            .child(drop_down)?
-            .child(button)?;
-        assert_eq!(panel.children()?.len()?, 30);
-        assert_eq!(panel.get_orientation()?, Orientation::Vertical);
-        assert_eq!(panel.get_spacing()?, 8.0);
+        let panel = StackPanel::el()
+            .orientation(Orientation::Vertical)
+            .spacing(8.0)
+            .background(Brush::solid(Color::rgb(0x1E, 0x1E, 0x1E)))
+            .child("Hello from Rust")
+            .child(AnyEl::from_control(text_box))
+            .child(AnyEl::from_control(toggle))
+            .child(AnyEl::from_control(combo_box))
+            .child(AnyEl::from_control(list_box))
+            .child(AnyEl::from_control(radio_buttons))
+            .child(AnyEl::from_control(expander))
+            .child(AnyEl::from_control(hover_panel))
+            .child(AnyEl::from_control(progress))
+            .child(AnyEl::from_control(laid_out))
+            .child(AnyEl::from_control(grid_tracks))
+            .child(AnyEl::from_control(image))
+            .child(AnyEl::from_control(tabs))
+            .child(AnyEl::from_control(tree))
+            .child(AnyEl::from_control(menu))
+            .child(AnyEl::from_control(split_view))
+            .child(AnyEl::from_control(date_picker))
+            .child(AnyEl::from_control(time_picker))
+            .child(AnyEl::from_control(numeric))
+            .child(AnyEl::from_control(auto_complete))
+            .child(AnyEl::from_control(wrap))
+            .child(AnyEl::from_control(uniform))
+            .child(AnyEl::from_control(relative))
+            .child(AnyEl::from_control(viewbox))
+            .child(AnyEl::from_control(splitter))
+            .child(AnyEl::from_control(repeat))
+            .child(AnyEl::from_control(hyperlink))
+            .child(AnyEl::from_control(toggle_split))
+            .child(AnyEl::from_control(context_menu))
+            .child(AnyEl::from_control(split))
+            .child(AnyEl::from_control(drop_down))
+            .child(AnyEl::from_control(button))
+            .build(scope)?;
+        assert_eq!(panel.children()?.len()?, 32);
+
+        // ControlList::insert places a control at an exact index and shifts subsequent children.
+        let inserted_banner = TextBlock::el().text("Inserted banner").build(scope)?;
+        panel.children()?.insert(1, &inserted_banner)?;
+        assert_eq!(panel.children()?.len()?, 33);
+        assert_eq!(panel.children()?.index_of(&inserted_banner)?, Some(1));
+        assert!(panel.children()?.get(1)?.same_object(&inserted_banner)?);
+        panel.children()?.remove(1)?;
+        assert_eq!(panel.children()?.len()?, 32);
+
+        // Scoped control styles register on the control's Styles collection.
+        let style_handle = scope.apply_control_styles(
+            &panel,
+            StyleSheet::new().rule(
+                Style::select("Button.primary:pointerover")
+                    .background(Color::rgb(0x10, 0x6E, 0xBE))
+                    .corner_radius(4.0),
+            ),
+        )?;
+        assert!(style_handle > 0);
+
+        assert_eq!(panel.orientation()?, Orientation::Vertical);
+        assert_eq!(panel.spacing()?, 8.0);
         assert_eq!(
-            panel.get_background()?,
-            Some(Brush::solid(Color::rgb(0x1E, 0x1E, 0x1E)))
+            panel.background()?,
+            Some(Paint::Solid(Brush::solid(Color::rgb(0x1E, 0x1E, 0x1E))))
         );
 
-        let window = Window::new()?
-            .title("Avalonia Rust")?
-            .can_resize(false)?
-            .margin(Thickness::uniform(0.0))?
-            .content(Some(&panel))?;
-        assert!(!window.get_can_resize()?);
-        assert_eq!(window.get_window_state()?, WindowState::Normal);
+        let window = Window::new()?;
+        window.set_title("Avalonia Rust")?;
+        window.set_can_resize(false)?;
+        window.set_margin(Thickness::uniform(0.0))?;
+        window.set_content(&panel)?;
+        assert!(!window.can_resize()?);
+        assert_eq!(window.window_state()?, WindowState::Normal);
         window.set_can_resize(true)?;
-        assert!(window.get_can_resize()?);
+        assert!(window.can_resize()?);
+
+        let shortcut_id = scope.bind_window_shortcut(
+            &window,
+            Shortcut::primary(Key::S),
+            Command::new(|_| Ok(())),
+            "save",
+        )?;
+        assert!(shortcut_id > 0);
+
         scope.mount(window.clone())?;
         called_from_handler.store(true, Ordering::SeqCst);
 
@@ -651,23 +775,20 @@ fn builders_create_a_real_window_through_nativeaot() {
             context
                 .post(move || {
                     text_box_for_post.set_text("after").unwrap();
-                    assert_eq!(
-                        text_box_for_post.get_text().unwrap().as_deref(),
-                        Some("after")
-                    );
+                    assert_eq!(text_box_for_post.text().unwrap().as_deref(), Some("after"));
                     toggle_for_post.set_checked(Some(false)).unwrap();
-                    assert_eq!(toggle_for_post.get_is_checked().unwrap(), Some(false));
+                    assert_eq!(toggle_for_post.is_checked().unwrap(), Some(false));
                     radio_two_for_post.set_checked(Some(true)).unwrap();
-                    assert_eq!(radio_one_for_post.get_is_checked().unwrap(), Some(false));
-                    assert_eq!(radio_two_for_post.get_is_checked().unwrap(), Some(true));
+                    assert_eq!(radio_one_for_post.is_checked().unwrap(), Some(false));
+                    assert_eq!(radio_two_for_post.is_checked().unwrap(), Some(true));
                     combo_box_for_post.set_selected_index(1).unwrap();
-                    assert_eq!(combo_box_for_post.get_selected_index().unwrap(), 1);
+                    assert_eq!(combo_box_for_post.selected_index().unwrap(), 1);
                     // An editable ComboBox rewrites its text from the selection, so flip it
                     // after the selection assertions rather than in the builder chain.
                     combo_box_for_post.set_editable(true).unwrap();
-                    assert!(combo_box_for_post.get_is_editable().unwrap());
+                    assert!(combo_box_for_post.is_editable().unwrap());
                     list_box_for_post.set_selected_index(1).unwrap();
-                    assert_eq!(list_box_for_post.get_selected_index().unwrap(), 1);
+                    assert_eq!(list_box_for_post.selected_index().unwrap(), 1);
                     list_box_for_post.select_all().unwrap();
                     list_box_for_post.unselect_all().unwrap();
                     posted_from_handler.store(true, Ordering::SeqCst);

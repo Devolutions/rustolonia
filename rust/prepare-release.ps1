@@ -82,9 +82,10 @@ function Set-Content-Replace([string]$Path, [string]$Pattern, [string]$Replaceme
 }
 
 if ($PSCmdlet.ParameterSetName -eq 'Version') {
-    foreach ($crate in @('rustolonia-sys', 'rustolonia', 'rustolonia-bindgen', 'rustolonia-apk')) {
+    foreach ($crate in @('rustolonia-sys', 'rustolonia-macros', 'rustolonia', 'rustolonia-bindgen', 'rustolonia-apk')) {
         Set-Content-Replace (Join-Path $root 'rust' $crate 'Cargo.toml') '^version\s*=\s*"[^"]+"' "version = `"$Version`""
     }
+    Set-Content-Replace (Join-Path $root 'rust' 'rustolonia' 'Cargo.toml') '^(rustolonia-macros\s*=\s*\{\s*version\s*=\s*)"=[^"]+"' "`${1}`"=$Version`""
     Set-Content-Replace (Join-Path $root 'rust' 'rustolonia' 'Cargo.toml') '^(rustolonia-sys\s*=\s*\{\s*version\s*=\s*)"=[^"]+"' "`${1}`"=$Version`""
     Set-Content-Replace (Join-Path $root 'rust' 'release-manifest.json') '("rustoloniaVersion"\s*:\s*)"[^"]+"' "`${1}`"$Version`""
     Set-Content-Replace (Join-Path $root 'build' 'SharedVersion.props') '<Version>[^<]+</Version>' "<Version>$Version</Version>"

@@ -2,7 +2,7 @@
 
 `Avalonia.Host`, the generated managed projection, and all crates in this
 workspace are released in semver lockstep from one source revision.
-`rustolonia`, `rustolonia-sys` and `rustolonia-bindgen` are published to
+`rustolonia`, `rustolonia-macros`, `rustolonia-sys` and `rustolonia-bindgen` are published to
 crates.io with the same version as the `rustolonia-host-<version>-<rid>.tar.gz`
 assets of the GitHub release `v<version>` (see
 [Crates.io and prebuilt hosts](#cratesio-and-prebuilt-hosts)); consumers must
@@ -178,10 +178,12 @@ startup and windows it carries:
   hash-pinned `avalonia-application-name.patch` also names Avalonia's default
   application-menu holder before export; setting the process name alone
   otherwise leaves its native item/submenu titles empty;
-- code-first native menus: create a Rust-numbered `NativeMenu`
-  (`IAvnNativeMenu`, with the Rust-implemented `IAvnNativeMenuHandler`), set
-  it as a window's or the application's menu, query `IsNativeMenuExported`,
-  and create a `NativeMenuBar` control.
+- code-first native menus, pure-Rust stylesheets, and window shortcuts: create
+  a Rust-numbered `NativeMenu` (`IAvnNativeMenu`, with `IAvnNativeMenuHandler`),
+  set it as a window's or the application's menu, query `IsNativeMenuExported`,
+  create a `NativeMenuBar` control, apply/remove NativeAOT-safe selector
+  stylesheets (`ApplyStyles` / `RemoveStyles`), and register/remove window
+  `KeyBinding`s (`AddWindowKeyBinding` / `RemoveWindowKeyBinding`).
 
 ### Projection history
 

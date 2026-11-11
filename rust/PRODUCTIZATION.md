@@ -335,7 +335,8 @@ not signing inputs. Missing explicitly requested signing inputs fail the build.
 ## Releases and crate publishing
 
 The first release is **12.1.0**, backed by upstream Avalonia **12.1.3**.
-Keep all three crates and the native host at that version. Major/minor
+Keep all four crates (`rustolonia`, `rustolonia-macros`, `rustolonia-sys`,
+`rustolonia-bindgen`) and the native host at that version. Major/minor
 identify the Avalonia line; the patch starts at zero and counts Rustolonia
 releases independently, not upstream patches. The exact upstream revision
 remains recorded in `release-manifest.json` and the producer submodule.
@@ -359,12 +360,14 @@ Cargo discovers `rustolonia` in the nested workspace and resolves its
 for code-first apps; compiled AXAML/view-model apps still build their own host.
 Release tags and host assets must remain immutable after publication.
 
-Optionally, `rustolonia`, `rustolonia-sys`, and `rustolonia-bindgen` can be
-published to crates.io at the same version as the NativeAOT host tarballs attached to the
-GitHub release `v<version>`. `rustolonia` pins `rustolonia-sys = "=<version>"`,
-and `rustolonia-sys` embeds `host-checksums.txt` (the SHA-256 of every RID
-tarball), so a published crate can only ever load the host it was released
-with. `avalonia-sample` stays `publish = false`.
+Optionally, `rustolonia`, `rustolonia-macros`, `rustolonia-sys`, and
+`rustolonia-bindgen` can be published to crates.io at the same version as the
+NativeAOT host tarballs attached to the GitHub release `v<version>`.
+`rustolonia` pins `rustolonia-sys = "=<version>"` and
+`rustolonia-macros = "=<version>"`, and `rustolonia-sys` embeds
+`host-checksums.txt` (the SHA-256 of every RID tarball), so a published crate
+can only ever load the host it was released with. `avalonia-sample` stays
+`publish = false`.
 
 Each crate has an explicit `include` allow-list (sources, `build.rs`,
 `build_support/`, the ABI header, `host-checksums.txt`, README, LICENSE).
@@ -374,8 +377,9 @@ host. Packaging is checked in CI with:
 
 ```bash
 cd rust
-cargo package --locked -p rustolonia-sys -p rustolonia-bindgen -p rustolonia \
-  --config 'patch.crates-io.rustolonia-sys.path="rustolonia-sys"'
+cargo package --locked -p rustolonia-sys -p rustolonia-macros -p rustolonia-bindgen -p rustolonia \
+  --config 'patch.crates-io.rustolonia-sys.path="rustolonia-sys"' \
+  --config 'patch.crates-io.rustolonia-macros.path="rustolonia-macros"'
 ```
 
 The local patch verifies the package against the matching unpublished sys

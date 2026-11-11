@@ -1,34 +1,35 @@
-use rustolonia::{App, Button, CheckBox, Orientation, StackPanel, TextBlock, Window};
+use rustolonia::{rsx, App, Button, CheckBox, Orientation, Result, StackPanel, TextBlock, Window};
 
-fn main() -> rustolonia::Result<()> {
+fn main() -> Result<()> {
     App::load_from_env()?.run(|scope| {
         let child_scope = scope.clone();
-        let open = Button::new()?
-            .content(Some(&TextBlock::new()?.text("Open")?))?
-            .on_click(scope, move |_| {
-                Window::new()
-                    .and_then(|window| window.title("Sub"))
-                    .and_then(|window| {
-                        window.content(Some(
-                            &TextBlock::new()?.text("Opened from a Rust event handler")?,
-                        ))
-                    })
-                    .and_then(|window| child_scope.mount(window))
-                    .expect("failed to open child window");
-            })?;
-
-        scope.mount(
-            Window::new()?.title("AppWithoutLifetime")?.content(Some(
-                &StackPanel::new()?
-                    .orientation(Orientation::Vertical)?
-                    .child(TextBlock::new()?.text("Welcome to Avalonia!")?)?
-                    .child(
-                        CheckBox::new()?
-                            .checked(Some(true))?
-                            .content(Some(&TextBlock::new()?.text("Welcome to Avalonia!")?))?,
-                    )?
-                    .child(open)?,
-            ))?,
-        )
+        scope.mount_view(rsx! {
+            Window {
+                title: "AppWithoutLifetime",
+                StackPanel {
+                    orientation: Orientation::Vertical,
+                    spacing: 8.0,
+                    margin: 16.0,
+                    TextBlock { "Welcome to Avalonia!" }
+                    CheckBox {
+                        checked: Some(true),
+                        "Welcome to Avalonia!"
+                    }
+                    Button {
+                        on_click: move |_| -> Result<()> {
+                            child_scope.mount_view(rsx! {
+                                Window {
+                                    title: "Sub",
+                                    TextBlock { "Opened from a Rust event handler" }
+                                }
+                            })?;
+                            Ok(())
+                        },
+                        "Open"
+                    }
+                }
+            }
+        })?;
+        Ok(())
     })
 }

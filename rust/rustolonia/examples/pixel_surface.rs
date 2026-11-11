@@ -122,38 +122,34 @@ fn main() -> Result<()> {
         surface.set_cursor(Cursor::Cross)?;
         *slot.lock().unwrap() = Some(surface.clone());
 
-        let hint = TextBlock::new()?
-            .text("Drag to paint, right-click to clear")?
-            .margin(8.0)?;
+        let hint = TextBlock::new()?;
+        hint.set_text("Drag to paint, right-click to clear")?;
+        hint.set_margin(rustolonia::Thickness::uniform(8.0))?;
         DockPanel::set_dock(&hint, Dock::Top)?;
-        let window = Window::new()?
-            .title("Pixel surface")?
-            .width(640.0)?
-            .height(420.0)?
-            .content(Some(
-                &DockPanel::new()?
-                    .child(hint)?
-                    .child(surface.control().clone())?,
-            ))?;
+        let dock = DockPanel::new()?;
+        dock.children()?.add(hint)?;
+        dock.children()?.add(surface.control().clone())?;
+        let window = Window::new()?;
+        window.set_title("Pixel surface")?;
+        window.set_width(640.0)?;
+        window.set_height(420.0)?;
+        window.set_content(&dock)?;
         scope.mount(window)?;
 
         if let Some(ms) = std::env::var("RUSTOLONIA_EXAMPLE_EXIT_AFTER_MS")
             .ok()
             .and_then(|v| v.parse().ok())
         {
-            let scope = scope.clone();
+            let delay_scope = scope.clone();
             let probe = surface.clone();
-            scope.clone().spawn(async move {
-                if let Ok(delay) = scope.delay(std::time::Duration::from_millis(ms)) {
-                    let _ = delay.await;
+            scope.spawn_local(async move {
+                let _ = delay_scope
+                    .delay_async(std::time::Duration::from_millis(ms))
+                    .await;
+                if let Ok(m) = probe.metrics() {
+                    println!("surface {}x{} @{}", m.width, m.height, m.scaling);
                 }
-                let s = scope.clone();
-                let _ = scope.post(move || {
-                    if let Ok(m) = probe.metrics() {
-                        println!("surface {}x{} @{}", m.width, m.height, m.scaling);
-                    }
-                    let _ = s.shutdown();
-                });
+                let _ = delay_scope.shutdown();
             })?;
         }
         Ok(())

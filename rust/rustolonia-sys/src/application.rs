@@ -3,7 +3,7 @@ use crate::async_completion::IAvnAsyncCompletion;
 use crate::clipboard::IAvnClipboardData;
 use crate::com::{ComInterface, ComPtr, IUnknown};
 use crate::file_drag::IAvnFileDragHandler;
-use crate::generated::{IAvnControl, IAvnWindow};
+use crate::generated::{AvnVariant, IAvnCommand, IAvnControl, IAvnWindow};
 use crate::guid::Guid;
 use crate::hresult::{self, Result};
 use crate::native_menu::{IAvnNativeMenu, IAvnNativeMenuHandler};
@@ -137,7 +137,7 @@ impl ComPtr<IAvnResourceValue> {
 ///
 /// A cross-language tripwire: the managed `IAvnApplication` and
 /// [`IAvnApplicationVtbl`] must list the same methods in the same order.
-pub const IAVN_APPLICATION_METHOD_COUNT: usize = 60;
+pub const IAVN_APPLICATION_METHOD_COUNT: usize = 64;
 
 type App = IAvnApplication;
 
@@ -318,6 +318,21 @@ pub(crate) struct IAvnApplicationVtbl {
         unsafe extern "system" fn(*mut App, *mut IAvnWindow, *mut i32) -> i32,
     pub(crate) create_native_menu_bar:
         unsafe extern "system" fn(*mut App, *mut *mut IAvnControl) -> i32,
+
+    // Code-first styles and window key bindings.
+    pub(crate) apply_styles:
+        unsafe extern "system" fn(*mut App, *mut IAvnControl, *const u16, *mut i64) -> i32,
+    pub(crate) remove_styles: unsafe extern "system" fn(*mut App, i64) -> i32,
+    pub(crate) add_window_key_binding: unsafe extern "system" fn(
+        *mut App,
+        *mut IAvnWindow,
+        *const u16,
+        *mut IAvnCommand,
+        AvnVariant,
+        *mut i64,
+    ) -> i32,
+    pub(crate) remove_window_key_binding:
+        unsafe extern "system" fn(*mut App, *mut IAvnWindow, i64) -> i32,
 }
 
 pub(crate) type StartPicker = unsafe extern "system" fn(
@@ -527,6 +542,65 @@ impl ComPtr<IAvnApplication> {
             hresult::check((self.vtbl().set_value_converter_provider)(
                 self.as_raw(),
                 raw,
+            ))
+        }
+    }
+
+    pub fn apply_styles(
+        &self,
+        scope_control: Option<&ComPtr<IAvnControl>>,
+        rules_json: &[u16],
+    ) -> Result<i64> {
+        let rules_json = terminated_utf16(rules_json);
+        let scope_raw = scope_control.map_or(ptr::null_mut(), ComPtr::as_raw);
+        unsafe {
+            let mut handle = 0i64;
+            let hr = (self.vtbl().apply_styles)(
+                self.as_raw(),
+                scope_raw,
+                rules_json.as_ptr(),
+                &mut handle,
+            );
+            hresult::check(hr).map(|_| handle)
+        }
+    }
+
+    pub fn remove_styles(&self, style_handle: i64) -> Result<()> {
+        unsafe { hresult::check((self.vtbl().remove_styles)(self.as_raw(), style_handle)) }
+    }
+
+    pub fn add_window_key_binding(
+        &self,
+        window: &ComPtr<IAvnWindow>,
+        gesture: &[u16],
+        command: &ComPtr<IAvnCommand>,
+        parameter: AvnVariant,
+    ) -> Result<i64> {
+        let gesture = terminated_utf16(gesture);
+        unsafe {
+            let mut binding_id = 0i64;
+            let hr = (self.vtbl().add_window_key_binding)(
+                self.as_raw(),
+                window.as_raw(),
+                gesture.as_ptr(),
+                command.as_raw(),
+                parameter,
+                &mut binding_id,
+            );
+            hresult::check(hr).map(|_| binding_id)
+        }
+    }
+
+    pub fn remove_window_key_binding(
+        &self,
+        window: &ComPtr<IAvnWindow>,
+        binding_id: i64,
+    ) -> Result<()> {
+        unsafe {
+            hresult::check((self.vtbl().remove_window_key_binding)(
+                self.as_raw(),
+                window.as_raw(),
+                binding_id,
             ))
         }
     }

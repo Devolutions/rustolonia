@@ -82,12 +82,12 @@ pub fn stop() -> i32 {
 /// owns UIKit startup and invokes the function on the UI thread.
 ///
 /// ```no_run
-/// use rustolonia::{AppScope, Result, TextBlock};
+/// use rustolonia::{rsx, AppScope, Result, TextBlock};
 ///
 /// rustolonia::ios_application!(build_view);
 ///
-/// fn build_view(_: &AppScope) -> Result<TextBlock> {
-///     TextBlock::new()?.text("Hello from Rust")
+/// fn build_view(scope: &AppScope) -> Result<TextBlock> {
+///     rsx! { TextBlock { "Hello from Rust" } }.build(scope)
 /// }
 /// ```
 #[macro_export]

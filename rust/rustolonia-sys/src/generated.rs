@@ -6279,6 +6279,7 @@ struct IAvnVariantListVtbl {
     index_of: unsafe extern "system" fn(*mut IAvnVariantList, AvnVariant, *mut i32) -> i32,
     remove_at: unsafe extern "system" fn(*mut IAvnVariantList, i32) -> i32,
     clear: unsafe extern "system" fn(*mut IAvnVariantList) -> i32,
+    insert: unsafe extern "system" fn(*mut IAvnVariantList, i32, AvnVariant) -> i32,
 }
 
 #[repr(C)]
@@ -6311,6 +6312,9 @@ impl ComPtr<IAvnVariantList> {
     pub fn add(&self, value: AvnVariant) -> Result<()> {
         unsafe { hresult::check(((*self.as_raw()).vtbl.as_ref().unwrap().add)(self.as_raw(), value)) }
     }
+    pub fn insert(&self, index: usize, value: AvnVariant) -> Result<()> {
+        unsafe { hresult::check(((*self.as_raw()).vtbl.as_ref().unwrap().insert)(self.as_raw(), index as i32, value)) }
+    }
     pub fn index_of(&self, value: AvnVariant) -> Result<Option<usize>> {
         unsafe {
             let mut index = -1;
@@ -6339,6 +6343,7 @@ struct IAvnDateTimeListVtbl {
     index_of: unsafe extern "system" fn(*mut IAvnDateTimeList, i64, *mut i32) -> i32,
     remove_at: unsafe extern "system" fn(*mut IAvnDateTimeList, i32) -> i32,
     clear: unsafe extern "system" fn(*mut IAvnDateTimeList) -> i32,
+    insert: unsafe extern "system" fn(*mut IAvnDateTimeList, i32, i64) -> i32,
 }
 
 #[repr(C)]
@@ -6371,6 +6376,9 @@ impl ComPtr<IAvnDateTimeList> {
     pub fn add(&self, value: i64) -> Result<()> {
         unsafe { hresult::check(((*self.as_raw()).vtbl.as_ref().unwrap().add)(self.as_raw(), value)) }
     }
+    pub fn insert(&self, index: usize, value: i64) -> Result<()> {
+        unsafe { hresult::check(((*self.as_raw()).vtbl.as_ref().unwrap().insert)(self.as_raw(), index as i32, value)) }
+    }
     pub fn index_of(&self, value: i64) -> Result<Option<usize>> {
         unsafe {
             let mut index = -1;
@@ -6399,6 +6407,7 @@ struct IAvnControlListVtbl {
     index_of: unsafe extern "system" fn(*mut IAvnControlList, *mut IAvnControl, *mut i32) -> i32,
     remove_at: unsafe extern "system" fn(*mut IAvnControlList, i32) -> i32,
     clear: unsafe extern "system" fn(*mut IAvnControlList) -> i32,
+    insert: unsafe extern "system" fn(*mut IAvnControlList, i32, *mut IAvnControl) -> i32,
 }
 
 #[repr(C)]
@@ -6432,6 +6441,9 @@ impl ComPtr<IAvnControlList> {
     pub fn add(&self, value: &ComPtr<IAvnControl>) -> Result<()> {
         unsafe { hresult::check(((*self.as_raw()).vtbl.as_ref().unwrap().add)(self.as_raw(), value.as_raw())) }
     }
+    pub fn insert(&self, index: usize, value: &ComPtr<IAvnControl>) -> Result<()> {
+        unsafe { hresult::check(((*self.as_raw()).vtbl.as_ref().unwrap().insert)(self.as_raw(), index as i32, value.as_raw())) }
+    }
     pub fn index_of(&self, value: &ComPtr<IAvnControl>) -> Result<Option<usize>> {
         unsafe {
             let mut index = -1;
@@ -6460,6 +6472,7 @@ struct IAvnItemListVtbl {
     index_of: unsafe extern "system" fn(*mut IAvnItemList, *mut IAvnControl, *mut i32) -> i32,
     remove_at: unsafe extern "system" fn(*mut IAvnItemList, i32) -> i32,
     clear: unsafe extern "system" fn(*mut IAvnItemList) -> i32,
+    insert: unsafe extern "system" fn(*mut IAvnItemList, i32, *mut IAvnControl) -> i32,
 }
 
 #[repr(C)]
@@ -6493,6 +6506,9 @@ impl ComPtr<IAvnItemList> {
     pub fn add(&self, value: &ComPtr<IAvnControl>) -> Result<()> {
         unsafe { hresult::check(((*self.as_raw()).vtbl.as_ref().unwrap().add)(self.as_raw(), value.as_raw())) }
     }
+    pub fn insert(&self, index: usize, value: &ComPtr<IAvnControl>) -> Result<()> {
+        unsafe { hresult::check(((*self.as_raw()).vtbl.as_ref().unwrap().insert)(self.as_raw(), index as i32, value.as_raw())) }
+    }
     pub fn index_of(&self, value: &ComPtr<IAvnControl>) -> Result<Option<usize>> {
         unsafe {
             let mut index = -1;
@@ -6521,6 +6537,7 @@ struct IAvnSelectedVariantListVtbl {
     index_of: unsafe extern "system" fn(*mut IAvnSelectedVariantList, AvnVariant, *mut i32) -> i32,
     remove_at: unsafe extern "system" fn(*mut IAvnSelectedVariantList, i32) -> i32,
     clear: unsafe extern "system" fn(*mut IAvnSelectedVariantList) -> i32,
+    insert: unsafe extern "system" fn(*mut IAvnSelectedVariantList, i32, AvnVariant) -> i32,
 }
 
 #[repr(C)]
@@ -6553,6 +6570,9 @@ impl ComPtr<IAvnSelectedVariantList> {
     pub fn add(&self, value: AvnVariant) -> Result<()> {
         unsafe { hresult::check(((*self.as_raw()).vtbl.as_ref().unwrap().add)(self.as_raw(), value)) }
     }
+    pub fn insert(&self, index: usize, value: AvnVariant) -> Result<()> {
+        unsafe { hresult::check(((*self.as_raw()).vtbl.as_ref().unwrap().insert)(self.as_raw(), index as i32, value)) }
+    }
     pub fn index_of(&self, value: AvnVariant) -> Result<Option<usize>> {
         unsafe {
             let mut index = -1;
@@ -6581,6 +6601,7 @@ struct IAvnStringListVtbl {
     index_of: unsafe extern "system" fn(*mut IAvnStringList, *mut u16, *mut i32) -> i32,
     remove_at: unsafe extern "system" fn(*mut IAvnStringList, i32) -> i32,
     clear: unsafe extern "system" fn(*mut IAvnStringList) -> i32,
+    insert: unsafe extern "system" fn(*mut IAvnStringList, i32, *mut u16) -> i32,
 }
 
 #[repr(C)]
@@ -6613,6 +6634,10 @@ impl ComPtr<IAvnStringList> {
     pub fn add(&self, value: &[u16]) -> Result<()> {
         let value = crate::terminated_utf16(value);
         unsafe { hresult::check(((*self.as_raw()).vtbl.as_ref().unwrap().add)(self.as_raw(), value.as_ptr().cast_mut())) }
+    }
+    pub fn insert(&self, index: usize, value: &[u16]) -> Result<()> {
+        let value = crate::terminated_utf16(value);
+        unsafe { hresult::check(((*self.as_raw()).vtbl.as_ref().unwrap().insert)(self.as_raw(), index as i32, value.as_ptr().cast_mut())) }
     }
     pub fn index_of(&self, value: &[u16]) -> Result<Option<usize>> {
         let value = crate::terminated_utf16(value);

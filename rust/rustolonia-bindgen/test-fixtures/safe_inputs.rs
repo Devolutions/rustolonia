@@ -45,6 +45,22 @@ impl Raw {
     }
 }
 
+trait IntoContent {
+    fn into_content_control(self) -> Result<Option<u32>>;
+}
+
+impl<T: AsControl + ?Sized> IntoContent for &T {
+    fn into_content_control(self) -> Result<Option<u32>> {
+        Ok(Some(self.as_control()?))
+    }
+}
+
+impl IntoContent for Option<Control> {
+    fn into_content_control(self) -> Result<Option<u32>> {
+        self.map(|c| c.as_control()).transpose()
+    }
+}
+
 #[derive(Default)]
 struct Fixture { raw: Raw }
 
@@ -53,24 +69,17 @@ impl Fixture {
 }
 
 fn main() -> Result<()> {
-    let fixture = Fixture::default()
-        .required_control(Control)?
-        .optional_control(Some(&Control))?
-        .optional_control(None)?
-        .required_specific(&Specific { raw: 7 })?
-        .optional_specific(Some(&Specific { raw: 8 }))?
-        .optional_specific(None)?;
+    let fixture = Fixture::default();
     fixture.set_required_control(Control)?;
-    fixture.set_optional_control(Some(&Control))?;
+    fixture.set_optional_control(&Control)?;
     fixture.set_optional_control(None)?;
     fixture.set_required_specific(&Specific { raw: 7 })?;
     fixture.set_optional_specific(Some(&Specific { raw: 8 }))?;
     fixture.set_optional_specific(None)?;
     assert_eq!(*fixture.raw.calls.borrow(),
-        [Some(42), Some(42), None, Some(7), Some(8), None,
-         Some(42), Some(42), None, Some(7), Some(8), None]);
-    assert_eq!(fixture.set_optional_control(Some(&FailingControl)), Err("query failed"));
-    assert_eq!(fixture.raw.calls.borrow().len(), 12);
+        [Some(42), Some(42), None, Some(7), Some(8), None]);
+    assert_eq!(fixture.set_optional_control(&FailingControl), Err("query failed"));
+    assert_eq!(fixture.raw.calls.borrow().len(), 6);
 
     fixture.write_strings("A😀", Some("é😀"))?;
     fixture.write_strings(String::from(""), Some(""))?;

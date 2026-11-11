@@ -17,7 +17,11 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         let shutdown_result = shutdown_result.clone();
         move |scope| {
             let tray = if let Some(icon_path) = tray_icon {
-                scope.mount(rustolonia::Window::new()?.title("Native tray regression")?)?;
+                scope.mount(
+                    rustolonia::Window::el()
+                        .title("Native tray regression")
+                        .build(scope)?,
+                )?;
                 let tray = scope.create_tray(|_| Ok(())).map_err(|error| {
                     let host = rustolonia_sys::Host::load(
                         rustolonia::discover_host_path().expect("find diagnostic host"),

@@ -21,11 +21,21 @@ second completion attempt. Consuming a result keeps the operation completed:
 dropping it does not request cancellation, and duplicate completions remain
 rejected.
 
-`AppScope::spawn` is a small optional executor for UI work. It schedules polls
-through `IAvnDispatcher`, retains only active tasks, and releases completed task
-entries as soon as their polls finish. Scope cleanup closes the task registry
-and drops pending futures outside its locks. External executors can poll
-`AsyncOperation<T>` directly instead.
+`AppScope::spawn` (for `Send` futures) and `AppScope::spawn_local` (for UI-thread
+`!Send` futures capturing `Signal<T>` or `NodeRef<T>`) are lightweight built-in
+executors for UI work. They schedule polls through `IAvnDispatcher`, retain only
+active tasks, and release completed task entries as soon as their polls finish.
+Scope cleanup closes the task registry and drops pending futures outside its
+locks. External executors can poll `AsyncOperation<T>` directly instead.
+
+For ergonomic single-`Result` `async`/`await` calls on the UI thread, `AppScope`
+provides ambient-window helpers (`clipboard_text`, `set_clipboard_text`,
+`open_files`, `pick_folder`, `save_file`, `delay_async`, and `show_modal`) that
+resolve the active window automatically and flatten host start + completion into
+one `Result<T>`. For CPU-bound or blocking I/O work, `AppScope::run_blocking`
+returns a `BlockingOperation<T>` future and `AppScope::spawn_blocking` delivers
+results back on the UI thread; background threads can also push updates via
+`Signal::writer(scope)` (`SignalWriter<T>`) or `AppScope::channel` (`UiSender<M>`).
 
 Clipboard text read/write is the first real consumer. On Windows the host
 initializes OLE around the Avalonia application lifetime because a Rust

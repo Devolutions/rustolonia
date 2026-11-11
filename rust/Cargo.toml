@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "rustolonia",
+    "rustolonia-macros",
     "rustolonia-sys",
     "rustolonia-bindgen",
     "rustolonia-apk",

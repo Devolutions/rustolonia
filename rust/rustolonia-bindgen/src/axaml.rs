@@ -236,6 +236,7 @@ pub fn compile_axaml_to_rust_with_options(
 
     let mut refs = Vec::new();
     let mut bindings = Vec::new();
+    collect_optional_object_bindings(&root, &mut bindings)?;
     let mut handlers = Vec::new();
     let mut state = GenerationState {
         view_stem: view_stem.clone(),
@@ -302,35 +303,118 @@ pub fn compile_axaml_to_rust_with_options(
     }
 
     if !bindings.is_empty() {
-        let derives = if bindings.iter().all(|binding| binding.is_copy) {
-            "Clone, Copy, Debug"
-        } else {
-            "Clone, Debug"
-        };
-        out.push_str(&format!(
-            "#[derive({derives})]\n\
-             pub struct {view_stem}Bindings {{\n"
-        ));
-        for binding in &bindings {
-            if binding.is_signal {
-                out.push_str(&format!(
-                    "    pub {}: rustolonia::Signal<{}>,\n",
-                    binding.field_name, binding.rust_type
-                ));
-            } else {
-                out.push_str(&format!(
-                    "    pub {}: {},\n",
-                    binding.field_name, binding.rust_type
-                ));
+        let all_copy = bindings.iter().all(|binding| binding.is_copy);
+        let mut generic_params = Vec::new();
+        for binding in &mut bindings {
+            if binding.is_signal && binding.rust_type == ANY_OPTION_TYPE {
+                let param = format!("T{}", generic_params.len() + 1);
+                binding.rust_type = format!("Option<{param}>");
+                generic_params.push(param);
+            } else if !binding.is_signal && binding.rust_type == ANY_OPTION_PATH_TYPE {
+                let param = format!("T{}", generic_params.len() + 1);
+                binding.rust_type = format!("rustolonia::PropertyPath<Option<{param}>>");
+                generic_params.push(param);
             }
         }
-        out.push_str("}\n\n");
+        if generic_params.is_empty() {
+            let derives = if all_copy {
+                "Clone, Copy, Debug"
+            } else {
+                "Clone, Debug"
+            };
+            out.push_str(&format!(
+                "#[derive({derives})]\n\
+                 pub struct {view_stem}Bindings {{\n"
+            ));
+            for binding in &bindings {
+                if binding.is_signal {
+                    out.push_str(&format!(
+                        "    pub {}: rustolonia::Signal<{}>,\n",
+                        binding.field_name, binding.rust_type
+                    ));
+                } else {
+                    out.push_str(&format!(
+                        "    pub {}: {},\n",
+                        binding.field_name, binding.rust_type
+                    ));
+                }
+            }
+            out.push_str("}\n\n");
+        } else {
+            let struct_generics = format!(
+                "<{}>",
+                generic_params
+                    .iter()
+                    .map(|param| format!("{param}: 'static = ()"))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            );
+            let impl_generics = format!(
+                "<{}>",
+                generic_params
+                    .iter()
+                    .map(|param| format!("{param}: 'static"))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            );
+            let type_args = format!("<{}>", generic_params.join(", "));
+            out.push_str(&format!(
+                "pub struct {view_stem}Bindings{struct_generics} {{\n"
+            ));
+            for binding in &bindings {
+                if binding.is_signal {
+                    out.push_str(&format!(
+                        "    pub {}: rustolonia::Signal<{}>,\n",
+                        binding.field_name, binding.rust_type
+                    ));
+                } else {
+                    out.push_str(&format!(
+                        "    pub {}: {},\n",
+                        binding.field_name, binding.rust_type
+                    ));
+                }
+            }
+            out.push_str("}\n\n");
+            out.push_str(&format!(
+                "impl{impl_generics} Clone for {view_stem}Bindings{type_args} {{\n\
+                 \x20   fn clone(&self) -> Self {{\n\
+                 \x20       Self {{\n"
+            ));
+            for binding in &bindings {
+                if binding.is_copy {
+                    out.push_str(&format!("            {0}: self.{0},\n", binding.field_name));
+                } else {
+                    out.push_str(&format!(
+                        "            {0}: self.{0}.clone(),\n",
+                        binding.field_name
+                    ));
+                }
+            }
+            out.push_str("        }\n    }\n}\n\n");
+            if all_copy {
+                out.push_str(&format!(
+                    "impl{impl_generics} Copy for {view_stem}Bindings{type_args} {{}}\n\n"
+                ));
+            }
+            out.push_str(&format!(
+                "impl{impl_generics} std::fmt::Debug for {view_stem}Bindings{type_args} {{\n\
+                 \x20   fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {{\n\
+                 \x20       formatter.debug_struct(\"{view_stem}Bindings\")\n"
+            ));
+            for binding in &bindings {
+                out.push_str(&format!(
+                    "            .field(\"{0}\", &self.{0})\n",
+                    binding.field_name
+                ));
+            }
+            out.push_str("            .finish()\n    }\n}\n\n");
+        }
     }
 
     if !handlers.is_empty() {
         for (index, handler) in handlers.iter().enumerate() {
             out.push_str(&format!(
-                "pub type {view_stem}Handler{} = Box<dyn FnMut({}) + Send + 'static>;\n",
+                "pub type {view_stem}Handler{} = Box<dyn FnMut({}) + 'static>;\n",
                 index + 1,
                 handler.arg_type
             ));
@@ -347,9 +431,53 @@ pub fn compile_axaml_to_rust_with_options(
         out.push_str("}\n\n");
     }
 
+    let generic_count = bindings
+        .iter()
+        .enumerate()
+        .filter(|(idx, binding)| {
+            let expected_param = format!("T{}", idx + 1);
+            let _ = expected_param;
+            binding.rust_type.starts_with("Option<T")
+                && binding.rust_type["Option<T".len()..binding.rust_type.len() - 1]
+                    .chars()
+                    .all(|ch| ch.is_ascii_digit())
+                || binding
+                    .rust_type
+                    .starts_with("rustolonia::PropertyPath<Option<T")
+                    && binding.rust_type
+                        ["rustolonia::PropertyPath<Option<T".len()..binding.rust_type.len() - 2]
+                        .chars()
+                        .all(|ch| ch.is_ascii_digit())
+        })
+        .count();
+    let fn_generics = if generic_count == 0 {
+        String::new()
+    } else {
+        format!(
+            "<{}>",
+            (1..=generic_count)
+                .map(|i| format!("T{i}: 'static"))
+                .collect::<Vec<_>>()
+                .join(", ")
+        )
+    };
+    let bindings_type_args = if generic_count == 0 {
+        String::new()
+    } else {
+        format!(
+            "<{}>",
+            (1..=generic_count)
+                .map(|i| format!("T{i}"))
+                .collect::<Vec<_>>()
+                .join(", ")
+        )
+    };
+
     let mut params = Vec::new();
     if !bindings.is_empty() {
-        params.push(format!("bindings: &{view_stem}Bindings"));
+        params.push(format!(
+            "bindings: &{view_stem}Bindings{bindings_type_args}"
+        ));
     }
     if !handlers.is_empty() {
         params.push(format!("handlers: {view_stem}Handlers"));
@@ -357,7 +485,7 @@ pub fn compile_axaml_to_rust_with_options(
     let params_str = params.join(", ");
 
     out.push_str(&format!(
-        "pub fn build_{fn_stem}({params_str}) -> (rustolonia::El<rustolonia::{root_safe}>, {view_stem}Refs) {{\n\
+        "pub fn build_{fn_stem}{fn_generics}({params_str}) -> (rustolonia::El<rustolonia::{root_safe}>, {view_stem}Refs) {{\n\
          \x20   let refs = {view_stem}Refs::default();\n\
          \x20   let root = {expr};\n\
          \x20   (root, refs)\n\
@@ -549,7 +677,8 @@ fn emit_node_inner(
                         .as_deref()
                         .expect("argsInterfaceName"),
                 );
-                format!("&mut rustolonia::ComPtr<rustolonia::{args_name}>")
+                let safe_args = args_name.strip_prefix("IAvn").unwrap_or(args_name);
+                format!("&mut rustolonia::{safe_args}")
             } else if !event.parameters.is_empty() {
                 let handler = simple_name(&event.handler_interface_name);
                 let stem = handler
@@ -1526,6 +1655,10 @@ fn format_property_value(
         return format_binding_expr(&parsed, &rust_type, bindings);
     }
 
+    if let Some(converter) = property.string_converter_type_name.as_deref() {
+        return format_string_converted_literal(converter, raw);
+    }
+
     match property.kind.as_str() {
         "StringUtf16" => {
             let literal = raw.strip_prefix("{}").unwrap_or(raw);
@@ -1542,6 +1675,9 @@ fn format_property_value(
         "Point" => format_pair_literal("Point", raw),
         "Vector" => format_pair_literal("Vector", raw),
         "Brush" => format_brush_literal(raw),
+        "I32" if is_flags_property(property, flags_enums) => {
+            format_flags_literal(ir, property.managed_type_name.as_deref().unwrap(), raw)
+        }
         "I32" if is_enum_property(property, flags_enums) => {
             format_enum_literal(ir, property.managed_type_name.as_deref().unwrap(), raw)
         }
@@ -1674,6 +1810,26 @@ fn property_rust_type(
     property: &ProjectedProperty,
     flags_enums: &std::collections::HashSet<&str>,
 ) -> String {
+    if let Some(converter) = property.string_converter_type_name.as_deref() {
+        if let Some(rust_type) = match converter {
+            "Avalonia.Host.Com.AvnColumnDefinitions" | "Avalonia.Host.Com.AvnRowDefinitions" => {
+                Some("rustolonia::GridTracks".to_string())
+            }
+            "Avalonia.Host.Com.AvnCalendarDate" | "Avalonia.Host.Com.AvnDateTimeOffset" => {
+                Some("Option<rustolonia::CivilDate>".to_string())
+            }
+            "Avalonia.Host.Com.AvnCalendarDateValue"
+            | "Avalonia.Host.Com.AvnDateTimeOffsetValue" => {
+                Some("rustolonia::CivilDate".to_string())
+            }
+            "Avalonia.Host.Com.AvnTimeSpan" => Some("Option<rustolonia::CivilTime>".to_string()),
+            "Avalonia.Host.Com.AvnDecimal" => Some("Option<rustolonia::Decimal>".to_string()),
+            "Avalonia.Host.Com.AvnDecimalValue" => Some("rustolonia::Decimal".to_string()),
+            _ => None,
+        } {
+            return rust_type;
+        }
+    }
     match property.kind.as_str() {
         "StringUtf16" => "String".to_string(),
         "Brush" => "Option<rustolonia::Brush>".to_string(),
@@ -1686,7 +1842,10 @@ fn property_rust_type(
             }
         }
         "TimeSpanI64" => "std::time::Duration".to_string(),
-        "I32" if is_enum_property(property, flags_enums) => {
+        "I32"
+            if is_flags_property(property, flags_enums)
+                || is_enum_property(property, flags_enums) =>
+        {
             format!(
                 "rustolonia::{}",
                 simple_name(property.managed_type_name.as_deref().unwrap())
@@ -1696,20 +1855,72 @@ fn property_rust_type(
     }
 }
 
+const ANY_OPTION_TYPE: &str = "Option<_>";
+const ANY_OPTION_PATH_TYPE: &str = "rustolonia::PropertyPath<Option<_>>";
+
+fn is_option_rust_type(rust_type: &str) -> bool {
+    rust_type.starts_with("Option<") && rust_type.ends_with('>')
+}
+
+fn is_option_path_rust_type(rust_type: &str) -> bool {
+    rust_type.starts_with("rustolonia::PropertyPath<Option<") && rust_type.ends_with(">>")
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum BuiltinBoolConverter {
+    StringIsNotNullOrEmpty,
+    StringIsNullOrEmpty,
+    BoolNot,
+    ObjectIsNotNull,
+    ObjectIsNull,
+}
+
+impl BuiltinBoolConverter {
+    fn from_member(member: &str) -> Option<Self> {
+        let member = member
+            .strip_prefix("Avalonia.Data.Converters.")
+            .unwrap_or(member);
+        match member {
+            "StringConverters.IsNotNullOrEmpty" => Some(Self::StringIsNotNullOrEmpty),
+            "StringConverters.IsNullOrEmpty" => Some(Self::StringIsNullOrEmpty),
+            "BoolConverters.Not" => Some(Self::BoolNot),
+            "ObjectConverters.IsNotNull" => Some(Self::ObjectIsNotNull),
+            "ObjectConverters.IsNull" => Some(Self::ObjectIsNull),
+            _ => None,
+        }
+    }
+
+    fn from_reference(reference: &str) -> Option<Self> {
+        reference
+            .strip_prefix("x:Static ")
+            .and_then(Self::from_member)
+    }
+}
+
 fn register_binding(
     bindings: &mut Vec<BindingField>,
     field_name: &str,
     rust_type: &str,
     source: &str,
 ) -> Result<(), GenerationError> {
-    if let Some(binding) = bindings.iter().find(|b| b.field_name == field_name) {
+    if let Some(binding) = bindings.iter_mut().find(|b| b.field_name == field_name) {
         if binding.source != source {
             return Err(GenerationError::Invalid(format!(
                 "AXAML sources '{}' and '{source}' conflict on Rust binding field '{field_name}'",
                 binding.source
             )));
         }
-        if binding.rust_type != rust_type || !binding.is_signal {
+        if !binding.is_signal {
+            return Err(GenerationError::Invalid(format!(
+                "Binding '{field_name}' is used with incompatible Rust types '{}' and '{rust_type}'",
+                binding.rust_type
+            )));
+        }
+        if binding.rust_type == ANY_OPTION_TYPE && is_option_rust_type(rust_type) {
+            binding.rust_type = rust_type.to_string();
+        } else if !(rust_type == ANY_OPTION_TYPE && is_option_rust_type(&binding.rust_type))
+            && binding.rust_type != rust_type
+        {
             return Err(GenerationError::Invalid(format!(
                 "Binding '{field_name}' is used with incompatible Rust types '{}' and '{rust_type}'",
                 binding.rust_type
@@ -1723,6 +1934,42 @@ fn register_binding(
             is_signal: true,
             is_copy: true,
         });
+    }
+    Ok(())
+}
+
+fn collect_optional_object_bindings(
+    node: &XmlNode,
+    bindings: &mut Vec<BindingField>,
+) -> Result<(), GenerationError> {
+    for attribute in &node.attributes {
+        let Ok(Some(binding)) = parse_binding_extension(&attribute.value) else {
+            continue;
+        };
+        if !matches!(
+            binding
+                .converter
+                .as_deref()
+                .and_then(BuiltinBoolConverter::from_reference),
+            Some(BuiltinBoolConverter::ObjectIsNotNull | BuiltinBoolConverter::ObjectIsNull)
+        ) {
+            continue;
+        }
+        let field_name = binding_field_name(&binding.path)?;
+        if binding.path.contains('.') {
+            register_value_binding(
+                bindings,
+                &field_name,
+                ANY_OPTION_PATH_TYPE,
+                &binding.path,
+                false,
+            )?;
+        } else {
+            register_binding(bindings, &field_name, ANY_OPTION_TYPE, &binding.path)?;
+        }
+    }
+    for child in &node.children {
+        collect_optional_object_bindings(child, bindings)?;
     }
     Ok(())
 }
@@ -1758,13 +2005,24 @@ fn register_value_binding(
     is_copy: bool,
 ) -> Result<(), GenerationError> {
     if let Some(binding) = bindings
-        .iter()
+        .iter_mut()
         .find(|binding| binding.field_name == field_name)
     {
-        if binding.source != source || binding.rust_type != rust_type || binding.is_signal {
+        if binding.source != source || binding.is_signal {
             return Err(GenerationError::Invalid(format!(
                 "AXAML sources '{}' and '{source}' conflict on Rust binding field '{field_name}'",
                 binding.source
+            )));
+        }
+        if binding.rust_type == ANY_OPTION_PATH_TYPE && is_option_path_rust_type(rust_type) {
+            binding.rust_type = rust_type.to_string();
+        } else if !(rust_type == ANY_OPTION_PATH_TYPE
+            && is_option_path_rust_type(&binding.rust_type))
+            && binding.rust_type != rust_type
+        {
+            return Err(GenerationError::Invalid(format!(
+                "Binding '{field_name}' is used with incompatible Rust types '{}' and '{rust_type}'",
+                binding.rust_type
             )));
         }
     } else {
@@ -1777,6 +2035,143 @@ fn register_value_binding(
         });
     }
     Ok(())
+}
+
+fn format_builtin_converter_expr(
+    parsed: &ParsedBinding,
+    builtin: BuiltinBoolConverter,
+    target_rust_type: &str,
+    bindings: &mut Vec<BindingField>,
+) -> Result<String, GenerationError> {
+    let field_name = binding_field_name(&parsed.path)?;
+    let wrap = |bool_expr: String| {
+        if target_rust_type == "Option<bool>" {
+            format!("Some({bool_expr})")
+        } else {
+            bool_expr
+        }
+    };
+    if parsed.path.contains('.') {
+        let bool_expr = match builtin {
+            BuiltinBoolConverter::StringIsNotNullOrEmpty
+            | BuiltinBoolConverter::StringIsNullOrEmpty => {
+                let is_opt_string = bindings.iter().any(|b| {
+                    b.field_name == field_name
+                        && b.source == parsed.path
+                        && !b.is_signal
+                        && matches!(
+                            b.rust_type.as_str(),
+                            "rustolonia::PropertyPath<Option<String>>" | ANY_OPTION_PATH_TYPE
+                        )
+                });
+                if is_opt_string {
+                    register_value_binding(
+                        bindings,
+                        &field_name,
+                        "rustolonia::PropertyPath<Option<String>>",
+                        &parsed.path,
+                        false,
+                    )?;
+                    if builtin == BuiltinBoolConverter::StringIsNotNullOrEmpty {
+                        "__path.get()?.as_deref().is_some_and(|__s| !__s.is_empty())".to_string()
+                    } else {
+                        "__path.get()?.as_deref().is_none_or(str::is_empty)".to_string()
+                    }
+                } else {
+                    register_value_binding(
+                        bindings,
+                        &field_name,
+                        "rustolonia::PropertyPath<String>",
+                        &parsed.path,
+                        false,
+                    )?;
+                    if builtin == BuiltinBoolConverter::StringIsNotNullOrEmpty {
+                        "!__path.get()?.is_empty()".to_string()
+                    } else {
+                        "__path.get()?.is_empty()".to_string()
+                    }
+                }
+            }
+            BuiltinBoolConverter::BoolNot => {
+                register_value_binding(
+                    bindings,
+                    &field_name,
+                    "rustolonia::PropertyPath<bool>",
+                    &parsed.path,
+                    false,
+                )?;
+                "!__path.get()?".to_string()
+            }
+            BuiltinBoolConverter::ObjectIsNotNull => {
+                register_value_binding(
+                    bindings,
+                    &field_name,
+                    ANY_OPTION_PATH_TYPE,
+                    &parsed.path,
+                    false,
+                )?;
+                "__path.get()?.is_some()".to_string()
+            }
+            BuiltinBoolConverter::ObjectIsNull => {
+                register_value_binding(
+                    bindings,
+                    &field_name,
+                    ANY_OPTION_PATH_TYPE,
+                    &parsed.path,
+                    false,
+                )?;
+                "__path.get()?.is_none()".to_string()
+            }
+        };
+        let value = wrap(bool_expr);
+        return Ok(format!(
+            "{{ let __path = bindings.{field_name}.clone(); rustolonia::PropertyPath::read_only(move || Ok({value})) }}"
+        ));
+    }
+
+    let bool_expr = match builtin {
+        BuiltinBoolConverter::StringIsNotNullOrEmpty
+        | BuiltinBoolConverter::StringIsNullOrEmpty => {
+            let is_opt_string = bindings.iter().any(|b| {
+                b.field_name == field_name
+                    && b.source == parsed.path
+                    && b.is_signal
+                    && matches!(b.rust_type.as_str(), "Option<String>" | ANY_OPTION_TYPE)
+            });
+            if is_opt_string {
+                register_binding(bindings, &field_name, "Option<String>", &parsed.path)?;
+                if builtin == BuiltinBoolConverter::StringIsNotNullOrEmpty {
+                    "__sig.with(|__s| __s.as_deref().is_some_and(|__v| !__v.is_empty()))"
+                        .to_string()
+                } else {
+                    "__sig.with(|__s| __s.as_deref().is_none_or(str::is_empty))".to_string()
+                }
+            } else {
+                register_binding(bindings, &field_name, "String", &parsed.path)?;
+                if builtin == BuiltinBoolConverter::StringIsNotNullOrEmpty {
+                    "__sig.with(|__s| !__s.is_empty())".to_string()
+                } else {
+                    "__sig.with(String::is_empty)".to_string()
+                }
+            }
+        }
+        BuiltinBoolConverter::BoolNot => {
+            register_binding(bindings, &field_name, "bool", &parsed.path)?;
+            "!__sig.get()".to_string()
+        }
+        BuiltinBoolConverter::ObjectIsNotNull => {
+            register_binding(bindings, &field_name, ANY_OPTION_TYPE, &parsed.path)?;
+            "__sig.with(Option::is_some)".to_string()
+        }
+        BuiltinBoolConverter::ObjectIsNull => {
+            register_binding(bindings, &field_name, ANY_OPTION_TYPE, &parsed.path)?;
+            "__sig.with(Option::is_none)".to_string()
+        }
+    };
+    let value = wrap(bool_expr);
+    Ok(format!(
+        "{{ let __sig = bindings.{field_name}; move || {value} }}"
+    ))
 }
 
 fn format_binding_expr(
@@ -1792,6 +2187,15 @@ fn format_binding_expr(
             return Err(GenerationError::Invalid(format!(
                 "Converter binding to Rust type '{rust_type}' is not supported"
             )));
+        }
+        if matches!(rust_type, "bool" | "Option<bool>")
+            && !parsed.two_way
+            && parsed.converter_parameter.is_none()
+            && parsed.converter_culture.is_none()
+        {
+            if let Some(builtin) = BuiltinBoolConverter::from_reference(reference) {
+                return format_builtin_converter_expr(parsed, builtin, rust_type, bindings);
+            }
         }
         let source_field = format!("{}_converter_source", binding_field_name(&parsed.path)?);
         register_value_binding(
@@ -2304,6 +2708,17 @@ fn parse_named_color(name: &str) -> Option<(u8, u8, u8, u8)> {
     }
 }
 
+fn is_flags_property(
+    property: &ProjectedProperty,
+    flags_enums: &std::collections::HashSet<&str>,
+) -> bool {
+    property.kind == "I32"
+        && property
+            .managed_type_name
+            .as_deref()
+            .is_some_and(|name| flags_enums.contains(name))
+}
+
 fn format_enum_literal(
     ir: &ProjectionIr,
     managed_type_name: &str,
@@ -2322,6 +2737,187 @@ fn format_enum_literal(
         )));
     }
     Ok(format!("rustolonia::{}::{}", enum_def.name, trimmed))
+}
+
+fn format_flags_literal(
+    ir: &ProjectionIr,
+    managed_type_name: &str,
+    raw: &str,
+) -> Result<String, GenerationError> {
+    let enum_def = ir
+        .enums
+        .iter()
+        .find(|e| e.full_name == managed_type_name)
+        .ok_or_else(|| GenerationError::Invalid(format!("Unknown enum '{managed_type_name}'")))?;
+    let trimmed = raw.trim();
+    if let Ok(bits) = trimmed.parse::<i32>() {
+        return Ok(format!(
+            "rustolonia::{}::from_bits_retain({bits})",
+            enum_def.name
+        ));
+    }
+    let names = trimmed
+        .split(',')
+        .map(str::trim)
+        .filter(|name| !name.is_empty())
+        .collect::<Vec<_>>();
+    if names.is_empty() {
+        return Ok(format!("rustolonia::{}::NONE", enum_def.name));
+    }
+    let mut constants = Vec::with_capacity(names.len());
+    for name in names {
+        let Some(value) = enum_def
+            .values
+            .iter()
+            .find(|value| value.name.eq_ignore_ascii_case(name))
+        else {
+            return Err(GenerationError::Invalid(format!(
+                "Invalid flag '{name}' for enum '{}'",
+                enum_def.name
+            )));
+        };
+        constants.push(format!(
+            "rustolonia::{}::{}",
+            enum_def.name,
+            to_snake(&value.name).to_ascii_uppercase()
+        ));
+    }
+    Ok(constants.join(" | "))
+}
+
+fn format_string_converted_literal(converter: &str, raw: &str) -> Result<String, GenerationError> {
+    let value = raw.trim();
+    match converter {
+        "Avalonia.Host.Com.AvnColumnDefinitions" | "Avalonia.Host.Com.AvnRowDefinitions" => {
+            Ok(format!("rustolonia::tracks![{value:?}]"))
+        }
+        "Avalonia.Host.Com.AvnCalendarDate" | "Avalonia.Host.Com.AvnDateTimeOffset" => {
+            if value.is_empty() {
+                Ok("None".to_string())
+            } else {
+                let (year, month, day) = validate_date_literal(value)?;
+                Ok(format!(
+                    "Some(rustolonia::CivilDate::new({year}, {month}, {day}).expect(\"validated AXAML date\"))"
+                ))
+            }
+        }
+        "Avalonia.Host.Com.AvnCalendarDateValue" | "Avalonia.Host.Com.AvnDateTimeOffsetValue" => {
+            let (year, month, day) = validate_date_literal(value)?;
+            Ok(format!(
+                "rustolonia::CivilDate::new({year}, {month}, {day}).expect(\"validated AXAML date\")"
+            ))
+        }
+        "Avalonia.Host.Com.AvnTimeSpan" => {
+            if value.is_empty() {
+                Ok("None".to_string())
+            } else {
+                let (hour, minute, second) = validate_time_literal(value)?;
+                Ok(format!(
+                    "Some(rustolonia::CivilTime::new({hour}, {minute}, {second}).expect(\"validated AXAML time\"))"
+                ))
+            }
+        }
+        "Avalonia.Host.Com.AvnDecimal" => {
+            if value.is_empty() {
+                Ok("None".to_string())
+            } else {
+                validate_decimal_literal(value)?;
+                Ok(format!(
+                    "Some({value:?}.parse::<rustolonia::Decimal>().expect(\"validated AXAML decimal\"))"
+                ))
+            }
+        }
+        "Avalonia.Host.Com.AvnDecimalValue" => {
+            validate_decimal_literal(value)?;
+            Ok(format!(
+                "{value:?}.parse::<rustolonia::Decimal>().expect(\"validated AXAML decimal\")"
+            ))
+        }
+        _ => Err(GenerationError::Invalid(format!(
+            "Unsupported string converter '{converter}'"
+        ))),
+    }
+}
+
+fn validate_date_literal(value: &str) -> Result<(i32, u8, u8), GenerationError> {
+    let invalid = || {
+        GenerationError::Invalid(format!(
+            "Invalid AXAML date '{value}'; expected a valid YYYY-MM-DD date"
+        ))
+    };
+    if value.len() != 10 || !value.is_ascii() || &value[4..5] != "-" || &value[7..8] != "-" {
+        return Err(invalid());
+    }
+    let year = value[..4].parse::<i32>().map_err(|_| invalid())?;
+    let month = value[5..7].parse::<u8>().map_err(|_| invalid())?;
+    let day = value[8..10].parse::<u8>().map_err(|_| invalid())?;
+    let leap = year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
+    let days = match month {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 if leap => 29,
+        2 => 28,
+        _ => 0,
+    };
+    if day == 0 || day > days {
+        return Err(invalid());
+    }
+    Ok((year, month, day))
+}
+
+fn validate_time_literal(value: &str) -> Result<(u8, u8, u8), GenerationError> {
+    let invalid = || {
+        GenerationError::Invalid(format!(
+            "Invalid AXAML time '{value}'; expected HH:MM or HH:MM:SS"
+        ))
+    };
+    let parts = value.split(':').collect::<Vec<_>>();
+    if !value.is_ascii() || !matches!(parts.len(), 2 | 3) {
+        return Err(invalid());
+    }
+    let hour = parts[0].parse::<u8>().map_err(|_| invalid())?;
+    let minute = parts[1].parse::<u8>().map_err(|_| invalid())?;
+    let second = if parts.len() == 3 {
+        parts[2].parse::<u8>().map_err(|_| invalid())?
+    } else {
+        0
+    };
+    if parts[0].len() != 2
+        || parts[1].len() != 2
+        || parts.get(2).is_some_and(|part| part.len() != 2)
+        || hour >= 24
+        || minute >= 60
+        || second >= 60
+    {
+        return Err(invalid());
+    }
+    Ok((hour, minute, second))
+}
+
+fn validate_decimal_literal(value: &str) -> Result<(), GenerationError> {
+    let invalid = || GenerationError::Invalid(format!("Invalid AXAML decimal '{value}'"));
+    let trimmed = value.trim();
+    let digits = trimmed
+        .strip_prefix('-')
+        .or_else(|| trimmed.strip_prefix('+'))
+        .unwrap_or(trimmed);
+    let (integer, fraction) = digits.split_once('.').unwrap_or((digits, ""));
+    if digits.is_empty()
+        || integer.is_empty()
+        || !integer.bytes().all(|byte| byte.is_ascii_digit())
+        || !fraction.bytes().all(|byte| byte.is_ascii_digit())
+        || fraction.len() > 28
+        || digits.matches('.').count() > 1
+    {
+        return Err(invalid());
+    }
+    let magnitude = format!("{integer}{fraction}")
+        .parse::<u128>()
+        .map_err(|_| invalid())?;
+    if magnitude > 79_228_162_514_264_337_593_543_950_335_u128 {
+        return Err(invalid());
+    }
+    Ok(())
 }
 
 fn format_scalar_literal(kind: &str, raw: &str) -> Result<String, GenerationError> {
@@ -2922,14 +3518,28 @@ fn normalize_binding_namespaces(
             )));
         }
         let member = words.next().unwrap_or_default();
-        if let Some((type_prefix, _)) = member.split_once(':') {
-            if element.lookup_namespace_uri(Some(type_prefix)).is_none() {
+        let member = if let Some((type_prefix, local)) = member.split_once(':') {
+            let Some(ns) = element.lookup_namespace_uri(Some(type_prefix)) else {
                 let line = element.document().text_pos_at(element.range().start).row;
                 return Err(GenerationError::Invalid(format!(
                     "Converter type prefix '{type_prefix}' is not declared (line {line})"
                 )));
+            };
+            if matches!(
+                ns,
+                AVALONIA_XML_NAMESPACE
+                    | "using:Avalonia.Data.Converters"
+                    | "clr-namespace:Avalonia.Data.Converters"
+                    | "clr-namespace:Avalonia.Data.Converters;assembly=Avalonia.Base"
+            ) && BuiltinBoolConverter::from_member(local).is_some()
+            {
+                local
+            } else {
+                member
             }
-        }
+        } else {
+            member
+        };
         let rest = words.collect::<Vec<_>>().join(" ");
         let trailing = if rest.is_empty() {
             String::new()
@@ -3281,9 +3891,7 @@ mod tests {
         let rust_code =
             compile_test_axaml(axaml).expect("AXAML with events and DataTemplate should compile");
         assert!(rust_code.contains("pub struct TaskWindowHandlers"));
-        assert!(
-            rust_code.contains("pub type TaskWindowHandler1 = Box<dyn FnMut(()) + Send + 'static>")
-        );
+        assert!(rust_code.contains("pub type TaskWindowHandler1 = Box<dyn FnMut(()) + 'static>"));
         assert!(rust_code.contains("pub on_add_task: TaskWindowHandler1"));
         assert!(rust_code.contains(".on_click(handlers.on_add_task)"));
         assert!(rust_code.contains("format!(\"{} items\", __sig.get())"));
@@ -3622,7 +4230,7 @@ mod tests {
         let axaml = r#"
 <StackPanel xmlns="https://github.com/avaloniaui"
             xmlns:markup="http://schemas.microsoft.com/winfx/2006/xaml">
-  <Border IsVisible="{Binding Notification.Content, Converter={markup:Static StringConverters.IsNotNullOrEmpty}}">
+  <Border IsVisible="{Binding Notification.Content, Converter={markup:Static CustomConverters.HasContent}}">
     <TextBlock Text="{Binding Notification.Content}" />
   </Border>
   <TextBox Text="{Binding Price, Mode=TwoWay, Converter={StaticResource DecimalConverter}, ConverterParameter='0.00,units', ConverterCulture=fr-FR}" />
@@ -3633,15 +4241,115 @@ mod tests {
         );
         assert!(output.contains("pub notification_content: rustolonia::PropertyPath<String>"));
         assert!(output.contains(
-            "pub converter_static_string_converters_is_not_null_or_empty: rustolonia::RegisteredValueConverter"
+            "pub converter_static_custom_converters_has_content: rustolonia::RegisteredValueConverter"
         ));
         assert!(output.contains("rustolonia::ConvertedBinding::<bool>::new"));
-        assert!(output.contains("\"x:Static StringConverters.IsNotNullOrEmpty\""));
+        assert!(output.contains("\"x:Static CustomConverters.HasContent\""));
         assert!(output.contains(
             "pub converter_resource_decimal_converter: rustolonia::RegisteredValueConverter"
         ));
         assert!(output.contains("rustolonia::ScalarValue::String(\"0.00,units\".to_string())"));
         assert!(output.contains("Some(\"fr-FR\")).two_way()"));
+    }
+
+    #[test]
+    fn compiles_builtin_avalonia_boolean_converters_without_registered_converters() {
+        let axaml = r#"
+<StackPanel xmlns="https://github.com/avaloniaui"
+            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+            xmlns:conv="using:Avalonia.Data.Converters">
+  <Border IsVisible="{Binding Notification.Content, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+    <TextBlock Text="{Binding Notification.Content}" />
+  </Border>
+  <Border IsVisible="{Binding Notification.Content, Converter={x:Static StringConverters.IsNullOrEmpty}}" />
+  <TextBlock IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+             Text="{Binding Status}" />
+  <TextBlock IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNullOrEmpty}}" />
+  <Button IsEnabled="{Binding IsBusy, Converter={x:Static BoolConverters.Not}}" />
+  <Border IsVisible="{Binding Profile.IsLocked, Converter={x:Static BoolConverters.Not}}" />
+  <CheckBox IsChecked="{Binding IsBusy, Mode=OneWay, Converter={x:Static BoolConverters.Not}}" />
+  <Border IsVisible="{Binding Area, Converter={x:Static conv:ObjectConverters.IsNotNull}}" />
+  <Popup PlacementRect="{Binding Area}" />
+  <Border IsVisible="{Binding Area, Converter={x:Static ObjectConverters.IsNull}}" />
+</StackPanel>"#;
+        let output = compile_test_axaml(axaml).expect("built-in converters should compile");
+        assert!(!output.contains("_converter_source"));
+        assert!(!output.contains("RegisteredValueConverter"));
+        assert!(!output.contains("ConvertedBinding"));
+        assert_eq!(output.matches("pub notification_content:").count(), 1);
+        assert!(output.contains("pub notification_content: rustolonia::PropertyPath<String>"));
+        assert!(output.contains("Ok(!__path.get()?.is_empty())"));
+        assert!(output.contains("Ok(__path.get()?.is_empty())"));
+        assert_eq!(output.matches("pub status:").count(), 1);
+        assert!(output.contains("pub status: rustolonia::Signal<String>"));
+        assert!(output.contains("__sig.with(|__s| !__s.is_empty())"));
+        assert!(output.contains("__sig.with(String::is_empty)"));
+        assert_eq!(output.matches("pub is_busy:").count(), 1);
+        assert!(output.contains("pub is_busy: rustolonia::Signal<bool>"));
+        assert!(output.contains("move || !__sig.get()"));
+        assert!(output.contains("move || Some(!__sig.get())"));
+        assert!(output.contains("pub profile_is_locked: rustolonia::PropertyPath<bool>"));
+        assert!(output.contains("Ok(!__path.get()?)"));
+        assert_eq!(output.matches("pub area:").count(), 1);
+        assert!(output.contains("pub area: rustolonia::Signal<Option<rustolonia::Rect>>"));
+        assert!(output.contains("__sig.with(Option::is_some)"));
+        assert!(output.contains("__sig.with(Option::is_none)"));
+        assert!(output.contains("pub struct StackPanelBindings {"));
+    }
+
+    #[test]
+    fn compiles_standalone_object_converters_to_generic_option_bindings() {
+        let axaml = r#"
+<StackPanel xmlns="https://github.com/avaloniaui"
+            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+            x:Class="SelectionView">
+  <Border IsVisible="{Binding Selected, Converter={x:Static ObjectConverters.IsNotNull}}" />
+  <TextBlock IsVisible="{Binding Selected, Converter={x:Static ObjectConverters.IsNull}}" Text="Empty" />
+  <Border IsVisible="{Binding Profile.Avatar, Converter={x:Static ObjectConverters.IsNotNull}}" />
+  <Border IsVisible="{Binding OptionalNote, Converter={x:Static ObjectConverters.IsNotNull}}" />
+  <Border IsVisible="{Binding OptionalNote, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+</StackPanel>"#;
+        let output = compile_test_axaml(axaml).expect("standalone ObjectConverters should compile");
+        assert!(!output.contains("RegisteredValueConverter"));
+        assert!(
+            output.contains("pub struct SelectionViewBindings<T1: 'static = (), T2: 'static = ()>")
+        );
+        assert!(output.contains("pub selected: rustolonia::Signal<Option<T1>>"));
+        assert!(output.contains("pub profile_avatar: rustolonia::PropertyPath<Option<T2>>"));
+        assert!(output.contains("pub optional_note: rustolonia::Signal<Option<String>>"));
+        assert!(
+            output.contains("__sig.with(|__s| __s.as_deref().is_some_and(|__v| !__v.is_empty()))")
+        );
+        assert!(output.contains(
+            "pub fn build_selection_view<T1: 'static, T2: 'static>(bindings: &SelectionViewBindings<T1, T2>)"
+        ));
+    }
+
+    #[test]
+    fn falls_back_to_registered_converter_for_parameterized_two_way_or_custom_namespace_converters()
+    {
+        let parameterized = r#"
+<Border xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}, ConverterParameter=trim}" />"#;
+        let output = compile_test_axaml(parameterized).expect("parameterized converter falls back");
+        assert!(output.contains("RegisteredValueConverter"));
+
+        let two_way = r#"
+<CheckBox xmlns="https://github.com/avaloniaui"
+          xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+          IsChecked="{Binding Flag, Mode=TwoWay, Converter={x:Static BoolConverters.Not}}" />"#;
+        let output = compile_test_axaml(two_way).expect("two-way converter falls back");
+        assert!(output.contains("RegisteredValueConverter"));
+        assert!(output.contains(".two_way()"));
+
+        let custom_ns = r#"
+<Border xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:my="clr-namespace:MyApp"
+        IsVisible="{Binding Status, Converter={x:Static my:StringConverters.IsNotNullOrEmpty}}" />"#;
+        let output = compile_test_axaml(custom_ns).expect("custom namespace converter falls back");
+        assert!(output.contains("RegisteredValueConverter"));
     }
 
     #[test]
@@ -3824,9 +4532,7 @@ mod tests {
         let axaml = r#"
 <ListBox xmlns="https://github.com/avaloniaui" SelectionChanged="OnSelection" />"#;
         let source = compile_test_axaml(axaml).expect("selection event");
-        assert!(source.contains(
-            "rustolonia::ComPtr<rustolonia::IAvnSelectingItemsControlSelectionChangedArgs>"
-        ));
+        assert!(source.contains("&mut rustolonia::SelectingItemsControlSelectionChangedArgs"));
         assert!(!source.contains("rustolonia_sys::"));
     }
 
@@ -4046,5 +4752,75 @@ mod tests {
             .expect_err("one ControlSlot cannot refer to two hosts")
             .to_string()
             .contains("each ControlSlot needs its own host"));
+    }
+
+    #[test]
+    fn flags_enums_and_string_converted_properties_emit_typed_literals() {
+        let axaml = r#"
+<StackPanel xmlns="https://github.com/avaloniaui">
+  <ListBox SelectionMode="Multiple,AlwaysSelected" />
+  <Grid ColumnDefinitions="*,Auto,120" />
+  <CalendarDatePicker SelectedDate="2024-02-29" />
+  <TimePicker SelectedTime="09:30:15" />
+  <NumericUpDown Value="12.50" />
+</StackPanel>"#;
+        let generated = compile_test_axaml(axaml).expect("typed literals");
+        assert!(generated.contains(
+            "rustolonia::SelectionMode::MULTIPLE | rustolonia::SelectionMode::ALWAYS_SELECTED"
+        ));
+        assert!(generated.contains("rustolonia::tracks![\"*,Auto,120\"]"));
+        assert!(generated.contains("CivilDate::new(2024, 2, 29)"));
+        assert!(generated.contains("CivilTime::new(9, 30, 15)"));
+        assert!(generated.contains("12.50"));
+    }
+
+    #[test]
+    fn optional_string_converter_bindings_are_order_independent() {
+        let cases = [
+            r#"
+<StackPanel xmlns="https://github.com/avaloniaui"
+            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <TextBlock IsVisible="{Binding Name, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+  <TextBlock IsVisible="{Binding Name, Converter={x:Static ObjectConverters.IsNotNull}}" />
+</StackPanel>"#,
+            r#"
+<StackPanel xmlns="https://github.com/avaloniaui"
+            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <TextBlock IsVisible="{Binding Name, Converter={x:Static ObjectConverters.IsNotNull}}" />
+  <TextBlock IsVisible="{Binding Name, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+</StackPanel>"#,
+        ];
+        for axaml in cases {
+            let generated = compile_test_axaml(axaml).expect("compatible optional bindings");
+            assert!(generated.contains("rustolonia::Signal<Option<String>>"));
+            assert!(generated.contains("as_deref().is_some_and"));
+        }
+    }
+
+    #[test]
+    fn brush_paths_bind_to_paint_properties() {
+        let axaml = r#"
+<Border xmlns="https://github.com/avaloniaui"
+        Background="{Binding Item.Background}" />"#;
+        let generated = compile_test_axaml(axaml).expect("brush property path");
+        assert!(generated.contains("PropertyPath<Option<rustolonia::Brush>>"));
+        assert!(generated.contains(".background(bindings.item_background"));
+    }
+
+    #[test]
+    fn rejects_invalid_string_converted_literals() {
+        let invalid_date = r#"
+<CalendarDatePicker xmlns="https://github.com/avaloniaui" SelectedDate="2023-02-29" />"#;
+        assert!(compile_test_axaml(invalid_date)
+            .expect_err("invalid date")
+            .to_string()
+            .contains("Invalid AXAML date"));
+
+        let invalid_decimal = r#"
+<NumericUpDown xmlns="https://github.com/avaloniaui" Value="1.2.3" />"#;
+        assert!(compile_test_axaml(invalid_decimal)
+            .expect_err("invalid decimal")
+            .to_string()
+            .contains("Invalid AXAML decimal"));
     }
 }

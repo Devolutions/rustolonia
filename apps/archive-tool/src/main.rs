@@ -4,37 +4,25 @@
 //! view-model bridge exposes that state to the compiled Avalonia presentation.
 #![cfg_attr(target_os = "windows", windows_subsystem = "windows")]
 
-pub use rustolonia::{
-    AppScope, CancellationToken, ClipboardData, ConversionDirection, Error, MapKey, RangeBatch,
-    RangeRequest, RecentFileList, Result, ScalarKind, ScalarValue,
-};
-pub mod view_model {
-    pub use rustolonia::view_model::{
-        BatchCompletion, DynamicViewModel, ViewModelBatch, ViewModelSink,
-    };
-}
-pub mod value_converter {
-    pub use rustolonia::value_converter::ValueConverterDispatch;
-}
-
-#[path = "../generated/generated_view_models.rs"]
-mod generated_view_models;
 mod archive;
 mod fs_pane;
+#[path = "../generated/generated_view_models.rs"]
+mod generated_view_models;
 mod panes;
 
 use archive::{
     archive_totals, create_archive_from_folder, extract_entries, is_nested_archive, list_entries,
     smart_extract_destination, ArchiveEntry, ArchiveKind, ExtractReport,
 };
-use panes::{Pane, Side};
-use rustolonia::{
-    ActivationEvent, App, DragDropEffects, FileDropEvent, FileTypeFilter, FolderPickerOptions,
-    OpenFilePickerOptions, PickerOutcome, SaveFilePickerOptions, Window,
-};
 use generated_view_models::{
     mount_main_window, EntryRowViewModel, EntryRowViewModelSink, MainViewModel, MainViewModelSink,
     MAIN_VIEW_MODEL_RECENT_FILES_CAPACITY,
+};
+use panes::{Pane, Side};
+use rustolonia::{
+    ActivationEvent, App, AppScope, ClipboardData, DragDropEffects, Error, FileDropEvent,
+    FileTypeFilter, FolderPickerOptions, OpenFilePickerOptions, PickerOutcome, RecentFileList,
+    Result, SaveFilePickerOptions, Window,
 };
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -154,7 +142,13 @@ impl EntryRowViewModel for EntryRowModel {
             let can_extract = can_extract_selected(&shared);
             let can_delete = can_delete_selected(&shared);
             let can_copy = can_copy_to_other(&shared);
-            (shared.sink.clone(), label, can_extract, can_delete, can_copy)
+            (
+                shared.sink.clone(),
+                label,
+                can_extract,
+                can_delete,
+                can_copy,
+            )
         };
         if let Some(sink) = sink {
             sink.set_selected_count_label(label)?;
@@ -338,7 +332,11 @@ impl MainViewModel for Model {
             let Some(path) = shared.active_pane().archive_path().map(Path::to_path_buf) else {
                 return Ok(());
             };
-            let entries = shared.active_pane().archive_entries().unwrap_or(&[]).to_vec();
+            let entries = shared
+                .active_pane()
+                .archive_entries()
+                .unwrap_or(&[])
+                .to_vec();
             let parent = path
                 .parent()
                 .map(Path::to_path_buf)
@@ -526,10 +524,8 @@ impl MainViewModel for Model {
             };
             (scope, window, self.shared.clone())
         };
-        let operation = scope.open_folder_picker(
-            &window,
-            &FolderPickerOptions::new().title("Open folder"),
-        )?;
+        let operation =
+            scope.open_folder_picker(&window, &FolderPickerOptions::new().title("Open folder"))?;
         scope.spawn(async move {
             match operation.await {
                 Ok(PickerOutcome::Selected(items)) => {
@@ -625,7 +621,11 @@ impl MainViewModel for Model {
         }
         set_status(
             &self.shared,
-            format!("Copied {} item(s) to {}", folder_sources.len(), dest.display()),
+            format!(
+                "Copied {} item(s) to {}",
+                folder_sources.len(),
+                dest.display()
+            ),
         )
     }
 
@@ -815,7 +815,10 @@ fn can_copy_to_other(shared: &Shared) -> bool {
     if shared.loading {
         return false;
     }
-    shared.pane(shared.active.other()).copy_destination().is_some()
+    shared
+        .pane(shared.active.other())
+        .copy_destination()
+        .is_some()
         && (!shared.active_pane().selected_paths.is_empty()
             || !shared.active_pane().selected_key.is_empty())
 }
@@ -870,7 +873,10 @@ fn publish_state(shared: &Arc<Mutex<Shared>>) -> Result<()> {
             loading: shared.loading,
             archive_name: active.path_label(),
             archive_kind: active.kind_label(),
-            entry_count: entry_count_label(left_visible + right_visible, left_visible + right_visible),
+            entry_count: entry_count_label(
+                left_visible + right_visible,
+                left_visible + right_visible,
+            ),
             selected_count: selected_count_label(active.selected_paths.len()),
             can_selected: can_extract_selected(&shared),
             can_all: can_archive,
@@ -1174,18 +1180,21 @@ fn start_extract(
     let worker_shared = shared.clone();
     std::thread::Builder::new()
         .name("archive-extract".to_string())
-        .spawn(move || match extract_entries(&archive_path, &destination, &names) {
-            Ok(report) => {
-                if let Err(error) = apply_extract(&worker_shared, report, generation, reveal) {
-                    eprintln!("Archive explorer extract update failed: {error}");
+        .spawn(
+            move || match extract_entries(&archive_path, &destination, &names) {
+                Ok(report) => {
+                    if let Err(error) = apply_extract(&worker_shared, report, generation, reveal) {
+                        eprintln!("Archive explorer extract update failed: {error}");
+                    }
                 }
-            }
-            Err(error) => {
-                if let Err(update_error) = set_extract_error(&worker_shared, error, generation) {
-                    eprintln!("Archive explorer extract error update failed: {update_error}");
+                Err(error) => {
+                    if let Err(update_error) = set_extract_error(&worker_shared, error, generation)
+                    {
+                        eprintln!("Archive explorer extract error update failed: {update_error}");
+                    }
                 }
-            }
-        })
+            },
+        )
         .map(|_| ())
         .map_err(|error| Error::Load(format!("Unable to start extract worker: {error}")))
 }
@@ -1290,11 +1299,7 @@ fn open_entry(shared: &Arc<Mutex<Shared>>, side: Side, entry: &ArchiveEntry) -> 
     }
 }
 
-fn set_worker_status(
-    shared: &Arc<Mutex<Shared>>,
-    status: String,
-    generation: i64,
-) -> Result<()> {
+fn set_worker_status(shared: &Arc<Mutex<Shared>>, status: String, generation: i64) -> Result<()> {
     {
         let mut shared = shared.lock().expect("shared state lock poisoned");
         if shared.extract_generation != generation {
@@ -1319,15 +1324,18 @@ fn start_create(shared: &Arc<Mutex<Shared>>, folder: PathBuf, destination: PathB
     let worker = shared.clone();
     std::thread::Builder::new()
         .name("archive-create".to_string())
-        .spawn(move || match create_archive_from_folder(&folder, &destination, kind) {
-            Ok(()) => {
-                let name = display_name(&destination);
-                let _ = start_loading(&worker, destination, format!("Opening {name}..."));
-            }
-            Err(error) => {
-                let _ = set_worker_status(&worker, format!("Create failed: {error}"), generation);
-            }
-        })
+        .spawn(
+            move || match create_archive_from_folder(&folder, &destination, kind) {
+                Ok(()) => {
+                    let name = display_name(&destination);
+                    let _ = start_loading(&worker, destination, format!("Opening {name}..."));
+                }
+                Err(error) => {
+                    let _ =
+                        set_worker_status(&worker, format!("Create failed: {error}"), generation);
+                }
+            },
+        )
         .map(|_| ())
         .map_err(|error| Error::Load(format!("Unable to start create worker: {error}")))
 }
@@ -1376,7 +1384,10 @@ fn main() -> rustolonia::Result<()> {
     App::load_from_env()?.run(|scope| {
         let startup = scope.activation_items()?;
         let mut recent = RecentFileList::with_capacity(MAIN_VIEW_MODEL_RECENT_FILES_CAPACITY);
-        let startup_path = startup.iter().find_map(|item| item.local_path()).map(Path::to_path_buf);
+        let startup_path = startup
+            .iter()
+            .find_map(|item| item.local_path())
+            .map(Path::to_path_buf);
         let status = if let Some(path) = startup_path.as_ref() {
             recent.push(path.to_string_lossy().to_string());
             format!("Opening {}...", display_name(path))

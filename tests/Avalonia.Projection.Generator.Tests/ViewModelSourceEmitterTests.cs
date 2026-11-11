@@ -307,23 +307,32 @@ public class ViewModelSourceEmitterTests
         var rust = ViewModelSourceEmitter.EmitRust(SampleIr(), externalConsumer: true);
 
         Assert.Contains(
-            "pub fn mount_rust_vm_window(scope: &crate::AppScope, model: impl SampleViewModel)",
+            "pub fn mount_rust_vm_window(scope: &::rustolonia::AppScope, model: impl SampleViewModel)",
             rust,
             StringComparison.Ordinal);
         Assert.Contains("#![allow(dead_code)]", rust, StringComparison.Ordinal);
         Assert.Contains(
-            "pub fn register_value_converters(scope: &crate::AppScope, converters: impl ValueConverters)",
+            "pub struct SampleViewModelSink(::rustolonia::view_model::ViewModelSink);",
             rust,
             StringComparison.Ordinal);
-        Assert.DoesNotContain("impl crate::AppScope { pub fn mount_rust_vm_window", rust, StringComparison.Ordinal);
+        Assert.Contains(
+            "impl<T: ValueConverters> ::rustolonia::value_converter::ValueConverterDispatch for ValueConvertersDispatch<T>",
+            rust,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "pub fn register_value_converters(scope: &::rustolonia::AppScope, converters: impl ValueConverters)",
+            rust,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("crate::", rust, StringComparison.Ordinal);
+        Assert.DoesNotContain("crate::", ViewModelSourceEmitter.EmitRust(ShapesIr(), externalConsumer: true), StringComparison.Ordinal);
         Assert.Contains("push_integer(2, value)", rust, StringComparison.Ordinal);
         Assert.DoesNotContain("push_integer(2, value as i64)", rust, StringComparison.Ordinal);
         Assert.Contains(
-            "fn execute(&mut self, command_id: i32, _parameter: Option<String>) -> crate::Result<()>",
+            "fn execute(&mut self, command_id: i32, _parameter: Option<String>) -> ::rustolonia::Result<()>",
             rust,
             StringComparison.Ordinal);
         Assert.Contains(
-            "Err(crate::Error::InvalidViewModelMember { kind: \"command\", id: command_id })",
+            "Err(::rustolonia::Error::InvalidViewModelMember { kind: \"command\", id: command_id })",
             rust,
             StringComparison.Ordinal);
     }

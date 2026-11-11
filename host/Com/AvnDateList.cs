@@ -110,4 +110,17 @@ public sealed unsafe partial class AvnDateList : IAvnDateTimeList
             return Marshal.GetHRForException(e);
         }
     }
+
+    public int Insert(int index, long value)
+    {
+        try
+        {
+            _value.Insert(index, new DateTime(value, DateTimeKind.Utc));
+            return HResults.S_OK;
+        }
+        catch (Exception e)
+        {
+            return Marshal.GetHRForException(e);
+        }
+    }
 }

@@ -123,4 +123,19 @@ public sealed unsafe partial class AvnControlList : IAvnControlList
             return Marshal.GetHRForException(e);
         }
     }
+
+    public int Insert(int index, IAvnControl? value)
+    {
+        try
+        {
+            if (_value is null)
+                return HResults.E_POINTER;
+            _value.Insert(index, (Control)ProjectionRuntime.Unwrap(value)!);
+            return HResults.S_OK;
+        }
+        catch (Exception e)
+        {
+            return Marshal.GetHRForException(e);
+        }
+    }
 }

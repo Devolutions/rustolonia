@@ -776,7 +776,7 @@ jobs:
 
       - name: Package the crates
         working-directory: rust
-        run: cargo package --locked -p rustolonia-sys -p rustolonia-bindgen -p rustolonia --config 'patch.crates-io.rustolonia-sys.path="rustolonia-sys"'
+        run: cargo package --locked -p rustolonia-sys -p rustolonia-macros -p rustolonia-bindgen -p rustolonia --config 'patch.crates-io.rustolonia-sys.path="rustolonia-sys"' --config 'patch.crates-io.rustolonia-macros.path="rustolonia-macros"'
 
       # Verified Marketplace publisher; also used by IronRDP and picky-rs.
       - uses: rust-lang/crates-io-auth-action@v1
@@ -786,4 +786,4 @@ jobs:
         working-directory: rust
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.crates-io-auth.outputs.token }}
-        run: cargo publish --locked -p rustolonia-sys -p rustolonia-bindgen -p rustolonia
+        run: cargo publish --locked -p rustolonia-sys -p rustolonia-macros -p rustolonia-bindgen -p rustolonia

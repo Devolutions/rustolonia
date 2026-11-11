@@ -34,6 +34,7 @@ public static class ViewModelSourceEmitter
     public static string EmitRust(ViewModelIr ir, bool externalConsumer = false)
     {
         ir.Validate();
+        var root = externalConsumer ? "::rustolonia" : "crate";
         var sb = new StringBuilder(
             "//! Generated from view-model.ir.json. Do not edit.\n\n");
         if (externalConsumer)
@@ -41,8 +42,8 @@ public static class ViewModelSourceEmitter
         foreach (var enumDefinition in ir.Enums)
             EmitRustEnum(sb, enumDefinition);
         foreach (var model in ir.Models)
-            EmitRustModel(sb, ir, model, ir.Views.Where(view => view.Model == model.Name), ir.TrayIcons.Where(tray => tray.Model == model.Name), externalConsumer);
-        EmitRustConverters(sb, ir.Converters, externalConsumer);
+            EmitRustModel(sb, ir, model, ir.Views.Where(view => view.Model == model.Name), ir.TrayIcons.Where(tray => tray.Model == model.Name), externalConsumer, root);
+        EmitRustConverters(sb, ir.Converters, externalConsumer, root);
         return sb.ToString().TrimEnd() + "\n";
     }
 
@@ -1959,7 +1960,8 @@ public static class ViewModelSourceEmitter
         ViewModelDefinition model,
         IEnumerable<ViewDefinition> views,
         IEnumerable<TrayDefinition> trays,
-        bool externalConsumer)
+        bool externalConsumer,
+        string root)
     {
         var traitName = model.Name;
         var sinkName = $"{model.Name}Sink";
@@ -1970,7 +1972,7 @@ public static class ViewModelSourceEmitter
         var numberCollections = materialized.Where(IsNumberCollection).ToArray();
         var trackedCommands = model.Commands.Where(command => command.SupportsCancellation || command.SupportsProgress).ToArray();
         sb.AppendLine("#[derive(Clone, Debug)]");
-        sb.AppendLine($"pub struct {sinkName}(crate::view_model::ViewModelSink);");
+        sb.AppendLine($"pub struct {sinkName}({root}::view_model::ViewModelSink);");
         sb.AppendLine();
         if (model.RecentFiles is { } declaredRecent)
         {
@@ -1980,27 +1982,27 @@ public static class ViewModelSourceEmitter
         }
         sb.AppendLine($"impl {sinkName} {{");
         foreach (var property in model.Properties)
-            sb.AppendLine($"    pub fn {RustPropertySetterBody(property)}");
+            sb.AppendLine($"    pub fn {RustPropertySetterBody(property, root)}");
         foreach (var collection in stringCollections)
         {
-            sb.AppendLine($"    pub fn add_{Snake(collection.Name)}(&self, value: impl AsRef<str>) -> crate::Result<()> {{ self.0.add_string({collection.Id}, value) }}");
-            sb.AppendLine($"    pub fn insert_{Snake(collection.Name)}(&self, index: i32, value: impl AsRef<str>) -> crate::Result<()> {{ self.0.insert_string({collection.Id}, index, value) }}");
-            sb.AppendLine($"    pub fn replace_{Snake(collection.Name)}(&self, index: i32, value: impl AsRef<str>) -> crate::Result<()> {{ self.0.replace_string({collection.Id}, index, value) }}");
+            sb.AppendLine($"    pub fn add_{Snake(collection.Name)}(&self, value: impl AsRef<str>) -> {root}::Result<()> {{ self.0.add_string({collection.Id}, value) }}");
+            sb.AppendLine($"    pub fn insert_{Snake(collection.Name)}(&self, index: i32, value: impl AsRef<str>) -> {root}::Result<()> {{ self.0.insert_string({collection.Id}, index, value) }}");
+            sb.AppendLine($"    pub fn replace_{Snake(collection.Name)}(&self, index: i32, value: impl AsRef<str>) -> {root}::Result<()> {{ self.0.replace_string({collection.Id}, index, value) }}");
         }
         foreach (var collection in modelCollections)
         {
             var elementTrait = collection.ElementModelName!;
-            sb.AppendLine($"    pub fn add_{Snake(collection.Name)}(&self, value: impl {elementTrait}) -> crate::Result<()> {{ self.0.add_model({collection.Id}, {elementTrait}Dispatch {{ model: value }}) }}");
-            sb.AppendLine($"    pub fn insert_{Snake(collection.Name)}(&self, index: i32, value: impl {elementTrait}) -> crate::Result<()> {{ self.0.insert_model({collection.Id}, index, {elementTrait}Dispatch {{ model: value }}) }}");
-            sb.AppendLine($"    pub fn replace_{Snake(collection.Name)}(&self, index: i32, value: impl {elementTrait}) -> crate::Result<()> {{ self.0.replace_model({collection.Id}, index, {elementTrait}Dispatch {{ model: value }}) }}");
+            sb.AppendLine($"    pub fn add_{Snake(collection.Name)}(&self, value: impl {elementTrait}) -> {root}::Result<()> {{ self.0.add_model({collection.Id}, {elementTrait}Dispatch {{ model: value }}) }}");
+            sb.AppendLine($"    pub fn insert_{Snake(collection.Name)}(&self, index: i32, value: impl {elementTrait}) -> {root}::Result<()> {{ self.0.insert_model({collection.Id}, index, {elementTrait}Dispatch {{ model: value }}) }}");
+            sb.AppendLine($"    pub fn replace_{Snake(collection.Name)}(&self, index: i32, value: impl {elementTrait}) -> {root}::Result<()> {{ self.0.replace_model({collection.Id}, index, {elementTrait}Dispatch {{ model: value }}) }}");
         }
         foreach (var collection in numberCollections)
         {
             var suffix = RustNumberSuffix(collection.ElementKind);
             var rustType = RustNumberType(collection.ElementKind);
-            sb.AppendLine($"    pub fn add_{Snake(collection.Name)}(&self, value: {rustType}) -> crate::Result<()> {{ self.0.add_{suffix}({collection.Id}, value) }}");
-            sb.AppendLine($"    pub fn insert_{Snake(collection.Name)}(&self, index: i32, value: {rustType}) -> crate::Result<()> {{ self.0.insert_{suffix}({collection.Id}, index, value) }}");
-            sb.AppendLine($"    pub fn replace_{Snake(collection.Name)}(&self, index: i32, value: {rustType}) -> crate::Result<()> {{ self.0.replace_{suffix}({collection.Id}, index, value) }}");
+            sb.AppendLine($"    pub fn add_{Snake(collection.Name)}(&self, value: {rustType}) -> {root}::Result<()> {{ self.0.add_{suffix}({collection.Id}, value) }}");
+            sb.AppendLine($"    pub fn insert_{Snake(collection.Name)}(&self, index: i32, value: {rustType}) -> {root}::Result<()> {{ self.0.insert_{suffix}({collection.Id}, index, value) }}");
+            sb.AppendLine($"    pub fn replace_{Snake(collection.Name)}(&self, index: i32, value: {rustType}) -> {root}::Result<()> {{ self.0.replace_{suffix}({collection.Id}, index, value) }}");
         }
         if (numberCollections.Length > 0)
         {
@@ -2010,24 +2012,24 @@ public static class ViewModelSourceEmitter
         }
         foreach (var collection in stringCollections)
         {
-            sb.AppendLine($"    pub fn remove_{Snake(collection.Name)}(&self, index: i32) -> crate::Result<()> {{ self.0.remove_string_at({collection.Id}, index) }}");
-            sb.AppendLine($"    pub fn move_{Snake(collection.Name)}(&self, from_index: i32, to_index: i32) -> crate::Result<()> {{ self.0.move_string_item({collection.Id}, from_index, to_index) }}");
-            sb.AppendLine($"    pub fn clear_{Snake(collection.Name)}(&self) -> crate::Result<()> {{ self.0.clear_string_collection({collection.Id}) }}");
+            sb.AppendLine($"    pub fn remove_{Snake(collection.Name)}(&self, index: i32) -> {root}::Result<()> {{ self.0.remove_string_at({collection.Id}, index) }}");
+            sb.AppendLine($"    pub fn move_{Snake(collection.Name)}(&self, from_index: i32, to_index: i32) -> {root}::Result<()> {{ self.0.move_string_item({collection.Id}, from_index, to_index) }}");
+            sb.AppendLine($"    pub fn clear_{Snake(collection.Name)}(&self) -> {root}::Result<()> {{ self.0.clear_string_collection({collection.Id}) }}");
         }
         foreach (var collection in modelCollections)
         {
-            sb.AppendLine($"    pub fn remove_{Snake(collection.Name)}(&self, index: i32) -> crate::Result<()> {{ self.0.remove_model_at({collection.Id}, index) }}");
-            sb.AppendLine($"    pub fn move_{Snake(collection.Name)}(&self, from_index: i32, to_index: i32) -> crate::Result<()> {{ self.0.move_model_item({collection.Id}, from_index, to_index) }}");
-            sb.AppendLine($"    pub fn clear_{Snake(collection.Name)}(&self) -> crate::Result<()> {{ self.0.clear_model_collection({collection.Id}) }}");
+            sb.AppendLine($"    pub fn remove_{Snake(collection.Name)}(&self, index: i32) -> {root}::Result<()> {{ self.0.remove_model_at({collection.Id}, index) }}");
+            sb.AppendLine($"    pub fn move_{Snake(collection.Name)}(&self, from_index: i32, to_index: i32) -> {root}::Result<()> {{ self.0.move_model_item({collection.Id}, from_index, to_index) }}");
+            sb.AppendLine($"    pub fn clear_{Snake(collection.Name)}(&self) -> {root}::Result<()> {{ self.0.clear_model_collection({collection.Id}) }}");
         }
         foreach (var collection in numberCollections)
         {
-            sb.AppendLine($"    pub fn remove_{Snake(collection.Name)}(&self, index: i32) -> crate::Result<()> {{ self.0.remove_number_at({collection.Id}, index) }}");
-            sb.AppendLine($"    pub fn move_{Snake(collection.Name)}(&self, from_index: i32, to_index: i32) -> crate::Result<()> {{ self.0.move_number_item({collection.Id}, from_index, to_index) }}");
-            sb.AppendLine($"    pub fn clear_{Snake(collection.Name)}(&self) -> crate::Result<()> {{ self.0.clear_number_collection({collection.Id}) }}");
+            sb.AppendLine($"    pub fn remove_{Snake(collection.Name)}(&self, index: i32) -> {root}::Result<()> {{ self.0.remove_number_at({collection.Id}, index) }}");
+            sb.AppendLine($"    pub fn move_{Snake(collection.Name)}(&self, from_index: i32, to_index: i32) -> {root}::Result<()> {{ self.0.move_number_item({collection.Id}, from_index, to_index) }}");
+            sb.AppendLine($"    pub fn clear_{Snake(collection.Name)}(&self) -> {root}::Result<()> {{ self.0.clear_number_collection({collection.Id}) }}");
         }
         foreach (var command in model.Commands)
-            sb.AppendLine($"    pub fn set_{Snake(command.Name)}_enabled(&self, enabled: bool) -> crate::Result<()> {{ self.0.set_command_enabled({command.Id}, enabled) }}");
+            sb.AppendLine($"    pub fn set_{Snake(command.Name)}_enabled(&self, enabled: bool) -> {root}::Result<()> {{ self.0.set_command_enabled({command.Id}, enabled) }}");
         if (model.RecentFiles is { } recentFiles)
         {
             var collection = model.Collections.Single(candidate => candidate.Name == recentFiles.Collection);
@@ -2036,82 +2038,82 @@ public static class ViewModelSourceEmitter
             sb.AppendLine($"    /// The list is bounded by its own capacity ({recentFiles.Capacity}), so this replaces a");
             sb.AppendLine($"    /// handful of entries rather than a data set; the generated menu derives");
             sb.AppendLine($"    /// each header from the URI and passes the URI back as the command parameter.");
-            sb.AppendLine($"    pub fn publish_{Snake(recentFiles.Collection)}(&self, recent: &crate::RecentFileList) -> crate::Result<()> {{");
+            sb.AppendLine($"    pub fn publish_{Snake(recentFiles.Collection)}(&self, recent: &{root}::RecentFileList) -> {root}::Result<()> {{");
             sb.AppendLine($"        self.0.clear_string_collection({collection.Id})?;");
             sb.AppendLine($"        for uri in recent.entries() {{ self.0.add_string({collection.Id}, uri)?; }}");
             sb.AppendLine("        Ok(())");
             sb.AppendLine("    }");
         }
         foreach (var property in model.Properties.Where(property => property.Kind != ViewModelValueKind.Model))
-            sb.AppendLine($"    pub fn set_{Snake(property.Name)}_error(&self, message: Option<&str>) -> crate::Result<()> {{ self.0.set_property_error({property.Id}, message) }}");
-        EmitRustShapeSinkMethods(sb, ir, model, windowedCollections, trackedCommands);
+            sb.AppendLine($"    pub fn set_{Snake(property.Name)}_error(&self, message: Option<&str>) -> {root}::Result<()> {{ self.0.set_property_error({property.Id}, message) }}");
+        EmitRustShapeSinkMethods(sb, ir, model, windowedCollections, trackedCommands, root);
         sb.AppendLine($"    /// Creates a worker-safe immutable update batch with a monotonic generation.");
-        sb.AppendLine($"    pub fn batch(&self, generation: i64) -> {sinkName}Batch {{ {sinkName}Batch(crate::view_model::ViewModelBatch::new(generation)) }}");
-        sb.AppendLine($"    pub fn submit_batch(&self, batch: {sinkName}Batch) -> crate::Result<crate::view_model::BatchCompletion> {{ self.0.submit_batch(batch.0) }}");
+        sb.AppendLine($"    pub fn batch(&self, generation: i64) -> {sinkName}Batch {{ {sinkName}Batch({root}::view_model::ViewModelBatch::new(generation)) }}");
+        sb.AppendLine($"    pub fn submit_batch(&self, batch: {sinkName}Batch) -> {root}::Result<{root}::view_model::BatchCompletion> {{ self.0.submit_batch(batch.0) }}");
         sb.AppendLine("}");
         sb.AppendLine();
-        EmitRustBatchBuilder(sb, ir, model, sinkName, stringCollections, modelCollections);
+        EmitRustBatchBuilder(sb, ir, model, sinkName, stringCollections, modelCollections, root);
         sb.AppendLine($"pub trait {traitName}: Send + 'static {{");
-        sb.AppendLine($"    fn attach(&mut self, sink: {sinkName}) -> crate::Result<()>;");
-        sb.AppendLine("    fn detach(&mut self) -> crate::Result<()>;");
+        sb.AppendLine($"    fn attach(&mut self, sink: {sinkName}) -> {root}::Result<()>;");
+        sb.AppendLine($"    fn detach(&mut self) -> {root}::Result<()>;");
         foreach (var property in model.Properties.Where(property => property.Writable))
-            sb.AppendLine($"    fn set_{Snake(property.Name)}(&mut self, value: {RustPropertyType(ir, property)}) -> crate::Result<()>;");
+            sb.AppendLine($"    fn set_{Snake(property.Name)}(&mut self, value: {RustPropertyType(ir, property)}) -> {root}::Result<()>;");
         foreach (var command in model.Commands)
         {
             var parameter = command.ParameterProperty is { } parameterProperty
                 ? $", value: {RustOwnedType(model.Properties.Single(property => property.Name == parameterProperty).Kind)}"
                 : AcceptsCommandParameter(model, command) ? ", value: String" : "";
-            var token = command.SupportsCancellation ? ", token: crate::CancellationToken" : "";
-            sb.AppendLine($"    fn {Snake(command.Name)}(&mut self{parameter}{token}) -> crate::Result<()>;");
+            var token = command.SupportsCancellation ? $", token: {root}::CancellationToken" : "";
+            sb.AppendLine($"    fn {Snake(command.Name)}(&mut self{parameter}{token}) -> {root}::Result<()>;");
         }
         foreach (var collection in windowedCollections)
         {
             sb.AppendLine($"    /// Realizes one page of `{collection.Name}`. Called on the runtime's dedicated");
             sb.AppendLine("    /// range thread, never on the UI thread, so it may take as long as the dataset needs.");
-            sb.AppendLine($"    fn request_{Snake(collection.Name)}_range(&mut self, request: crate::RangeRequest) -> crate::Result<()>;");
+            sb.AppendLine($"    fn request_{Snake(collection.Name)}_range(&mut self, request: {root}::RangeRequest) -> {root}::Result<()>;");
         }
         sb.AppendLine("}");
         sb.AppendLine();
         sb.AppendLine($"struct {traitName}Dispatch<T: {traitName}> {{ model: T }}");
         sb.AppendLine();
-        sb.AppendLine($"impl<T: {traitName}> crate::view_model::DynamicViewModel for {traitName}Dispatch<T> {{");
-        sb.AppendLine($"    fn attach(&mut self, sink: crate::view_model::ViewModelSink) -> crate::Result<()> {{ self.model.attach({sinkName}(sink)) }}");
-        sb.AppendLine("    fn detach(&mut self) -> crate::Result<()> { self.model.detach() }");
-        EmitRustPropertyDispatch(sb, model, ViewModelValueKind.String);
-        EmitRustPropertyDispatch(sb, model, ViewModelValueKind.Integer);
-        EmitRustPropertyDispatch(sb, model, ViewModelValueKind.Boolean);
-        EmitRustPropertyDispatch(sb, model, ViewModelValueKind.Double);
-        EmitRustCommandDispatch(sb, model, asyncCommands: false);
-        EmitRustCommandDispatch(sb, model, asyncCommands: true);
-        EmitRustTrackedCommandDispatch(sb, model);
-        EmitRustRangeDispatch(sb, windowedCollections);
+        sb.AppendLine($"impl<T: {traitName}> {root}::view_model::DynamicViewModel for {traitName}Dispatch<T> {{");
+        sb.AppendLine($"    fn attach(&mut self, sink: {root}::view_model::ViewModelSink) -> {root}::Result<()> {{ self.model.attach({sinkName}(sink)) }}");
+        sb.AppendLine($"    fn detach(&mut self) -> {root}::Result<()> {{ self.model.detach() }}");
+        EmitRustPropertyDispatch(sb, model, ViewModelValueKind.String, root);
+        EmitRustPropertyDispatch(sb, model, ViewModelValueKind.Integer, root);
+        EmitRustPropertyDispatch(sb, model, ViewModelValueKind.Boolean, root);
+        EmitRustPropertyDispatch(sb, model, ViewModelValueKind.Double, root);
+        EmitRustCommandDispatch(sb, model, asyncCommands: false, root);
+        EmitRustCommandDispatch(sb, model, asyncCommands: true, root);
+        EmitRustTrackedCommandDispatch(sb, model, root);
+        EmitRustRangeDispatch(sb, windowedCollections, root);
         sb.AppendLine("}");
         sb.AppendLine();
         foreach (var view in views)
         {
             if (externalConsumer)
-                sb.AppendLine($"pub fn mount_{Snake(view.Name)}(scope: &crate::AppScope, model: impl {traitName}) -> crate::Result<()> {{ scope.mount_dynamic_view_model({view.Id}, {traitName}Dispatch {{ model }}) }}");
+                sb.AppendLine($"pub fn mount_{Snake(view.Name)}(scope: &{root}::AppScope, model: impl {traitName}) -> {root}::Result<()> {{ scope.mount_dynamic_view_model({view.Id}, {traitName}Dispatch {{ model }}) }}");
             else
-                sb.AppendLine($"impl crate::AppScope {{ pub fn mount_{Snake(view.Name)}(&self, model: impl {traitName}) -> crate::Result<()> {{ self.mount_dynamic_view_model({view.Id}, {traitName}Dispatch {{ model }}) }} }}");
+                sb.AppendLine($"impl {root}::AppScope {{ pub fn mount_{Snake(view.Name)}(&self, model: impl {traitName}) -> {root}::Result<()> {{ self.mount_dynamic_view_model({view.Id}, {traitName}Dispatch {{ model }}) }} }}");
             if (externalConsumer)
-                sb.AppendLine($"pub fn mount_{Snake(view.Name)}_hidden(scope: &crate::AppScope, model: impl {traitName}) -> crate::Result<()> {{ scope.mount_dynamic_view_model_hidden({view.Id}, {traitName}Dispatch {{ model }}).map(drop) }}");
+                sb.AppendLine($"pub fn mount_{Snake(view.Name)}_hidden(scope: &{root}::AppScope, model: impl {traitName}) -> {root}::Result<()> {{ scope.mount_dynamic_view_model_hidden({view.Id}, {traitName}Dispatch {{ model }}).map(drop) }}");
             else
-                sb.AppendLine($"impl crate::AppScope {{ pub fn mount_{Snake(view.Name)}_hidden(&self, model: impl {traitName}) -> crate::Result<()> {{ self.mount_dynamic_view_model_hidden({view.Id}, {traitName}Dispatch {{ model }}).map(drop) }} }}");
+                sb.AppendLine($"impl {root}::AppScope {{ pub fn mount_{Snake(view.Name)}_hidden(&self, model: impl {traitName}) -> {root}::Result<()> {{ self.mount_dynamic_view_model_hidden({view.Id}, {traitName}Dispatch {{ model }}).map(drop) }} }}");
             if (view.Converters.Count > 0)
             {
                 if (externalConsumer)
                     sb.AppendLine($"pub fn mount_{Snake(view.Name)}_with_converters<C: ValueConverters>(");
                 else
                 {
-                    sb.AppendLine("impl crate::AppScope {");
+                    sb.AppendLine($"impl {root}::AppScope {{");
                     sb.AppendLine($"    pub fn mount_{Snake(view.Name)}_with_converters<C: ValueConverters>(");
                     sb.AppendLine("        &self,");
                 }
                 if (externalConsumer)
-                    sb.AppendLine("    scope: &crate::AppScope,");
+                    sb.AppendLine($"    scope: &{root}::AppScope,");
                 sb.AppendLine($"        model: impl {traitName},");
                 sb.AppendLine($"        converters: C,");
-                sb.AppendLine($"    ) -> crate::Result<()> {{");
+                sb.AppendLine($"    ) -> {root}::Result<()> {{");
                 sb.AppendLine(externalConsumer
                     ? "        register_value_converters(scope, converters)?;"
                     : "        self.register_value_converters(converters)?;");
@@ -2126,9 +2128,9 @@ public static class ViewModelSourceEmitter
         foreach (var tray in trays)
         {
             if (externalConsumer)
-                sb.AppendLine($"pub fn mount_{Snake(tray.Name)}(scope: &crate::AppScope, model: impl {traitName}) -> crate::Result<()> {{ scope.mount_dynamic_tray({tray.Id}, {traitName}Dispatch {{ model }}) }}");
+                sb.AppendLine($"pub fn mount_{Snake(tray.Name)}(scope: &{root}::AppScope, model: impl {traitName}) -> {root}::Result<()> {{ scope.mount_dynamic_tray({tray.Id}, {traitName}Dispatch {{ model }}) }}");
             else
-                sb.AppendLine($"impl crate::AppScope {{ pub fn mount_{Snake(tray.Name)}(&self, model: impl {traitName}) -> crate::Result<()> {{ self.mount_dynamic_tray({tray.Id}, {traitName}Dispatch {{ model }}) }} }}");
+                sb.AppendLine($"impl {root}::AppScope {{ pub fn mount_{Snake(tray.Name)}(&self, model: impl {traitName}) -> {root}::Result<()> {{ self.mount_dynamic_tray({tray.Id}, {traitName}Dispatch {{ model }}) }} }}");
         }
         sb.AppendLine();
     }
@@ -2139,9 +2141,10 @@ public static class ViewModelSourceEmitter
         ViewModelDefinition model,
         string sinkName,
         IEnumerable<ViewModelCollection> stringCollections,
-        IEnumerable<ViewModelCollection> modelCollections)
+        IEnumerable<ViewModelCollection> modelCollections,
+        string root)
     {
-        sb.AppendLine($"pub struct {sinkName}Batch(crate::view_model::ViewModelBatch);");
+        sb.AppendLine($"pub struct {sinkName}Batch({root}::view_model::ViewModelBatch);");
         sb.AppendLine();
         sb.AppendLine($"impl {sinkName}Batch {{");
         foreach (var property in model.Properties)
@@ -2203,7 +2206,7 @@ public static class ViewModelSourceEmitter
         {
             var recentCollection = model.Collections.Single(candidate => candidate.Name == recentFiles.Collection);
             sb.AppendLine($"    /// Stages the most-recently-used storage URIs as one `{recentCollection.Name}` snapshot.");
-            sb.AppendLine($"    pub fn set_{Snake(recentFiles.Collection)}(&mut self, recent: &crate::RecentFileList) {{ self.0.push_string_snapshot({recentCollection.Id}, recent.entries()); }}");
+            sb.AppendLine($"    pub fn set_{Snake(recentFiles.Collection)}(&mut self, recent: &{root}::RecentFileList) {{ self.0.push_string_snapshot({recentCollection.Id}, recent.entries()); }}");
         }
         sb.AppendLine("}");
         sb.AppendLine();
@@ -2217,21 +2220,21 @@ public static class ViewModelSourceEmitter
     /// view-model properties (always `Option`, routed through the generic
     /// `set_model`).
     /// </summary>
-    private static string RustPropertySetterBody(ViewModelProperty property)
+    private static string RustPropertySetterBody(ViewModelProperty property, string root)
     {
         var name = Snake(property.Name);
         return property.Kind switch
         {
             ViewModelValueKind.Model =>
-                $"set_{name}<M: {property.ModelName}>(&self, value: Option<M>) -> crate::Result<()> {{ self.0.set_model({property.Id}, value.map(|model| {property.ModelName}Dispatch {{ model }})) }}",
+                $"set_{name}<M: {property.ModelName}>(&self, value: Option<M>) -> {root}::Result<()> {{ self.0.set_model({property.Id}, value.map(|model| {property.ModelName}Dispatch {{ model }})) }}",
             ViewModelValueKind.Enum when property.Nullable =>
                 throw new InvalidOperationException("Nullable enum properties are not supported."),
             ViewModelValueKind.Enum =>
-                $"set_{name}(&self, value: {property.EnumName}) -> crate::Result<()> {{ self.0.set_integer({property.Id}, value as i64) }}",
+                $"set_{name}(&self, value: {property.EnumName}) -> {root}::Result<()> {{ self.0.set_integer({property.Id}, value as i64) }}",
             ViewModelValueKind.String when property.Nullable =>
-                $"set_{name}(&self, value: Option<impl AsRef<str>>) -> crate::Result<()> {{ match value {{ Some(value) => self.0.set_string({property.Id}, value), None => self.0.set_null({property.Id}) }} }}",
+                $"set_{name}(&self, value: Option<impl AsRef<str>>) -> {root}::Result<()> {{ match value {{ Some(value) => self.0.set_string({property.Id}, value), None => self.0.set_null({property.Id}) }} }}",
             _ =>
-                $"set_{name}(&self, value: {RustInputType(property.Kind)}) -> crate::Result<()> {{ self.0.set_{Snake(TransportSuffix(property.Kind))}({property.Id}, value) }}",
+                $"set_{name}(&self, value: {RustInputType(property.Kind)}) -> {root}::Result<()> {{ self.0.set_{Snake(TransportSuffix(property.Kind))}({property.Id}, value) }}",
         };
     }
 
@@ -2241,7 +2244,7 @@ public static class ViewModelSourceEmitter
         _ => RustOwnedType(property.Kind),
     };
 
-    private static void EmitRustConverters(StringBuilder sb, IReadOnlyList<ValueConverterDefinition> converters, bool externalConsumer)
+    private static void EmitRustConverters(StringBuilder sb, IReadOnlyList<ValueConverterDefinition> converters, bool externalConsumer, string root)
     {
         if (converters.Count == 0)
             return;
@@ -2268,24 +2271,24 @@ public static class ViewModelSourceEmitter
         sb.AppendLine();
         sb.AppendLine("struct ValueConvertersDispatch<T: ValueConverters> { converters: T }");
         sb.AppendLine();
-        sb.AppendLine("impl<T: ValueConverters> crate::value_converter::ValueConverterDispatch for ValueConvertersDispatch<T> {");
+        sb.AppendLine($"impl<T: ValueConverters> {root}::value_converter::ValueConverterDispatch for ValueConvertersDispatch<T> {{");
         sb.AppendLine("    fn convert(");
         sb.AppendLine("        &self,");
         sb.AppendLine("        converter_id: i32,");
-        sb.AppendLine("        direction: crate::ConversionDirection,");
-        sb.AppendLine("        value: crate::ScalarValue,");
-        sb.AppendLine($"        {parameterName}: crate::ScalarValue,");
-        sb.AppendLine("        _target_kind: crate::ScalarKind,");
+        sb.AppendLine($"        direction: {root}::ConversionDirection,");
+        sb.AppendLine($"        value: {root}::ScalarValue,");
+        sb.AppendLine($"        {parameterName}: {root}::ScalarValue,");
+        sb.AppendLine($"        _target_kind: {root}::ScalarKind,");
         sb.AppendLine("        _culture: &str,");
-        sb.AppendLine("    ) -> crate::Result<crate::ScalarValue> {");
-        sb.AppendLine("        use crate::{ConversionDirection, ScalarValue};");
+        sb.AppendLine($"    ) -> {root}::Result<{root}::ScalarValue> {{");
+        sb.AppendLine($"        use {root}::{{ConversionDirection, ScalarValue}};");
         sb.AppendLine("        match (converter_id, direction) {");
         foreach (var converter in converters)
         {
             sb.AppendLine($"            ({converter.Id}, ConversionDirection::Convert) => {{");
-            sb.AppendLine($"                let value = {DecodeScalarMatch("value", converter.ValueKind, converter.Id, "converter-value")};");
+            sb.AppendLine($"                let value = {DecodeScalarMatch("value", converter.ValueKind, converter.Id, "converter-value", root)};");
             if (converter.ParameterKind is { } forwardParameterKind2)
-                sb.AppendLine($"                let parameter = {DecodeScalarMatch(parameterName, forwardParameterKind2, converter.Id, "converter-parameter")};");
+                sb.AppendLine($"                let parameter = {DecodeScalarMatch(parameterName, forwardParameterKind2, converter.Id, "converter-parameter", root)};");
             var forwardCall = converter.ParameterKind is null
                 ? $"self.converters.{Snake(converter.Name)}(value)"
                 : $"self.converters.{Snake(converter.Name)}(value, parameter)";
@@ -2294,9 +2297,9 @@ public static class ViewModelSourceEmitter
             if (converter.SupportsConvertBack)
             {
                 sb.AppendLine($"            ({converter.Id}, ConversionDirection::ConvertBack) => {{");
-                sb.AppendLine($"                let value = {DecodeScalarMatch("value", converter.ResultKind, converter.Id, "converter-value")};");
+                sb.AppendLine($"                let value = {DecodeScalarMatch("value", converter.ResultKind, converter.Id, "converter-value", root)};");
                 if (converter.ParameterKind is { } backParameterKind2)
-                    sb.AppendLine($"                let parameter = {DecodeScalarMatch(parameterName, backParameterKind2, converter.Id, "converter-parameter")};");
+                    sb.AppendLine($"                let parameter = {DecodeScalarMatch(parameterName, backParameterKind2, converter.Id, "converter-parameter", root)};");
                 var backCall = converter.ParameterKind is null
                     ? $"self.converters.{Snake(converter.Name)}_back(value)"
                     : $"self.converters.{Snake(converter.Name)}_back(value, parameter)";
@@ -2304,21 +2307,21 @@ public static class ViewModelSourceEmitter
                 sb.AppendLine("            }");
             }
         }
-        sb.AppendLine("            _ => Err(crate::Error::InvalidViewModelMember { kind: \"converter\", id: converter_id }),");
+        sb.AppendLine($"            _ => Err({root}::Error::InvalidViewModelMember {{ kind: \"converter\", id: converter_id }}),");
         sb.AppendLine("        }");
         sb.AppendLine("    }");
         sb.AppendLine("}");
         sb.AppendLine();
         if (externalConsumer)
         {
-            sb.AppendLine("pub fn register_value_converters(scope: &crate::AppScope, converters: impl ValueConverters) -> crate::Result<()> {");
+            sb.AppendLine($"pub fn register_value_converters(scope: &{root}::AppScope, converters: impl ValueConverters) -> {root}::Result<()> {{");
             sb.AppendLine("    scope.register_value_converter_dispatch(ValueConvertersDispatch { converters })");
             sb.AppendLine("}");
         }
         else
         {
-            sb.AppendLine("impl crate::AppScope {");
-            sb.AppendLine("    pub fn register_value_converters(&self, converters: impl ValueConverters) -> crate::Result<()> {");
+            sb.AppendLine($"impl {root}::AppScope {{");
+            sb.AppendLine($"    pub fn register_value_converters(&self, converters: impl ValueConverters) -> {root}::Result<()> {{");
             sb.AppendLine("        self.register_value_converter_dispatch(ValueConvertersDispatch { converters })");
             sb.AppendLine("    }");
             sb.AppendLine("}");
@@ -2326,7 +2329,7 @@ public static class ViewModelSourceEmitter
         sb.AppendLine();
     }
 
-    private static string DecodeScalarMatch(string variable, ViewModelValueKind kind, int converterId, string what)
+    private static string DecodeScalarMatch(string variable, ViewModelValueKind kind, int converterId, string what, string root)
     {
         var pattern = kind switch
         {
@@ -2336,7 +2339,7 @@ public static class ViewModelSourceEmitter
             ViewModelValueKind.Double => "ScalarValue::Double(value) => value",
             _ => throw new ArgumentOutOfRangeException(nameof(kind)),
         };
-        return $"match {variable} {{ {pattern}, ScalarValue::Unset => return Ok(ScalarValue::Unset), ScalarValue::DoNothing => return Ok(ScalarValue::DoNothing), ScalarValue::Null => return Ok(ScalarValue::Null), _ => return Err(crate::Error::InvalidViewModelMember {{ kind: \"{what}\", id: {converterId} }}) }}";
+        return $"match {variable} {{ {pattern}, ScalarValue::Unset => return Ok(ScalarValue::Unset), ScalarValue::DoNothing => return Ok(ScalarValue::DoNothing), ScalarValue::Null => return Ok(ScalarValue::Null), _ => return Err({root}::Error::InvalidViewModelMember {{ kind: \"{what}\", id: {converterId} }}) }}";
     }
 
     private static string EncodeScalarExpr(string expression, ViewModelValueKind kind) => kind switch
@@ -2369,17 +2372,18 @@ public static class ViewModelSourceEmitter
     private static void EmitRustPropertyDispatch(
         StringBuilder sb,
         ViewModelDefinition model,
-        ViewModelValueKind wireKind)
+        ViewModelValueKind wireKind,
+        string root)
     {
         var transport = Snake(TransportSuffix(wireKind));
         var properties = model.Properties
             .Where(property => property.Writable && WireKind(property.Kind) == wireKind)
             .ToArray();
         var valueName = properties.Length == 0 ? "_value" : "value";
-        sb.AppendLine($"    fn set_{transport}(&mut self, property_id: i32, {valueName}: {RustOwnedType(wireKind)}) -> crate::Result<()> {{");
+        sb.AppendLine($"    fn set_{transport}(&mut self, property_id: i32, {valueName}: {RustOwnedType(wireKind)}) -> {root}::Result<()> {{");
         if (properties.Length == 0)
         {
-            sb.AppendLine("        Err(crate::Error::InvalidViewModelMember { kind: \"property\", id: property_id })");
+            sb.AppendLine($"        Err({root}::Error::InvalidViewModelMember {{ kind: \"property\", id: property_id }})");
             sb.AppendLine("    }");
             return;
         }
@@ -2388,14 +2392,14 @@ public static class ViewModelSourceEmitter
         {
             if (property.Kind == ViewModelValueKind.Enum)
             {
-                sb.AppendLine($"            {property.Id} => self.model.set_{Snake(property.Name)}({property.EnumName}::try_from(value).map_err(|_| crate::Error::InvalidViewModelMember {{ kind: \"property\", id: property_id }})?),");
+                sb.AppendLine($"            {property.Id} => self.model.set_{Snake(property.Name)}({property.EnumName}::try_from(value).map_err(|_| {root}::Error::InvalidViewModelMember {{ kind: \"property\", id: property_id }})?),");
             }
             else
             {
                 sb.AppendLine($"            {property.Id} => self.model.set_{Snake(property.Name)}(value),");
             }
         }
-        sb.AppendLine($"            _ => Err(crate::Error::InvalidViewModelMember {{ kind: \"property\", id: property_id }}),");
+        sb.AppendLine($"            _ => Err({root}::Error::InvalidViewModelMember {{ kind: \"property\", id: property_id }}),");
         sb.AppendLine("        }");
         sb.AppendLine("    }");
     }
@@ -2403,7 +2407,8 @@ public static class ViewModelSourceEmitter
     private static void EmitRustCommandDispatch(
         StringBuilder sb,
         ViewModelDefinition model,
-        bool asyncCommands)
+        bool asyncCommands,
+        string root)
     {
         var method = asyncCommands ? "begin_async" : "execute";
         var commands = model.Commands.Where(command => command.IsAsync == asyncCommands).ToArray();
@@ -2411,23 +2416,23 @@ public static class ViewModelSourceEmitter
                 command.ParameterProperty is not null || AcceptsCommandParameter(model, command))
             ? "parameter"
             : "_parameter";
-        sb.AppendLine($"    fn {method}(&mut self, command_id: i32, {parameterName}: Option<String>) -> crate::Result<()> {{");
+        sb.AppendLine($"    fn {method}(&mut self, command_id: i32, {parameterName}: Option<String>) -> {root}::Result<()> {{");
         if (commands.Length == 0)
         {
-            sb.AppendLine("        Err(crate::Error::InvalidViewModelMember { kind: \"command\", id: command_id })");
+            sb.AppendLine($"        Err({root}::Error::InvalidViewModelMember {{ kind: \"command\", id: command_id }})");
             sb.AppendLine("    }");
             return;
         }
         sb.AppendLine("        match command_id {");
         foreach (var command in commands)
         {
-            var argument = RustCommandWireArgument(model, command, "command_id");
+            var argument = RustCommandWireArgument(model, command, "command_id", root);
             var token = command.SupportsCancellation
-                ? (argument.Length == 0 ? "crate::CancellationToken::none()" : ", crate::CancellationToken::none()")
+                ? (argument.Length == 0 ? $"{root}::CancellationToken::none()" : $", {root}::CancellationToken::none()")
                 : "";
             sb.AppendLine($"            {command.Id} => self.model.{Snake(command.Name)}({argument}{token}),");
         }
-        sb.AppendLine($"            _ => Err(crate::Error::InvalidViewModelMember {{ kind: \"command\", id: command_id }}),");
+        sb.AppendLine($"            _ => Err({root}::Error::InvalidViewModelMember {{ kind: \"command\", id: command_id }}),");
         sb.AppendLine("        }");
         sb.AppendLine("    }");
     }
@@ -2437,16 +2442,16 @@ public static class ViewModelSourceEmitter
     /// real token; every other async command reuses the plain dispatch, so a
     /// producer never has two divergent code paths for the same command.
     /// </summary>
-    private static void EmitRustTrackedCommandDispatch(StringBuilder sb, ViewModelDefinition model)
+    private static void EmitRustTrackedCommandDispatch(StringBuilder sb, ViewModelDefinition model, string root)
     {
         var cancellable = model.Commands.Where(command => command.SupportsCancellation).ToArray();
         if (cancellable.Length == 0)
             return;
-        sb.AppendLine("    fn begin_async_tracked(&mut self, command_id: i32, parameter: Option<String>, token: crate::CancellationToken) -> crate::Result<()> {");
+        sb.AppendLine($"    fn begin_async_tracked(&mut self, command_id: i32, parameter: Option<String>, token: {root}::CancellationToken) -> {root}::Result<()> {{");
         sb.AppendLine("        match command_id {");
         foreach (var command in cancellable)
         {
-            var argument = RustCommandWireArgument(model, command, "command_id");
+            var argument = RustCommandWireArgument(model, command, "command_id", root);
             var call = argument.Length == 0 ? "token" : $"{argument}, token";
             sb.AppendLine($"            {command.Id} => self.model.{Snake(command.Name)}({call}),");
         }
@@ -2462,15 +2467,16 @@ public static class ViewModelSourceEmitter
     /// </summary>
     private static void EmitRustRangeDispatch(
         StringBuilder sb,
-        IReadOnlyList<ViewModelCollection> windowedCollections)
+        IReadOnlyList<ViewModelCollection> windowedCollections,
+        string root)
     {
         if (windowedCollections.Count == 0)
             return;
-        sb.AppendLine("    fn request_range(&mut self, request: crate::RangeRequest) -> crate::Result<()> {");
+        sb.AppendLine($"    fn request_range(&mut self, request: {root}::RangeRequest) -> {root}::Result<()> {{");
         sb.AppendLine("        match request.collection_id {");
         foreach (var collection in windowedCollections)
             sb.AppendLine($"            {collection.Id} => self.model.request_{Snake(collection.Name)}_range(request),");
-        sb.AppendLine("            _ => Err(crate::Error::InvalidViewModelMember { kind: \"collection\", id: request.collection_id }),");
+        sb.AppendLine($"            _ => Err({root}::Error::InvalidViewModelMember {{ kind: \"collection\", id: request.collection_id }}),");
         sb.AppendLine("        }");
         sb.AppendLine("    }");
     }
@@ -2486,7 +2492,8 @@ public static class ViewModelSourceEmitter
         ViewModelIr ir,
         ViewModelDefinition model,
         IReadOnlyList<ViewModelCollection> windowedCollections,
-        IReadOnlyList<ViewModelCommand> trackedCommands)
+        IReadOnlyList<ViewModelCommand> trackedCommands,
+        string root)
     {
         if (model.Maps.Count > 0 || windowedCollections.Count > 0 || trackedCommands.Count > 0 ||
             model.Commands.Any(command => command.ResultModelName is not null))
@@ -2498,72 +2505,72 @@ public static class ViewModelSourceEmitter
         foreach (var map in model.Maps)
         {
             var name = Snake(map.Name);
-            var key = RustMapKeyType(map);
+            var key = RustMapKeyType(map, root);
             switch (map.ValueKind)
             {
                 case ViewModelValueKind.String:
-                    sb.AppendLine($"    pub fn set_{name}(&self, key: {key}, value: impl AsRef<str>) -> crate::Result<()> {{ self.0.map_set_string({map.Id}, key.into(), value) }}");
+                    sb.AppendLine($"    pub fn set_{name}(&self, key: {key}, value: impl AsRef<str>) -> {root}::Result<()> {{ self.0.map_set_string({map.Id}, key.into(), value) }}");
                     break;
                 case ViewModelValueKind.Integer:
-                    sb.AppendLine($"    pub fn set_{name}(&self, key: {key}, value: i64) -> crate::Result<()> {{ self.0.map_set_integer({map.Id}, key.into(), value) }}");
+                    sb.AppendLine($"    pub fn set_{name}(&self, key: {key}, value: i64) -> {root}::Result<()> {{ self.0.map_set_integer({map.Id}, key.into(), value) }}");
                     break;
                 case ViewModelValueKind.Boolean:
-                    sb.AppendLine($"    pub fn set_{name}(&self, key: {key}, value: bool) -> crate::Result<()> {{ self.0.map_set_boolean({map.Id}, key.into(), value) }}");
+                    sb.AppendLine($"    pub fn set_{name}(&self, key: {key}, value: bool) -> {root}::Result<()> {{ self.0.map_set_boolean({map.Id}, key.into(), value) }}");
                     break;
                 case ViewModelValueKind.Double:
-                    sb.AppendLine($"    pub fn set_{name}(&self, key: {key}, value: f64) -> crate::Result<()> {{ self.0.map_set_double({map.Id}, key.into(), value) }}");
+                    sb.AppendLine($"    pub fn set_{name}(&self, key: {key}, value: f64) -> {root}::Result<()> {{ self.0.map_set_double({map.Id}, key.into(), value) }}");
                     break;
                 case ViewModelValueKind.Model:
-                    sb.AppendLine($"    pub fn set_{name}(&self, key: {key}, value: impl {map.ValueModelName}) -> crate::Result<()> {{ self.0.map_set_model({map.Id}, key.into(), {map.ValueModelName}Dispatch {{ model: value }}) }}");
+                    sb.AppendLine($"    pub fn set_{name}(&self, key: {key}, value: impl {map.ValueModelName}) -> {root}::Result<()> {{ self.0.map_set_model({map.Id}, key.into(), {map.ValueModelName}Dispatch {{ model: value }}) }}");
                     break;
             }
-            sb.AppendLine($"    pub fn remove_{name}(&self, key: {key}) -> crate::Result<()> {{ self.0.map_remove({map.Id}, key.into()) }}");
-            sb.AppendLine($"    pub fn clear_{name}(&self) -> crate::Result<()> {{ self.0.map_clear({map.Id}) }}");
+            sb.AppendLine($"    pub fn remove_{name}(&self, key: {key}) -> {root}::Result<()> {{ self.0.map_remove({map.Id}, key.into()) }}");
+            sb.AppendLine($"    pub fn clear_{name}(&self) -> {root}::Result<()> {{ self.0.map_clear({map.Id}) }}");
         }
         foreach (var command in trackedCommands)
         {
             var name = Snake(command.Name);
             if (command.SupportsProgress)
             {
-                sb.AppendLine($"    pub fn set_{name}_progress(&self, value: Option<f64>, message: Option<&str>) -> crate::Result<()> {{ self.0.set_command_progress({command.Id}, value, message) }}");
+                sb.AppendLine($"    pub fn set_{name}_progress(&self, value: Option<f64>, message: Option<&str>) -> {root}::Result<()> {{ self.0.set_command_progress({command.Id}, value, message) }}");
             }
-            sb.AppendLine($"    pub fn set_{name}_running(&self, running: bool) -> crate::Result<()> {{ self.0.set_command_running({command.Id}, running) }}");
+            sb.AppendLine($"    pub fn set_{name}_running(&self, running: bool) -> {root}::Result<()> {{ self.0.set_command_running({command.Id}, running) }}");
             if (command.SupportsCancellation)
             {
                 sb.AppendLine($"    /// Claims the single terminal transition of one `{command.Name}` invocation.");
                 sb.AppendLine($"    /// Returns false when success, failure or cancellation already claimed it.");
-                sb.AppendLine($"    pub fn claim_{name}_completion(&self, token: &crate::CancellationToken) -> bool {{ self.0.claim_completion({command.Id}, token) }}");
+                sb.AppendLine($"    pub fn claim_{name}_completion(&self, token: &{root}::CancellationToken) -> bool {{ self.0.claim_completion({command.Id}, token) }}");
             }
         }
         foreach (var command in model.Commands.Where(command => command.ResultModelName is not null))
         {
             var name = Snake(command.Name);
-            sb.AppendLine($"    pub fn set_{name}_result(&self, value: impl {command.ResultModelName}) -> crate::Result<()> {{ self.0.set_command_result({command.Id}, Some({command.ResultModelName}Dispatch {{ model: value }})) }}");
-            sb.AppendLine($"    pub fn clear_{name}_result(&self) -> crate::Result<()> {{ self.0.clear_command_result({command.Id}) }}");
+            sb.AppendLine($"    pub fn set_{name}_result(&self, value: impl {command.ResultModelName}) -> {root}::Result<()> {{ self.0.set_command_result({command.Id}, Some({command.ResultModelName}Dispatch {{ model: value }})) }}");
+            sb.AppendLine($"    pub fn clear_{name}_result(&self) -> {root}::Result<()> {{ self.0.clear_command_result({command.Id}) }}");
         }
         foreach (var collection in windowedCollections)
         {
             var name = Snake(collection.Name);
             sb.AppendLine($"    /// Republishes `{collection.Name}`'s dataset identity, invalidating every realized page.");
-            sb.AppendLine($"    pub fn reset_{name}(&self, generation: i64, total_count: i64) -> crate::Result<()> {{ self.0.publish_range_reset({collection.Id}, generation, total_count) }}");
+            sb.AppendLine($"    pub fn reset_{name}(&self, generation: i64, total_count: i64) -> {root}::Result<()> {{ self.0.publish_range_reset({collection.Id}, generation, total_count) }}");
             sb.AppendLine($"    /// Starts a page for `{collection.Name}` at the currently published generation.");
-            sb.AppendLine($"    pub fn {name}_page(&self, offset: i64) -> Option<crate::RangeBatch> {{ self.0.range_batch({collection.Id}, offset) }}");
+            sb.AppendLine($"    pub fn {name}_page(&self, offset: i64) -> Option<{root}::RangeBatch> {{ self.0.range_batch({collection.Id}, offset) }}");
             if (collection.ElementKind == ViewModelValueKind.Model)
             {
-                sb.AppendLine($"    pub fn push_{name}_row(&self, page: &mut crate::RangeBatch, value: impl {collection.ElementModelName}) {{ self.0.push_range_model(page, {collection.ElementModelName}Dispatch {{ model: value }}); }}");
+                sb.AppendLine($"    pub fn push_{name}_row(&self, page: &mut {root}::RangeBatch, value: impl {collection.ElementModelName}) {{ self.0.push_range_model(page, {collection.ElementModelName}Dispatch {{ model: value }}); }}");
             }
             else
             {
-                sb.AppendLine($"    pub fn push_{name}_row(&self, page: &mut crate::RangeBatch, value: impl AsRef<str>) {{ let _ = self; page.push_text(value); }}");
+                sb.AppendLine($"    pub fn push_{name}_row(&self, page: &mut {root}::RangeBatch, value: impl AsRef<str>) {{ let _ = self; page.push_text(value); }}");
             }
-            sb.AppendLine($"    pub fn publish_{name}_page(&self, page: crate::RangeBatch) -> crate::Result<crate::view_model::BatchCompletion> {{ self.0.publish_range(page) }}");
+            sb.AppendLine($"    pub fn publish_{name}_page(&self, page: {root}::RangeBatch) -> {root}::Result<{root}::view_model::BatchCompletion> {{ self.0.publish_range(page) }}");
             sb.AppendLine($"    /// Re-requests realized `{collection.Name}` pages at the current generation (live values, no adapter churn).");
-            sb.AppendLine($"    pub fn refresh_{name}(&self) -> crate::Result<()> {{ self.0.publish_range_invalidate({collection.Id}) }}");
+            sb.AppendLine($"    pub fn refresh_{name}(&self) -> {root}::Result<()> {{ self.0.publish_range_invalidate({collection.Id}) }}");
         }
     }
 
-    private static string RustMapKeyType(ViewModelMap map) =>
-        map.KeyKind == ViewModelValueKind.String ? "impl Into<crate::MapKey>" : "i64";
+    private static string RustMapKeyType(ViewModelMap map, string root) =>
+        map.KeyKind == ViewModelValueKind.String ? $"impl Into<{root}::MapKey>" : "i64";
 
     private static string RustNumberSuffix(ViewModelValueKind elementKind) =>
         elementKind == ViewModelValueKind.Integer ? "integer" : "double";
@@ -2673,7 +2680,7 @@ public static class ViewModelSourceEmitter
     /// Parses the UTF-16 command argument into the generated Rust trait's
     /// owned parameter type. Empty when the command takes no value.
     /// </summary>
-    private static string RustCommandWireArgument(ViewModelDefinition model, ViewModelCommand command, string commandIdExpr)
+    private static string RustCommandWireArgument(ViewModelDefinition model, ViewModelCommand command, string commandIdExpr, string root)
     {
         if (command.ParameterProperty is { } name)
         {
@@ -2681,7 +2688,7 @@ public static class ViewModelSourceEmitter
             if (kind == ViewModelValueKind.String)
                 return "parameter.unwrap_or_default()";
             var rustType = RustOwnedType(kind);
-            return $"parameter.as_deref().unwrap_or(\"\").parse::<{rustType}>().map_err(|_| crate::Error::InvalidViewModelMember {{ kind: \"command\", id: {commandIdExpr} }})?";
+            return $"parameter.as_deref().unwrap_or(\"\").parse::<{rustType}>().map_err(|_| {root}::Error::InvalidViewModelMember {{ kind: \"command\", id: {commandIdExpr} }})?";
         }
 
         return AcceptsCommandParameter(model, command) ? "parameter.unwrap_or_default()" : "";

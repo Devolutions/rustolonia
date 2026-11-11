@@ -1,7 +1,10 @@
+extern crate self as rustolonia;
+
 #[rustfmt::skip]
 mod generated;
 pub mod android;
 mod async_runtime;
+pub mod callbacks;
 pub mod clipboard;
 pub mod data_shapes;
 pub mod ios;
@@ -13,28 +16,43 @@ mod resource_scope;
 mod runtime;
 pub mod shell;
 pub mod storage;
+pub mod style;
 pub mod value_converter;
+pub mod values;
 pub mod view;
 pub mod view_model;
 
-pub use async_runtime::{AsyncOperation, AsyncValue};
+/// Escape hatch for low-level `rustolonia-sys` COM handles (`HostExports`, `ComPtr`).
+pub mod raw {
+    pub use rustolonia_sys::{ComPtr, HostExports};
+}
+#[doc(hidden)]
+pub use rustolonia_sys::HostExports;
+
+pub use async_runtime::{AsyncOperation, AsyncValue, BlockingOperation};
+pub use callbacks::{
+    AsyncPopulator, IntoContent, ItemFilter, ItemSelector, Notification, PopulateRequest,
+    PopupPlacementCallback, PopupPlacementInput, PopupPlacementOutput, TextFilter, TextSelector,
+};
 pub use clipboard::{ClipboardCapabilities, ClipboardData, ClipboardFilesOperation};
 pub use data_shapes::{CancellationToken, MapKey, RangeBatch, RangeRequest};
 pub use generated::*;
 pub use menu::{RecentFileList, RecentFilesChange};
-pub use native_menu::{MenuItemState, NativeMenu, NativeMenuItem, NativeMenuItemKind};
+pub use native_menu::{
+    MenuBar, MenuBuilder, MenuItemState, NativeMenu, NativeMenuItem, NativeMenuItemKind,
+};
 pub use pixel_surface::{PixelSurface, SurfaceInput};
 pub use reactive::{
     provide_context, use_context, Effect, Memo, NodeRef, PathTwoWay, PropertyPath, ReactiveScope,
-    Resource, ResourceState, Signal, TwoWay,
+    Resource, ResourceState, Signal, SignalWriter, TwoWay,
 };
 pub use resource_scope::ResourceScope;
 pub use runtime::{
-    discover_host_path, App, AppContext, AppScope, AsControl, Downcast, EventSubscription,
-    LocalizationResources, NonOwningRef, ResourceValue, SingleViewSession, ThemeVariant, Upcast,
-    HOST_NATIVE_LIB_ENV_VAR,
+    discover_host_path, with_ui_error_handler, App, AppContext, AppScope, AsControl, Downcast,
+    EventSubscription, IntoEventResult, LocalizationResources, NonOwningRef, ResourceValue,
+    SingleViewSession, ThemeVariant, UiSender, Upcast, HOST_NATIVE_LIB_ENV_VAR,
 };
-pub use rustolonia_sys::{ComPtr, HostExports};
+pub use rustolonia_macros::{color, component, fmt, lens, rsx, tracks, Lens};
 pub use shell::{
     NativePopupEvent, NativeWindowHandle, NativeWindowHandleKind, ShellTray, ShutdownMode,
     TrayEvent, TrayMenuItem,
@@ -44,14 +62,17 @@ pub use storage::{
     OpenFilePickerOptions, PickerOutcome, SaveFilePickerOptions, StorageCapabilities, StorageItem,
     StorageItemKind, StorageLocation, StoragePickerOperation, WellKnownFolder,
 };
+pub use style::{BoxShadow, BoxShadows, Shortcut, Style, StyleSheet};
 pub use value_converter::{
     ConversionDirection, ConvertedBinding, ConverterTarget, RegisteredValueConverter, ScalarKind,
     ScalarPath, ScalarValue, ValueConverterDispatch,
 };
+pub use values::{CivilDate, CivilTime, Decimal, GridLength, GridTrack, GridTracks};
 pub use view::{
-    data_template_reactive, theme_brush, AnyEl, Command, ControlSlot, El, For, IntoChildEl,
-    IntoCommandProp, IntoContentEl, IntoProp, IntoValue, ItemNameScope, ItemsView,
-    KeyedListReconciler, PropBinding, Show, ViewRegistry,
+    data_template_reactive, theme_brush, use_theme, use_window, AnyEl, Command, ControlSlot, El,
+    For, IntoChildEl, IntoCommandProp, IntoContentEl, IntoProp, IntoValue, ItemNameScope,
+    ItemsView, KeyedListReconciler, PanelChildSlot, PropBinding, Show, TryIntoGridTracks,
+    ViewRegistry,
 };
 
 impl Variant {
@@ -81,23 +102,32 @@ impl VariantAbi {
     }
 }
 
-/// Builds a data template from Rust closures, wrapping the sys-level CCW in
-/// the safe `DataTemplate` type the template setters accept.
+/// Builds a data template from UI-thread Rust closures, wrapping the sys-level
+/// CCW in the safe `DataTemplate` type the template setters accept.
 pub fn data_template(
-    matches: impl FnMut(Variant) -> bool + Send + 'static,
-    build: impl FnMut() -> Result<Control> + Send + 'static,
+    matches: impl FnMut(Variant) -> bool + 'static,
+    build: impl FnMut() -> Result<Control> + 'static,
 ) -> Result<DataTemplate> {
-    let mut matches = matches;
-    let mut build = build;
+    let matches_cb = crate::reactive::UiCallbackHandle::new(matches);
+    let build_cb = crate::reactive::UiCallbackHandle::new(build);
     let sys_template = rustolonia_sys::data_template(
         move |data: rustolonia_sys::AvnVariant| {
-            Ok(matches(unsafe { Variant::from_borrowed_abi(data)? }))
+            let variant = unsafe { Variant::from_borrowed_abi(data)? };
+            matches_cb
+                .with(|cb| cb(variant))
+                .map_err(|_| rustolonia_sys::Error(rustolonia_sys::E_FAIL))
         },
         move || {
-            let control = build().map_err(|error| match error {
-                crate::Error::Abi(error) => error,
-                _ => rustolonia_sys::Error(rustolonia_sys::E_FAIL),
-            })?;
+            let control = build_cb
+                .with(|cb| cb())
+                .map_err(|_| rustolonia_sys::Error(rustolonia_sys::E_FAIL))?
+                .map_err(|error| match error {
+                    crate::Error::Abi(error) => error,
+                    other => {
+                        crate::runtime::report_ui_error("data template build failed", &other);
+                        rustolonia_sys::Error(rustolonia_sys::E_FAIL)
+                    }
+                })?;
             Ok(control.raw.clone())
         },
     );
@@ -141,6 +171,7 @@ pub enum Error {
         kind: &'static str,
         id: i32,
     },
+    InvalidValue(String),
     Async {
         hresult: i32,
         message: String,
@@ -214,6 +245,7 @@ impl std::fmt::Display for Error {
             Self::InvalidViewModelMember { kind, id } => {
                 write!(formatter, "invalid view-model {kind} ID {id}")
             }
+            Self::InvalidValue(error) => write!(formatter, "invalid value: {error}"),
             Self::Async { hresult, message } => {
                 write!(
                     formatter,

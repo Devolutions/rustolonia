@@ -7,7 +7,7 @@ an application-specific managed host.
 
 ## Development setup
 
-The template's `v12.1.5` dependency tag predates the compiler and runtime APIs
+The template's `v12.1.6` dependency tag predates the compiler and runtime APIs
 used here. Until a release includes these changes, use a checkout containing
 this revision and override the tagged dependencies. The checkout needs neither
 an initialized Avalonia submodule nor .NET tooling.
@@ -20,6 +20,7 @@ to that checkout:
 ```toml
 [patch."https://github.com/Devolutions/rustolonia"]
 rustolonia = { path = "/path/to/rustolonia/rust/rustolonia" }
+rustolonia-macros = { path = "/path/to/rustolonia/rust/rustolonia-macros" }
 rustolonia-bindgen = { path = "/path/to/rustolonia/rust/rustolonia-bindgen" }
 rustolonia-sys = { path = "/path/to/rustolonia/rust/rustolonia-sys" }
 ```
@@ -32,7 +33,7 @@ cargo update -p rustolonia -p rustolonia-bindgen -p rustolonia-sys
 ```
 
 Obtain a prebuilt host built from the same revision as the checkout; the
-published v12.1.5 host predates these changes. Point `RUSTOLONIA_HOST_DIR` at
+published v12.1.6 host predates these changes. Point `RUSTOLONIA_HOST_DIR` at
 the directory containing the host library before running `cargo run` from the
 copied directory. For example:
 
@@ -86,21 +87,26 @@ predicate. Call `command.try_notify()?` when dependencies of the predicate other
 than the reactive gate change. Commands and parameters inside item templates
 are not supported.
 
-Converters accept registered `{x:Static Type.Member}` or
-`{StaticResource Key}` references. The application supplies a `ScalarPath`
-declaring the source type, a `RegisteredValueConverter`, and a
-`ValueConverterDispatch` implementation; no CLR member or AXAML resource is
-loaded automatically. The supported source kinds are string, Boolean, 64-bit
-integer and double, and supported target properties are `String`, `bool`,
-`Option<bool>`, `i32`, `i64` and `f64`. `ConverterParameter` is a literal
-string, and `ConverterCulture` is a literal override of the registered
-culture signal. Without an override, culture changes re-evaluate the binding.
-Two-way conversion requires a writable source and a `ConvertBack`
-implementation. `DoNothing` skips an update; `Unset`, type mismatches and
-conversion errors are reported. Runtime update errors are logged; a rejected
-control edit can remain visible and does not implement Avalonia validation or
-fallback-value semantics. Converters cannot be combined with `StringFormat`
-or used in item templates.
+Standard one-way Avalonia boolean converters (`StringConverters.IsNotNullOrEmpty`,
+`StringConverters.IsNullOrEmpty`, `BoolConverters.Not`,
+`ObjectConverters.IsNotNull`, and `ObjectConverters.IsNull`) without
+`ConverterParameter` or `ConverterCulture` lower directly to typed Rust
+`Signal` or `PropertyPath` expressions on `bool` and `Option<bool>` properties,
+sharing the underlying model binding field. Other `{x:Static Type.Member}` and
+`{StaticResource Key}` references use the registered converter bridge: the
+application supplies a `ScalarPath` declaring the source type, a
+`RegisteredValueConverter`, and a `ValueConverterDispatch` implementation; no
+CLR member or AXAML resource is loaded automatically. The supported source kinds
+for registered converters are string, Boolean, 64-bit integer and double, and
+supported target properties are `String`, `bool`, `Option<bool>`, `i32`, `i64`
+and `f64`. `ConverterParameter` is a literal string, and `ConverterCulture` is a
+literal override of the registered culture signal. Without an override, culture
+changes re-evaluate the binding. Two-way conversion requires a writable source
+and a `ConvertBack` implementation. `DoNothing` skips an update; `Unset`, type
+mismatches and conversion errors are reported. Runtime update errors are logged;
+a rejected control edit can remain visible and does not implement Avalonia
+validation or fallback-value semantics. Converters cannot be combined with
+`StringFormat` or used in item templates.
 
 `x:Class` names the Rust view; root `x:DataType` and `x:CompileBindings` do not
 load a C# viewmodel or perform managed compiled-binding checks. Declared
