@@ -302,7 +302,9 @@ and `scope.show_window(&window, false)` for nonactivating overlays/HUDs.
 An explicit user open can call `scope.promote_macos_to_foreground()` on the UI
 thread, then `scope.show_window(&window, true)`. Promotion is fallible, changes
 to Regular policy and activates the application; it does not create a window.
-Calls before the native loop runs queue activation until the loop starts.
+Calls from the startup callback (before the native loop runs) synchronize
+Avalonia's native desired policy immediately; the native finish-launching
+callback activates only if the desired policy is Regular.
 Other platforms return `E_NOTIMPL`; guard these macOS-specific calls in
 cross-platform apps. Foreground startup remains the default.
 
@@ -324,10 +326,12 @@ an absolute local Cargo path as a shipping dependency.
 
 With those overrides, run
 `cargo test --manifest-path rust/Cargo.toml -p rustolonia --test macos_background -- --ignored`.
-The isolated agent bundle checks nonactivating startup, a tray and topmost
-window, rejected off-thread promotion, explicit Regular promotion, and default
-foreground startup. It restores the previous frontmost application only if the
-probe itself is still frontmost, and removes its temporary bundle.
+The isolated agent bundle checks nonactivating startup, Avalonia's application
+subclass, a tray and topmost window, rejected off-thread promotion, promotion
+both before and after the native loop starts, and default foreground startup.
+The promotion-only case does not show an activating window. It restores the
+previous frontmost application only if the probe itself is still frontmost,
+and removes its temporary bundle.
 
 The popup fixture opens real macOS tooltips and `MenuFlyout`s on two top-levels:
 `AppContext::set_overlay_popups(&window, true)` keeps the protected window's

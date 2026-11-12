@@ -30,7 +30,7 @@
     },
     {
       "path": "avalonia-patches/avalonia-background-launch.patch",
-      "sha256": "0e2aacb788d1c30b41025c1196a0dbbe73aeb16d79dc8d8d4ae28a2268b0ac2d"
+      "sha256": "aa56b6df58de206f8b8ae9aedc680744296075c50c935521a25e999ba1beb809"
     }
   ],
   "schemas": {

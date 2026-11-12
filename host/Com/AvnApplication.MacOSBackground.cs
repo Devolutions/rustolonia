@@ -44,11 +44,9 @@ public partial class AvnApplication
             Dispatcher.UIThread.VerifyAccess();
             if (Application.Current is null)
                 throw new InvalidOperationException("Avalonia must be initialized before macOS foreground promotion.");
-            MacOS.ObjC.SetRegularApplicationPolicy();
+            AvaloniaNativePlatformExtensions.SetShowInDock(true);
             if (MacOS.ObjC.IsApplicationRunning())
                 MacOS.ObjC.ActivateApplication();
-            else
-                Dispatcher.UIThread.Post(MacOS.ObjC.ActivateApplication);
             return HResults.S_OK;
         }
         catch (Exception e)
@@ -68,14 +66,6 @@ public partial class AvnApplication
             private static nint ApplicationHandle() =>
                 SendPointer(GetClass("NSApplication"), Selector("sharedApplication"));
 
-            public static void SetRegularApplicationPolicy()
-            {
-                var application = ApplicationHandle();
-                if (SendInt(application, Selector("activationPolicy")) != 0 &&
-                    SendBoolInt(application, Selector("setActivationPolicy:"), 0) == 0)
-                    throw new InvalidOperationException("macOS rejected the Regular application activation policy.");
-            }
-
             public static bool IsApplicationRunning() =>
                 SendBool(ApplicationHandle(), Selector("isRunning")) != 0;
 
@@ -91,8 +81,6 @@ public partial class AvnApplication
             [LibraryImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
             private static partial byte SendBool(nint receiver, nint selector);
 
-            [LibraryImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
-            private static partial byte SendBoolInt(nint receiver, nint selector, nint value);
         }
     }
 #endif

@@ -133,7 +133,7 @@ extern "C" {
 /// is only accepted if it reports this exact fingerprint.
 pub const ABI_FINGERPRINT: &str = env!("RUSTOLONIA_ABI_FINGERPRINT");
 
-const HOST_CAPABILITY_MACOS_BACKGROUND_LAUNCH: u32 = 1;
+pub const HOST_CAPABILITY_MACOS_BACKGROUND_LAUNCH: u32 = 1;
 
 /// Directory where `build.rs` staged the host, when the `dev-host-path`
 /// feature is enabled and a host was staged. Only meaningful on the build
@@ -724,6 +724,7 @@ mod host_info_tests {
             HostLoadError::IncompatibleHost { found: Some(_), .. }
         ));
         assert!(error.to_string().contains("macOS background-launch slots"));
+        assert!(FREE.get().is_none(), "stale host published its allocator");
     }
 
     unsafe extern "C" fn fake_host_info(info: *mut HostInfoNative) -> i32 {

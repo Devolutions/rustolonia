@@ -74,7 +74,7 @@ fn one_agent_bundle_supports_background_promotion_and_foreground_launches() {
         .unwrap();
         let icon = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("../../avalonia-src/tests/Avalonia.RenderTests/Assets/Star512.png");
-        for mode in ["background", "promote", "foreground"] {
+        for mode in ["background", "promote", "startup-promote", "foreground"] {
             check_launch(&executable, mode, &icon);
         }
     });

@@ -14,7 +14,7 @@ the upstream `12.1.6` tag (`cf8e564674700348947e93ab19105f27afe859a9`) by
 | `avalonia-file-drag.patch` | Retains a macOS mouse event for a deferred native file-drag operation. |
 | `avalonia-application-name.patch` | Names the default macOS application-menu holder from `Application.Name` before export, so both the menu item and submenu retain the application name when windows become key. |
 | `avalonia-grid-invalidation.patch` | Invalidates Grid's cell cache and measure when row or column definitions are replaced or changed. |
-| `avalonia-background-launch.patch` | Keeps accessory macOS launches from activating either the Dock or the application; stages the desired policy from `ShowInDock` and reports rejected policy changes. |
+| `avalonia-background-launch.patch` | Keeps accessory macOS launches from activating the Dock or application; stages the desired policy from `ShowInDock` and activates Regular launches after AppKit finishes launching. |
 
 ## Usage
 
