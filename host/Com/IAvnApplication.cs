@@ -386,4 +386,12 @@ public partial interface IAvnApplication
     /// <summary>Removes a <c>KeyBinding</c> previously added to <paramref name="window"/>.</summary>
     [PreserveSig]
     int RemoveWindowKeyBinding(IAvnWindow? window, long bindingId);
+
+    /// <summary>Stages accessory startup on macOS; must precede Avalonia initialization.</summary>
+    [PreserveSig]
+    int SetMacOSBackground(int enabled);
+
+    /// <summary>Promotes a running macOS application to Regular and activates it on the UI thread.</summary>
+    [PreserveSig]
+    int PromoteMacOSToForeground();
 }

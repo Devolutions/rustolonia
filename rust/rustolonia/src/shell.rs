@@ -93,6 +93,15 @@ impl ShutdownMode {
 }
 
 impl AppContext {
+    /// UI-thread only: becomes a Regular macOS Dock application and activates it.
+    ///
+    /// Does not create or show a window; use [`Self::show_window`] afterwards.
+    /// If called before the native loop starts, activation is queued until it runs.
+    /// Other platforms return `E_NOTIMPL`.
+    pub fn promote_macos_to_foreground(&self) -> Result<()> {
+        Ok(self.application().promote_macos_to_foreground()?)
+    }
+
     /// Gates native popups belonging to this owner (including nested popups).
     /// macOS only. Install before opening any popup; the callback runs on the
     /// UI thread before native show and must return promptly. Preparing supplies

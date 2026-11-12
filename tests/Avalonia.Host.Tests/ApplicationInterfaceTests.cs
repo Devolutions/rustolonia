@@ -75,12 +75,14 @@ public class ApplicationInterfaceTests
         nameof(IAvnApplication.RemoveStyles),
         nameof(IAvnApplication.AddWindowKeyBinding),
         nameof(IAvnApplication.RemoveWindowKeyBinding),
+        nameof(IAvnApplication.SetMacOSBackground),
+        nameof(IAvnApplication.PromoteMacOSToForeground),
     ];
 
     [Fact]
     public void Application_is_one_interface_in_rust_vtable_order()
     {
         Assert.Equal(s_slots, typeof(IAvnApplication).GetMethods().Select(m => m.Name));
-        Assert.Equal(64, s_slots.Length);
+        Assert.Equal(66, s_slots.Length);
     }
 }

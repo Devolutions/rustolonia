@@ -1,4 +1,7 @@
-use rustolonia_sys::{Host, HostExports, HostInfoNative, HostLoadError, ABI_FINGERPRINT};
+use rustolonia_sys::{
+    Host, HostExports, HostInfoNative, HostLoadError, ABI_FINGERPRINT,
+    HOST_CAPABILITY_MACOS_BACKGROUND_LAUNCH,
+};
 use std::ffi::{c_void, CString};
 use std::sync::OnceLock;
 
@@ -21,6 +24,7 @@ unsafe extern "C" fn host_info(info: *mut HostInfoNative) -> i32 {
     (*info).abi_fingerprint = FINGERPRINT
         .get_or_init(|| CString::new(ABI_FINGERPRINT).unwrap())
         .as_ptr();
+    (*info).reserved = HOST_CAPABILITY_MACOS_BACKGROUND_LAUNCH;
     rustolonia_sys::S_OK
 }
 

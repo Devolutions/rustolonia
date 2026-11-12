@@ -1221,6 +1221,17 @@ impl App {
         Ok(self)
     }
 
+    /// Starts macOS as an Accessory application without launch activation or a Dock icon.
+    ///
+    /// Call before [`App::run`], not in its callback. For strict no-flash bundled
+    /// startup, use an `LSUIElement=true` bundle baseline. Foreground launches
+    /// retain the default Regular policy. Other platforms return `E_NOTIMPL`.
+    /// Use [`AppContext::promote_macos_to_foreground`] for a later explicit open.
+    pub fn with_macos_background(self) -> Result<Self> {
+        self.application.set_macos_background(true)?;
+        Ok(self)
+    }
+
     /// Starts with no startup arguments at all.
     pub fn without_startup_arguments(mut self) -> Self {
         self.startup_arguments = Some(Vec::new());

@@ -1,0 +1,63 @@
+diff --git a/native/Avalonia.Native/src/OSX/app.mm b/native/Avalonia.Native/src/OSX/app.mm
+--- a/native/Avalonia.Native/src/OSX/app.mm
++++ b/native/Avalonia.Native/src/OSX/app.mm
+@@ -1,4 +1,5 @@
+ #include "common.h"
+ #include "AvnString.h"
+ #include "menu.h"
++#include <dispatch/dispatch.h>
+ @interface AvnAppDelegate : NSObject<NSApplicationDelegate>
+@@ -58,8 +59,10 @@
+ - (void)applicationWillFinishLaunching:(NSNotification *)notification
+ {
+-    if([[NSApplication sharedApplication] activationPolicy] != AvnDesiredActivationPolicy)
++    NSApplication* application = [NSApplication sharedApplication];
++    if(AvnDesiredActivationPolicy == NSApplicationActivationPolicyRegular)
+     {
+         for (NSRunningApplication * app in [NSRunningApplication runningApplicationsWithBundleIdentifier:@"com.apple.dock"]) {
++            if([application activationPolicy] != AvnDesiredActivationPolicy)
+-            [app activateWithOptions:NSApplicationActivateIgnoringOtherApps];
++                [app activateWithOptions:NSApplicationActivateIgnoringOtherApps];
+             break;
+         }
+@@ -73,4 +76,7 @@
+ - (void)applicationDidFinishLaunching:(NSNotification *)notification
+ {
+-    [[NSRunningApplication currentApplication] activateWithOptions:NSApplicationActivateIgnoringOtherApps];
++    dispatch_async(dispatch_get_main_queue(), ^{
++        if(AvnDesiredActivationPolicy == NSApplicationActivationPolicyRegular)
++            [[NSApplication sharedApplication] activateIgnoringOtherApps:YES];
++    });
+ }
+diff --git a/native/Avalonia.Native/src/OSX/main.mm b/native/Avalonia.Native/src/OSX/main.mm
+--- a/native/Avalonia.Native/src/OSX/main.mm
++++ b/native/Avalonia.Native/src/OSX/main.mm
+@@ -144,7 +144,7 @@
+-            if ([app activationPolicy] != requestedPolicy)
+-            {
+-                [app setActivationPolicy:requestedPolicy];
+-            }
++            if ([app activationPolicy] != requestedPolicy &&
++                ![app setActivationPolicy:requestedPolicy])
++                return E_FAIL;
++            AvnDesiredActivationPolicy = requestedPolicy;
+             
+             return S_OK;
+         }
+diff --git a/src/Avalonia.Native/AvaloniaNativePlatformExtensions.cs b/src/Avalonia.Native/AvaloniaNativePlatformExtensions.cs
+--- a/src/Avalonia.Native/AvaloniaNativePlatformExtensions.cs
++++ b/src/Avalonia.Native/AvaloniaNativePlatformExtensions.cs
+@@ -8,4 +8,13 @@
+ {
+     public static class AvaloniaNativePlatformExtensions
+     {
++        public static void SetShowInDock(bool show)
++        {
++            var factory = AvaloniaLocator.Current.GetService<Avalonia.Native.Interop.IAvaloniaNativeFactory>()
++                ?? throw new InvalidOperationException("The Avalonia Native factory is unavailable.");
++            var options = factory.MacOptions
++                ?? throw new InvalidOperationException("The Avalonia macOS options are unavailable.");
++            options.SetShowInDock(show ? 1 : 0);
++        }
++
+         public static AppBuilder UseAvaloniaNative(this AppBuilder builder)

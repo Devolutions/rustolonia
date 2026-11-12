@@ -47,6 +47,7 @@ $patches = @(
     'avalonia-file-drag.patch'
     'avalonia-application-name.patch'
     'avalonia-grid-invalidation.patch'
+    'avalonia-background-launch.patch'
 )
 
 foreach ($patch in $patches) {

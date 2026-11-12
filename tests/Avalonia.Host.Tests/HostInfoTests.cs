@@ -17,6 +17,7 @@ public unsafe class HostInfoTests
 
         Assert.Equal(HResults.S_OK, getHostInfo(&info));
         Assert.Equal((uint)sizeof(HostInfoNative), info.StructSize);
+        Assert.Equal(HostInfo.MacOSBackgroundLaunch, info.Reserved);
         Assert.Equal(HostBuildInfo.Version, Marshal.PtrToStringUTF8((nint)info.Version));
         Assert.Equal(HostBuildInfo.AbiFingerprint, Marshal.PtrToStringUTF8((nint)info.AbiFingerprint));
     }

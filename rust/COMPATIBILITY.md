@@ -115,7 +115,12 @@ a mismatch (or a host without `avn_get_host_info`) fails with
 hand-written interfaces (`IAvnApplication` in `host/Com` and the view-model
 interfaces in `interop/Avalonia.Rust.Interop`) are not in that header; the
 exact `=X.Y.Z` crate requirement and the checksum-pinned host download keep
-them matched instead.
+them matched instead. The existing reserved word of `avn_get_host_info` now
+also carries capability flags: bit 0 advertises the handwritten macOS
+background-launch slots. New bindings require that bit before publishing host
+exports or accessing application vtables, including on non-macOS platforms
+whose slots return `E_NOTIMPL`. An older host with the same header fingerprint
+but without those slots is rejected with `HostLoadError::IncompatibleHost`.
 
 ### One identity per interface
 

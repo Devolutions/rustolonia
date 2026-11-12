@@ -24,6 +24,10 @@ name = "native_application_name"
 path = "src/native_application_name.rs"
 
 [[bin]]
+name = "native_macos_background"
+path = "src/native_macos_background.rs"
+
+[[bin]]
 name = "native_menu_host"
 path = "src/native_menu_host.rs"
 
