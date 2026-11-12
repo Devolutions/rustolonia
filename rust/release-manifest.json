@@ -27,6 +27,10 @@
     {
       "path": "avalonia-patches/avalonia-grid-invalidation.patch",
       "sha256": "078d9f4d8e4a11ed3abe3702913895463d785bb36155686b2d8ea61fb6d7ceb9"
+    },
+    {
+      "path": "avalonia-patches/avalonia-background-launch.patch",
+      "sha256": "0e2aacb788d1c30b41025c1196a0dbbe73aeb16d79dc8d8d4ae28a2268b0ac2d"
     }
   ],
   "schemas": {

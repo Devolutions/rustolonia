@@ -133,6 +133,8 @@ extern "C" {
 /// is only accepted if it reports this exact fingerprint.
 pub const ABI_FINGERPRINT: &str = env!("RUSTOLONIA_ABI_FINGERPRINT");
 
+const HOST_CAPABILITY_MACOS_BACKGROUND_LAUNCH: u32 = 1;
+
 /// Directory where `build.rs` staged the host, when the `dev-host-path`
 /// feature is enabled and a host was staged. Only meaningful on the build
 /// machine; used as a last-resort runtime search path.
@@ -147,6 +149,7 @@ pub const STATIC_HOST: bool = cfg!(rustolonia_static_host);
 #[repr(C)]
 pub struct HostInfoNative {
     pub struct_size: u32,
+    /// Host capability flags; bit 0 advertises the macOS background-launch application slots.
     pub reserved: u32,
     pub version: *const std::ffi::c_char,
     pub abi_fingerprint: *const std::ffi::c_char,
@@ -189,8 +192,8 @@ pub enum HostLoadError {
     IncompatibleAllocator,
     InvalidExportsSize(u32),
     MissingExport(&'static str),
-    /// The host was built against a different ABI than this crate. `found`
-    /// is `None` for hosts that predate `avn_get_host_info`.
+    /// The host lacks required application capabilities or has a different ABI.
+    /// `found` is `None` for hosts that predate `avn_get_host_info`.
     IncompatibleHost {
         expected: &'static str,
         found: Option<HostInfo>,
@@ -215,13 +218,13 @@ impl std::fmt::Display for HostLoadError {
             Self::IncompatibleHost { expected, found } => match found {
                 Some(found) => write!(
                     formatter,
-                    "rustolonia host {} was built for ABI {}, but rustolonia-sys {} expects ABI {}; \
-                     use the host released with rustolonia-sys {}",
+                    "rustolonia host {} does not match the required application capabilities and ABI \
+                     (reported ABI {}, rustolonia-sys {} expects ABI {} with macOS background-launch slots); \
+                     use a matching rebuilt host, or upgrade the host and crates together",
                     found.version,
                     found.abi_fingerprint,
                     env!("CARGO_PKG_VERSION"),
                     expected,
-                    env!("CARGO_PKG_VERSION"),
                 ),
                 None => write!(
                     formatter,
@@ -234,19 +237,27 @@ impl std::fmt::Display for HostLoadError {
     }
 }
 
-/// Accepts `found` only if its ABI fingerprint is exactly `expected`.
+/// Also checks handwritten application slots before any vtable can be accessed.
 fn check_host_compatibility(
     expected: &'static str,
-    found: Option<HostInfo>,
+    found: Option<(HostInfo, u32)>,
 ) -> std::result::Result<HostInfo, HostLoadError> {
     match found {
-        Some(info) if info.abi_fingerprint == expected => Ok(info),
-        found => Err(HostLoadError::IncompatibleHost { expected, found }),
+        Some((info, capabilities))
+            if info.abi_fingerprint == expected
+                && capabilities & HOST_CAPABILITY_MACOS_BACKGROUND_LAUNCH != 0 =>
+        {
+            Ok(info)
+        }
+        found => Err(HostLoadError::IncompatibleHost {
+            expected,
+            found: found.map(|(info, _)| info),
+        }),
     }
 }
 
 /// Calls `avn_get_host_info`. Returns `None` if the call fails.
-unsafe fn query_host_info(get_host_info: GetHostInfoFn) -> Option<HostInfo> {
+unsafe fn query_host_info(get_host_info: GetHostInfoFn) -> Option<(HostInfo, u32)> {
     let mut native = HostInfoNative {
         struct_size: std::mem::size_of::<HostInfoNative>() as u32,
         reserved: 0,
@@ -263,10 +274,13 @@ unsafe fn query_host_info(get_host_info: GetHostInfoFn) -> Option<HostInfo> {
                 .into_owned()
         })
     };
-    Some(HostInfo {
-        version: read(native.version).unwrap_or_default(),
-        abi_fingerprint: read(native.abi_fingerprint).unwrap_or_default(),
-    })
+    Some((
+        HostInfo {
+            version: read(native.version).unwrap_or_default(),
+            abi_fingerprint: read(native.abi_fingerprint).unwrap_or_default(),
+        },
+        native.reserved,
+    ))
 }
 
 impl std::error::Error for HostLoadError {}
@@ -420,7 +434,7 @@ struct ResolvedHostExports {
 
 /// Validates the host ABI and publishes its process-wide string allocator.
 fn publish_host_exports(
-    found: Option<HostInfo>,
+    found: Option<(HostInfo, u32)>,
     exports: &ResolvedHostExports,
 ) -> std::result::Result<HostInfo, HostLoadError> {
     let info = check_host_compatibility(ABI_FINGERPRINT, found)?;
@@ -665,13 +679,21 @@ mod host_info_tests {
 
     #[test]
     fn matching_fingerprint_is_accepted() {
-        let accepted = check_host_compatibility("abc", Some(info("abc"))).unwrap();
+        let accepted = check_host_compatibility(
+            "abc",
+            Some((info("abc"), HOST_CAPABILITY_MACOS_BACKGROUND_LAUNCH)),
+        )
+        .unwrap();
         assert_eq!(accepted, info("abc"));
     }
 
     #[test]
     fn mismatched_fingerprint_is_rejected() {
-        let error = check_host_compatibility("abc", Some(info("def"))).unwrap_err();
+        let error = check_host_compatibility(
+            "abc",
+            Some((info("def"), HOST_CAPABILITY_MACOS_BACKGROUND_LAUNCH)),
+        )
+        .unwrap_err();
         assert!(matches!(
             &error,
             HostLoadError::IncompatibleHost { expected: "abc", found: Some(found) } if found.abi_fingerprint == "def"
@@ -689,6 +711,19 @@ mod host_info_tests {
             HostLoadError::IncompatibleHost { found: None, .. }
         ));
         assert!(error.to_string().contains("avn_get_host_info"));
+    }
+
+    #[test]
+    fn matching_header_without_application_slots_is_rejected_before_factory_use() {
+        let error = match unsafe { Host::from_in_process(&exports(stale_host_info)) } {
+            Ok(_) => panic!("stale host accepted"),
+            Err(error) => error,
+        };
+        assert!(matches!(
+            error,
+            HostLoadError::IncompatibleHost { found: Some(_), .. }
+        ));
+        assert!(error.to_string().contains("macOS background-launch slots"));
     }
 
     unsafe extern "C" fn fake_host_info(info: *mut HostInfoNative) -> i32 {
@@ -710,6 +745,13 @@ mod host_info_tests {
         (*info).abi_fingerprint = FINGERPRINT
             .get_or_init(|| std::ffi::CString::new(ABI_FINGERPRINT).unwrap())
             .as_ptr();
+        (*info).reserved = HOST_CAPABILITY_MACOS_BACKGROUND_LAUNCH;
+        0
+    }
+
+    unsafe extern "C" fn stale_host_info(info: *mut HostInfoNative) -> i32 {
+        matching_host_info(info);
+        (*info).reserved = 0;
         0
     }
 
@@ -796,10 +838,13 @@ mod host_info_tests {
         let found = unsafe { query_host_info(fake_host_info) }.unwrap();
         assert_eq!(
             found,
-            HostInfo {
-                version: "1.2.3".into(),
-                abi_fingerprint: "feed".into()
-            }
+            (
+                HostInfo {
+                    version: "1.2.3".into(),
+                    abi_fingerprint: "feed".into()
+                },
+                0
+            )
         );
         assert!(unsafe { query_host_info(failing_host_info) }.is_none());
     }

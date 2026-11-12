@@ -291,6 +291,44 @@ The tests launch the host on a child process's main thread, check process-exit
 shutdown, and exercise a mounted window with tray icon/menu setup and cleanup.
 The tray fixture uses the initialized Avalonia submodule's `Star512.png` test asset.
 
+### macOS background/accessory launches
+
+Call `App::with_macos_background()` before `run` for an Accessory application
+that has no Dock icon and does not activate at launch. The app delegate remains
+installed, so tray icons, reopen events and termination callbacks keep working.
+Use `ShutdownMode::OnExplicitShutdown` to keep a service alive without windows,
+and `scope.show_window(&window, false)` for nonactivating overlays/HUDs.
+
+An explicit user open can call `scope.promote_macos_to_foreground()` on the UI
+thread, then `scope.show_window(&window, true)`. Promotion is fallible, changes
+to Regular policy and activates the application; it does not create a window.
+Calls before the native loop runs queue activation until the loop starts.
+Other platforms return `E_NOTIMPL`; guard these macOS-specific calls in
+cross-platform apps. Foreground startup remains the default.
+
+For a strict no-transient-Dock-icon guarantee, use `LSUIElement=true` as the
+baseline of the same `.app` bundle for both modes. Ordinary launches still
+become Regular through the host's default startup options; background launches
+stay Accessory. A conventional bundle can already be Regular when AppKit is
+created, before the host's startup options run. Bundle metadata alone is not a
+replacement for the per-launch Rust choice.
+
+These APIs require a matching new host/crate release; `v12.1.7` hosts lack the
+handwritten slots and are rejected even when their generated-header hash
+matches. For source-build validation, set `RUSTOLONIA_HOST_DIR` to the matching
+local publish directory at build time and `RUSTOLONIA_HOST_LIB` to its
+`librustolonia_host.dylib` at runtime. A git dependency alone does not build a
+source host: distributable source builds must build/package that same revision
+beside the app (or link its static host). Do not replace published assets or use
+an absolute local Cargo path as a shipping dependency.
+
+With those overrides, run
+`cargo test --manifest-path rust/Cargo.toml -p rustolonia --test macos_background -- --ignored`.
+The isolated agent bundle checks nonactivating startup, a tray and topmost
+window, rejected off-thread promotion, explicit Regular promotion, and default
+foreground startup. It restores the previous frontmost application only if the
+probe itself is still frontmost, and removes its temporary bundle.
+
 The popup fixture opens real macOS tooltips and `MenuFlyout`s on two top-levels:
 `AppContext::set_overlay_popups(&window, true)` keeps the protected window's
 popups embedded, while the normal window continues to use native popups.

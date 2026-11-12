@@ -26,6 +26,10 @@ Rustolonia-specific friend declarations to be removed.
   deferred native file-drag operations.
 - `avalonia-application-name.patch` initializes the default macOS application
   menu holder with `Application.Name`.
+- `avalonia-background-launch.patch` stages the desired activation policy from
+  `ShowInDock`, reports policy-change failures, and prevents accessory launches
+  from activating either the Dock or the application. Delegate lifecycle
+  callbacks remain installed.
 
 ## Grid definition changes invalidate cached cells
 

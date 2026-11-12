@@ -137,7 +137,7 @@ impl ComPtr<IAvnResourceValue> {
 ///
 /// A cross-language tripwire: the managed `IAvnApplication` and
 /// [`IAvnApplicationVtbl`] must list the same methods in the same order.
-pub const IAVN_APPLICATION_METHOD_COUNT: usize = 64;
+pub const IAVN_APPLICATION_METHOD_COUNT: usize = 66;
 
 type App = IAvnApplication;
 
@@ -333,6 +333,9 @@ pub(crate) struct IAvnApplicationVtbl {
     ) -> i32,
     pub(crate) remove_window_key_binding:
         unsafe extern "system" fn(*mut App, *mut IAvnWindow, i64) -> i32,
+
+    pub(crate) set_macos_background: unsafe extern "system" fn(*mut App, i32) -> i32,
+    pub(crate) promote_macos_to_foreground: unsafe extern "system" fn(*mut App) -> i32,
 }
 
 pub(crate) type StartPicker = unsafe extern "system" fn(
@@ -359,6 +362,21 @@ impl ComPtr<IAvnApplication> {
 }
 
 impl ComPtr<IAvnApplication> {
+    /// Stages accessory startup on macOS, before Avalonia initializes.
+    pub fn set_macos_background(&self, enabled: bool) -> Result<()> {
+        unsafe {
+            hresult::check((self.vtbl().set_macos_background)(
+                self.as_raw(),
+                i32::from(enabled),
+            ))
+        }
+    }
+
+    /// UI-thread only: becomes a Regular macOS application and activates.
+    pub fn promote_macos_to_foreground(&self) -> Result<()> {
+        unsafe { hresult::check((self.vtbl().promote_macos_to_foreground)(self.as_raw())) }
+    }
+
     pub fn run(&self, handler: &ComPtr<IAvnAppHandler>) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().run)(

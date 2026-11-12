@@ -42,7 +42,13 @@ public partial class AvnApplication
         return application;
     }
 
-    private AppBuilder CreateAppBuilder() =>
-        RustHostPlatform.Configure(AppBuilder.Configure(CreateApplication));
+    private AppBuilder CreateAppBuilder()
+    {
+        var builder = RustHostPlatform.Configure(AppBuilder.Configure(CreateApplication));
+#if AVN_HOST_OSX
+        builder.With(CreateMacOSPlatformOptions());
+#endif
+        return builder;
+    }
 #endif
 }

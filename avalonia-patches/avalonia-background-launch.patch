@@ -1,0 +1,38 @@
+diff --git a/native/Avalonia.Native/src/OSX/app.mm b/native/Avalonia.Native/src/OSX/app.mm
+--- a/native/Avalonia.Native/src/OSX/app.mm
++++ b/native/Avalonia.Native/src/OSX/app.mm
+@@ -53,7 +53,8 @@
+ 
+ - (void)applicationWillFinishLaunching:(NSNotification *)notification
+ {
+-    if([[NSApplication sharedApplication] activationPolicy] != AvnDesiredActivationPolicy)
++    if(AvnDesiredActivationPolicy == NSApplicationActivationPolicyRegular &&
++       [[NSApplication sharedApplication] activationPolicy] != AvnDesiredActivationPolicy)
+     {
+         for (NSRunningApplication * app in [NSRunningApplication runningApplicationsWithBundleIdentifier:@"com.apple.dock"]) {
+             [app activateWithOptions:NSApplicationActivateIgnoringOtherApps];
+@@ -68,7 +69,8 @@
+ 
+ - (void)applicationDidFinishLaunching:(NSNotification *)notification
+ {
+-    [[NSRunningApplication currentApplication] activateWithOptions:NSApplicationActivateIgnoringOtherApps];
++    if(AvnDesiredActivationPolicy == NSApplicationActivationPolicyRegular)
++        [[NSRunningApplication currentApplication] activateWithOptions:NSApplicationActivateIgnoringOtherApps];
+ }
+ 
+ -(BOOL)applicationShouldHandleReopen:(NSApplication *)sender hasVisibleWindows:(BOOL)flag
+diff --git a/native/Avalonia.Native/src/OSX/main.mm b/native/Avalonia.Native/src/OSX/main.mm
+--- a/native/Avalonia.Native/src/OSX/main.mm
++++ b/native/Avalonia.Native/src/OSX/main.mm
+@@ -144,7 +144,7 @@
+-            if ([app activationPolicy] != requestedPolicy)
+-            {
+-                [app setActivationPolicy:requestedPolicy];
+-            }
++            if ([app activationPolicy] != requestedPolicy &&
++                ![app setActivationPolicy:requestedPolicy])
++                return E_FAIL;
++            AvnDesiredActivationPolicy = requestedPolicy;
+             
+             return S_OK;
+         }
