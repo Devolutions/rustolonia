@@ -31,6 +31,7 @@ public sealed class BrowserComGenerator : ISourceGenerator
     // compile time and memory double with each member.
     private const int MaximumFamilySize = 12;
     private static readonly object s_loadGate = new();
+    private static readonly Dictionary<string, Assembly> s_sdkGenerators = new(StringComparer.Ordinal);
     private static readonly DiagnosticDescriptor s_failure = new(
         "BRCOM001",
         "Browser COM generation failed",
@@ -173,11 +174,13 @@ public sealed class BrowserComGenerator : ISourceGenerator
 
         lock (s_loadGate)
         {
-            var loadContext = AssemblyLoadContext.GetLoadContext(typeof(BrowserComGenerator).Assembly)
-                ?? throw new InvalidOperationException("Could not locate the source generator's assembly load context.");
-            var sourcePath = Path.Combine(Path.GetDirectoryName(path)!, "Microsoft.Interop.SourceGeneration.dll");
-            LoadAssembly(loadContext, sourcePath);
-            var assembly = LoadAssembly(loadContext, path);
+            path = Path.GetFullPath(path);
+            if (!s_sdkGenerators.TryGetValue(path, out var assembly))
+            {
+                var loadContext = new SdkGeneratorLoadContext(Path.GetDirectoryName(path)!);
+                assembly = loadContext.LoadFromAssemblyPath(path);
+                s_sdkGenerators.Add(path, assembly);
+            }
             return new[] { "ComInterfaceGenerator", "ComClassGenerator", "VtableIndexStubGenerator" }
                 .Select(name =>
                 {
@@ -188,17 +191,20 @@ public sealed class BrowserComGenerator : ISourceGenerator
         }
     }
 
-    private static Assembly LoadAssembly(AssemblyLoadContext context, string path)
+    private sealed class SdkGeneratorLoadContext(string directory) : AssemblyLoadContext
     {
-        var name = AssemblyName.GetAssemblyName(path);
-        var existing = context.Assemblies.FirstOrDefault(assembly => assembly.GetName().Name == name.Name);
-        if (existing is not null)
+        protected override Assembly? Load(AssemblyName name)
         {
-            if (existing.GetName().Version != name.Version)
-                throw new InvalidOperationException($"The loaded {name.Name} version does not match the selected .NET SDK.");
-            return existing;
+            // Share Roslyn's type identity with the compiler, but never borrow
+            // interop helpers already loaded by another SDK/reference pack.
+            if (name.Name == typeof(ISourceGenerator).Assembly.GetName().Name)
+                return typeof(ISourceGenerator).Assembly;
+            if (name.Name == typeof(CSharpCompilation).Assembly.GetName().Name)
+                return typeof(CSharpCompilation).Assembly;
+            if (name.Name?.StartsWith("Microsoft.Interop.", StringComparison.Ordinal) == true)
+                return LoadFromAssemblyPath(Path.Combine(directory, name.Name + ".dll"));
+            return null;
         }
-        return context.LoadFromAssemblyPath(path);
     }
 
     private static ImmutableArray<INamedTypeSymbol> FindAttributedTypes(

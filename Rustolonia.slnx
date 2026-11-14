@@ -26,6 +26,7 @@
     <Project Path="tests/Avalonia.Rust.BrowserCom.TestInterfaces/Avalonia.Rust.BrowserCom.TestInterfaces.csproj" />
     <Project Path="tests/Avalonia.Rust.BrowserCom.TestFixtures/Avalonia.Rust.BrowserCom.TestFixtures.csproj" />
     <Project Path="tests/Avalonia.Rust.BrowserCom.Tests/Avalonia.Rust.BrowserCom.Tests.csproj" />
+    <Project Path="tests/Avalonia.Rust.BrowserCom.Generator.Tests/Avalonia.Rust.BrowserCom.Generator.Tests.csproj" />
     <Project Path="tests/Avalonia.Rust.BrowserCom.NativeAotSmoke/Avalonia.Rust.BrowserCom.NativeAotSmoke.csproj" />
     <Project Path="tests/Avalonia.Projection.Generator.Tests/Avalonia.Projection.Generator.Tests.csproj" />
     <Project Path="tests/Avalonia.Projection.Ir.Tests/Avalonia.Projection.Ir.Tests.csproj" />

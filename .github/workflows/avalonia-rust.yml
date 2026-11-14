@@ -229,10 +229,11 @@ jobs:
           $projects = @(
             'tests/Avalonia.Host.Tests/Avalonia.Host.Tests.csproj',
             'tests/Avalonia.Projection.Generator.Tests/Avalonia.Projection.Generator.Tests.csproj',
-            'tests/Avalonia.Projection.Ir.Tests/Avalonia.Projection.Ir.Tests.csproj'
+            'tests/Avalonia.Projection.Ir.Tests/Avalonia.Projection.Ir.Tests.csproj',
+            'tests/Avalonia.Rust.BrowserCom.Generator.Tests/Avalonia.Rust.BrowserCom.Generator.Tests.csproj'
           )
           foreach ($project in $projects) {
-            & dotnet test $project -c Release
+            & dotnet test --project $project -c Release
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
 
