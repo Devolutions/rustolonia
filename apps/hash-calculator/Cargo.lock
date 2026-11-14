@@ -486,7 +486,7 @@ dependencies = [
 
 [[package]]
 name = "rustolonia"
-version = "12.1.7"
+version = "12.1.8"
 dependencies = [
  "rustolonia-macros",
  "rustolonia-sys",
@@ -494,11 +494,11 @@ dependencies = [
 
 [[package]]
 name = "rustolonia-macros"
-version = "12.1.7"
+version = "12.1.8"
 
 [[package]]
 name = "rustolonia-sys"
-version = "12.1.7"
+version = "12.1.8"
 dependencies = [
  "dirs",
  "flate2",

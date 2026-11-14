@@ -530,7 +530,7 @@ dependencies = [
 
 [[package]]
 name = "rustolonia"
-version = "12.1.7"
+version = "12.1.8"
 dependencies = [
  "avalonia-sample",
  "chrono",
@@ -543,7 +543,7 @@ dependencies = [
 
 [[package]]
 name = "rustolonia-apk"
-version = "12.1.7"
+version = "12.1.8"
 dependencies = [
  "dirs",
  "flate2",
@@ -555,7 +555,7 @@ dependencies = [
 
 [[package]]
 name = "rustolonia-bindgen"
-version = "12.1.7"
+version = "12.1.8"
 dependencies = [
  "roxmltree",
  "serde",
@@ -565,11 +565,11 @@ dependencies = [
 
 [[package]]
 name = "rustolonia-macros"
-version = "12.1.7"
+version = "12.1.8"
 
 [[package]]
 name = "rustolonia-sys"
-version = "12.1.7"
+version = "12.1.8"
 dependencies = [
  "dirs",
  "flate2",
