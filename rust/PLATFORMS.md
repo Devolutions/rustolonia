@@ -901,8 +901,10 @@ wrappers and native object proxies from the generator's own vtables. A build-tim
 generator adapts the .NET SDK's COM source generator and emits the proxy types,
 interface registrations and class registrations ahead of time. The deployed COM
 shim does not emit types, scan assemblies or discover attributes at runtime.
-The generator loads the SDK generator in the compiler process; that build-time
-reflection is not part of the browser app.
+The generator loads the SDK generator in the compiler process, isolating its
+interop helper assemblies from other analyzers and reference-pack versions
+while sharing the compiler's Roslyn types. That build-time reflection is not
+part of the browser app.
 
 The ABI seen by Rust is identical on both platforms. Casts between interfaces
 continue to follow `QueryInterface`. The generator groups interfaces whose

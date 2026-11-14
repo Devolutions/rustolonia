@@ -66,6 +66,13 @@ cargo test --manifest-path .\rust\Cargo.toml -p rustolonia-bindgen --locked
 cargo check --manifest-path .\rust\Cargo.toml -p rustolonia --examples --locked
 ```
 
+The browser COM generator's assembly-loading regression runs without the
+WebAssembly workload or a browser:
+
+```powershell
+dotnet test --project .\tests\Avalonia.Rust.BrowserCom.Generator.Tests -c Release
+```
+
 For native integration, `rust/build.ps1` publishes a host and runs the Rust
 workspace against it. The explicit consumer smoke flow builds an application
 outside the repository and launches its adjacent bundle:
