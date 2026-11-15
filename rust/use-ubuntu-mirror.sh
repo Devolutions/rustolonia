@@ -3,8 +3,8 @@ set -euo pipefail
 
 architecture="$(dpkg --print-architecture)"
 case "$architecture" in
-    amd64) mirror="https://mirrors.mit.edu/ubuntu/" ;;
-    arm64) mirror="https://mirrors.mit.edu/ubuntu-ports/" ;;
+    amd64) mirror="https://archive.ubuntu.com/ubuntu/" ;;
+    arm64) mirror="https://ports.ubuntu.com/ubuntu-ports/" ;;
     *)
         echo "Unsupported Ubuntu architecture: $architecture" >&2
         exit 1

@@ -56,21 +56,21 @@ class UbuntuMirrorTests(unittest.TestCase):
 
         self.assertEqual(
             sources.read_text(),
-            "deb https://mirrors.mit.edu/ubuntu/ jammy main\n"
-            "deb https://mirrors.mit.edu/ubuntu/ jammy-updates main\n"
+            "deb https://archive.ubuntu.com/ubuntu/ jammy main\n"
+            "deb https://archive.ubuntu.com/ubuntu/ jammy-updates main\n"
             "deb https://packages.microsoft.com/ubuntu/22.04/prod jammy main\n"
             "deb mirror+file:/etc/apt/apt-mirrors.txt.other stable main\n",
         )
         self.assertEqual(
             deb822.read_text(),
             "Types: deb\n"
-            "URIs: https://mirrors.mit.edu/ubuntu/\n"
+            "URIs: https://archive.ubuntu.com/ubuntu/\n"
             "Suites: jammy jammy-updates jammy-security\n"
             "Components: main universe\n",
         )
         self.assertEqual(
             legacy.read_text(),
-            "deb https://mirrors.mit.edu/ubuntu/ jammy-security main\n",
+            "deb https://archive.ubuntu.com/ubuntu/ jammy-security main\n",
         )
         before = [path.read_text() for path in (sources, deb822, legacy)]
         self.run_helper("amd64")
@@ -87,18 +87,21 @@ class UbuntuMirrorTests(unittest.TestCase):
 
         self.assertEqual(
             sources.read_text(),
-            "deb https://mirrors.mit.edu/ubuntu-ports/ jammy main\n"
-            "deb https://mirrors.mit.edu/ubuntu-ports/ jammy-updates main\n",
+            "deb https://ports.ubuntu.com/ubuntu-ports/ jammy main\n"
+            "deb https://ports.ubuntu.com/ubuntu-ports/ jammy-updates main\n",
         )
 
     def test_accepts_an_already_configured_mirror_without_a_trailing_slash(self):
         sources = self.apt / "sources.list"
-        original = "deb https://mirrors.mit.edu/ubuntu jammy main\n"
+        original = "deb https://archive.ubuntu.com/ubuntu jammy main\n"
         sources.write_text(original)
 
         self.run_helper("amd64")
 
-        self.assertEqual(sources.read_text(), original)
+        self.assertEqual(
+            sources.read_text(),
+            "deb https://archive.ubuntu.com/ubuntu/ jammy main\n",
+        )
 
     def test_missing_ubuntu_sources_are_reported(self):
         sources = self.apt / "sources.list"
