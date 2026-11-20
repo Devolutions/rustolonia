@@ -366,7 +366,7 @@ try {
 
     $staticPackages = Join-Path $scratch 'static-packages'
     $staticLibraries = @{}
-    foreach ($name in @('SkiaSharp.NativeAssets.Win32', 'HarfBuzzSharp.NativeAssets.Win32', 'Summpot.StaticAvalonia', 'runtime.win-x64.Microsoft.DotNet.ILCompiler')) {
+    foreach ($name in @('SkiaSharp.NativeAssets.Win32', 'HarfBuzzSharp.NativeAssets.Win32', 'runtime.win-x64.Microsoft.DotNet.ILCompiler')) {
         $relative = "$($name.ToLowerInvariant())/1.0"
         $directory = Join-Path $staticPackages $relative
         New-Item -ItemType Directory -Force -Path $directory | Out-Null
@@ -381,22 +381,37 @@ try {
     $runtimePack = Join-Path $staticPackages 'microsoft.netcore.app.runtime.win-x64' '1.0'
     New-Item -ItemType Directory -Force -Path $runtimePack | Out-Null
     Set-Content -LiteralPath (Join-Path $runtimePack 'LICENSE.TXT') -Value '.NET runtime license'
-    $staticPackage = Join-Path $staticPackages 'summpot.staticavalonia' '1.0'
-    New-Item -ItemType Directory -Force -Path (Join-Path $staticPackage 'build' 'components'), (Join-Path $staticPackage 'licenses' 'angle') | Out-Null
-    Set-Content -LiteralPath (Join-Path $staticPackage 'build' 'components' 'skiasharp.json') -Value '{"component":"skiasharp","version":"1.0"}'
-    Set-Content -LiteralPath (Join-Path $staticPackage 'build' 'components' 'angle.json') -Value '{"component":"angle"}'
-    Set-Content -LiteralPath (Join-Path $staticPackage 'licenses' 'angle' 'LICENSE') -Value 'ANGLE license'
+    $winPublish = Join-Path $scratch 'win-static-publish'
+    New-Item -ItemType Directory -Force -Path $winPublish | Out-Null
+    $winGraphicsFiles = @{}
+    foreach ($archive in @('skia.lib', 'SkiaSharp.lib', 'libHarfBuzzSharp.lib')) {
+        $archivePath = Join-Path $winPublish $archive
+        Set-Content -LiteralPath $archivePath -Value "fake $archive"
+        $winGraphicsFiles["win-x64/$archive"] = (Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash.ToLowerInvariant()
+    }
+    $winAngleFiles = @{}
+    foreach ($archive in @('libANGLE_static.lib', 'libGLESv2_static.lib')) {
+        $archivePath = Join-Path $winPublish $archive
+        Set-Content -LiteralPath $archivePath -Value "fake $archive"
+        $winAngleFiles["win-x64/$archive"] = (Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash.ToLowerInvariant()
+    }
+    @{ component = 'skiasharp'; version = '1.0'; files = $winGraphicsFiles } | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $winPublish 'STATIC-SKIASHARP-PROVENANCE.json')
+    @{ component = 'angle'; version = 'chromium-7151'; files = $winAngleFiles } | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $winPublish 'STATIC-ANGLE-PROVENANCE.json')
+    Set-Content -LiteralPath (Join-Path $winPublish 'STATIC-ANGLE-NOTICES.txt') -Value 'ANGLE license'
     $packageFolders = @{}
     $packageFolders[$staticPackages] = @{}
     $staticAssets = Join-Path $scratch 'static.assets.json'
     @{ libraries = $staticLibraries; packageFolders = $packageFolders } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $staticAssets
-    Copy-StaticNativeNotices -ProjectAssetsJsonPath $staticAssets -DestinationDirectory $staticBundle -Rid win-x64
+    Copy-StaticNativeNotices -ProjectAssetsJsonPath $staticAssets -DestinationDirectory $staticBundle -Rid win-x64 -StaticPublishDirectory $winPublish
     $staticNoticeText = Get-Content -LiteralPath (Join-Path $staticBundle 'STATIC-NATIVE-NOTICES.txt') -Raw
     Assert-True ($staticNoticeText -match 'SkiaSharp.NativeAssets.Win32 license' -and $staticNoticeText -match 'HarfBuzzSharp.NativeAssets.Win32 notices' -and $staticNoticeText -match 'ANGLE license' -and $staticNoticeText -match '.NET runtime license' -and $staticNoticeText -match 'Copyright 2017 The Wuffs Authors') 'Static bundles must preserve graphics, ANGLE, Wuffs, and runtime notices.'
     Assert-True (Test-Path -LiteralPath (Join-Path $staticBundle 'STATIC-SKIASHARP-PROVENANCE.json')) 'Static bundles must record SkiaSharp provenance.'
     Assert-True (Test-Path -LiteralPath (Join-Path $staticBundle 'STATIC-ANGLE-PROVENANCE.json')) 'Windows static bundles must record ANGLE provenance.'
+    Set-Content -LiteralPath (Join-Path $winPublish 'libANGLE_static.lib') -Value 'tampered'
+    Assert-Throws { Copy-StaticNativeNotices -ProjectAssetsJsonPath $staticAssets -DestinationDirectory $staticBundle -Rid win-x64 -StaticPublishDirectory $winPublish } 'provenance does not match libANGLE_static.lib'
+    Set-Content -LiteralPath (Join-Path $winPublish 'libANGLE_static.lib') -Value 'fake libANGLE_static.lib'
     Remove-Item -LiteralPath (Join-Path $staticPackages 'harfbuzzsharp.nativeassets.win32' '1.0' 'LICENSE.txt')
-    Assert-Throws { Copy-StaticNativeNotices -ProjectAssetsJsonPath $staticAssets -DestinationDirectory $staticBundle -Rid win-x64 } 'Missing .* notice'
+    Assert-Throws { Copy-StaticNativeNotices -ProjectAssetsJsonPath $staticAssets -DestinationDirectory $staticBundle -Rid win-x64 -StaticPublishDirectory $winPublish } 'Missing .* notice'
     foreach ($name in @('SkiaSharp.NativeAssets.Linux', 'HarfBuzzSharp.NativeAssets.Linux', 'runtime.linux-x64.Microsoft.DotNet.ILCompiler')) {
         $relative = "$($name.ToLowerInvariant())/1.0"
         $directory = Join-Path $staticPackages $relative

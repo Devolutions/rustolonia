@@ -1,0 +1,42 @@
+# Build arguments for SkiaSharp static library on Windows
+target_os = "win"
+# x64 is the checked-in default. The build script rewrites this to arm64 for win-arm64.
+target_cpu = "x64"
+is_official_build = true
+is_static_skiasharp = true
+
+skia_enable_tools = false
+skia_enable_fontmgr_win_gdi = false
+skia_enable_fontmgr_win = true
+skia_enable_pdf = false
+skia_enable_skottie = true
+
+skia_use_angle = false
+skia_use_dng_sdk = false
+skia_use_icu = false
+skia_use_piex = true
+skia_use_sfntly = false
+skia_use_system_expat = false
+skia_use_system_libjpeg_turbo = false
+skia_use_system_libpng = false
+skia_use_system_libwebp = false
+skia_use_system_zlib = false
+skia_use_vma = false
+skia_use_vulkan = false
+skia_use_direct3d = false
+skia_use_partition_alloc = false
+
+extra_cflags = [
+  "/MT",
+  "/EHsc",
+  "-DSKIA_C_DLL",
+  "-DSK_AVOID_SLOW_RASTER_PIPELINE_BLURS",
+  "-DSK_ENABLE_LEGACY_SHADERCONTEXT",
+  "-D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS",
+]
+extra_ldflags = [
+  "/DEBUG:FULL",
+  "/DEBUGTYPE:CV,FIXUP",
+  "/OPT:REF",
+  "/OPT:ICF",
+]

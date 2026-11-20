@@ -1,0 +1,145 @@
+name: Build - ANGLE Static Libraries
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/build-angle.yml
+      - rust/static-deps/common.ps1
+      - rust/static-deps/artifacts.ps1
+      - rust/static-deps/angle/**
+  push:
+    branches: [master]
+    paths:
+      - .github/workflows/build-angle.yml
+      - rust/static-deps/common.ps1
+      - rust/static-deps/artifacts.ps1
+      - rust/static-deps/angle/**
+  workflow_dispatch:
+  workflow_call:
+    outputs:
+      component_tag:
+        value: ${{ jobs.plan.outputs.tag }}
+      exists:
+        value: ${{ jobs.plan.outputs.exists }}
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    name: plan static ANGLE
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.plan.outputs.tag }}
+      commit: ${{ steps.plan.outputs.commit }}
+      exists: ${{ steps.plan.outputs.exists }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: plan
+        name: Compute content-addressed tag and probe cache
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./rust/static-deps/artifacts.ps1 plan -Component angle -Probe -Output out/component.json
+      - uses: actions/upload-artifact@v4
+        if: steps.plan.outputs.exists != 'true'
+        with:
+          name: angle-plan
+          path: out/component.json
+
+  build:
+    needs: plan
+    if: needs.plan.outputs.exists != 'true'
+    name: ANGLE Windows ${{ matrix.arch }}
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            msvc_arch: x64
+          - arch: arm64
+            msvc_arch: amd64_arm64
+    env:
+      DEPOT_TOOLS_WIN_TOOLCHAIN: '0'
+    steps:
+      - uses: actions/checkout@v4
+      # Upstream ANGLE's scripts/bootstrap.py and depot_tools require Python.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: TheMrMilchmann/setup-msvc-dev@v3
+        with:
+          arch: ${{ matrix.msvc_arch }}
+      - name: Setup depot_tools
+        shell: pwsh
+        run: |
+          $depot = Join-Path $env:RUNNER_TEMP 'depot_tools'
+          git clone --depth=1 https://chromium.googlesource.com/chromium/tools/depot_tools.git $depot
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $depot | Out-File -FilePath $env:GITHUB_PATH -Append
+          $env:PATH = "$depot;$env:PATH"
+          & "$depot/update_depot_tools.bat"
+      - name: Fetch source and dependencies
+        shell: pwsh
+        run: ./rust/static-deps/angle/build-angle.ps1 prepare -Arch ${{ matrix.arch }}
+      - name: Build complete static libraries
+        shell: pwsh
+        run: ./rust/static-deps/angle/build-angle.ps1 build -Arch ${{ matrix.arch }}
+      - name: Check architecture and collect libraries and licenses
+        shell: pwsh
+        run: ./rust/static-deps/angle/build-angle.ps1 collect -Arch ${{ matrix.arch }}
+      - name: Link static ANGLE smoke test
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path out | Out-Null
+          cl /nologo /MT /EHsc rust/static-deps/angle/smoke.cpp /Fe:out/angle-smoke.exe /link `
+            out/static-angle/artifacts/angle-win-${{ matrix.arch }}/libGLESv2_static.lib `
+            out/static-angle/artifacts/angle-win-${{ matrix.arch }}/libANGLE_static.lib `
+            d3d9.lib d3d11.lib dxgi.lib dxguid.lib d3dcompiler.lib gdi32.lib user32.lib `
+            ole32.lib advapi32.lib synchronization.lib version.lib winmm.lib
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Run x64 smoke test
+        if: matrix.arch == 'x64'
+        shell: pwsh
+        run: ./out/angle-smoke.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-angle-win-${{ matrix.arch }}
+          path: out/static-angle/artifacts/angle-win-${{ matrix.arch }}/
+          if-no-files-found: error
+
+  bundle:
+    needs: [plan, build]
+    if: ${{ always() && needs.plan.result == 'success' && needs.plan.outputs.exists != 'true' && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
+    name: bundle and cache static ANGLE
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: component-${{ needs.plan.outputs.tag }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: angle-plan
+          path: out
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: native-angle-*
+          path: out/incoming
+      - name: Verify and bundle component
+        shell: pwsh
+        run: ./rust/static-deps/artifacts.ps1 bundle -InputPath out/component.json -Incoming out/incoming -Output out/component
+      - uses: actions/upload-artifact@v4
+        with:
+          name: angle-native
+          path: out/component/
+          if-no-files-found: error
+      - name: Persist immutable component release
+        if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./rust/static-deps/artifacts.ps1 store-component -Output out/component

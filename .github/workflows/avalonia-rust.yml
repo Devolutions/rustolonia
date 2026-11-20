@@ -83,6 +83,10 @@ jobs:
         if: runner.os != 'Windows'
         run: python3 rust/tests/test-browser-smoke.py
 
+      - name: Check static native dependency scripts
+        shell: pwsh
+        run: ./rust/tests/test-static-deps.ps1
+
       - name: Check iOS host validation
         if: runner.os == 'macOS'
         run: ./rust/tests/test-ios-host.sh
@@ -147,6 +151,10 @@ jobs:
       - name: Apply Avalonia source patches
         shell: pwsh
         run: ./avalonia-patches/apply-avalonia-patches.ps1 -AvaloniaRoot ./avalonia-src
+
+      - name: Verify static native dependency pins match Avalonia
+        shell: pwsh
+        run: ./rust/static-deps/artifacts.ps1 check-sync
 
       - uses: actions/setup-dotnet@v4
         with:

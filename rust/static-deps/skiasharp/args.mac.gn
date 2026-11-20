@@ -1,0 +1,32 @@
+# Build arguments for SkiaSharp static library on macOS
+target_os = "mac"
+target_cpu = "arm64"
+is_official_build = true
+is_static_skiasharp = true
+min_macos_version = "12.0"
+
+skia_enable_tools = false
+skia_enable_pdf = true
+skia_enable_skottie = true
+
+skia_use_metal = true
+skia_enable_graphite = true
+skia_use_partition_alloc = false
+skia_use_harfbuzz = false
+skia_use_icu = false
+skia_use_piex = true
+skia_use_system_expat = false
+skia_use_system_libjpeg_turbo = false
+skia_use_system_libpng = false
+skia_use_system_libwebp = false
+skia_use_system_zlib = false
+
+extra_cflags = [
+  "-DSKIA_C_DLL",
+  "-DSK_AVOID_SLOW_RASTER_PIPELINE_BLURS",
+  "-DSK_ENABLE_LEGACY_SHADERCONTEXT",
+  "-DHAVE_ARC4RANDOM_BUF",
+  "-D_DARWIN_C_SOURCE=1",
+  "-stdlib=libc++",
+  "-fPIC",
+]

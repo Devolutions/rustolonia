@@ -426,8 +426,15 @@ bootstrapper, Avalonia.Native (macOS), SkiaSharp, HarfBuzzSharp and Windows
 ANGLE into the Rust executable. The manifest records `linkage: Static` and
 the archive `hostFile`; native and runtime notices and source provenance are
 included. The Linux bootstrapper retains the NativeAOT module section under
-both GNU ld and LLD section garbage collection. The macOS and Windows graphics
-archives come from the pinned third-party `Summpot.StaticAvalonia` package.
+both GNU ld and LLD section garbage collection. All static graphics and ANGLE
+archives are built from pinned upstream sources in-repository via
+`.github/workflows/build-skiasharp.yml` and `.github/workflows/build-angle.yml`
+and cached as content-addressed immutable GitHub Releases (`native-skiasharp-<hash>`
+and `native-angle-<hash>`). Version pins in `rust/static-deps/*/source.json` and
+`rust/build-linux-static-graphics.sh` are validated against
+`avalonia-src/Directory.Packages.props` in CI (`./rust/static-deps/artifacts.ps1 check-sync`),
+and can be bumped after an Avalonia submodule update with
+`./rust/static-deps/sync-from-avalonia.ps1 -Update`.
 Linux graphics are built from
 pinned SkiaSharp and Skia source on the supported glibc 2.35 baseline for GNU
 hosts or on Alpine for musl hosts; Linux font and compiler runtime archives

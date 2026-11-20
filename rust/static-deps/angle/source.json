@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/google/angle.git",
+  "ref": "chromium/7151",
+  "commit": "df9c59dcacff7d186d00e3263a1aa68f8059137c",
+  "avaloniaAnglePackageVersion": "2.1.27548.20260419"
+}

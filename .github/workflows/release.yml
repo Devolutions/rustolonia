@@ -90,9 +90,23 @@ jobs:
           DRAFT: ${{ inputs.draft }}
           BUILD_RUN_ID: ${{ inputs.build_run_id }}
 
+  build-angle:
+    name: static ANGLE
+    needs: version
+    permissions:
+      contents: write
+    uses: ./.github/workflows/build-angle.yml
+
+  build-skiasharp:
+    name: static SkiaSharp
+    needs: version
+    permissions:
+      contents: write
+    uses: ./.github/workflows/build-skiasharp.yml
+
   build:
     name: host (${{ matrix.rid }}${{ matrix.backend == 'Drm' && ', DRM' || '' }})
-    needs: version
+    needs: [version, build-angle, build-skiasharp]
     runs-on: ${{ matrix.os }}
     env:
       RestoreConfigFile: ${{ github.workspace }}/avalonia-src/NuGet.Config
@@ -216,12 +230,52 @@ jobs:
             -LinuxBackend ${{ matrix.backend || 'X11' }} -BuildOnly:('${{ matrix.backend }}' -eq 'Drm') `
             -WorkDirectory (Join-Path $env:RUNNER_TEMP 'git-app')
 
-      - name: Build Linux static graphics on the supported glibc baseline
-        if: runner.os == 'Linux'
-        shell: bash
+      - uses: actions/download-artifact@v4
+        if: needs.build-skiasharp.outputs.exists != 'true' && github.ref != 'refs/heads/master'
+        with:
+          name: skiasharp-native
+          path: ${{ runner.temp }}/rustolonia-static-graphics-artifact
+
+      - name: Fetch static SkiaSharp libraries
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SKIASHARP_TAG: ${{ needs.build-skiasharp.outputs.component_tag }}
+          SKIASHARP_FROM_RELEASE: ${{ needs.build-skiasharp.outputs.exists == 'true' || github.ref == 'refs/heads/master' }}
         run: |
-          sh ./rust/build-linux-static-graphics.sh "${{ matrix.rid }}" "$RUNNER_TEMP/rustolonia-static-graphics"
-          echo "RUSTOLONIA_LINUX_STATIC_GRAPHICS_DIR=$RUNNER_TEMP/rustolonia-static-graphics/out/${{ matrix.rid }}" >> "$GITHUB_ENV"
+          $dest = Join-Path $env:RUNNER_TEMP 'rustolonia-static-graphics'
+          if ($env:SKIASHARP_FROM_RELEASE -eq 'true') {
+            ./rust/static-deps/artifacts.ps1 fetch-component -Component skiasharp -Tag $env:SKIASHARP_TAG -Output $dest
+          } else {
+            $src = Join-Path $env:RUNNER_TEMP 'rustolonia-static-graphics-artifact'
+            ./rust/static-deps/artifacts.ps1 extract-local -InputPath $src -Output $dest
+          }
+          $ridDir = Join-Path $dest '${{ matrix.rid }}'
+          "RUSTOLONIA_STATIC_GRAPHICS_DIR=$ridDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - uses: actions/download-artifact@v4
+        if: runner.os == 'Windows' && needs.build-angle.outputs.exists != 'true' && github.ref != 'refs/heads/master'
+        with:
+          name: angle-native
+          path: ${{ runner.temp }}/rustolonia-static-angle-artifact
+
+      - name: Fetch static ANGLE libraries
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ANGLE_TAG: ${{ needs.build-angle.outputs.component_tag }}
+          ANGLE_FROM_RELEASE: ${{ needs.build-angle.outputs.exists == 'true' || github.ref == 'refs/heads/master' }}
+        run: |
+          $dest = Join-Path $env:RUNNER_TEMP 'rustolonia-static-angle'
+          if ($env:ANGLE_FROM_RELEASE -eq 'true') {
+            ./rust/static-deps/artifacts.ps1 fetch-component -Component angle -Tag $env:ANGLE_TAG -Output $dest
+          } else {
+            $src = Join-Path $env:RUNNER_TEMP 'rustolonia-static-angle-artifact'
+            ./rust/static-deps/artifacts.ps1 extract-local -InputPath $src -Output $dest
+          }
+          $ridDir = Join-Path $dest '${{ matrix.rid }}'
+          "RUSTOLONIA_ANGLE_LIB_DIR=$ridDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       - name: Package the static host tarball
         shell: pwsh
