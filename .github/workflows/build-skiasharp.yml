@@ -1,0 +1,224 @@
+name: Build - SkiaSharp Static Libraries
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/build-skiasharp.yml
+      - rust/static-deps/common.ps1
+      - rust/static-deps/artifacts.ps1
+      - rust/static-deps/skiasharp/**
+      - rust/static-skia-linux.gn
+      - rust/build-linux-static-graphics.sh
+      - rust/collect-linux-graphics-notices.sh
+  push:
+    branches: [master]
+    paths:
+      - .github/workflows/build-skiasharp.yml
+      - rust/static-deps/common.ps1
+      - rust/static-deps/artifacts.ps1
+      - rust/static-deps/skiasharp/**
+      - rust/static-skia-linux.gn
+      - rust/build-linux-static-graphics.sh
+      - rust/collect-linux-graphics-notices.sh
+  workflow_dispatch:
+  workflow_call:
+    outputs:
+      component_tag:
+        value: ${{ jobs.plan.outputs.tag }}
+      exists:
+        value: ${{ jobs.plan.outputs.exists }}
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    name: plan static SkiaSharp
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.plan.outputs.tag }}
+      commit: ${{ steps.plan.outputs.commit }}
+      exists: ${{ steps.plan.outputs.exists }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: plan
+        name: Compute content-addressed tag and probe cache
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./rust/static-deps/artifacts.ps1 plan -Component skiasharp -Probe -Output out/component.json
+      - uses: actions/upload-artifact@v4
+        if: steps.plan.outputs.exists != 'true'
+        with:
+          name: skiasharp-plan
+          path: out/component.json
+
+  build-windows:
+    name: SkiaSharp Windows ${{ matrix.arch }}
+    needs: plan
+    if: needs.plan.outputs.exists != 'true'
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            msvc_arch: x64
+            platform_toolset: ''
+          - arch: arm64
+            msvc_arch: amd64_arm64
+            platform_toolset: v143
+    env:
+      DEPOT_TOOLS_WIN_TOOLCHAIN: '0'
+    steps:
+      - uses: actions/checkout@v4
+      # Upstream Skia's tools/git-sync-deps and depot_tools require Python.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: TheMrMilchmann/setup-msvc-dev@v3
+        with:
+          arch: ${{ matrix.msvc_arch }}
+      - name: Setup depot_tools
+        shell: pwsh
+        run: |
+          $depot = Join-Path $env:RUNNER_TEMP 'depot_tools'
+          git clone --depth=1 --no-tags --single-branch https://chromium.googlesource.com/chromium/tools/depot_tools.git $depot
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $depot | Out-File -FilePath $env:GITHUB_PATH -Append
+          $env:PATH = "$depot;$env:PATH"
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git config --global depot-tools.allowGlobalGitConfig true
+          & "$depot/update_depot_tools.bat"
+      - name: Fetch SkiaSharp and Skia source
+        shell: pwsh
+        run: ./rust/static-deps/skiasharp/build-skiasharp.ps1 prepare
+      - name: Build Skia, SkiaSharp, and HarfBuzzSharp (Static)
+        shell: pwsh
+        run: |
+          $params = @{ Command = 'build-windows'; Arch = '${{ matrix.arch }}' }
+          if ('${{ matrix.platform_toolset }}') {
+            $params.PlatformToolset = '${{ matrix.platform_toolset }}'
+          }
+          & ./rust/static-deps/skiasharp/build-skiasharp.ps1 @params
+      - name: Verify architecture and collect artifacts
+        shell: pwsh
+        run: ./rust/static-deps/skiasharp/build-skiasharp.ps1 collect-windows -Arch ${{ matrix.arch }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-skiasharp-win-${{ matrix.arch }}
+          path: out/static-skiasharp/artifacts/win-${{ matrix.arch }}/
+          if-no-files-found: error
+
+  build-linux:
+    name: SkiaSharp Linux ${{ matrix.arch }} (glibc 2.35)
+    needs: plan
+    if: needs.plan.outputs.exists != 'true'
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: ubuntu-22.04
+          - arch: arm64
+            runner: ubuntu-22.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Linux static graphics build dependencies
+        run: |
+          sudo ./rust/use-ubuntu-mirror.sh
+          sudo apt-get update
+          sudo apt-get install --yes clang build-essential generate-ninja ninja-build pkg-config libfontconfig1-dev libfreetype6-dev libpng-dev libexpat1-dev zlib1g-dev libbrotli-dev uuid-dev
+      - name: Build Skia, SkiaSharp, and HarfBuzzSharp on glibc 2.35
+        run: sh ./rust/build-linux-static-graphics.sh "linux-${{ matrix.arch }}" "$RUNNER_TEMP/rustolonia-static-graphics"
+      - name: Collect Linux artifacts
+        run: |
+          out="$RUNNER_TEMP/rustolonia-static-graphics/out/linux-${{ matrix.arch }}"
+          dest="out/static-skiasharp/artifacts/linux-${{ matrix.arch }}"
+          mkdir -p "$dest"
+          cp "$out/libskia.a" "$out/libSkiaSharp.a" "$out/libHarfBuzzSharp.a" \
+             "$out/STATIC-SKIASHARP-PROVENANCE.json" "$out/STATIC-SKIASHARP-SOURCE-NOTICES.txt" "$dest/"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-skiasharp-linux-${{ matrix.arch }}
+          path: out/static-skiasharp/artifacts/linux-${{ matrix.arch }}/
+          if-no-files-found: error
+
+  build-macos:
+    name: SkiaSharp macOS arm64 & x64
+    needs: plan
+    if: needs.plan.outputs.exists != 'true'
+    runs-on: macos-15
+    env:
+      MACOSX_DEPLOYMENT_TARGET: '12.0'
+    steps:
+      - uses: actions/checkout@v4
+      # Upstream Skia's tools/git-sync-deps and depot_tools require Python.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Setup depot_tools
+        run: |
+          depot="$RUNNER_TEMP/depot_tools"
+          git clone --depth=1 --no-tags --single-branch https://chromium.googlesource.com/chromium/tools/depot_tools.git "$depot"
+          echo "$depot" >> "$GITHUB_PATH"
+          export PATH="$depot:$PATH"
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git config --global depot-tools.allowGlobalGitConfig true
+          update_depot_tools
+      - name: Fetch SkiaSharp and Skia source
+        shell: pwsh
+        run: ./rust/static-deps/skiasharp/build-skiasharp.ps1 prepare
+      - name: Build and collect macOS arm64 (Static)
+        shell: pwsh
+        run: |
+          ./rust/static-deps/skiasharp/build-skiasharp.ps1 build-macos -Arch arm64
+          ./rust/static-deps/skiasharp/build-skiasharp.ps1 collect-macos -Arch arm64
+      - name: Build and collect macOS x64 (Static)
+        shell: pwsh
+        run: |
+          ./rust/static-deps/skiasharp/build-skiasharp.ps1 build-macos -Arch x64
+          ./rust/static-deps/skiasharp/build-skiasharp.ps1 collect-macos -Arch x64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-skiasharp-osx
+          path: out/static-skiasharp/artifacts/
+          if-no-files-found: error
+
+  bundle:
+    needs: [plan, build-windows, build-linux, build-macos]
+    if: ${{ always() && needs.plan.result == 'success' && needs.plan.outputs.exists != 'true' && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
+    name: bundle and cache static SkiaSharp
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: component-${{ needs.plan.outputs.tag }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: skiasharp-plan
+          path: out
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: native-skiasharp-*
+          path: out/incoming
+      - name: Verify and bundle component
+        shell: pwsh
+        run: ./rust/static-deps/artifacts.ps1 bundle -InputPath out/component.json -Incoming out/incoming -Output out/component
+      - uses: actions/upload-artifact@v4
+        with:
+          name: skiasharp-native
+          path: out/component/
+          if-no-files-found: error
+      - name: Persist immutable component release
+        if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./rust/static-deps/artifacts.ps1 store-component -Output out/component

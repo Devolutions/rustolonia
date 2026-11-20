@@ -880,7 +880,7 @@ function Copy-StaticNativeNotices {
     $assets = Get-Content -LiteralPath $ProjectAssetsJsonPath -Raw | ConvertFrom-Json
     $platform = if ($Rid.StartsWith('win-')) { 'Win32' } elseif ($Rid.StartsWith('osx-')) { 'macOS' } else { 'Linux' }
     $runtimeName = "runtime.$Rid.Microsoft.DotNet.ILCompiler"
-    $packageNames = @("SkiaSharp.NativeAssets.$platform", "HarfBuzzSharp.NativeAssets.$platform", 'Summpot.StaticAvalonia', $runtimeName)
+    $packageNames = @("SkiaSharp.NativeAssets.$platform", "HarfBuzzSharp.NativeAssets.$platform", $runtimeName)
     $packagePaths = @{}
     $packageVersions = @{}
     foreach ($name in $packageNames) {
@@ -895,6 +895,10 @@ function Copy-StaticNativeNotices {
             }
         }
         if (-not $packagePaths.ContainsKey($name)) { throw "Cannot locate the restored $name package on disk." }
+    }
+
+    if ([string]::IsNullOrWhiteSpace($StaticPublishDirectory)) {
+        throw 'The static publish directory is required to collect native notices and provenance.'
     }
 
     $notices = @()
@@ -915,36 +919,23 @@ function Copy-StaticNativeNotices {
     }
     if (-not $runtimeLicense) { throw "Cannot find the .NET runtime license for $Rid $($packageVersions[$runtimeName])." }
     $notices += @{ Label = "Microsoft.NETCore.App.Runtime.$Rid/LICENSE.TXT"; Path = $runtimeLicense }
-    $staticPackage = $packagePaths['Summpot.StaticAvalonia']
     if ($Rid.StartsWith('win-')) {
-        $angleNotices = Join-Path $staticPackage 'licenses'
-        if (-not (Test-Path -LiteralPath $angleNotices -PathType Container)) {
+        $angleNotices = Join-Path $StaticPublishDirectory 'STATIC-ANGLE-NOTICES.txt'
+        if (-not (Test-Path -LiteralPath $angleNotices -PathType Leaf)) {
             throw "Missing static ANGLE notices: $angleNotices"
         }
-        $angleFiles = @(Get-ChildItem -LiteralPath $angleNotices -File -Recurse | Sort-Object FullName -CaseSensitive)
-        if ($angleFiles.Count -eq 0) { throw "Static ANGLE notices are empty: $angleNotices" }
-        foreach ($file in $angleFiles) {
-            $relative = [IO.Path]::GetRelativePath($staticPackage, $file.FullName).Replace('\', '/')
-            $notices += @{ Label = "Summpot.StaticAvalonia/$relative"; Path = $file.FullName }
-        }
+        $notices += @{ Label = 'ANGLE/STATIC-ANGLE-NOTICES.txt'; Path = $angleNotices }
     }
 
-    $components = @(@{ Source = 'skiasharp.json'; Destination = 'STATIC-SKIASHARP-PROVENANCE.json' })
+    $components = @(@{ Name = 'skiasharp'; File = 'STATIC-SKIASHARP-PROVENANCE.json' })
     if ($Rid.StartsWith('win-')) {
-        $components += @{ Source = 'angle.json'; Destination = 'STATIC-ANGLE-PROVENANCE.json' }
+        $components += @{ Name = 'angle'; File = 'STATIC-ANGLE-PROVENANCE.json' }
     }
     foreach ($component in $components) {
-        $source = if ($Rid.StartsWith('linux-')) {
-            if ([string]::IsNullOrWhiteSpace($StaticPublishDirectory)) {
-                throw 'The static Linux publish directory is required to collect native provenance.'
-            }
-            Join-Path $StaticPublishDirectory $component.Destination
-        } else {
-            Join-Path $staticPackage 'build' 'components' $component.Source
-        }
+        $source = Join-Path $StaticPublishDirectory $component.File
         if (-not (Test-Path -LiteralPath $source -PathType Leaf)) { throw "Missing static native provenance: $source" }
-        if ($component.Source -eq 'skiasharp.json') {
-            $metadata = Get-Content -LiteralPath $source -Raw | ConvertFrom-Json
+        $metadata = Get-Content -LiteralPath $source -Raw | ConvertFrom-Json
+        if ($component.Name -eq 'skiasharp') {
             if ($metadata.version -ne $packageVersions["SkiaSharp.NativeAssets.$platform"]) {
                 throw "Static SkiaSharp $($metadata.version) does not match the restored managed graphics version $($packageVersions["SkiaSharp.NativeAssets.$platform"])."
             }
@@ -980,8 +971,33 @@ function Copy-StaticNativeNotices {
                     throw 'Static Linux graphics provenance does not match the source notices.'
                 }
             }
+            elseif ($metadata.PSObject.Properties['files']) {
+                $expectedArchives = if ($Rid.StartsWith('win-')) { @('skia.lib', 'SkiaSharp.lib', 'libHarfBuzzSharp.lib') } else { @('libskia.a', 'libSkiaSharp.a', 'libHarfBuzzSharp.a') }
+                foreach ($archive in $expectedArchives) {
+                    $key = "$Rid/$archive"
+                    $property = $metadata.files.PSObject.Properties[$key]
+                    if ($null -eq $property) { throw "Static SkiaSharp provenance is missing $key." }
+                    $expected = $property.Value
+                    $actual = (Get-FileHash -LiteralPath (Join-Path $StaticPublishDirectory $archive) -Algorithm SHA256).Hash.ToLowerInvariant()
+                    if ($expected -notmatch '^[0-9a-f]{64}$' -or $actual -ne $expected) {
+                        throw "Static SkiaSharp provenance does not match $archive."
+                    }
+                }
+            }
         }
-        Copy-Item -LiteralPath $source -Destination (Join-Path $DestinationDirectory $component.Destination)
+        elseif ($component.Name -eq 'angle' -and $metadata.PSObject.Properties['files']) {
+            foreach ($archive in @('libANGLE_static.lib', 'libGLESv2_static.lib')) {
+                $key = "$Rid/$archive"
+                $property = $metadata.files.PSObject.Properties[$key]
+                if ($null -eq $property) { throw "Static ANGLE provenance is missing $key." }
+                $expected = $property.Value
+                $actual = (Get-FileHash -LiteralPath (Join-Path $StaticPublishDirectory $archive) -Algorithm SHA256).Hash.ToLowerInvariant()
+                if ($expected -notmatch '^[0-9a-f]{64}$' -or $actual -ne $expected) {
+                    throw "Static ANGLE provenance does not match $archive."
+                }
+            }
+        }
+        Copy-Item -LiteralPath $source -Destination (Join-Path $DestinationDirectory $component.File)
     }
     if ($Rid.StartsWith('linux-')) {
         if ([string]::IsNullOrWhiteSpace($StaticPublishDirectory)) {

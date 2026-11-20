@@ -54,8 +54,13 @@
     <Copy SourceFiles="$(_RustoloniaHostSource)" DestinationFiles="$(_RustoloniaHostFile)" />
     <Delete Files="$(_RustoloniaHostSource)" />
   </Target>
+  <PropertyGroup Condition="'$(PublishAot)' == 'true' and '$(NativeLib)' == 'Static' and '$(AvaloniaRustHostPlatform)' != 'iOS'">
+    <RustoloniaStaticGraphicsDir Condition="'$(RustoloniaStaticGraphicsDir)' == ''">$(RUSTOLONIA_STATIC_GRAPHICS_DIR)</RustoloniaStaticGraphicsDir>
+    <RustoloniaStaticGraphicsDir Condition="'$(RustoloniaStaticGraphicsDir)' == '' and ('$(AvaloniaRustHostPlatform)' == 'X11' or '$(AvaloniaRustHostPlatform)' == 'LinuxDrm')">$(RustoloniaLinuxStaticGraphicsDir)</RustoloniaStaticGraphicsDir>
+    <RustoloniaStaticGraphicsDir Condition="'$(RustoloniaStaticGraphicsDir)' == '' and ('$(AvaloniaRustHostPlatform)' == 'X11' or '$(AvaloniaRustHostPlatform)' == 'LinuxDrm')">$(RUSTOLONIA_LINUX_STATIC_GRAPHICS_DIR)</RustoloniaStaticGraphicsDir>
+  </PropertyGroup>
   <ItemGroup Condition="'$(PublishAot)' == 'true' and '$(NativeLib)' == 'Static' and '$(AvaloniaRustHostPlatform)' != 'iOS'">
-    <PackageReference Include="Summpot.StaticAvalonia" PrivateAssets="all" />
+    <DirectPInvoke Include="libSkiaSharp;libHarfBuzzSharp" />
   </ItemGroup>
   <PropertyGroup Condition="'$(PublishAot)' == 'true' and '$(NativeLib)' == 'Static' and '$(AvaloniaRustHostPlatform)' == 'OSX'">
     <_RustoloniaNativeArch Condition="'$(RuntimeIdentifier)' == 'osx-arm64'">arm64</_RustoloniaNativeArch>
@@ -66,9 +71,13 @@
   <ItemGroup Condition="'$(PublishAot)' == 'true' and '$(NativeLib)' == 'Static' and '$(AvaloniaRustHostPlatform)' == 'OSX'">
     <DirectPInvoke Include="libAvaloniaNative;libAvaloniaNative.dylib" />
     <NativeLibrary Include="$(_RustoloniaNativeArchive)" />
+    <NativeLibrary Condition="'$(RustoloniaStaticGraphicsDir)' != ''" Include="$(RustoloniaStaticGraphicsDir)/libskia.a;$(RustoloniaStaticGraphicsDir)/libSkiaSharp.a;$(RustoloniaStaticGraphicsDir)/libHarfBuzzSharp.a" />
     <NativeFramework Include="AppKit;Carbon;CoreGraphics;CoreText;Foundation;IOSurface;Metal;OpenGL;QuartzCore;UniformTypeIdentifiers" />
     <NativeSystemLibrary Include="c++" />
   </ItemGroup>
+  <PropertyGroup Condition="'$(PublishAot)' == 'true' and '$(NativeLib)' == 'Static' and ('$(AvaloniaRustHostPlatform)' == 'X11' or '$(AvaloniaRustHostPlatform)' == 'LinuxDrm')">
+    <LinkStandardCPlusPlusLibrary Condition="'$(LinkStandardCPlusPlusLibrary)' == ''">true</LinkStandardCPlusPlusLibrary>
+  </PropertyGroup>
   <ItemGroup Condition="'$(PublishAot)' == 'true' and '$(NativeLib)' == 'Static' and ('$(AvaloniaRustHostPlatform)' == 'X11' or '$(AvaloniaRustHostPlatform)' == 'LinuxDrm')">
     <NativeSystemLibrary Include="pthread;dl;m" />
   </ItemGroup>
@@ -80,10 +89,13 @@
     <DirectPInvoke Include="libX11.so.6;libXrandr.so.2;libXext.so.6;libXi.so.6;libXcursor.so.1;libXfixes.so.3;libICE.so.6;libSM.so.6;libc;System.Security.Cryptography.Native.OpenSsl" />
     <NativeLibrary Include="$(IntermediateOutputPath)libs/System.Security.Cryptography.Native/build/libSystem.Security.Cryptography.Native.OpenSsl.a" />
   </ItemGroup>
-  <PropertyGroup Condition="'$(PublishAot)' == 'true' and '$(NativeLib)' == 'Static' and ('$(AvaloniaRustHostPlatform)' == 'X11' or '$(AvaloniaRustHostPlatform)' == 'LinuxDrm')">
-    <RustoloniaLinuxStaticGraphicsDir Condition="'$(RustoloniaLinuxStaticGraphicsDir)' == ''">$(RUSTOLONIA_LINUX_STATIC_GRAPHICS_DIR)</RustoloniaLinuxStaticGraphicsDir>
+  <PropertyGroup Condition="'$(PublishAot)' == 'true' and '$(NativeLib)' == 'Static' and '$(AvaloniaRustHostPlatform)' == 'Win32'">
+    <RustoloniaAngleLibDir Condition="'$(RustoloniaAngleLibDir)' == ''">$(RUSTOLONIA_ANGLE_LIB_DIR)</RustoloniaAngleLibDir>
   </PropertyGroup>
   <ItemGroup Condition="'$(PublishAot)' == 'true' and '$(NativeLib)' == 'Static' and '$(AvaloniaRustHostPlatform)' == 'Win32'">
+    <DirectPInvoke Include="av_libGLESv2.dll" />
+    <NativeLibrary Condition="'$(RustoloniaStaticGraphicsDir)' != ''" Include="$(RustoloniaStaticGraphicsDir)/skia.lib;$(RustoloniaStaticGraphicsDir)/SkiaSharp.lib;$(RustoloniaStaticGraphicsDir)/libHarfBuzzSharp.lib" />
+    <NativeLibrary Condition="'$(RustoloniaAngleLibDir)' != ''" Include="$(RustoloniaAngleLibDir)/libGLESv2_static.lib;$(RustoloniaAngleLibDir)/libANGLE_static.lib" />
     <NativeSystemLibrary Include="d3d12;dxgi;d3dcompiler;gdi32;user32;ole32;fontsub;usp10;synchronization;d3d9;d3d11;dxguid;advapi32;version;winmm" />
   </ItemGroup>
   <Target Name="BuildRustoloniaStaticAvaloniaNative" BeforeTargets="IlcCompile"
@@ -130,9 +142,9 @@
       <_RustoloniaSkiaWrapper Include="@(NativeLibrary)" Condition="'$(_RustoloniaStaticLinux)' != 'true' and ('%(Filename)' == 'libSkiaSharp' or '%(Filename)' == 'SkiaSharp')" />
       <_RustoloniaSkiaCore Include="@(NativeLibrary)" Condition="'$(_RustoloniaStaticLinux)' != 'true' and ('%(Filename)' == 'libskia' or '%(Filename)' == 'skia')" />
       <_RustoloniaHarfBuzz Include="@(NativeLibrary)" Condition="'$(_RustoloniaStaticLinux)' != 'true' and '%(Filename)' == 'libHarfBuzzSharp'" />
-      <_RustoloniaSkiaWrapper Include="$(RustoloniaLinuxStaticGraphicsDir)/libSkiaSharp.a" Condition="'$(_RustoloniaStaticLinux)' == 'true'" />
-      <_RustoloniaSkiaCore Include="$(RustoloniaLinuxStaticGraphicsDir)/libskia.a" Condition="'$(_RustoloniaStaticLinux)' == 'true'" />
-      <_RustoloniaHarfBuzz Include="$(RustoloniaLinuxStaticGraphicsDir)/libHarfBuzzSharp.a" Condition="'$(_RustoloniaStaticLinux)' == 'true'" />
+      <_RustoloniaSkiaWrapper Include="$(RustoloniaStaticGraphicsDir)/libSkiaSharp.a" Condition="'$(_RustoloniaStaticLinux)' == 'true'" />
+      <_RustoloniaSkiaCore Include="$(RustoloniaStaticGraphicsDir)/libskia.a" Condition="'$(_RustoloniaStaticLinux)' == 'true'" />
+      <_RustoloniaHarfBuzz Include="$(RustoloniaStaticGraphicsDir)/libHarfBuzzSharp.a" Condition="'$(_RustoloniaStaticLinux)' == 'true'" />
       <_RustoloniaLinuxRuntimeTail Include="@(NativeLibrary)" Condition="'$(_RustoloniaStaticLinux)' == 'true' and ('%(Filename)' == 'libz' or '%(Filename)' == 'libbrotlienc' or '%(Filename)' == 'libbrotlidec' or '%(Filename)' == 'libbrotlicommon')" />
       <_RustoloniaStaticLibrary Include="@(_RustoloniaSkiaWrapper);@(_RustoloniaSkiaCore);@(_RustoloniaHarfBuzz)" />
       <_RustoloniaStaticLibrary Include="@(NativeLibrary)"
@@ -140,15 +152,23 @@
       <_RustoloniaSystemLibrary Include="@(NativeSystemLibrary)" Condition="'$(_RustoloniaStaticLinux)' != 'true' or '%(Identity)' != 'stdc++'" />
     </ItemGroup>
     <Error Condition="'@(_RustoloniaStaticObject)' == ''" Text="NativeAOT did not report its bootstrapper object for the static host." />
+    <Error Condition="'$(RustoloniaStaticGraphicsDir)' == ''" Text="Set RUSTOLONIA_STATIC_GRAPHICS_DIR (or RUSTOLONIA_LINUX_STATIC_GRAPHICS_DIR on Linux) to the static SkiaSharp/HarfBuzzSharp directory for $(RuntimeIdentifier)." />
+    <Error Condition="!Exists('$(RustoloniaStaticGraphicsDir)/STATIC-SKIASHARP-PROVENANCE.json')" Text="The static graphics directory is missing STATIC-SKIASHARP-PROVENANCE.json: $(RustoloniaStaticGraphicsDir)" />
+    <Error Condition="'$(_RustoloniaStaticWindows)' == 'true' and (!Exists('$(RustoloniaStaticGraphicsDir)/skia.lib') or !Exists('$(RustoloniaStaticGraphicsDir)/SkiaSharp.lib') or !Exists('$(RustoloniaStaticGraphicsDir)/libHarfBuzzSharp.lib'))" Text="The static graphics directory is missing Windows SkiaSharp/HarfBuzzSharp archives: $(RustoloniaStaticGraphicsDir)" />
+    <Error Condition="'$(_RustoloniaStaticWindows)' == 'true' and '$(RustoloniaAngleLibDir)' == ''" Text="Set RUSTOLONIA_ANGLE_LIB_DIR to the static ANGLE directory for $(RuntimeIdentifier)." />
+    <Error Condition="'$(_RustoloniaStaticWindows)' == 'true' and (!Exists('$(RustoloniaAngleLibDir)/libANGLE_static.lib') or !Exists('$(RustoloniaAngleLibDir)/libGLESv2_static.lib'))" Text="The static ANGLE directory is missing libANGLE_static.lib or libGLESv2_static.lib: $(RustoloniaAngleLibDir)" />
+    <Error Condition="'$(_RustoloniaStaticWindows)' == 'true' and !Exists('$(RustoloniaAngleLibDir)/STATIC-ANGLE-PROVENANCE.json')" Text="The static ANGLE directory is missing STATIC-ANGLE-PROVENANCE.json: $(RustoloniaAngleLibDir)" />
+    <Error Condition="'$(_RustoloniaStaticWindows)' == 'true' and !Exists('$(RustoloniaAngleLibDir)/STATIC-ANGLE-NOTICES.txt')" Text="The static ANGLE directory is missing STATIC-ANGLE-NOTICES.txt: $(RustoloniaAngleLibDir)" />
+    <Error Condition="'$(AvaloniaRustHostPlatform)' == 'OSX' and (!Exists('$(RustoloniaStaticGraphicsDir)/libskia.a') or !Exists('$(RustoloniaStaticGraphicsDir)/libSkiaSharp.a') or !Exists('$(RustoloniaStaticGraphicsDir)/libHarfBuzzSharp.a'))" Text="The static graphics directory is missing macOS SkiaSharp/HarfBuzzSharp archives: $(RustoloniaStaticGraphicsDir)" />
     <Error Condition="'$(_RustoloniaStaticLinux)' == 'true' and '$(_RustoloniaModuleAnchorTarget)' == ''" Text="A supported Linux RuntimeIdentifier is required to build the static host." />
-    <Error Condition="'$(_RustoloniaStaticLinux)' == 'true' and '$(RustoloniaLinuxStaticGraphicsDir)' == ''" Text="Set RUSTOLONIA_LINUX_STATIC_GRAPHICS_DIR to the output of rust/build-linux-static-graphics.sh." />
-    <Error Condition="'$(_RustoloniaStaticLinux)' == 'true' and !Exists('$(RustoloniaLinuxStaticGraphicsDir)/STATIC-SKIASHARP-PROVENANCE.json')" Text="The static Linux graphics directory is missing its source-build provenance." />
-    <Error Condition="'$(_RustoloniaStaticLinux)' == 'true' and !Exists('$(RustoloniaLinuxStaticGraphicsDir)/STATIC-SKIASHARP-SOURCE-NOTICES.txt')" Text="The static Linux graphics directory is missing its source notices." />
+    <Error Condition="'$(_RustoloniaStaticLinux)' == 'true' and !Exists('$(RustoloniaStaticGraphicsDir)/STATIC-SKIASHARP-SOURCE-NOTICES.txt')" Text="The static Linux graphics directory is missing its source notices." />
     <Copy SourceFiles="$(_RustoloniaStaticSource)" DestinationFiles="$(PublishDir)$(_RustoloniaStaticFileName)" />
     <Copy SourceFiles="$(ProjectAssetsFile)" DestinationFiles="$(PublishDir)rustolonia-project-assets.json" />
     <Delete Files="$(_RustoloniaStaticSource)" />
     <Copy SourceFiles="@(_RustoloniaStaticLibrary);@(_RustoloniaNativeWindowing);@(_RustoloniaLinuxRuntimeTail)" DestinationFolder="$(PublishDir)" />
-    <Copy Condition="'$(_RustoloniaStaticLinux)' == 'true'" SourceFiles="$(RustoloniaLinuxStaticGraphicsDir)/STATIC-SKIASHARP-PROVENANCE.json;$(RustoloniaLinuxStaticGraphicsDir)/STATIC-SKIASHARP-SOURCE-NOTICES.txt" DestinationFolder="$(PublishDir)" />
+    <Copy SourceFiles="$(RustoloniaStaticGraphicsDir)/STATIC-SKIASHARP-PROVENANCE.json" DestinationFolder="$(PublishDir)" />
+    <Copy Condition="'$(_RustoloniaStaticLinux)' == 'true'" SourceFiles="$(RustoloniaStaticGraphicsDir)/STATIC-SKIASHARP-SOURCE-NOTICES.txt" DestinationFolder="$(PublishDir)" />
+    <Copy Condition="'$(_RustoloniaStaticWindows)' == 'true'" SourceFiles="$(RustoloniaAngleLibDir)/STATIC-ANGLE-PROVENANCE.json;$(RustoloniaAngleLibDir)/STATIC-ANGLE-NOTICES.txt" DestinationFolder="$(PublishDir)" />
     <Exec Condition="'$(_RustoloniaStaticLinux)' == 'true' and !$([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('linux-musl-'))" Command="sh &quot;$(MSBuildProjectDirectory)/../rust/stage-linux-static-libs.sh&quot; &quot;$(PublishDir)&quot; &quot;$(RuntimeIdentifier)&quot;" />
     <Exec Condition="'$(_RustoloniaStaticLinux)' == 'true' and $([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('linux-musl-'))" Command="sh &quot;$(MSBuildProjectDirectory)/../rust/stage-linux-musl-static-libs.sh&quot; &quot;$(PublishDir)&quot; &quot;$(RuntimeIdentifier)&quot;" />
     <ReadLinesFromFile Condition="'$(_RustoloniaStaticLinux)' == 'true'" File="$(PublishDir)rustolonia-linux-static-link.txt">
