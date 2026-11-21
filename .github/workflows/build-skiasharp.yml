@@ -190,7 +190,7 @@ jobs:
 
   bundle:
     needs: [plan, build-windows, build-linux, build-macos]
-    if: ${{ always() && needs.plan.result == 'success' && needs.plan.outputs.exists != 'true' && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
+    if: ${{ always() && needs.plan.result == 'success' && needs.plan.outputs.exists != 'true' && !failure() && !cancelled() }}
     name: bundle and cache static SkiaSharp
     runs-on: ubuntu-latest
     permissions:

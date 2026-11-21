@@ -220,6 +220,13 @@ try {
         Assert-StaticDepsSyncedWithAvalonia -RepoRoot $root -AvaloniaPackagesProps $driftedAngleProps
     } 'ANGLE version drift'
 
+    # 6. Workflow YAML must not use needs.*.result (invalid in GitHub Actions job `if` expressions).
+    foreach ($wf in @('build-angle.yml', 'build-skiasharp.yml', 'release.yml', 'avalonia-rust.yml')) {
+        $wfPath = Join-Path $root '.github' 'workflows' $wf
+        $wfText = Get-Content -LiteralPath $wfPath -Raw
+        Assert-True ($wfText -notmatch 'needs\.\*\.result') "$wf must not use invalid 'needs.*.result' in job conditions."
+    }
+
     Write-Host 'Static native dependency tests passed.'
 }
 finally {
