@@ -228,6 +228,29 @@ try {
         Assert-True ($wfText -notmatch 'needs\.\*\.result') "$wf must not use invalid 'needs.*.result' in job conditions."
     }
 
+    # 7. build-angle.ps1 and build-skiasharp.ps1 must resolve repoRoot to the repository root.
+    $angleCollectWork = Join-Path $scratch 'angle-collect-work'
+    $angleCollectBuildObj = Join-Path $angleCollectWork 'build' 'win-x64' 'obj'
+    $angleCollectSrc = Join-Path $angleCollectWork 'src_angle'
+    New-Item -ItemType Directory -Force -Path $angleCollectBuildObj | Out-Null
+    New-Item -ItemType Directory -Force -Path $angleCollectSrc | Out-Null
+    [System.IO.File]::WriteAllBytes((Join-Path $angleCollectBuildObj 'libANGLE_static.lib'), (New-CoffArchiveBytes -Machine 0x8664))
+    [System.IO.File]::WriteAllBytes((Join-Path $angleCollectBuildObj 'libGLESv2_static.lib'), (New-CoffArchiveBytes -Machine 0x8664))
+    [System.IO.File]::WriteAllText((Join-Path $angleCollectSrc 'LICENSE'), "BSD license`n")
+    $angleCollectOut = Join-Path $scratch 'angle-collect-out'
+    & (Join-Path $root 'rust' 'static-deps' 'angle' 'build-angle.ps1') collect -Arch x64 -WorkDir $angleCollectWork -OutputDir $angleCollectOut
+    Assert-True (Test-Path -LiteralPath (Join-Path $angleCollectOut 'ANGLE-source.json') -PathType Leaf) 'build-angle.ps1 collect must write ANGLE-source.json from repoRoot.'
+
+    $skiaCollectWork = Join-Path $scratch 'skia-collect-work'
+    $skiaCollectBuild = Join-Path $skiaCollectWork 'build' 'win-x64'
+    New-Item -ItemType Directory -Force -Path $skiaCollectBuild | Out-Null
+    foreach ($lib in @('skia.lib', 'SkiaSharp.lib', 'libHarfBuzzSharp.lib')) {
+        [System.IO.File]::WriteAllBytes((Join-Path $skiaCollectBuild $lib), (New-CoffArchiveBytes -Machine 0x8664))
+    }
+    $skiaCollectOut = Join-Path $scratch 'skia-collect-out'
+    & (Join-Path $root 'rust' 'static-deps' 'skiasharp' 'build-skiasharp.ps1') collect-windows -Arch x64 -WorkDir $skiaCollectWork -OutputDir $skiaCollectOut
+    Assert-True (Test-Path -LiteralPath (Join-Path $skiaCollectOut 'skia.lib') -PathType Leaf) 'build-skiasharp.ps1 collect-windows must collect skia.lib.'
+
     Write-Host 'Static native dependency tests passed.'
 }
 finally {

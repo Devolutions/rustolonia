@@ -23,7 +23,7 @@ $PSNativeCommandUseErrorActionPreference = $true
 . (Join-Path (Split-Path -Parent $PSScriptRoot) 'common.ps1')
 
 $angleDir = $PSScriptRoot
-$repoRoot = Split-Path -Parent (Split-Path -Parent $angleDir)
+$repoRoot = $script:StaticDepsRepoRoot
 $libraries = @('libANGLE_static.lib', 'libGLESv2_static.lib')
 
 function Invoke-Checked {
