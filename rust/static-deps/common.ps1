@@ -497,6 +497,7 @@ function Invoke-GhCapture {
         try {
             $stdout = (& gh @Arguments 2>$stderrFile) -join "`n"
             $code = $LASTEXITCODE
+            $global:LASTEXITCODE = 0
             $stderr = if (Test-Path -LiteralPath $stderrFile) { Get-Content -LiteralPath $stderrFile -Raw } else { '' }
             return [pscustomobject]@{ ExitCode = $code; StdOut = $stdout; StdErr = $stderr }
         }

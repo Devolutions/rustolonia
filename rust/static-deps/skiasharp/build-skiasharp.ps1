@@ -23,7 +23,7 @@ $PSNativeCommandUseErrorActionPreference = $true
 . (Join-Path (Split-Path -Parent $PSScriptRoot) 'common.ps1')
 
 $skiaConfigDir = $PSScriptRoot
-$repoRoot = Split-Path -Parent (Split-Path -Parent $skiaConfigDir)
+$repoRoot = $script:StaticDepsRepoRoot
 $winLibraries = @('skia.lib', 'SkiaSharp.lib', 'libHarfBuzzSharp.lib')
 $macLibraries = @('libskia.a', 'libSkiaSharp.a', 'libHarfBuzzSharp.a')
 
