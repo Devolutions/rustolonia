@@ -985,8 +985,11 @@ version = "0.1.0"
     [IO.File]::WriteAllText($muslNotices, 'verified notices')
     & (Join-Path $root 'rust/generate-sbom.ps1') -Rid linux-musl-arm64 -Bundle $muslStage
     $muslSbom = Get-Content -LiteralPath (Join-Path $muslStage 'sbom.cdx.json') -Raw | ConvertFrom-Json
-    Assert-True (@($muslSbom.components | Where-Object { $_.type -eq 'library' -and $_.purl -eq 'pkg:apk/alpine/openssl-libs-static@3.5.9-r0?arch=aarch64&distro=3.24' }).Count -eq 2) 'The musl SBOM must identify both static OpenSSL archives.'
+    Assert-True (@($muslSbom.components | Where-Object { $_.type -eq 'library' -and $_.purl -eq 'pkg:apk/alpine/openssl-libs-static@3.5.9-r1?arch=aarch64&distro=3.24' }).Count -eq 2) 'The musl SBOM must identify both static OpenSSL archives.'
     Assert-True (@($muslSbom.components | Where-Object { $_.type -eq 'library' -and $_.purl -eq 'pkg:generic/xorg/libxau@1.0.12?arch=aarch64' }).Count -eq 1) 'The musl SBOM must identify source-built X11 archives.'
+    $muslReleaseScript = Get-Content -LiteralPath (Join-Path $root 'rust/build-linux-musl-release-host.sh') -Raw
+    Assert-True ($muslReleaseScript -match '(?m)^apk add --no-cache --upgrade "\$@"') 'The musl release builder must allow apk to upgrade pre-installed base-image dependencies.'
+    Assert-True ($muslReleaseScript -notmatch '\b(build-base|clang21|cmake|gn|meson|samurai)=') 'Build-only Alpine host tools must not be pinned to mutable apk revisions.'
     $staticCargo = New-CargoBuildCommand -ManifestPath 'Cargo.toml' -PackageName app -TargetTriple aarch64-apple-darwin -BinaryName app -Features @('rustolonia/static-host')
     Assert-True (($staticCargo -join ' ') -eq 'cargo build --manifest-path Cargo.toml -p app --features rustolonia/static-host --bin app --target aarch64-apple-darwin --release') 'Static consumer builds must enable rustolonia/static-host.'
     $releaseVersion = Get-RustoloniaReleaseVersion -RustoloniaRoot $root

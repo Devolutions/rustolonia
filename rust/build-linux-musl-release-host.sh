@@ -40,9 +40,11 @@ set --
 while IFS= read -r pin; do
     set -- "$@" "$pin"
 done < "$workspace/apk-pins.txt"
-apk add --no-cache "$@" \
-    build-base=0.5-r4 clang21=21.1.8-r3 cmake=4.2.3-r0 gn=0_git20260924-r0 \
-    meson=1.11.1-r0 samurai=1.2-r8 \
+# Allow upgrading pre-installed base-image packages (e.g. libcrypto3/libssl3)
+# when Alpine publishes security revisions ahead of the base image, while still
+# strictly honoring the pinned link-input packages in "$@".
+apk add --no-cache --upgrade "$@" \
+    build-base clang21 cmake gn meson samurai \
     binutils ca-certificates curl git icu-libs pkgconf python3 xorgproto
 
 mkdir -p "$workspace/bin" "$workspace/dotnet-sdk"
