@@ -57,9 +57,7 @@ jobs:
       matrix:
         include:
           - arch: x64
-            msvc_arch: x64
           - arch: arm64
-            msvc_arch: amd64_arm64
     env:
       DEPOT_TOOLS_WIN_TOOLCHAIN: '0'
     steps:
@@ -72,7 +70,7 @@ jobs:
         shell: pwsh
         run: |
           . ./rust/static-deps/common.ps1
-          Enter-MsvcEnvironment -Arch '${{ matrix.msvc_arch }}'
+          Enter-MsvcEnvironment -Arch '${{ matrix.arch }}'
       - name: Setup depot_tools
         shell: pwsh
         run: |

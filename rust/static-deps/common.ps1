@@ -737,44 +737,53 @@ function Get-AvaloniaPackageVersions {
 function Enter-MsvcEnvironment {
     param([Parameter(Mandatory)][string]$Arch)
 
-    $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
-    if (-not (Test-Path -LiteralPath $vswhere -PathType Leaf)) {
-        throw "vswhere.exe not found at $vswhere"
+    $targetArch = switch ($Arch.ToLowerInvariant()) {
+        'amd64_arm64' { 'arm64' }
+        'x64_arm64'   { 'arm64' }
+        default       { $Arch.ToLowerInvariant() }
     }
-    $vsPath = (& $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath | Select-Object -First 1)
-    if (-not $vsPath) {
-        throw 'Visual Studio installation with VC tools not found.'
+
+    if (-not (Get-Module -ListAvailable -Name VsDevShell)) {
+        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -ErrorAction SilentlyContinue
+        Install-Module -Name VsDevShell -Repository PSGallery -Scope CurrentUser -Force -AllowClobber
     }
-    $vcvarsall = Join-Path $vsPath.Trim() 'VC\Auxiliary\Build\vcvarsall.bat'
-    if (-not (Test-Path -LiteralPath $vcvarsall -PathType Leaf)) {
-        throw "vcvarsall.bat not found at $vcvarsall"
-    }
-    $previousPath = $env:PATH
+    Import-Module VsDevShell -Force
+
+    $baselinePath = $env:PATH
+    $sysRoot = $env:SystemRoot
+    $minPath = (@("$sysRoot\System32", $sysRoot, "$sysRoot\System32\Wbem", "$sysRoot\System32\WindowsPowerShell\v1.0") -join ';')
     try {
-        # Trim inherited PATH entries before running vcvarsall.bat so cmd.exe's 8191-char line limit is not exceeded.
-        $sysRoot = $env:SystemRoot
-        $env:PATH = (@("$sysRoot\System32", $sysRoot, "$sysRoot\System32\Wbem", "$sysRoot\System32\WindowsPowerShell\v1.0") -join ';')
-        $lines = & $env:ComSpec /c "call `"$vcvarsall`" $Arch >nul && set"
-        if ($LASTEXITCODE -ne 0) {
-            throw "vcvarsall.bat $Arch failed with exit code $LASTEXITCODE."
-        }
+        $env:PATH = $minPath
+        $vsDevEnv = Get-VsDevEnv -Arch $targetArch -HostArch x64 -NoLogo
     }
     finally {
-        $env:PATH = $previousPath
+        $env:PATH = $baselinePath
     }
-    foreach ($line in $lines) {
-        $idx = $line.IndexOf('=')
-        if ($idx -gt 0) {
-            $name = $line.Substring(0, $idx)
-            $val = $line.Substring($idx + 1)
-            if ($name -ieq 'PATH') {
-                $val = "$val;$previousPath"
+    if ($vsDevEnv.Contains('PATH') -and ([string]$vsDevEnv['PATH']).EndsWith($minPath, [StringComparison]::OrdinalIgnoreCase)) {
+        $vsDevEnv['PATH'] = ([string]$vsDevEnv['PATH']).Substring(0, ([string]$vsDevEnv['PATH']).Length - $minPath.Length) + $baselinePath
+    }
+    $vsDevEnv | Enter-VsDevShell -Force
+
+    if ($env:GITHUB_ENV) {
+        foreach ($entry in $vsDevEnv.GetEnumerator()) {
+            $name = [string]$entry.Key
+            $val = if ($null -eq $entry.Value) { '' } else { [string]$entry.Value }
+            if ([string]::IsNullOrWhiteSpace($name) -or $name.Contains('=')) {
+                continue
             }
-            [System.Environment]::SetEnvironmentVariable($name, $val, 'Process')
-            if ($env:GITHUB_ENV) {
-                $delim = "MSVC_EOF_" + [guid]::NewGuid().ToString('N')
-                "$name<<$delim`n$val`n$delim" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+            if ($name.Equals('PATH', [StringComparison]::OrdinalIgnoreCase) -and
+                -not [string]::IsNullOrEmpty($val) -and
+                -not [string]::IsNullOrEmpty($env:GITHUB_PATH) -and
+                -not [string]::IsNullOrEmpty($baselinePath) -and
+                $val.EndsWith($baselinePath, [StringComparison]::OrdinalIgnoreCase)) {
+                $prefix = $val.Substring(0, $val.Length - $baselinePath.Length).TrimEnd(';')
+                $prefix -split ';' |
+                    Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+                    ForEach-Object { $_ | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8 }
+                continue
             }
+            $delim = "VSDEVENV_" + [guid]::NewGuid().ToString('N')
+            "$name<<$delim`n$val`n$delim" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
         }
     }
 }
