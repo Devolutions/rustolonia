@@ -733,6 +733,51 @@ function Get-AvaloniaPackageVersions {
     return $versions
 }
 
+function Enter-MsvcEnvironment {
+    param([Parameter(Mandatory)][string]$Arch)
+
+    $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+    if (-not (Test-Path -LiteralPath $vswhere -PathType Leaf)) {
+        throw "vswhere.exe not found at $vswhere"
+    }
+    $vsPath = (& $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath | Select-Object -First 1)
+    if (-not $vsPath) {
+        throw 'Visual Studio installation with VC tools not found.'
+    }
+    $vcvarsall = Join-Path $vsPath.Trim() 'VC\Auxiliary\Build\vcvarsall.bat'
+    if (-not (Test-Path -LiteralPath $vcvarsall -PathType Leaf)) {
+        throw "vcvarsall.bat not found at $vcvarsall"
+    }
+    $previousPath = $env:PATH
+    try {
+        # Trim inherited PATH entries before running vcvarsall.bat so cmd.exe's 8191-char line limit is not exceeded.
+        $sysRoot = $env:SystemRoot
+        $env:PATH = (@("$sysRoot\System32", $sysRoot, "$sysRoot\System32\Wbem", "$sysRoot\System32\WindowsPowerShell\v1.0") -join ';')
+        $lines = & $env:ComSpec /c "call `"$vcvarsall`" $Arch >nul && set"
+        if ($LASTEXITCODE -ne 0) {
+            throw "vcvarsall.bat $Arch failed with exit code $LASTEXITCODE."
+        }
+    }
+    finally {
+        $env:PATH = $previousPath
+    }
+    foreach ($line in $lines) {
+        $idx = $line.IndexOf('=')
+        if ($idx -gt 0) {
+            $name = $line.Substring(0, $idx)
+            $val = $line.Substring($idx + 1)
+            if ($name -ieq 'PATH') {
+                $val = "$val;$previousPath"
+            }
+            [System.Environment]::SetEnvironmentVariable($name, $val, 'Process')
+            if ($env:GITHUB_ENV) {
+                $delim = "MSVC_EOF_" + [guid]::NewGuid().ToString('N')
+                "$name<<$delim`n$val`n$delim" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+            }
+        }
+    }
+}
+
 function Assert-StaticDepsSyncedWithAvalonia {
     param(
         [string]$RepoRoot = $script:StaticDepsRepoRoot,

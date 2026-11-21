@@ -76,9 +76,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - uses: TheMrMilchmann/setup-msvc-dev@v3
-        with:
-          arch: ${{ matrix.msvc_arch }}
+      - name: Setup MSVC developer environment
+        shell: pwsh
+        run: |
+          . ./rust/static-deps/common.ps1
+          Enter-MsvcEnvironment -Arch '${{ matrix.msvc_arch }}'
       - name: Setup depot_tools
         shell: pwsh
         run: |

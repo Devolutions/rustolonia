@@ -220,10 +220,11 @@ try {
         Assert-StaticDepsSyncedWithAvalonia -RepoRoot $root -AvaloniaPackagesProps $driftedAngleProps
     } 'ANGLE version drift'
 
-    # 6. Workflow YAML must not use needs.*.result (invalid in GitHub Actions job `if` expressions).
+    # 6. Workflow YAML must not use unallowed third-party actions or invalid needs.*.result expressions.
     foreach ($wf in @('build-angle.yml', 'build-skiasharp.yml', 'release.yml', 'avalonia-rust.yml')) {
         $wfPath = Join-Path $root '.github' 'workflows' $wf
         $wfText = Get-Content -LiteralPath $wfPath -Raw
+        Assert-True ($wfText -notmatch 'setup-msvc-dev') "$wf must not use unallowed third-party action 'setup-msvc-dev'."
         Assert-True ($wfText -notmatch 'needs\.\*\.result') "$wf must not use invalid 'needs.*.result' in job conditions."
     }
 
