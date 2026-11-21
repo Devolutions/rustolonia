@@ -750,17 +750,22 @@ function Enter-MsvcEnvironment {
     Import-Module VsDevShell -Force
 
     $baselinePath = $env:PATH
-    $sysRoot = $env:SystemRoot
-    $minPath = (@("$sysRoot\System32", $sysRoot, "$sysRoot\System32\Wbem", "$sysRoot\System32\WindowsPowerShell\v1.0") -join ';')
     try {
-        $env:PATH = $minPath
         $vsDevEnv = Get-VsDevEnv -Arch $targetArch -HostArch x64 -NoLogo
     }
-    finally {
-        $env:PATH = $baselinePath
-    }
-    if ($vsDevEnv.Contains('PATH') -and ([string]$vsDevEnv['PATH']).EndsWith($minPath, [StringComparison]::OrdinalIgnoreCase)) {
-        $vsDevEnv['PATH'] = ([string]$vsDevEnv['PATH']).Substring(0, ([string]$vsDevEnv['PATH']).Length - $minPath.Length) + $baselinePath
+    catch {
+        $sysRoot = $env:SystemRoot
+        $minPath = (@("$sysRoot\System32", $sysRoot, "$sysRoot\System32\Wbem", "$sysRoot\System32\WindowsPowerShell\v1.0") -join ';')
+        try {
+            $env:PATH = $minPath
+            $vsDevEnv = Get-VsDevEnv -Arch $targetArch -HostArch x64 -NoLogo
+        }
+        finally {
+            $env:PATH = $baselinePath
+        }
+        foreach ($pathKey in @($vsDevEnv.Keys | Where-Object { $_ -ieq 'PATH' })) {
+            $vsDevEnv[$pathKey] = ([string]$vsDevEnv[$pathKey]).Replace($minPath, $baselinePath)
+        }
     }
     $vsDevEnv | Enter-VsDevShell -Force
 
@@ -769,17 +774,6 @@ function Enter-MsvcEnvironment {
             $name = [string]$entry.Key
             $val = if ($null -eq $entry.Value) { '' } else { [string]$entry.Value }
             if ([string]::IsNullOrWhiteSpace($name) -or $name.Contains('=')) {
-                continue
-            }
-            if ($name.Equals('PATH', [StringComparison]::OrdinalIgnoreCase) -and
-                -not [string]::IsNullOrEmpty($val) -and
-                -not [string]::IsNullOrEmpty($env:GITHUB_PATH) -and
-                -not [string]::IsNullOrEmpty($baselinePath) -and
-                $val.EndsWith($baselinePath, [StringComparison]::OrdinalIgnoreCase)) {
-                $prefix = $val.Substring(0, $val.Length - $baselinePath.Length).TrimEnd(';')
-                $prefix -split ';' |
-                    Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
-                    ForEach-Object { $_ | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8 }
                 continue
             }
             $delim = "VSDEVENV_" + [guid]::NewGuid().ToString('N')
