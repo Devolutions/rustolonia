@@ -74,11 +74,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Setup MSVC developer environment
+      - name: Install VsDevShell
         shell: pwsh
-        run: |
-          . ./rust/static-deps/common.ps1
-          Enter-MsvcEnvironment -Arch '${{ matrix.arch }}'
+        run: Install-Module -Name VsDevShell -Force
       - name: Setup depot_tools
         shell: pwsh
         run: |
@@ -97,6 +95,7 @@ jobs:
       - name: Build Skia, SkiaSharp, and HarfBuzzSharp (Static)
         shell: pwsh
         run: |
+          Enter-VsDevShell ${{ matrix.arch }}
           $params = @{ Command = 'build-windows'; Arch = '${{ matrix.arch }}' }
           if ('${{ matrix.platform_toolset }}') {
             $params.PlatformToolset = '${{ matrix.platform_toolset }}'

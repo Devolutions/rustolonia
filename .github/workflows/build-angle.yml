@@ -66,11 +66,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Setup MSVC developer environment
+      - name: Install VsDevShell
         shell: pwsh
-        run: |
-          . ./rust/static-deps/common.ps1
-          Enter-MsvcEnvironment -Arch '${{ matrix.arch }}'
+        run: Install-Module -Name VsDevShell -Force
       - name: Setup depot_tools
         shell: pwsh
         run: |
@@ -82,16 +80,21 @@ jobs:
           & "$depot/update_depot_tools.bat"
       - name: Fetch source and dependencies
         shell: pwsh
-        run: ./rust/static-deps/angle/build-angle.ps1 prepare -Arch ${{ matrix.arch }}
+        run: |
+          Enter-VsDevShell ${{ matrix.arch }}
+          ./rust/static-deps/angle/build-angle.ps1 prepare -Arch ${{ matrix.arch }}
       - name: Build complete static libraries
         shell: pwsh
-        run: ./rust/static-deps/angle/build-angle.ps1 build -Arch ${{ matrix.arch }}
+        run: |
+          Enter-VsDevShell ${{ matrix.arch }}
+          ./rust/static-deps/angle/build-angle.ps1 build -Arch ${{ matrix.arch }}
       - name: Check architecture and collect libraries and licenses
         shell: pwsh
         run: ./rust/static-deps/angle/build-angle.ps1 collect -Arch ${{ matrix.arch }}
       - name: Link static ANGLE smoke test
         shell: pwsh
         run: |
+          Enter-VsDevShell ${{ matrix.arch }}
           New-Item -ItemType Directory -Force -Path out | Out-Null
           cl /nologo /MT /EHsc rust/static-deps/angle/smoke.cpp /Fe:out/angle-smoke.exe /link `
             out/static-angle/artifacts/angle-win-${{ matrix.arch }}/libGLESv2_static.lib `

@@ -734,54 +734,6 @@ function Get-AvaloniaPackageVersions {
     return $versions
 }
 
-function Enter-MsvcEnvironment {
-    param([Parameter(Mandatory)][string]$Arch)
-
-    $targetArch = switch ($Arch.ToLowerInvariant()) {
-        'amd64_arm64' { 'arm64' }
-        'x64_arm64'   { 'arm64' }
-        default       { $Arch.ToLowerInvariant() }
-    }
-
-    if (-not (Get-Module -ListAvailable -Name VsDevShell)) {
-        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -ErrorAction SilentlyContinue
-        Install-Module -Name VsDevShell -Repository PSGallery -Scope CurrentUser -Force -AllowClobber
-    }
-    Import-Module VsDevShell -Force
-
-    $baselinePath = $env:PATH
-    try {
-        $vsDevEnv = Get-VsDevEnv -Arch $targetArch -HostArch x64 -NoLogo
-    }
-    catch {
-        $sysRoot = $env:SystemRoot
-        $minPath = (@("$sysRoot\System32", $sysRoot, "$sysRoot\System32\Wbem", "$sysRoot\System32\WindowsPowerShell\v1.0") -join ';')
-        try {
-            $env:PATH = $minPath
-            $vsDevEnv = Get-VsDevEnv -Arch $targetArch -HostArch x64 -NoLogo
-        }
-        finally {
-            $env:PATH = $baselinePath
-        }
-        foreach ($pathKey in @($vsDevEnv.Keys | Where-Object { $_ -ieq 'PATH' })) {
-            $vsDevEnv[$pathKey] = ([string]$vsDevEnv[$pathKey]).Replace($minPath, $baselinePath)
-        }
-    }
-    $vsDevEnv | Enter-VsDevShell -Force
-
-    if ($env:GITHUB_ENV) {
-        foreach ($entry in $vsDevEnv.GetEnumerator()) {
-            $name = [string]$entry.Key
-            $val = if ($null -eq $entry.Value) { '' } else { [string]$entry.Value }
-            if ([string]::IsNullOrWhiteSpace($name) -or $name.Contains('=')) {
-                continue
-            }
-            $delim = "VSDEVENV_" + [guid]::NewGuid().ToString('N')
-            "$name<<$delim`n$val`n$delim" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-        }
-    }
-}
-
 function Assert-StaticDepsSyncedWithAvalonia {
     param(
         [string]$RepoRoot = $script:StaticDepsRepoRoot,
