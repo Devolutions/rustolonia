@@ -46,10 +46,10 @@ using typed fixed-point `Decimal` values.
 `RepeatButton`, `DropDownButton`, `SplitButton`, `ToggleSplitButton`,
 `HyperlinkButton`, `ContextMenu` and `MenuFlyout` are projected too.
 `HyperlinkButton.NavigateUri` is a URI string; `SplitButton.Flyout` is not.
-`WrapPanel`, `UniformGrid`, `RelativePanel`, `Viewbox` and
+`WrapPanel`, `UniformGrid`, `RelativePanel`, `Viewbox`, `FlexPanel` and
 `GridSplitter` (plus its `Thumb` base) are projected too. RelativePanel's
 `Align*WithPanel` bools cross as attached properties; object-valued `Above`/`LeftOf`
-stay gaps. `FlexPanel` is newer than the pinned Avalonia 12.1.x line.
+and Flex's attached `Order`/`Grow`/`Shrink` stay gaps.
 `Flyout`, the imperative `Menu`/`MenuItem` pair, `SplitView`, `DatePicker` and
 `TimePicker` are projected too (`SelectedDate` / `SelectedTime` use `CivilDate`
 and `CivilTime`). Pure-Rust `StyleSheet` rules (`Style::select("Button.accent:pointerover")`),

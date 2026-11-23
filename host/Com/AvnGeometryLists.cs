@@ -95,3 +95,28 @@ public static class AvnFontFeatures
         }
     }
 }
+
+/// <summary>
+/// Converts between the ABI's UTF-16 variation string (<c>wght=700,wdth=85</c>)
+/// and a <c>FontVariationSettings</c>. An empty or malformed string clears the
+/// value, matching <see cref="AvnFontFeatures"/>.
+/// </summary>
+public static class AvnFontVariations
+{
+    public static string? ToAbi(Avalonia.Media.FontVariationSettings? value) =>
+        value is null || value.IsEmpty ? null : value.ToString();
+
+    public static Avalonia.Media.FontVariationSettings? FromAbi(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+        try
+        {
+            return Avalonia.Media.FontVariationSettings.Parse(value);
+        }
+        catch (FormatException)
+        {
+            return null;
+        }
+    }
+}

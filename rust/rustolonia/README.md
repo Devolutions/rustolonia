@@ -16,7 +16,7 @@ a local source override and matching host. Cargo resolves `rustolonia-sys`
 from the same git revision automatically; no registry patches or crates.io
 publication are required. The final tag includes the checksums of the actual
 release build.
-Rust 1.88 or newer is required. Rustolonia `12.1.x` tracks the Avalonia `12.1`
+Rust 1.88 or newer is required. Rustolonia `12.2.x` tracks the Avalonia `12.2`
 line, while the patch counts Rustolonia releases independently. The API is
 still experimental; use an exact release tag to avoid unintended upgrades.
 After crates.io publication, `rustolonia = "=12.1.6"` is also supported.

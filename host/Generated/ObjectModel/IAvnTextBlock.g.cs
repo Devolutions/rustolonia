@@ -59,6 +59,12 @@ public partial interface IAvnTextBlock : IAvnControl
     int SetFontStretch(int value);
 
     [PreserveSig]
+    int GetFontVariations(out string? value);
+
+    [PreserveSig]
+    int SetFontVariations(string? value);
+
+    [PreserveSig]
     int GetForeground(out IAvnBrush? value);
 
     [PreserveSig]
@@ -1941,6 +1947,37 @@ public sealed partial class AvnTextBlock : IAvnTextBlock
             using var call = _state.EnterCall();
             _value.VerifyAccess();
             _value.FontStretch = (global::Avalonia.Media.FontStretch)value;
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int GetFontVariations(out string? value)
+    {
+        value = default;
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            value = global::Avalonia.Host.Com.AvnFontVariations.ToAbi(_value.FontVariations);
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int SetFontVariations(string? value)
+    {
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            _value.FontVariations = global::Avalonia.Host.Com.AvnFontVariations.FromAbi(value);
             return global::Avalonia.Host.HResults.S_OK;
         }
         catch (global::System.Exception e)

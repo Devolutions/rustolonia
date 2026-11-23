@@ -2044,6 +2044,37 @@ public sealed partial class AvnCommandBar : IAvnCommandBar
         }
     }
 
+    public int GetFontVariations(out string? value)
+    {
+        value = default;
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            value = global::Avalonia.Host.Com.AvnFontVariations.ToAbi(_value.FontVariations);
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int SetFontVariations(string? value)
+    {
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            _value.FontVariations = global::Avalonia.Host.Com.AvnFontVariations.FromAbi(value);
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
     public int GetForeground(out IAvnBrush? value)
     {
         value = default;

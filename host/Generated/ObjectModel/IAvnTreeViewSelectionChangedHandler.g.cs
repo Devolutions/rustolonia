@@ -50,10 +50,10 @@ public sealed partial class AvnTreeViewSelectionChangedArgs : IAvnTreeViewSelect
         value = default;
         try
         {
-            var item = _collections[0]?.Cast<object?>().ElementAtOrDefault(index);
-            if (index < 0 || item is null)
+            var items = _collections[0]?.Cast<object?>().ToArray() ?? [];
+            if ((uint)index >= (uint)items.Length)
                 return global::Avalonia.Host.HResults.E_INVALIDARG;
-            value = AvnVariant.FromObject(item);
+            value = AvnVariant.FromObject(items[index]);
             return global::Avalonia.Host.HResults.S_OK;
         }
         catch (global::System.Exception e)
@@ -81,10 +81,10 @@ public sealed partial class AvnTreeViewSelectionChangedArgs : IAvnTreeViewSelect
         value = default;
         try
         {
-            var item = _collections[1]?.Cast<object?>().ElementAtOrDefault(index);
-            if (index < 0 || item is null)
+            var items = _collections[1]?.Cast<object?>().ToArray() ?? [];
+            if ((uint)index >= (uint)items.Length)
                 return global::Avalonia.Host.HResults.E_INVALIDARG;
-            value = AvnVariant.FromObject(item);
+            value = AvnVariant.FromObject(items[index]);
             return global::Avalonia.Host.HResults.S_OK;
         }
         catch (global::System.Exception e)

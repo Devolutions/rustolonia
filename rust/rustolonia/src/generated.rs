@@ -1254,6 +1254,124 @@ impl TryFrom<i32> for ExpandDirection {
 
 #[repr(i32)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum FlexAlignContent {
+    FlexStart = 0,
+    FlexEnd = 1,
+    Center = 2,
+    Stretch = 3,
+    SpaceBetween = 4,
+    SpaceAround = 5,
+    SpaceEvenly = 6,
+}
+
+impl TryFrom<i32> for FlexAlignContent {
+    type Error = crate::Error;
+    fn try_from(value: i32) -> Result<Self> {
+        match value {
+            0 => Ok(Self::FlexStart),
+            1 => Ok(Self::FlexEnd),
+            2 => Ok(Self::Center),
+            3 => Ok(Self::Stretch),
+            4 => Ok(Self::SpaceBetween),
+            5 => Ok(Self::SpaceAround),
+            6 => Ok(Self::SpaceEvenly),
+            _ => Err(crate::Error::InvalidEnumValue(value)),
+        }
+    }
+}
+
+#[repr(i32)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum FlexAlignItems {
+    FlexStart = 0,
+    FlexEnd = 1,
+    Center = 2,
+    Stretch = 3,
+}
+
+impl TryFrom<i32> for FlexAlignItems {
+    type Error = crate::Error;
+    fn try_from(value: i32) -> Result<Self> {
+        match value {
+            0 => Ok(Self::FlexStart),
+            1 => Ok(Self::FlexEnd),
+            2 => Ok(Self::Center),
+            3 => Ok(Self::Stretch),
+            _ => Err(crate::Error::InvalidEnumValue(value)),
+        }
+    }
+}
+
+#[repr(i32)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum FlexDirection {
+    Row = 0,
+    RowReverse = 1,
+    Column = 2,
+    ColumnReverse = 3,
+}
+
+impl TryFrom<i32> for FlexDirection {
+    type Error = crate::Error;
+    fn try_from(value: i32) -> Result<Self> {
+        match value {
+            0 => Ok(Self::Row),
+            1 => Ok(Self::RowReverse),
+            2 => Ok(Self::Column),
+            3 => Ok(Self::ColumnReverse),
+            _ => Err(crate::Error::InvalidEnumValue(value)),
+        }
+    }
+}
+
+#[repr(i32)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum FlexJustifyContent {
+    FlexStart = 0,
+    FlexEnd = 1,
+    Center = 2,
+    SpaceBetween = 3,
+    SpaceAround = 4,
+    SpaceEvenly = 5,
+}
+
+impl TryFrom<i32> for FlexJustifyContent {
+    type Error = crate::Error;
+    fn try_from(value: i32) -> Result<Self> {
+        match value {
+            0 => Ok(Self::FlexStart),
+            1 => Ok(Self::FlexEnd),
+            2 => Ok(Self::Center),
+            3 => Ok(Self::SpaceBetween),
+            4 => Ok(Self::SpaceAround),
+            5 => Ok(Self::SpaceEvenly),
+            _ => Err(crate::Error::InvalidEnumValue(value)),
+        }
+    }
+}
+
+#[repr(i32)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum FlexWrap {
+    NoWrap = 0,
+    Wrap = 1,
+    WrapReverse = 2,
+}
+
+impl TryFrom<i32> for FlexWrap {
+    type Error = crate::Error;
+    fn try_from(value: i32) -> Result<Self> {
+        match value {
+            0 => Ok(Self::NoWrap),
+            1 => Ok(Self::Wrap),
+            2 => Ok(Self::WrapReverse),
+            _ => Err(crate::Error::InvalidEnumValue(value)),
+        }
+    }
+}
+
+#[repr(i32)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum FlyoutShowMode {
     Standard = 0,
     Transient = 1,
@@ -1954,6 +2072,9 @@ pub enum WrapPanelItemsAlignment {
     Start = 0,
     Center = 1,
     End = 2,
+    Justify = 3,
+    Stretch = 4,
+    StretchAll = 5,
 }
 
 impl TryFrom<i32> for WrapPanelItemsAlignment {
@@ -1963,6 +2084,9 @@ impl TryFrom<i32> for WrapPanelItemsAlignment {
             0 => Ok(Self::Start),
             1 => Ok(Self::Center),
             2 => Ok(Self::End),
+            3 => Ok(Self::Justify),
+            4 => Ok(Self::Stretch),
+            5 => Ok(Self::StretchAll),
             _ => Err(crate::Error::InvalidEnumValue(value)),
         }
     }
@@ -3209,6 +3333,26 @@ impl TryFrom<i32> for DayOfWeek {
             4 => Ok(Self::Thursday),
             5 => Ok(Self::Friday),
             6 => Ok(Self::Saturday),
+            _ => Err(crate::Error::InvalidEnumValue(value)),
+        }
+    }
+}
+
+#[repr(i32)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum CalendarWeekRule {
+    FirstDay = 0,
+    FirstFullWeek = 1,
+    FirstFourDayWeek = 2,
+}
+
+impl TryFrom<i32> for CalendarWeekRule {
+    type Error = crate::Error;
+    fn try_from(value: i32) -> Result<Self> {
+        match value {
+            0 => Ok(Self::FirstDay),
+            1 => Ok(Self::FirstFullWeek),
+            2 => Ok(Self::FirstFourDayWeek),
             _ => Err(crate::Error::InvalidEnumValue(value)),
         }
     }
@@ -4674,6 +4818,13 @@ impl AutoCompleteBox {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -4766,6 +4917,10 @@ impl AutoCompleteBox {
     pub fn set_placeholder_foreground(&self, value: impl crate::view::IntoValue<Option<Paint>>) -> Result<()> {
         let value = value.into_value().as_ref().map(Paint::to_raw).transpose()?;
         Ok(self.raw.set_placeholder_foreground(value.as_ref())?)
+    }
+    pub fn use_floating_placeholder(&self) -> Result<bool> { Ok(self.raw.get_use_floating_placeholder()?) }
+    pub fn set_use_floating_placeholder(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_use_floating_placeholder(value)?)
     }
     pub fn item_filter(&self) -> Result<Option<crate::ItemFilter>> {
         Ok(self.raw.get_item_filter()?.map(|raw| crate::ItemFilter { raw }))
@@ -5550,6 +5705,12 @@ impl crate::view::El<AutoCompleteBox> {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
         })
     }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
+        })
+    }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
@@ -5672,6 +5833,12 @@ impl crate::view::El<AutoCompleteBox> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_placeholder_foreground(v))
+        })
+    }
+    pub fn use_floating_placeholder<M>(self, value: impl crate::view::IntoProp<bool, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_use_floating_placeholder(v))
         })
     }
     pub fn item_filter(self, value: impl Into<Option<crate::ItemFilter>> + 'static) -> Self {
@@ -7728,6 +7895,13 @@ impl Button {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -8439,6 +8613,12 @@ impl crate::view::El<Button> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -9250,6 +9430,13 @@ impl ButtonSpinner {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -9970,6 +10157,12 @@ impl crate::view::El<ButtonSpinner> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -10757,6 +10950,13 @@ impl Calendar {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -10791,6 +10991,17 @@ impl Calendar {
     pub fn set_header_background(&self, value: impl crate::view::IntoValue<Option<Paint>>) -> Result<()> {
         let value = value.into_value().as_ref().map(Paint::to_raw).transpose()?;
         Ok(self.raw.set_header_background(value.as_ref())?)
+    }
+    pub fn is_week_number_visible(&self) -> Result<bool> { Ok(self.raw.get_is_week_number_visible()?) }
+    pub fn set_week_number_visible(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_is_week_number_visible(value)?)
+    }
+    pub fn week_number_rule(&self) -> Result<CalendarWeekRule> {
+        let value = self.raw.get_week_number_rule()?;
+        CalendarWeekRule::try_from(value)
+    }
+    pub fn set_week_number_rule(&self, value: CalendarWeekRule) -> Result<()> {
+        Ok(self.raw.set_week_number_rule(value as i32)?)
     }
     pub fn display_mode(&self) -> Result<CalendarMode> {
         let value = self.raw.get_display_mode()?;
@@ -11483,6 +11694,12 @@ impl crate::view::El<Calendar> {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
         })
     }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
+        })
+    }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
@@ -11520,6 +11737,21 @@ impl crate::view::El<Calendar> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_header_background(v))
+        })
+    }
+    pub fn week_number_visible<M>(self, value: impl crate::view::IntoProp<bool, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_week_number_visible(v))
+        })
+    }
+    pub fn is_week_number_visible<M>(self, value: impl crate::view::IntoProp<bool, M> + 'static) -> Self {
+        self.week_number_visible(value)
+    }
+    pub fn week_number_rule<M>(self, value: impl crate::view::IntoProp<CalendarWeekRule, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_week_number_rule(v))
         })
     }
     pub fn display_mode<M>(self, value: impl crate::view::IntoProp<CalendarMode, M> + 'static) -> Self {
@@ -12292,6 +12524,13 @@ impl CalendarDatePicker {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -12411,6 +12650,17 @@ impl CalendarDatePicker {
     }
     pub fn set_vertical_content_alignment(&self, value: VerticalAlignment) -> Result<()> {
         Ok(self.raw.set_vertical_content_alignment(value as i32)?)
+    }
+    pub fn is_week_number_visible(&self) -> Result<bool> { Ok(self.raw.get_is_week_number_visible()?) }
+    pub fn set_week_number_visible(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_is_week_number_visible(value)?)
+    }
+    pub fn week_number_rule(&self) -> Result<CalendarWeekRule> {
+        let value = self.raw.get_week_number_rule()?;
+        CalendarWeekRule::try_from(value)
+    }
+    pub fn set_week_number_rule(&self, value: CalendarWeekRule) -> Result<()> {
+        Ok(self.raw.set_week_number_rule(value as i32)?)
     }
     pub fn clear(&self) -> Result<()> { Ok(self.raw.clear()?) }
     pub fn subscribe_calendar_closed<R: crate::IntoEventResult>(&self, mut callback: impl FnMut(()) -> R + 'static) -> Result<EventSubscription> {
@@ -13064,6 +13314,12 @@ impl crate::view::El<CalendarDatePicker> {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
         })
     }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
+        })
+    }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
@@ -13183,6 +13439,21 @@ impl crate::view::El<CalendarDatePicker> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_vertical_content_alignment(v))
+        })
+    }
+    pub fn week_number_visible<M>(self, value: impl crate::view::IntoProp<bool, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_week_number_visible(v))
+        })
+    }
+    pub fn is_week_number_visible<M>(self, value: impl crate::view::IntoProp<bool, M> + 'static) -> Self {
+        self.week_number_visible(value)
+    }
+    pub fn week_number_rule<M>(self, value: impl crate::view::IntoProp<CalendarWeekRule, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_week_number_rule(v))
         })
     }
     pub fn on_calendar_closed<R: crate::IntoEventResult + 'static>(self, callback: impl FnMut(()) -> R + 'static) -> Self {
@@ -15141,6 +15412,13 @@ impl Carousel {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -15878,6 +16156,12 @@ impl crate::view::El<Carousel> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -16707,6 +16991,13 @@ impl CheckBox {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -17502,6 +17793,12 @@ impl crate::view::El<CheckBox> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -18344,6 +18641,13 @@ impl ComboBox {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -19149,6 +19453,12 @@ impl crate::view::El<ComboBox> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -20031,6 +20341,13 @@ impl ComboBoxItem {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -20714,6 +21031,12 @@ impl crate::view::El<ComboBoxItem> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -21480,6 +21803,13 @@ impl CommandBar {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -22211,6 +22541,12 @@ impl crate::view::El<CommandBar> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -23039,6 +23375,13 @@ impl CommandBarButton {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -23812,6 +24155,12 @@ impl crate::view::El<CommandBarButton> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -24665,6 +25014,13 @@ impl CommandBarSeparator {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -25293,6 +25649,12 @@ impl crate::view::El<CommandBarSeparator> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -26040,6 +26402,13 @@ impl CommandBarToggleButton {
     }
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
+    }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
     }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
@@ -26869,6 +27238,12 @@ impl crate::view::El<CommandBarToggleButton> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -27753,6 +28128,13 @@ impl ContentControl {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -28374,6 +28756,12 @@ impl crate::view::El<ContentControl> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -29130,6 +29518,13 @@ impl ContextMenu {
     }
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
+    }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
     }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
@@ -30025,6 +30420,12 @@ impl crate::view::El<ContextMenu> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -32011,6 +32412,13 @@ impl DatePicker {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -32687,6 +33095,12 @@ impl crate::view::El<DatePicker> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -35859,6 +36273,13 @@ impl DropDownButton {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -36599,6 +37020,12 @@ impl crate::view::El<DropDownButton> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -37410,6 +37837,13 @@ impl Expander {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -38194,6 +38628,12 @@ impl crate::view::El<Expander> {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
         })
     }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
+        })
+    }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
@@ -38453,6 +38893,1274 @@ impl crate::view::El<Expander> {
     }
     pub fn rsx_child(self, value: impl crate::view::IntoContentEl + 'static) -> Self {
         self.content(value)
+    }
+}
+
+#[repr(transparent)]
+#[derive(Clone, Debug)]
+pub struct FlexPanel {
+    pub(crate) raw: sys::ComPtr<sys::IAvnFlexPanel>,
+}
+
+impl FlexPanel {
+    pub fn new() -> Result<Self> {
+        with_factory(|factory| factory.create_flex_panel())
+            .map(|raw| Self { raw })
+    }
+    pub fn el() -> crate::view::El<Self> {
+        crate::view::El::new(Self::new)
+    }
+    pub fn object_id(&self) -> Result<i64> {
+        Ok(self.raw.object_id()?)
+    }
+    pub fn same_object(&self, other: &impl crate::Upcast<AvaloniaObject>) -> Result<bool> {
+        Ok(self.raw.object_id()? == other.upcast_ref().raw.object_id()?)
+    }
+    pub fn is<Target>(&self) -> bool
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::is_instance(self)
+    }
+    pub fn cast<Target>(&self) -> Option<Target>
+    where
+        Self: crate::Downcast<Target>,
+    {
+        <Self as crate::Downcast<Target>>::downcast(self)
+    }
+    pub fn name(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_name()?)) }
+    }
+    pub fn set_name(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_name(Some(&value))?)
+    }
+    pub fn classes(&self) -> Result<StringList> {
+        Ok(StringList { raw: self.raw.get_classes()? })
+    }
+    pub fn data_context(&self) -> Result<Variant> {
+        Ok(Variant::from_abi(self.raw.get_data_context()?))
+    }
+    pub fn set_data_context(&self, value: impl Into<Variant>) -> Result<()> {
+        let value = value.into().to_abi()?;
+        Ok(self.raw.set_data_context(&value)?)
+    }
+    pub fn is_initialized(&self) -> Result<bool> { Ok(self.raw.get_is_initialized()?) }
+    pub fn templated_parent(&self) -> Result<Option<AvaloniaObject>> {
+        Ok(self.raw.get_templated_parent()?.map(|raw| AvaloniaObject { raw }))
+    }
+    pub fn parent(&self) -> Result<Option<StyledElement>> {
+        Ok(self.raw.get_parent()?.map(|raw| StyledElement { raw }))
+    }
+    pub fn actual_theme_variant(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_actual_theme_variant()?)) }
+    }
+    pub fn subscribe_attached_to_logical_tree<R: crate::IntoEventResult>(&self, mut callback: impl FnMut(()) -> R + 'static) -> Result<EventSubscription> {
+        let cb = crate::reactive::UiCallbackHandle::new(move || {
+            if let Err(err) = callback(()).into_event_result() {
+                crate::runtime::report_ui_error("attached_to_logical_tree callback failed", &err);
+            }
+        });
+        let handler = sys::styled_element_attached_to_logical_tree_handler(move || {
+            let _ = cb.with(|f| f());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_attached_to_logical_tree(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_attached_to_logical_tree(subscription_id)))
+    }
+    pub fn on_attached_to_logical_tree<R: crate::IntoEventResult>(&self, scope: &crate::AppScope, callback: impl FnMut(()) -> R + 'static) -> Result<()> {
+        scope.retain_subscription(self.subscribe_attached_to_logical_tree(callback)?);
+        Ok(())
+    }
+    pub fn subscribe_detached_from_logical_tree<R: crate::IntoEventResult>(&self, mut callback: impl FnMut(()) -> R + 'static) -> Result<EventSubscription> {
+        let cb = crate::reactive::UiCallbackHandle::new(move || {
+            if let Err(err) = callback(()).into_event_result() {
+                crate::runtime::report_ui_error("detached_from_logical_tree callback failed", &err);
+            }
+        });
+        let handler = sys::styled_element_detached_from_logical_tree_handler(move || {
+            let _ = cb.with(|f| f());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_detached_from_logical_tree(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_detached_from_logical_tree(subscription_id)))
+    }
+    pub fn on_detached_from_logical_tree<R: crate::IntoEventResult>(&self, scope: &crate::AppScope, callback: impl FnMut(()) -> R + 'static) -> Result<()> {
+        scope.retain_subscription(self.subscribe_detached_from_logical_tree(callback)?);
+        Ok(())
+    }
+    pub fn subscribe_data_context_changed<R: crate::IntoEventResult>(&self, mut callback: impl FnMut(()) -> R + 'static) -> Result<EventSubscription> {
+        let cb = crate::reactive::UiCallbackHandle::new(move || {
+            if let Err(err) = callback(()).into_event_result() {
+                crate::runtime::report_ui_error("data_context_changed callback failed", &err);
+            }
+        });
+        let handler = sys::styled_element_data_context_changed_handler(move || {
+            let _ = cb.with(|f| f());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_data_context_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_data_context_changed(subscription_id)))
+    }
+    pub fn on_data_context_changed<R: crate::IntoEventResult>(&self, scope: &crate::AppScope, callback: impl FnMut(()) -> R + 'static) -> Result<()> {
+        scope.retain_subscription(self.subscribe_data_context_changed(callback)?);
+        Ok(())
+    }
+    pub fn subscribe_initialized<R: crate::IntoEventResult>(&self, mut callback: impl FnMut(()) -> R + 'static) -> Result<EventSubscription> {
+        let cb = crate::reactive::UiCallbackHandle::new(move || {
+            if let Err(err) = callback(()).into_event_result() {
+                crate::runtime::report_ui_error("initialized callback failed", &err);
+            }
+        });
+        let handler = sys::styled_element_initialized_handler(move || {
+            let _ = cb.with(|f| f());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_initialized(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_initialized(subscription_id)))
+    }
+    pub fn on_initialized<R: crate::IntoEventResult>(&self, scope: &crate::AppScope, callback: impl FnMut(()) -> R + 'static) -> Result<()> {
+        scope.retain_subscription(self.subscribe_initialized(callback)?);
+        Ok(())
+    }
+    pub fn subscribe_resources_changed<R: crate::IntoEventResult>(&self, mut callback: impl FnMut(()) -> R + 'static) -> Result<EventSubscription> {
+        let cb = crate::reactive::UiCallbackHandle::new(move || {
+            if let Err(err) = callback(()).into_event_result() {
+                crate::runtime::report_ui_error("resources_changed callback failed", &err);
+            }
+        });
+        let handler = sys::styled_element_resources_changed_handler(move || {
+            let _ = cb.with(|f| f());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_resources_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_resources_changed(subscription_id)))
+    }
+    pub fn on_resources_changed<R: crate::IntoEventResult>(&self, scope: &crate::AppScope, callback: impl FnMut(()) -> R + 'static) -> Result<()> {
+        scope.retain_subscription(self.subscribe_resources_changed(callback)?);
+        Ok(())
+    }
+    pub fn subscribe_actual_theme_variant_changed<R: crate::IntoEventResult>(&self, mut callback: impl FnMut(()) -> R + 'static) -> Result<EventSubscription> {
+        let cb = crate::reactive::UiCallbackHandle::new(move || {
+            if let Err(err) = callback(()).into_event_result() {
+                crate::runtime::report_ui_error("actual_theme_variant_changed callback failed", &err);
+            }
+        });
+        let handler = sys::styled_element_actual_theme_variant_changed_handler(move || {
+            let _ = cb.with(|f| f());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_actual_theme_variant_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_actual_theme_variant_changed(subscription_id)))
+    }
+    pub fn on_actual_theme_variant_changed<R: crate::IntoEventResult>(&self, scope: &crate::AppScope, callback: impl FnMut(()) -> R + 'static) -> Result<()> {
+        scope.retain_subscription(self.subscribe_actual_theme_variant_changed(callback)?);
+        Ok(())
+    }
+    pub fn is_visible(&self) -> Result<bool> { Ok(self.raw.get_is_visible()?) }
+    pub fn set_visible(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_is_visible(value)?)
+    }
+    pub fn opacity(&self) -> Result<f64> { Ok(self.raw.get_opacity()?) }
+    pub fn set_opacity(&self, value: f64) -> Result<()> {
+        Ok(self.raw.set_opacity(value)?)
+    }
+    pub fn context_menu(&self) -> Result<Option<ContextMenu>> {
+        Ok(self.raw.get_context_menu()?.map(|raw| ContextMenu { raw }))
+    }
+    pub fn set_context_menu(&self, value: Option<&ContextMenu>) -> Result<()> {
+        Ok(self.raw.set_context_menu(value.map(|value| &value.raw))?)
+    }
+    pub fn context_flyout(&self) -> Result<Option<FlyoutBase>> {
+        Ok(self.raw.get_context_flyout()?.map(|raw| FlyoutBase { raw }))
+    }
+    pub fn set_context_flyout(&self, value: Option<&FlyoutBase>) -> Result<()> {
+        Ok(self.raw.set_context_flyout(value.map(|value| &value.raw))?)
+    }
+    pub fn is_loaded(&self) -> Result<bool> { Ok(self.raw.get_is_loaded()?) }
+    pub fn tag(&self) -> Result<Variant> {
+        Ok(Variant::from_abi(self.raw.get_tag()?))
+    }
+    pub fn set_tag(&self, value: impl Into<Variant>) -> Result<()> {
+        let value = value.into().to_abi()?;
+        Ok(self.raw.set_tag(&value)?)
+    }
+    pub fn width(&self) -> Result<f64> { Ok(self.raw.get_width()?) }
+    pub fn set_width(&self, value: f64) -> Result<()> {
+        Ok(self.raw.set_width(value)?)
+    }
+    pub fn height(&self) -> Result<f64> { Ok(self.raw.get_height()?) }
+    pub fn set_height(&self, value: f64) -> Result<()> {
+        Ok(self.raw.set_height(value)?)
+    }
+    pub fn min_width(&self) -> Result<f64> { Ok(self.raw.get_min_width()?) }
+    pub fn set_min_width(&self, value: f64) -> Result<()> {
+        Ok(self.raw.set_min_width(value)?)
+    }
+    pub fn max_width(&self) -> Result<f64> { Ok(self.raw.get_max_width()?) }
+    pub fn set_max_width(&self, value: f64) -> Result<()> {
+        Ok(self.raw.set_max_width(value)?)
+    }
+    pub fn min_height(&self) -> Result<f64> { Ok(self.raw.get_min_height()?) }
+    pub fn set_min_height(&self, value: f64) -> Result<()> {
+        Ok(self.raw.set_min_height(value)?)
+    }
+    pub fn max_height(&self) -> Result<f64> { Ok(self.raw.get_max_height()?) }
+    pub fn set_max_height(&self, value: f64) -> Result<()> {
+        Ok(self.raw.set_max_height(value)?)
+    }
+    pub fn margin(&self) -> Result<Thickness> {
+        Ok(self.raw.get_margin()?.into())
+    }
+    pub fn set_margin(&self, value: impl Into<Thickness>) -> Result<()> {
+        Ok(self.raw.set_margin(value.into().into())?)
+    }
+    pub fn horizontal_alignment(&self) -> Result<HorizontalAlignment> {
+        let value = self.raw.get_horizontal_alignment()?;
+        HorizontalAlignment::try_from(value)
+    }
+    pub fn set_horizontal_alignment(&self, value: HorizontalAlignment) -> Result<()> {
+        Ok(self.raw.set_horizontal_alignment(value as i32)?)
+    }
+    pub fn vertical_alignment(&self) -> Result<VerticalAlignment> {
+        let value = self.raw.get_vertical_alignment()?;
+        VerticalAlignment::try_from(value)
+    }
+    pub fn set_vertical_alignment(&self, value: VerticalAlignment) -> Result<()> {
+        Ok(self.raw.set_vertical_alignment(value as i32)?)
+    }
+    pub fn focusable(&self) -> Result<bool> { Ok(self.raw.get_focusable()?) }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_focusable(value)?)
+    }
+    pub fn is_enabled(&self) -> Result<bool> { Ok(self.raw.get_is_enabled()?) }
+    pub fn set_enabled(&self, value: bool) -> Result<()> {
+        Ok(self.raw.set_is_enabled(value)?)
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: NavigationMethod, key_modifiers: KeyModifiers) -> Result<bool> { Ok(self.raw.focus_with_navigation_method_and_key_modifiers(method as i32, key_modifiers.bits())? != 0) }
+    pub fn subscribe_loaded<R: crate::IntoEventResult>(&self, mut callback: impl FnMut(()) -> R + 'static) -> Result<EventSubscription> {
+        let cb = crate::reactive::UiCallbackHandle::new(move || {
+            if let Err(err) = callback(()).into_event_result() {
+                crate::runtime::report_ui_error("loaded callback failed", &err);
+            }
+        });
+        let handler = sys::control_loaded_handler(move || {
+            let _ = cb.with(|f| f());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_loaded(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_loaded(subscription_id)))
+    }
+    pub fn on_loaded<R: crate::IntoEventResult>(&self, scope: &crate::AppScope, callback: impl FnMut(()) -> R + 'static) -> Result<()> {
+        scope.retain_subscription(self.subscribe_loaded(callback)?);
+        Ok(())
+    }
+    pub fn subscribe_unloaded<R: crate::IntoEventResult>(&self, mut callback: impl FnMut(()) -> R + 'static) -> Result<EventSubscription> {
+        let cb = crate::reactive::UiCallbackHandle::new(move || {
+            if let Err(err) = callback(()).into_event_result() {
+                crate::runtime::report_ui_error("unloaded callback failed", &err);
+            }
+        });
+        let handler = sys::control_unloaded_handler(move || {
+            let _ = cb.with(|f| f());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_unloaded(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_unloaded(subscription_id)))
+    }
+    pub fn on_unloaded<R: crate::IntoEventResult>(&self, scope: &crate::AppScope, callback: impl FnMut(()) -> R + 'static) -> Result<()> {
+        scope.retain_subscription(self.subscribe_unloaded(callback)?);
+        Ok(())
+    }
+    pub fn subscribe_size_changed<R: crate::IntoEventResult>(&self, mut callback: impl FnMut(&mut ControlSizeChangedEventArgs) -> R + 'static) -> Result<EventSubscription> {
+        let cb = crate::reactive::UiCallbackHandle::new(move |ev: &mut ControlSizeChangedEventArgs| {
+            if let Err(err) = callback(ev).into_event_result() {
+                crate::runtime::report_ui_error("size_changed callback failed", &err);
+            }
+        });
+        let handler = sys::control_size_changed_handler(move |raw_event| {
+            let mut safe = ControlSizeChangedEventArgs::from_sys(raw_event)?;
+            let _ = cb.with(|f| f(&mut safe));
+            safe.write_back(raw_event);
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_size_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_size_changed(subscription_id)))
+    }
+    pub fn on_size_changed<R: crate::IntoEventResult>(&self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlSizeChangedEventArgs) -> R + 'static) -> Result<()> {
+        scope.retain_subscription(self.subscribe_size_changed(callback)?);
+        Ok(())
+    }
+    pub fn subscribe_got_focus<R: crate::IntoEventResult>(&self, mut callback: impl FnMut(&mut ControlGotFocusEventArgs) -> R + 'static) -> Result<EventSubscription> {
+        let cb = crate::reactive::UiCallbackHandle::new(move |ev: &mut ControlGotFocusEventArgs| {
+            if let Err(err) = callback(ev).into_event_result() {
+                crate::runtime::report_ui_error("got_focus callback failed", &err);
+            }
+        });
+        let handler = sys::control_got_focus_handler(move |raw_event| {
+            let mut safe = ControlGotFocusEventArgs::from_sys(raw_event)?;
+            let _ = cb.with(|f| f(&mut safe));
+            safe.write_back(raw_event);
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_got_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_got_focus(subscription_id)))
+    }
+    pub fn on_got_focus<R: crate::IntoEventResult>(&self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlGotFocusEventArgs) -> R + 'static) -> Result<()> {
+        scope.retain_subscription(self.subscribe_got_focus(callback)?);
+        Ok(())
+    }
+    pub fn subscribe_lost_focus<R: crate::IntoEventResult>(&self, mut callback: impl FnMut(()) -> R + 'static) -> Result<EventSubscription> {
+        let cb = crate::reactive::UiCallbackHandle::new(move || {
+            if let Err(err) = callback(()).into_event_result() {
+                crate::runtime::report_ui_error("lost_focus callback failed", &err);
+            }
+        });
+        let handler = sys::control_lost_focus_handler(move || {
+            let _ = cb.with(|f| f());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_lost_focus(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_lost_focus(subscription_id)))
+    }
+    pub fn on_lost_focus<R: crate::IntoEventResult>(&self, scope: &crate::AppScope, callback: impl FnMut(()) -> R + 'static) -> Result<()> {
+        scope.retain_subscription(self.subscribe_lost_focus(callback)?);
+        Ok(())
+    }
+    pub fn subscribe_key_down<R: crate::IntoEventResult>(&self, mut callback: impl FnMut(&mut ControlKeyDownEventArgs) -> R + 'static) -> Result<EventSubscription> {
+        let cb = crate::reactive::UiCallbackHandle::new(move |ev: &mut ControlKeyDownEventArgs| {
+            if let Err(err) = callback(ev).into_event_result() {
+                crate::runtime::report_ui_error("key_down callback failed", &err);
+            }
+        });
+        let handler = sys::control_key_down_handler(move |raw_event| {
+            let mut safe = ControlKeyDownEventArgs::from_sys(raw_event)?;
+            let _ = cb.with(|f| f(&mut safe));
+            safe.write_back(raw_event);
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_key_down(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_down(subscription_id)))
+    }
+    pub fn on_key_down<R: crate::IntoEventResult>(&self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyDownEventArgs) -> R + 'static) -> Result<()> {
+        scope.retain_subscription(self.subscribe_key_down(callback)?);
+        Ok(())
+    }
+    pub fn subscribe_key_up<R: crate::IntoEventResult>(&self, mut callback: impl FnMut(&mut ControlKeyUpEventArgs) -> R + 'static) -> Result<EventSubscription> {
+        let cb = crate::reactive::UiCallbackHandle::new(move |ev: &mut ControlKeyUpEventArgs| {
+            if let Err(err) = callback(ev).into_event_result() {
+                crate::runtime::report_ui_error("key_up callback failed", &err);
+            }
+        });
+        let handler = sys::control_key_up_handler(move |raw_event| {
+            let mut safe = ControlKeyUpEventArgs::from_sys(raw_event)?;
+            let _ = cb.with(|f| f(&mut safe));
+            safe.write_back(raw_event);
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_key_up(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_key_up(subscription_id)))
+    }
+    pub fn on_key_up<R: crate::IntoEventResult>(&self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlKeyUpEventArgs) -> R + 'static) -> Result<()> {
+        scope.retain_subscription(self.subscribe_key_up(callback)?);
+        Ok(())
+    }
+    pub fn subscribe_pointer_entered<R: crate::IntoEventResult>(&self, mut callback: impl FnMut(&mut ControlPointerEnteredEventArgs) -> R + 'static) -> Result<EventSubscription> {
+        let cb = crate::reactive::UiCallbackHandle::new(move |ev: &mut ControlPointerEnteredEventArgs| {
+            if let Err(err) = callback(ev).into_event_result() {
+                crate::runtime::report_ui_error("pointer_entered callback failed", &err);
+            }
+        });
+        let handler = sys::control_pointer_entered_handler(move |raw_event| {
+            let mut safe = ControlPointerEnteredEventArgs::from_sys(raw_event)?;
+            let _ = cb.with(|f| f(&mut safe));
+            safe.write_back(raw_event);
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_pointer_entered(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_entered(subscription_id)))
+    }
+    pub fn on_pointer_entered<R: crate::IntoEventResult>(&self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) -> R + 'static) -> Result<()> {
+        scope.retain_subscription(self.subscribe_pointer_entered(callback)?);
+        Ok(())
+    }
+    pub fn subscribe_pointer_exited<R: crate::IntoEventResult>(&self, mut callback: impl FnMut(&mut ControlPointerExitedEventArgs) -> R + 'static) -> Result<EventSubscription> {
+        let cb = crate::reactive::UiCallbackHandle::new(move |ev: &mut ControlPointerExitedEventArgs| {
+            if let Err(err) = callback(ev).into_event_result() {
+                crate::runtime::report_ui_error("pointer_exited callback failed", &err);
+            }
+        });
+        let handler = sys::control_pointer_exited_handler(move |raw_event| {
+            let mut safe = ControlPointerExitedEventArgs::from_sys(raw_event)?;
+            let _ = cb.with(|f| f(&mut safe));
+            safe.write_back(raw_event);
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_pointer_exited(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_exited(subscription_id)))
+    }
+    pub fn on_pointer_exited<R: crate::IntoEventResult>(&self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerExitedEventArgs) -> R + 'static) -> Result<()> {
+        scope.retain_subscription(self.subscribe_pointer_exited(callback)?);
+        Ok(())
+    }
+    pub fn subscribe_pointer_wheel_changed<R: crate::IntoEventResult>(&self, mut callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) -> R + 'static) -> Result<EventSubscription> {
+        let cb = crate::reactive::UiCallbackHandle::new(move |ev: &mut ControlPointerWheelChangedEventArgs| {
+            if let Err(err) = callback(ev).into_event_result() {
+                crate::runtime::report_ui_error("pointer_wheel_changed callback failed", &err);
+            }
+        });
+        let handler = sys::control_pointer_wheel_changed_handler(move |raw_event| {
+            let mut safe = ControlPointerWheelChangedEventArgs::from_sys(raw_event)?;
+            let _ = cb.with(|f| f(&mut safe));
+            safe.write_back(raw_event);
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_pointer_wheel_changed(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_pointer_wheel_changed(subscription_id)))
+    }
+    pub fn on_pointer_wheel_changed<R: crate::IntoEventResult>(&self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) -> R + 'static) -> Result<()> {
+        scope.retain_subscription(self.subscribe_pointer_wheel_changed(callback)?);
+        Ok(())
+    }
+    pub fn subscribe_tapped<R: crate::IntoEventResult>(&self, mut callback: impl FnMut(&mut ControlTappedEventArgs) -> R + 'static) -> Result<EventSubscription> {
+        let cb = crate::reactive::UiCallbackHandle::new(move |ev: &mut ControlTappedEventArgs| {
+            if let Err(err) = callback(ev).into_event_result() {
+                crate::runtime::report_ui_error("tapped callback failed", &err);
+            }
+        });
+        let handler = sys::control_tapped_handler(move |raw_event| {
+            let mut safe = ControlTappedEventArgs::from_sys(raw_event)?;
+            let _ = cb.with(|f| f(&mut safe));
+            safe.write_back(raw_event);
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_tapped(subscription_id)))
+    }
+    pub fn on_tapped<R: crate::IntoEventResult>(&self, scope: &crate::AppScope, callback: impl FnMut(&mut ControlTappedEventArgs) -> R + 'static) -> Result<()> {
+        scope.retain_subscription(self.subscribe_tapped(callback)?);
+        Ok(())
+    }
+    pub fn subscribe_double_tapped<R: crate::IntoEventResult>(&self, mut callback: impl FnMut(()) -> R + 'static) -> Result<EventSubscription> {
+        let cb = crate::reactive::UiCallbackHandle::new(move || {
+            if let Err(err) = callback(()).into_event_result() {
+                crate::runtime::report_ui_error("double_tapped callback failed", &err);
+            }
+        });
+        let handler = sys::control_double_tapped_handler(move || {
+            let _ = cb.with(|f| f());
+            Ok(())
+        });
+        let subscription_id = self.raw.advise_double_tapped(&handler)?;
+        let source = self.raw.clone();
+        Ok(EventSubscription::new(move || source.unadvise_double_tapped(subscription_id)))
+    }
+    pub fn on_double_tapped<R: crate::IntoEventResult>(&self, scope: &crate::AppScope, callback: impl FnMut(()) -> R + 'static) -> Result<()> {
+        scope.retain_subscription(self.subscribe_double_tapped(callback)?);
+        Ok(())
+    }
+    pub fn children(&self) -> Result<ControlList> {
+        Ok(ControlList { raw: self.raw.get_children()? })
+    }
+    pub fn background(&self) -> Result<Option<Paint>> {
+        self.raw.get_background()?.as_ref().map(Paint::from_raw).transpose()
+    }
+    pub fn set_background(&self, value: impl crate::view::IntoValue<Option<Paint>>) -> Result<()> {
+        let value = value.into_value().as_ref().map(Paint::to_raw).transpose()?;
+        Ok(self.raw.set_background(value.as_ref())?)
+    }
+    pub fn direction(&self) -> Result<FlexDirection> {
+        let value = self.raw.get_direction()?;
+        FlexDirection::try_from(value)
+    }
+    pub fn set_direction(&self, value: FlexDirection) -> Result<()> {
+        Ok(self.raw.set_direction(value as i32)?)
+    }
+    pub fn justify_content(&self) -> Result<FlexJustifyContent> {
+        let value = self.raw.get_justify_content()?;
+        FlexJustifyContent::try_from(value)
+    }
+    pub fn set_justify_content(&self, value: FlexJustifyContent) -> Result<()> {
+        Ok(self.raw.set_justify_content(value as i32)?)
+    }
+    pub fn align_items(&self) -> Result<FlexAlignItems> {
+        let value = self.raw.get_align_items()?;
+        FlexAlignItems::try_from(value)
+    }
+    pub fn set_align_items(&self, value: FlexAlignItems) -> Result<()> {
+        Ok(self.raw.set_align_items(value as i32)?)
+    }
+    pub fn align_content(&self) -> Result<FlexAlignContent> {
+        let value = self.raw.get_align_content()?;
+        FlexAlignContent::try_from(value)
+    }
+    pub fn set_align_content(&self, value: FlexAlignContent) -> Result<()> {
+        Ok(self.raw.set_align_content(value as i32)?)
+    }
+    pub fn wrap(&self) -> Result<FlexWrap> {
+        let value = self.raw.get_wrap()?;
+        FlexWrap::try_from(value)
+    }
+    pub fn set_wrap(&self, value: FlexWrap) -> Result<()> {
+        Ok(self.raw.set_wrap(value as i32)?)
+    }
+    pub fn column_spacing(&self) -> Result<f64> { Ok(self.raw.get_column_spacing()?) }
+    pub fn set_column_spacing(&self, value: f64) -> Result<()> {
+        Ok(self.raw.set_column_spacing(value)?)
+    }
+    pub fn row_spacing(&self) -> Result<f64> { Ok(self.raw.get_row_spacing()?) }
+    pub fn set_row_spacing(&self, value: f64) -> Result<()> {
+        Ok(self.raw.set_row_spacing(value)?)
+    }
+    pub fn canvas_left(&self) -> Result<f64> {
+        Canvas::left(self)
+    }
+    pub fn set_canvas_left(&self, value: f64) -> Result<()> {
+        Canvas::set_left(self, value)
+    }
+    pub fn canvas_top(&self) -> Result<f64> {
+        Canvas::top(self)
+    }
+    pub fn set_canvas_top(&self, value: f64) -> Result<()> {
+        Canvas::set_top(self, value)
+    }
+    pub fn canvas_right(&self) -> Result<f64> {
+        Canvas::right(self)
+    }
+    pub fn set_canvas_right(&self, value: f64) -> Result<()> {
+        Canvas::set_right(self, value)
+    }
+    pub fn canvas_bottom(&self) -> Result<f64> {
+        Canvas::bottom(self)
+    }
+    pub fn set_canvas_bottom(&self, value: f64) -> Result<()> {
+        Canvas::set_bottom(self, value)
+    }
+    pub fn dock_panel_dock(&self) -> Result<Dock> {
+        DockPanel::dock(self)
+    }
+    pub fn set_dock_panel_dock(&self, value: Dock) -> Result<()> {
+        DockPanel::set_dock(self, value)
+    }
+    pub fn grid_column(&self) -> Result<i32> {
+        Grid::column(self)
+    }
+    pub fn set_grid_column(&self, value: i32) -> Result<()> {
+        Grid::set_column(self, value)
+    }
+    pub fn grid_row(&self) -> Result<i32> {
+        Grid::row(self)
+    }
+    pub fn set_grid_row(&self, value: i32) -> Result<()> {
+        Grid::set_row(self, value)
+    }
+    pub fn grid_column_span(&self) -> Result<i32> {
+        Grid::column_span(self)
+    }
+    pub fn set_grid_column_span(&self, value: i32) -> Result<()> {
+        Grid::set_column_span(self, value)
+    }
+    pub fn grid_row_span(&self) -> Result<i32> {
+        Grid::row_span(self)
+    }
+    pub fn set_grid_row_span(&self, value: i32) -> Result<()> {
+        Grid::set_row_span(self, value)
+    }
+    pub fn grid_is_shared_size_scope(&self) -> Result<bool> {
+        Grid::is_shared_size_scope(self)
+    }
+    pub fn set_grid_is_shared_size_scope(&self, value: bool) -> Result<()> {
+        Grid::set_is_shared_size_scope(self, value)
+    }
+    pub fn relative_panel_align_left_with_panel(&self) -> Result<bool> {
+        RelativePanel::align_left_with_panel(self)
+    }
+    pub fn set_relative_panel_align_left_with_panel(&self, value: bool) -> Result<()> {
+        RelativePanel::set_align_left_with_panel(self, value)
+    }
+    pub fn relative_panel_align_right_with_panel(&self) -> Result<bool> {
+        RelativePanel::align_right_with_panel(self)
+    }
+    pub fn set_relative_panel_align_right_with_panel(&self, value: bool) -> Result<()> {
+        RelativePanel::set_align_right_with_panel(self, value)
+    }
+    pub fn relative_panel_align_top_with_panel(&self) -> Result<bool> {
+        RelativePanel::align_top_with_panel(self)
+    }
+    pub fn set_relative_panel_align_top_with_panel(&self, value: bool) -> Result<()> {
+        RelativePanel::set_align_top_with_panel(self, value)
+    }
+    pub fn relative_panel_align_bottom_with_panel(&self) -> Result<bool> {
+        RelativePanel::align_bottom_with_panel(self)
+    }
+    pub fn set_relative_panel_align_bottom_with_panel(&self, value: bool) -> Result<()> {
+        RelativePanel::set_align_bottom_with_panel(self, value)
+    }
+    pub fn relative_panel_align_horizontal_center_with_panel(&self) -> Result<bool> {
+        RelativePanel::align_horizontal_center_with_panel(self)
+    }
+    pub fn set_relative_panel_align_horizontal_center_with_panel(&self, value: bool) -> Result<()> {
+        RelativePanel::set_align_horizontal_center_with_panel(self, value)
+    }
+    pub fn relative_panel_align_vertical_center_with_panel(&self) -> Result<bool> {
+        RelativePanel::align_vertical_center_with_panel(self)
+    }
+    pub fn set_relative_panel_align_vertical_center_with_panel(&self, value: bool) -> Result<()> {
+        RelativePanel::set_align_vertical_center_with_panel(self, value)
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility(&self) -> Result<ScrollBarVisibility> {
+        ScrollViewer::attached_horizontal_scroll_bar_visibility(self)
+    }
+    pub fn set_scroll_viewer_horizontal_scroll_bar_visibility(&self, value: ScrollBarVisibility) -> Result<()> {
+        ScrollViewer::set_attached_horizontal_scroll_bar_visibility(self, value)
+    }
+    pub fn tool_tip_tip(&self) -> Result<Option<String>> {
+        ToolTip::tip(self)
+    }
+    pub fn set_tool_tip_tip(&self, value: impl AsRef<str>) -> Result<()> {
+        ToolTip::set_tip(self, value)
+    }
+    pub fn tool_tip_is_open(&self) -> Result<bool> {
+        ToolTip::is_open(self)
+    }
+    pub fn set_tool_tip_is_open(&self, value: bool) -> Result<()> {
+        ToolTip::set_is_open(self, value)
+    }
+    pub fn tool_tip_placement(&self) -> Result<PlacementMode> {
+        ToolTip::placement(self)
+    }
+    pub fn set_tool_tip_placement(&self, value: PlacementMode) -> Result<()> {
+        ToolTip::set_placement(self, value)
+    }
+    pub fn tool_tip_horizontal_offset(&self) -> Result<f64> {
+        ToolTip::horizontal_offset(self)
+    }
+    pub fn set_tool_tip_horizontal_offset(&self, value: f64) -> Result<()> {
+        ToolTip::set_horizontal_offset(self, value)
+    }
+    pub fn tool_tip_vertical_offset(&self) -> Result<f64> {
+        ToolTip::vertical_offset(self)
+    }
+    pub fn set_tool_tip_vertical_offset(&self, value: f64) -> Result<()> {
+        ToolTip::set_vertical_offset(self, value)
+    }
+    pub fn tool_tip_show_delay(&self) -> Result<i32> {
+        ToolTip::show_delay(self)
+    }
+    pub fn set_tool_tip_show_delay(&self, value: i32) -> Result<()> {
+        ToolTip::set_show_delay(self, value)
+    }
+    pub fn tool_tip_between_show_delay(&self) -> Result<i32> {
+        ToolTip::between_show_delay(self)
+    }
+    pub fn set_tool_tip_between_show_delay(&self, value: i32) -> Result<()> {
+        ToolTip::set_between_show_delay(self, value)
+    }
+    pub fn tool_tip_show_on_disabled(&self) -> Result<bool> {
+        ToolTip::show_on_disabled(self)
+    }
+    pub fn set_tool_tip_show_on_disabled(&self, value: bool) -> Result<()> {
+        ToolTip::set_show_on_disabled(self, value)
+    }
+    pub fn tool_tip_service_enabled(&self) -> Result<bool> {
+        ToolTip::service_enabled(self)
+    }
+    pub fn set_tool_tip_service_enabled(&self, value: bool) -> Result<()> {
+        ToolTip::set_service_enabled(self, value)
+    }
+}
+
+impl std::ops::Deref for FlexPanel {
+    type Target = Panel;
+    fn deref(&self) -> &Self::Target {
+        unsafe { &*(self as *const Self as *const Self::Target) }
+    }
+}
+
+unsafe impl crate::Upcast<AvaloniaObject> for FlexPanel {
+    fn upcast(&self) -> AvaloniaObject {
+        AvaloniaObject {
+            raw: unsafe { self.raw.cast_clone() },
+        }
+    }
+    fn upcast_ref(&self) -> &AvaloniaObject {
+        unsafe { &*(self as *const Self as *const AvaloniaObject) }
+    }
+}
+
+impl AsRef<AvaloniaObject> for FlexPanel {
+    fn as_ref(&self) -> &AvaloniaObject {
+        <Self as crate::Upcast<AvaloniaObject>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<FlexPanel> for AvaloniaObject {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnFlexPanel>().is_ok()
+    }
+    fn downcast(&self) -> Option<FlexPanel> {
+        self.raw
+            .query_interface::<sys::IAvnFlexPanel>()
+            .ok()
+            .map(|raw| FlexPanel { raw })
+    }
+}
+
+unsafe impl crate::Upcast<StyledElement> for FlexPanel {
+    fn upcast(&self) -> StyledElement {
+        StyledElement {
+            raw: unsafe { self.raw.cast_clone() },
+        }
+    }
+    fn upcast_ref(&self) -> &StyledElement {
+        unsafe { &*(self as *const Self as *const StyledElement) }
+    }
+}
+
+impl AsRef<StyledElement> for FlexPanel {
+    fn as_ref(&self) -> &StyledElement {
+        <Self as crate::Upcast<StyledElement>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<FlexPanel> for StyledElement {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnFlexPanel>().is_ok()
+    }
+    fn downcast(&self) -> Option<FlexPanel> {
+        self.raw
+            .query_interface::<sys::IAvnFlexPanel>()
+            .ok()
+            .map(|raw| FlexPanel { raw })
+    }
+}
+
+unsafe impl crate::Upcast<Control> for FlexPanel {
+    fn upcast(&self) -> Control {
+        Control {
+            raw: unsafe { self.raw.cast_clone() },
+        }
+    }
+    fn upcast_ref(&self) -> &Control {
+        unsafe { &*(self as *const Self as *const Control) }
+    }
+}
+
+impl AsRef<Control> for FlexPanel {
+    fn as_ref(&self) -> &Control {
+        <Self as crate::Upcast<Control>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<FlexPanel> for Control {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnFlexPanel>().is_ok()
+    }
+    fn downcast(&self) -> Option<FlexPanel> {
+        self.raw
+            .query_interface::<sys::IAvnFlexPanel>()
+            .ok()
+            .map(|raw| FlexPanel { raw })
+    }
+}
+
+unsafe impl crate::Upcast<Panel> for FlexPanel {
+    fn upcast(&self) -> Panel {
+        Panel {
+            raw: unsafe { self.raw.cast_clone() },
+        }
+    }
+    fn upcast_ref(&self) -> &Panel {
+        unsafe { &*(self as *const Self as *const Panel) }
+    }
+}
+
+impl AsRef<Panel> for FlexPanel {
+    fn as_ref(&self) -> &Panel {
+        <Self as crate::Upcast<Panel>>::upcast_ref(self)
+    }
+}
+
+unsafe impl crate::Downcast<FlexPanel> for Panel {
+    fn is_instance(&self) -> bool {
+        self.raw.query_interface::<sys::IAvnFlexPanel>().is_ok()
+    }
+    fn downcast(&self) -> Option<FlexPanel> {
+        self.raw
+            .query_interface::<sys::IAvnFlexPanel>()
+            .ok()
+            .map(|raw| FlexPanel { raw })
+    }
+}
+
+impl AsControl for FlexPanel {
+    fn as_control(&self) -> Result<sys::ComPtr<sys::IAvnControl>> {
+        Ok(self.raw.query_interface()?)
+    }
+}
+
+impl crate::view::El<FlexPanel> {
+    pub fn name<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_name(v))
+        })
+    }
+    pub fn data_context<M>(self, value: impl crate::view::IntoProp<Variant, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_data_context(v))
+        })
+    }
+    pub fn on_attached_to_logical_tree<R: crate::IntoEventResult + 'static>(self, callback: impl FnMut(()) -> R + 'static) -> Self {
+        self.with_op(move |scope, control| {
+            scope.retain_subscription(control.subscribe_attached_to_logical_tree(callback)?);
+            Ok(())
+        })
+    }
+    pub fn on_detached_from_logical_tree<R: crate::IntoEventResult + 'static>(self, callback: impl FnMut(()) -> R + 'static) -> Self {
+        self.with_op(move |scope, control| {
+            scope.retain_subscription(control.subscribe_detached_from_logical_tree(callback)?);
+            Ok(())
+        })
+    }
+    pub fn on_data_context_changed<R: crate::IntoEventResult + 'static>(self, callback: impl FnMut(()) -> R + 'static) -> Self {
+        self.with_op(move |scope, control| {
+            scope.retain_subscription(control.subscribe_data_context_changed(callback)?);
+            Ok(())
+        })
+    }
+    pub fn on_initialized<R: crate::IntoEventResult + 'static>(self, callback: impl FnMut(()) -> R + 'static) -> Self {
+        self.with_op(move |scope, control| {
+            scope.retain_subscription(control.subscribe_initialized(callback)?);
+            Ok(())
+        })
+    }
+    pub fn on_resources_changed<R: crate::IntoEventResult + 'static>(self, callback: impl FnMut(()) -> R + 'static) -> Self {
+        self.with_op(move |scope, control| {
+            scope.retain_subscription(control.subscribe_resources_changed(callback)?);
+            Ok(())
+        })
+    }
+    pub fn on_actual_theme_variant_changed<R: crate::IntoEventResult + 'static>(self, callback: impl FnMut(()) -> R + 'static) -> Self {
+        self.with_op(move |scope, control| {
+            scope.retain_subscription(control.subscribe_actual_theme_variant_changed(callback)?);
+            Ok(())
+        })
+    }
+    pub fn visible<M>(self, value: impl crate::view::IntoProp<bool, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_visible(v))
+        })
+    }
+    pub fn is_visible<M>(self, value: impl crate::view::IntoProp<bool, M> + 'static) -> Self {
+        self.visible(value)
+    }
+    pub fn opacity<M>(self, value: impl crate::view::IntoProp<f64, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_opacity(v))
+        })
+    }
+    pub fn context_menu<M>(self, value: impl crate::view::IntoProp<Option<ContextMenu>, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_context_menu(v.as_ref()))
+        })
+    }
+    pub fn context_flyout<M>(self, value: impl crate::view::IntoProp<Option<FlyoutBase>, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_context_flyout(v.as_ref()))
+        })
+    }
+    pub fn tag<M>(self, value: impl crate::view::IntoProp<Variant, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_tag(v))
+        })
+    }
+    pub fn width<M>(self, value: impl crate::view::IntoProp<f64, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_width(v))
+        })
+    }
+    pub fn height<M>(self, value: impl crate::view::IntoProp<f64, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_height(v))
+        })
+    }
+    pub fn min_width<M>(self, value: impl crate::view::IntoProp<f64, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_min_width(v))
+        })
+    }
+    pub fn max_width<M>(self, value: impl crate::view::IntoProp<f64, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_max_width(v))
+        })
+    }
+    pub fn min_height<M>(self, value: impl crate::view::IntoProp<f64, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_min_height(v))
+        })
+    }
+    pub fn max_height<M>(self, value: impl crate::view::IntoProp<f64, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_max_height(v))
+        })
+    }
+    pub fn margin<M>(self, value: impl crate::view::IntoProp<Thickness, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_margin(v))
+        })
+    }
+    pub fn horizontal_alignment<M>(self, value: impl crate::view::IntoProp<HorizontalAlignment, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_horizontal_alignment(v))
+        })
+    }
+    pub fn vertical_alignment<M>(self, value: impl crate::view::IntoProp<VerticalAlignment, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_vertical_alignment(v))
+        })
+    }
+    pub fn focusable<M>(self, value: impl crate::view::IntoProp<bool, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_focusable(v))
+        })
+    }
+    pub fn enabled<M>(self, value: impl crate::view::IntoProp<bool, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_enabled(v))
+        })
+    }
+    pub fn is_enabled<M>(self, value: impl crate::view::IntoProp<bool, M> + 'static) -> Self {
+        self.enabled(value)
+    }
+    pub fn on_loaded<R: crate::IntoEventResult + 'static>(self, callback: impl FnMut(()) -> R + 'static) -> Self {
+        self.with_op(move |scope, control| {
+            scope.retain_subscription(control.subscribe_loaded(callback)?);
+            Ok(())
+        })
+    }
+    pub fn on_unloaded<R: crate::IntoEventResult + 'static>(self, callback: impl FnMut(()) -> R + 'static) -> Self {
+        self.with_op(move |scope, control| {
+            scope.retain_subscription(control.subscribe_unloaded(callback)?);
+            Ok(())
+        })
+    }
+    pub fn on_size_changed<R: crate::IntoEventResult + 'static>(self, callback: impl FnMut(&mut ControlSizeChangedEventArgs) -> R + 'static) -> Self {
+        self.with_op(move |scope, control| {
+            scope.retain_subscription(control.subscribe_size_changed(callback)?);
+            Ok(())
+        })
+    }
+    pub fn on_got_focus<R: crate::IntoEventResult + 'static>(self, callback: impl FnMut(&mut ControlGotFocusEventArgs) -> R + 'static) -> Self {
+        self.with_op(move |scope, control| {
+            scope.retain_subscription(control.subscribe_got_focus(callback)?);
+            Ok(())
+        })
+    }
+    pub fn on_lost_focus<R: crate::IntoEventResult + 'static>(self, callback: impl FnMut(()) -> R + 'static) -> Self {
+        self.with_op(move |scope, control| {
+            scope.retain_subscription(control.subscribe_lost_focus(callback)?);
+            Ok(())
+        })
+    }
+    pub fn on_key_down<R: crate::IntoEventResult + 'static>(self, callback: impl FnMut(&mut ControlKeyDownEventArgs) -> R + 'static) -> Self {
+        self.with_op(move |scope, control| {
+            scope.retain_subscription(control.subscribe_key_down(callback)?);
+            Ok(())
+        })
+    }
+    pub fn on_key_up<R: crate::IntoEventResult + 'static>(self, callback: impl FnMut(&mut ControlKeyUpEventArgs) -> R + 'static) -> Self {
+        self.with_op(move |scope, control| {
+            scope.retain_subscription(control.subscribe_key_up(callback)?);
+            Ok(())
+        })
+    }
+    pub fn on_pointer_entered<R: crate::IntoEventResult + 'static>(self, callback: impl FnMut(&mut ControlPointerEnteredEventArgs) -> R + 'static) -> Self {
+        self.with_op(move |scope, control| {
+            scope.retain_subscription(control.subscribe_pointer_entered(callback)?);
+            Ok(())
+        })
+    }
+    pub fn on_pointer_exited<R: crate::IntoEventResult + 'static>(self, callback: impl FnMut(&mut ControlPointerExitedEventArgs) -> R + 'static) -> Self {
+        self.with_op(move |scope, control| {
+            scope.retain_subscription(control.subscribe_pointer_exited(callback)?);
+            Ok(())
+        })
+    }
+    pub fn on_pointer_wheel_changed<R: crate::IntoEventResult + 'static>(self, callback: impl FnMut(&mut ControlPointerWheelChangedEventArgs) -> R + 'static) -> Self {
+        self.with_op(move |scope, control| {
+            scope.retain_subscription(control.subscribe_pointer_wheel_changed(callback)?);
+            Ok(())
+        })
+    }
+    pub fn on_tapped<R: crate::IntoEventResult + 'static>(self, callback: impl FnMut(&mut ControlTappedEventArgs) -> R + 'static) -> Self {
+        self.with_op(move |scope, control| {
+            scope.retain_subscription(control.subscribe_tapped(callback)?);
+            Ok(())
+        })
+    }
+    pub fn on_double_tapped<R: crate::IntoEventResult + 'static>(self, callback: impl FnMut(()) -> R + 'static) -> Self {
+        self.with_op(move |scope, control| {
+            scope.retain_subscription(control.subscribe_double_tapped(callback)?);
+            Ok(())
+        })
+    }
+    pub fn child(self, value: impl crate::view::IntoChildEl + 'static) -> Self {
+        self.with_panel_child_op(move |scope, control, slot| {
+            let built = value.into_child_el().build(scope)?;
+            slot.mount(control, &built)
+        })
+    }
+    pub fn children_iter<I, C>(mut self, children: I) -> Self
+    where
+        I: IntoIterator<Item = C>,
+        C: crate::view::IntoChildEl + 'static,
+    {
+        for child in children {
+            self = self.child(child);
+        }
+        self
+    }
+    pub fn background<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_background(v))
+        })
+    }
+    pub fn direction<M>(self, value: impl crate::view::IntoProp<FlexDirection, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_direction(v))
+        })
+    }
+    pub fn justify_content<M>(self, value: impl crate::view::IntoProp<FlexJustifyContent, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_justify_content(v))
+        })
+    }
+    pub fn align_items<M>(self, value: impl crate::view::IntoProp<FlexAlignItems, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_align_items(v))
+        })
+    }
+    pub fn align_content<M>(self, value: impl crate::view::IntoProp<FlexAlignContent, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_align_content(v))
+        })
+    }
+    pub fn wrap<M>(self, value: impl crate::view::IntoProp<FlexWrap, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_wrap(v))
+        })
+    }
+    pub fn column_spacing<M>(self, value: impl crate::view::IntoProp<f64, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_column_spacing(v))
+        })
+    }
+    pub fn row_spacing<M>(self, value: impl crate::view::IntoProp<f64, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_row_spacing(v))
+        })
+    }
+    pub fn canvas_left<M>(self, value: impl crate::view::IntoProp<f64, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_canvas_left(v))
+        })
+    }
+    pub fn canvas_top<M>(self, value: impl crate::view::IntoProp<f64, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_canvas_top(v))
+        })
+    }
+    pub fn canvas_right<M>(self, value: impl crate::view::IntoProp<f64, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_canvas_right(v))
+        })
+    }
+    pub fn canvas_bottom<M>(self, value: impl crate::view::IntoProp<f64, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_canvas_bottom(v))
+        })
+    }
+    pub fn dock_panel_dock<M>(self, value: impl crate::view::IntoProp<Dock, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_dock_panel_dock(v))
+        })
+    }
+    pub fn grid_column<M>(self, value: impl crate::view::IntoProp<i32, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_grid_column(v))
+        })
+    }
+    pub fn grid_row<M>(self, value: impl crate::view::IntoProp<i32, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_grid_row(v))
+        })
+    }
+    pub fn grid_column_span<M>(self, value: impl crate::view::IntoProp<i32, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_grid_column_span(v))
+        })
+    }
+    pub fn grid_row_span<M>(self, value: impl crate::view::IntoProp<i32, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_grid_row_span(v))
+        })
+    }
+    pub fn grid_is_shared_size_scope<M>(self, value: impl crate::view::IntoProp<bool, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_grid_is_shared_size_scope(v))
+        })
+    }
+    pub fn relative_panel_align_left_with_panel<M>(self, value: impl crate::view::IntoProp<bool, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_left_with_panel(v))
+        })
+    }
+    pub fn relative_panel_align_right_with_panel<M>(self, value: impl crate::view::IntoProp<bool, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_right_with_panel(v))
+        })
+    }
+    pub fn relative_panel_align_top_with_panel<M>(self, value: impl crate::view::IntoProp<bool, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_top_with_panel(v))
+        })
+    }
+    pub fn relative_panel_align_bottom_with_panel<M>(self, value: impl crate::view::IntoProp<bool, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_bottom_with_panel(v))
+        })
+    }
+    pub fn relative_panel_align_horizontal_center_with_panel<M>(self, value: impl crate::view::IntoProp<bool, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_horizontal_center_with_panel(v))
+        })
+    }
+    pub fn relative_panel_align_vertical_center_with_panel<M>(self, value: impl crate::view::IntoProp<bool, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_relative_panel_align_vertical_center_with_panel(v))
+        })
+    }
+    pub fn scroll_viewer_horizontal_scroll_bar_visibility<M>(self, value: impl crate::view::IntoProp<ScrollBarVisibility, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_scroll_viewer_horizontal_scroll_bar_visibility(v))
+        })
+    }
+    pub fn tool_tip_tip<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_tool_tip_tip(v))
+        })
+    }
+    pub fn tool_tip_is_open<M>(self, value: impl crate::view::IntoProp<bool, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_tool_tip_is_open(v))
+        })
+    }
+    pub fn tool_tip_placement<M>(self, value: impl crate::view::IntoProp<PlacementMode, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_tool_tip_placement(v))
+        })
+    }
+    pub fn tool_tip_horizontal_offset<M>(self, value: impl crate::view::IntoProp<f64, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_tool_tip_horizontal_offset(v))
+        })
+    }
+    pub fn tool_tip_vertical_offset<M>(self, value: impl crate::view::IntoProp<f64, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_tool_tip_vertical_offset(v))
+        })
+    }
+    pub fn tool_tip_show_delay<M>(self, value: impl crate::view::IntoProp<i32, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_tool_tip_show_delay(v))
+        })
+    }
+    pub fn tool_tip_between_show_delay<M>(self, value: impl crate::view::IntoProp<i32, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_tool_tip_between_show_delay(v))
+        })
+    }
+    pub fn tool_tip_show_on_disabled<M>(self, value: impl crate::view::IntoProp<bool, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_tool_tip_show_on_disabled(v))
+        })
+    }
+    pub fn tool_tip_service_enabled<M>(self, value: impl crate::view::IntoProp<bool, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_tool_tip_service_enabled(v))
+        })
+    }
+    pub fn rsx_child(self, value: impl crate::view::IntoChildEl + 'static) -> Self {
+        self.child(value)
     }
 }
 
@@ -40756,6 +42464,13 @@ impl GridSplitter {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -41462,6 +43177,12 @@ impl crate::view::El<GridSplitter> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -42240,6 +43961,13 @@ impl GroupBox {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -42935,6 +44663,12 @@ impl crate::view::El<GroupBox> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -43704,6 +45438,13 @@ impl HyperlinkButton {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -44455,6 +46196,12 @@ impl crate::view::El<HyperlinkButton> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -45273,6 +47020,13 @@ impl IconElement {
     }
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
+    }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
     }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
@@ -47301,6 +49055,13 @@ impl ItemsControl {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -47920,6 +49681,12 @@ impl crate::view::El<ItemsControl> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -48675,6 +50442,13 @@ impl Label {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -49332,6 +51106,12 @@ impl crate::view::El<Label> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -51281,6 +53061,13 @@ impl ListBox {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -52015,6 +53802,12 @@ impl crate::view::El<ListBox> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -52835,6 +54628,13 @@ impl ListBoxItem {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -53489,6 +55289,12 @@ impl crate::view::El<ListBoxItem> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -54254,6 +56060,13 @@ impl MaskedTextBox {
     }
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
+    }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
     }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
@@ -55183,6 +56996,12 @@ impl crate::view::El<MaskedTextBox> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -56190,6 +58009,13 @@ impl Menu {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -56984,6 +58810,12 @@ impl crate::view::El<Menu> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -57802,6 +59634,13 @@ impl MenuBase {
     }
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
+    }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
     }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
@@ -59254,6 +61093,13 @@ impl MenuItem {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -60130,6 +61976,12 @@ impl crate::view::El<MenuItem> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -61043,6 +62895,13 @@ impl NotificationCard {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -61724,6 +63583,12 @@ impl crate::view::El<NotificationCard> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -62502,6 +64367,13 @@ impl WindowNotificationManager {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -63115,6 +64987,12 @@ impl crate::view::El<WindowNotificationManager> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -63856,6 +65734,13 @@ impl NumericUpDown {
     }
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
+    }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
     }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
@@ -64606,6 +66491,12 @@ impl crate::view::El<NumericUpDown> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -66623,6 +68514,13 @@ impl PathIcon {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -67250,6 +69148,12 @@ impl crate::view::El<PathIcon> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -67986,6 +69890,13 @@ impl PipsPager {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -68622,6 +70533,12 @@ impl crate::view::El<PipsPager> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -69519,6 +71436,13 @@ impl HeaderedContentControl {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -70185,6 +72109,12 @@ impl crate::view::El<HeaderedContentControl> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -70954,6 +72884,13 @@ impl HeaderedItemsControl {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -71618,6 +73555,12 @@ impl crate::view::El<HeaderedItemsControl> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -72385,6 +74328,13 @@ impl HeaderedSelectingItemsControl {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -73127,6 +75077,12 @@ impl crate::view::El<HeaderedSelectingItemsControl> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -75584,6 +77540,13 @@ impl RangeBase {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -76480,6 +78443,13 @@ impl SelectingItemsControl {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -77177,6 +79147,12 @@ impl crate::view::El<SelectingItemsControl> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -77991,6 +79967,13 @@ impl TemplatedControl {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -78553,6 +80536,12 @@ impl crate::view::El<TemplatedControl> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -79283,6 +81272,13 @@ impl Thumb {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -79934,6 +81930,12 @@ impl crate::view::El<Thumb> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -80681,6 +82683,13 @@ impl ToggleButton {
     }
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
+    }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
     }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
@@ -81448,6 +83457,12 @@ impl crate::view::El<ToggleButton> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -83523,6 +85538,13 @@ impl ProgressBar {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -84206,6 +86228,12 @@ impl crate::view::El<ProgressBar> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -85005,6 +87033,13 @@ impl RadioButton {
     }
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
+    }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
     }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
@@ -85808,6 +87843,12 @@ impl crate::view::El<RadioButton> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -86656,6 +88697,13 @@ impl RefreshContainer {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -87336,6 +89384,12 @@ impl crate::view::El<RefreshContainer> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -89351,6 +91405,13 @@ impl RepeatButton {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -90099,6 +92160,12 @@ impl crate::view::El<RepeatButton> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -90922,6 +92989,13 @@ impl ScrollViewer {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -91704,6 +93778,12 @@ impl crate::view::El<ScrollViewer> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -92528,6 +94608,13 @@ impl SelectableTextBlock {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -93186,6 +95273,12 @@ impl crate::view::El<SelectableTextBlock> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -93991,6 +96084,13 @@ impl Separator {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -94582,6 +96682,12 @@ impl crate::view::El<Separator> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -106294,6 +108400,13 @@ impl Slider {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -106987,6 +109100,12 @@ impl crate::view::El<Slider> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -107794,6 +109913,13 @@ impl Spinner {
     }
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
+    }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
     }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
@@ -108736,6 +110862,13 @@ impl SplitButton {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -109431,6 +111564,12 @@ impl crate::view::El<SplitButton> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -110218,6 +112357,13 @@ impl SplitView {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -110994,6 +113140,12 @@ impl crate::view::El<SplitView> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -113066,6 +115218,13 @@ impl TabControl {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -113831,6 +115990,12 @@ impl crate::view::El<TabControl> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -114675,6 +116840,13 @@ impl TabItem {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -115396,6 +117568,12 @@ impl crate::view::El<TabItem> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -116192,6 +118370,13 @@ impl TableView {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -116965,6 +119150,12 @@ impl crate::view::El<TableView> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -117791,6 +119982,13 @@ impl TableViewCell {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -118441,6 +120639,12 @@ impl crate::view::El<TableViewCell> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -119583,6 +121787,13 @@ impl TableViewRow {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -120266,6 +122477,12 @@ impl crate::view::El<TableViewRow> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -121012,6 +123229,13 @@ impl TextBlock {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -121594,6 +123818,12 @@ impl crate::view::El<TextBlock> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -122368,6 +124598,13 @@ impl TextBox {
     }
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
+    }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
     }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
@@ -123239,6 +125476,12 @@ impl crate::view::El<TextBox> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -125399,6 +127642,13 @@ impl TimePicker {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -126045,6 +128295,12 @@ impl crate::view::El<TimePicker> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -126824,6 +129080,13 @@ impl ToggleSplitButton {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -127570,6 +129833,12 @@ impl crate::view::El<ToggleSplitButton> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -128378,6 +130647,13 @@ impl ToggleSwitch {
     }
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
+    }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
     }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
@@ -129200,6 +131476,12 @@ impl crate::view::El<ToggleSwitch> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -130066,6 +132348,13 @@ impl ToolTip {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -130798,6 +133087,12 @@ impl crate::view::El<ToolTip> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -131555,6 +133850,13 @@ impl TransitioningContentControl {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -132229,6 +134531,12 @@ impl crate::view::El<TransitioningContentControl> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -133164,6 +135472,13 @@ impl TreeView {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -133863,6 +136178,12 @@ impl crate::view::El<TreeView> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -134649,6 +136970,13 @@ impl TreeViewItem {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -135387,6 +137715,12 @@ impl crate::view::El<TreeViewItem> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -136192,6 +138526,13 @@ impl UserControl {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -136842,6 +139183,12 @@ impl crate::view::El<UserControl> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {
@@ -138760,6 +141107,13 @@ impl Window {
     pub fn set_font_stretch(&self, value: FontStretch) -> Result<()> {
         Ok(self.raw.set_font_stretch(value as i32)?)
     }
+    pub fn font_variations(&self) -> Result<Option<String>> {
+        unsafe { Ok(sys::take_utf16(self.raw.get_font_variations()?)) }
+    }
+    pub fn set_font_variations(&self, value: impl AsRef<str>) -> Result<()> {
+        let value: Vec<u16> = value.as_ref().encode_utf16().chain(Some(0)).collect();
+        Ok(self.raw.set_font_variations(Some(&value))?)
+    }
     pub fn foreground(&self) -> Result<Option<Paint>> {
         self.raw.get_foreground()?.as_ref().map(Paint::from_raw).transpose()
     }
@@ -139525,6 +141879,12 @@ impl crate::view::El<Window> {
         let binding = value.into_prop();
         self.with_op(move |_, control| {
             crate::view::apply_prop(control, binding, |c, v| c.set_font_stretch(v))
+        })
+    }
+    pub fn font_variations<M>(self, value: impl crate::view::IntoProp<String, M> + 'static) -> Self {
+        let binding = value.into_prop();
+        self.with_op(move |_, control| {
+            crate::view::apply_prop(control, binding, |c, v| c.set_font_variations(v))
         })
     }
     pub fn foreground<M>(self, value: impl crate::view::IntoProp<Option<Paint>, M> + 'static) -> Self {

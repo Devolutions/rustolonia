@@ -92,6 +92,12 @@ public partial interface IAvnAutoCompleteBox : IAvnTemplatedControl
     int SetPlaceholderForeground(IAvnBrush? value);
 
     [PreserveSig]
+    int GetUseFloatingPlaceholder(out int value);
+
+    [PreserveSig]
+    int SetUseFloatingPlaceholder(int value);
+
+    [PreserveSig]
     int GetItemFilter(out IAvnItemFilter? value);
 
     [PreserveSig]
@@ -2136,6 +2142,37 @@ public sealed partial class AvnAutoCompleteBox : IAvnAutoCompleteBox
         }
     }
 
+    public int GetFontVariations(out string? value)
+    {
+        value = default;
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            value = global::Avalonia.Host.Com.AvnFontVariations.ToAbi(_value.FontVariations);
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int SetFontVariations(string? value)
+    {
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            _value.FontVariations = global::Avalonia.Host.Com.AvnFontVariations.FromAbi(value);
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
     public int GetForeground(out IAvnBrush? value)
     {
         value = default;
@@ -2640,6 +2677,37 @@ public sealed partial class AvnAutoCompleteBox : IAvnAutoCompleteBox
             using var call = _state.EnterCall();
             _value.VerifyAccess();
             _value.PlaceholderForeground = AvnBrush.ToBrush(value);
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int GetUseFloatingPlaceholder(out int value)
+    {
+        value = default;
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            value = _value.UseFloatingPlaceholder ? 1 : 0;
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int SetUseFloatingPlaceholder(int value)
+    {
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            _value.UseFloatingPlaceholder = value != 0;
             return global::Avalonia.Host.HResults.S_OK;
         }
         catch (global::System.Exception e)

@@ -7,6 +7,7 @@ using Avalonia.Host.Com;
 using Avalonia.Media;
 using Avalonia.UnitTests;
 using Xunit;
+using CalendarWeekRule = System.Globalization.CalendarWeekRule;
 
 namespace Avalonia.Host.Tests;
 
@@ -34,13 +35,19 @@ public unsafe class WaveQInputComTests
             Assert.Equal(0, box.GetSearchText(out _));
         });
         Through<IAvnCalendar>(projectedCalendar, calendar =>
-            Assert.Equal(0, calendar.SetIsTodayHighlighted(0)));
+        {
+            Assert.Equal(0, calendar.SetIsTodayHighlighted(0));
+            Assert.Equal(0, calendar.SetIsWeekNumberVisible(1));
+            Assert.Equal(0, calendar.SetWeekNumberRule((int)CalendarWeekRule.FirstFourDayWeek));
+        });
         Through<IAvnNumericUpDown>(projectedNumeric, numeric =>
             Assert.Equal(0, numeric.SetTextAlignment((int)TextAlignment.Right)));
 
         Assert.Equal("av", Target<AutoCompleteBox>(projectedBox).Text);
         Assert.Equal(32, Target<AutoCompleteBox>(projectedBox).MaxLength);
         Assert.False(Target<Calendar>(projectedCalendar).IsTodayHighlighted);
+        Assert.True(Target<Calendar>(projectedCalendar).IsWeekNumberVisible);
+        Assert.Equal(CalendarWeekRule.FirstFourDayWeek, Target<Calendar>(projectedCalendar).WeekNumberRule);
         Assert.Equal(TextAlignment.Right, Target<NumericUpDown>(projectedNumeric).TextAlignment);
     }
 

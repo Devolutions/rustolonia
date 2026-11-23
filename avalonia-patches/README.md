@@ -3,7 +3,7 @@
 Additive patches against the [Avalonia UI framework](https://github.com/AvaloniaUI/Avalonia)
 that rustolonia's NativeAOT host and projected TableView surface depend on.
 They are meant to be applied to the `avalonia-src` submodule checkout pinned at
-the upstream `12.1.6` tag (`cf8e564674700348947e93ab19105f27afe859a9`) by
+the upstream `12.2.0` tag (`5d9e6d1b0e87337f74f233bead580db186412357`) by
 `apply-avalonia-patches.ps1`.
 
 | Patch | Contents |
@@ -29,14 +29,14 @@ pwsh ./apply-avalonia-patches.ps1 -AvaloniaRoot ../avalonia-src -Check
 Applying is idempotent: an already-patched checkout is detected and skipped.
 
 Validated producer: the patch applies cleanly to the pinned checkout at
-`cf8e564674700348947e93ab19105f27afe859a9`; the patched producer build and the
+`5d9e6d1b0e87337f74f233bead580db186412357`; the patched producer build and the
 relevant `Avalonia.Controls.UnitTests` suite remain the expected baseline for
 Rustolonia's compatibility work.
 
 ## Maintenance
 
 - Track upstream stable releases: pin the submodule to an Avalonia release tag
-  (`release/X.Y` line, currently `12.1.6`), not `main`. Bump on each upstream
+  (`release/X.Y` line, currently `12.2.0`), not `main`. Bump on each upstream
   patch release, run with `-Check` first, and rebuild/re-release.
 - If a patch stops applying (typically because upstream shipped an equivalent
   change), apply with `git apply --3way`, drop the parts upstream now provides,
@@ -44,10 +44,10 @@ Rustolonia's compatibility work.
   `rust/release-manifest.json` (`producerPin`, patch `sha256`) and the
   upstreaming tracker below. Stage the new submodule gitlink before running
   Rustolonia's regeneration and build scripts.
-- The projection follows the pinned API surface. Moving from `main` to `12.1.3`
-  dropped master-only API (`FlexPanel`, `Calendar.IsWeekNumberVisible`/`WeekNumberRule`)
-  from `AvaloniaProjectionProfiles`; re-add them when the pin reaches a release that
-  ships them, then run `rust/regenerate-and-build.ps1`.
+- The projection follows the pinned API surface. When a bump ships new members
+  on projected types, add them to `AvaloniaProjectionProfiles` (or classify them
+  as gaps) and run `rust/regenerate-and-build.ps1`; new members surface as
+  "Not included by projection policy" entries in `rust/projection.ir.gaps.txt`.
 - The goal is for this directory to shrink to nothing as the changes are
   merged upstream.
 

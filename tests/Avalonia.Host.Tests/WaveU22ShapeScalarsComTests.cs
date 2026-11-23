@@ -69,4 +69,28 @@ public class WaveU22ShapeScalarsComTests
         Assert.Equal(0, wrapper.GetFontFeatures(out var read));
         Assert.NotNull(read);
     }
+
+    [Fact]
+    public void Text_block_font_variations_cross_as_axis_settings()
+    {
+        using var app = UnitTestApplication.Start(TestServices.StyledWindow);
+        var factory = new AvnControlFactory();
+        Assert.Equal(0, factory.CreateTextBlock(out var projected));
+        Assert.NotNull(projected);
+
+        var wrapper = Assert.IsType<AvnTextBlock>(projected);
+
+        Assert.Equal(0, wrapper.SetFontVariations(" wght = 700 "));
+        Assert.Equal(0, wrapper.GetFontVariations(out var read));
+        Assert.Equal("wght=700", read);
+        var value = Assert.IsType<TextBlock>(
+            typeof(AvnTextBlock)
+                .GetProperty("_value", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                .GetValue(wrapper));
+        Assert.Equal(700, Assert.Single(value.FontVariations!.Variations).Value);
+
+        Assert.Equal(0, wrapper.SetFontVariations("not-a-variation"));
+        Assert.Equal(0, wrapper.GetFontVariations(out var cleared));
+        Assert.Null(cleared);
+    }
 }
