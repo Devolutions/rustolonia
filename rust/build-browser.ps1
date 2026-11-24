@@ -85,12 +85,21 @@ $appLib = Join-Path $appDir 'rustolonia_app.a'
 # 3. Avalonia.Browser's JavaScript modules (avalonia.js, ...) are bundled by a
 #    target that only runs in its multi-targeting build, and the host picks
 #    them up at evaluation time, so produce them before publishing.
+#    BunRunBuild builds Avalonia.Browser.BuildTasks (the input layout
+#    generator) with a plain MSBuild call that does not restore, so restore
+#    that project first.
+#    Avalonia.Browser also multi-targets the next .NET (net11.0-browser),
+#    which the repository's .NET 10 SDK cannot restore; the host only uses
+#    the current browser target framework, so skip the next one.
+$producerArgs = @('-p:AvsSkipBuildingNextTargetFrameworks=True') + $DotnetArgs
 $avaloniaBrowser = Join-Path $repoRoot 'avalonia-src/src/Browser/Avalonia.Browser/Avalonia.Browser.csproj'
-& dotnet msbuild $avaloniaBrowser -t:BunRunBuild -nologo -v:minimal @DotnetArgs
+$browserBuildTasks = Join-Path $repoRoot 'avalonia-src/src/tools/Avalonia.Browser.BuildTasks/Avalonia.Browser.BuildTasks.csproj'
+& dotnet restore $browserBuildTasks -nologo -v:minimal @producerArgs
+& dotnet msbuild $avaloniaBrowser -t:BunRunBuild -nologo -v:minimal @producerArgs
 
 # 4. .NET: publish the browser host with the Rust app linked in.
 & dotnet publish (Join-Path $repoRoot 'host/Browser/Avalonia.Host.Browser.csproj') `
-    -c $Configuration -o $OutputDirectory "-p:RustoloniaBrowserApp=$appLib" @DotnetArgs
+    -c $Configuration -o $OutputDirectory "-p:RustoloniaBrowserApp=$appLib" @producerArgs
 
 $site = Join-Path $OutputDirectory 'wwwroot'
 Write-Host "Browser app published to $site"

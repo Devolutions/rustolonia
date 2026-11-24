@@ -848,7 +848,8 @@ The script:
    `rust/target/browser/rustolonia_app.a` (the host's glue objects declare
    the bulk-memory feature Rust's std needs; see
    [Prebuilt browser host](#prebuilt-browser-host));
-3. bundles Avalonia.Browser's JavaScript modules (`BunRunBuild`);
+3. restores Avalonia.Browser.BuildTasks and bundles Avalonia.Browser's
+   JavaScript modules (`BunRunBuild`);
 4. publishes the browser host with `NativeFileReference` to the archive into
    `rust/target/browser/publish/wwwroot`, which any static file server can
    serve. `-Serve` starts `python3 -m http.server` on `-Port` (default 8080).
