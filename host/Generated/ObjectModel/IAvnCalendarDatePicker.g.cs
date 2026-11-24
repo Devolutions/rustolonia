@@ -104,6 +104,18 @@ public partial interface IAvnCalendarDatePicker : IAvnTemplatedControl
     int SetVerticalContentAlignment(int value);
 
     [PreserveSig]
+    int GetIsWeekNumberVisible(out int value);
+
+    [PreserveSig]
+    int SetIsWeekNumberVisible(int value);
+
+    [PreserveSig]
+    int GetWeekNumberRule(out int value);
+
+    [PreserveSig]
+    int SetWeekNumberRule(int value);
+
+    [PreserveSig]
     int Clear();
 
     [PreserveSig]
@@ -2062,6 +2074,37 @@ public sealed partial class AvnCalendarDatePicker : IAvnCalendarDatePicker
         }
     }
 
+    public int GetFontVariations(out string? value)
+    {
+        value = default;
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            value = global::Avalonia.Host.Com.AvnFontVariations.ToAbi(_value.FontVariations);
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int SetFontVariations(string? value)
+    {
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            _value.FontVariations = global::Avalonia.Host.Com.AvnFontVariations.FromAbi(value);
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
     public int GetForeground(out IAvnBrush? value)
     {
         value = default;
@@ -2628,6 +2671,68 @@ public sealed partial class AvnCalendarDatePicker : IAvnCalendarDatePicker
             using var call = _state.EnterCall();
             _value.VerifyAccess();
             _value.VerticalContentAlignment = (global::Avalonia.Layout.VerticalAlignment)value;
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int GetIsWeekNumberVisible(out int value)
+    {
+        value = default;
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            value = _value.IsWeekNumberVisible ? 1 : 0;
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int SetIsWeekNumberVisible(int value)
+    {
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            _value.IsWeekNumberVisible = value != 0;
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int GetWeekNumberRule(out int value)
+    {
+        value = default;
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            value = (int)_value.WeekNumberRule;
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int SetWeekNumberRule(int value)
+    {
+        try
+        {
+            using var call = _state.EnterCall();
+            _value.VerifyAccess();
+            _value.WeekNumberRule = (global::System.Globalization.CalendarWeekRule)value;
             return global::Avalonia.Host.HResults.S_OK;
         }
         catch (global::System.Exception e)

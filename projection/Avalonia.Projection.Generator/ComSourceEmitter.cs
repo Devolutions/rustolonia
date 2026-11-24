@@ -291,10 +291,13 @@ public static class ComSourceEmitter
                 sb.AppendLine("        value = default;");
                 sb.AppendLine("        try");
                 sb.AppendLine("        {");
-                sb.AppendLine($"            var item = _collections[{i}]?.Cast<object?>().ElementAtOrDefault(index);");
-                sb.AppendLine("            if (index < 0 || item is null)");
+                // Only an out-of-range index is invalid. A null entry is a real
+                // selection item (for example a pending index that never matched an
+                // item) and crosses as the empty variant.
+                sb.AppendLine($"            var items = _collections[{i}]?.Cast<object?>().ToArray() ?? [];");
+                sb.AppendLine("            if ((uint)index >= (uint)items.Length)");
                 sb.AppendLine("                return global::Avalonia.Host.HResults.E_INVALIDARG;");
-                sb.AppendLine("            value = AvnVariant.FromObject(item);");
+                sb.AppendLine("            value = AvnVariant.FromObject(items[index]);");
                 sb.AppendLine("            return global::Avalonia.Host.HResults.S_OK;");
                 sb.AppendLine("        }");
                 sb.AppendLine("        catch (global::System.Exception e)");

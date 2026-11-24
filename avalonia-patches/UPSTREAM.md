@@ -1,6 +1,6 @@
 # Upstream Avalonia: what Rustolonia needs merged
 
-The producer is pinned to Avalonia `12.1.6`. The patches in this directory
+The producer is pinned to Avalonia `12.2.0`. The patches in this directory
 contain the remaining changes to upstream framework files.
 
 ## TableView viewport hook

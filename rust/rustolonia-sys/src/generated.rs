@@ -6802,6 +6802,8 @@ struct IAvnAutoCompleteBoxVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, *mut f64) -> i32,
@@ -6835,6 +6837,8 @@ struct IAvnAutoCompleteBoxVtbl {
     set_placeholder_text: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, *mut u16) -> i32,
     get_placeholder_foreground: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, *mut *mut IAvnBrush) -> i32,
     set_placeholder_foreground: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, *mut IAvnBrush) -> i32,
+    get_use_floating_placeholder: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, *mut i32) -> i32,
+    set_use_floating_placeholder: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, i32) -> i32,
     get_item_filter: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, *mut *mut IAvnItemFilter) -> i32,
     set_item_filter: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, *mut IAvnItemFilter) -> i32,
     get_text_filter: unsafe extern "system" fn(*mut IAvnAutoCompleteBox, *mut *mut IAvnTextFilter) -> i32,
@@ -7594,6 +7598,21 @@ impl ComPtr<IAvnAutoCompleteBox> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -7825,6 +7844,20 @@ impl ComPtr<IAvnAutoCompleteBox> {
     pub fn set_placeholder_foreground(&self, value: Option<&ComPtr<IAvnBrush>>) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_placeholder_foreground)(self.as_raw(), value.map_or(ptr::null_mut(), ComPtr::as_raw));
+            hresult::check(hr)
+        }
+    }
+    pub fn get_use_floating_placeholder(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_use_floating_placeholder)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_use_floating_placeholder(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_use_floating_placeholder)(self.as_raw(), i32::from(value));
             hresult::check(hr)
         }
     }
@@ -8972,6 +9005,8 @@ struct IAvnButtonVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnButton, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnButton, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnButton, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnButton, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnButton, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnButton, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnButton, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnButton, *mut f64) -> i32,
@@ -9727,6 +9762,21 @@ impl ComPtr<IAvnButton> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -10057,6 +10107,8 @@ struct IAvnButtonSpinnerVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnButtonSpinner, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnButtonSpinner, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnButtonSpinner, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnButtonSpinner, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnButtonSpinner, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnButtonSpinner, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnButtonSpinner, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnButtonSpinner, *mut f64) -> i32,
@@ -10805,6 +10857,21 @@ impl ComPtr<IAvnButtonSpinner> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -11084,6 +11151,8 @@ struct IAvnCalendarVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnCalendar, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnCalendar, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnCalendar, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnCalendar, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnCalendar, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnCalendar, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnCalendar, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnCalendar, *mut f64) -> i32,
@@ -11096,6 +11165,10 @@ struct IAvnCalendarVtbl {
     set_is_today_highlighted: unsafe extern "system" fn(*mut IAvnCalendar, i32) -> i32,
     get_header_background: unsafe extern "system" fn(*mut IAvnCalendar, *mut *mut IAvnBrush) -> i32,
     set_header_background: unsafe extern "system" fn(*mut IAvnCalendar, *mut IAvnBrush) -> i32,
+    get_is_week_number_visible: unsafe extern "system" fn(*mut IAvnCalendar, *mut i32) -> i32,
+    set_is_week_number_visible: unsafe extern "system" fn(*mut IAvnCalendar, i32) -> i32,
+    get_week_number_rule: unsafe extern "system" fn(*mut IAvnCalendar, *mut i32) -> i32,
+    set_week_number_rule: unsafe extern "system" fn(*mut IAvnCalendar, i32) -> i32,
     get_display_mode: unsafe extern "system" fn(*mut IAvnCalendar, *mut i32) -> i32,
     set_display_mode: unsafe extern "system" fn(*mut IAvnCalendar, i32) -> i32,
     get_selection_mode: unsafe extern "system" fn(*mut IAvnCalendar, *mut i32) -> i32,
@@ -11842,6 +11915,21 @@ impl ComPtr<IAvnCalendar> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -11923,6 +12011,34 @@ impl ComPtr<IAvnCalendar> {
     pub fn set_header_background(&self, value: Option<&ComPtr<IAvnBrush>>) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_header_background)(self.as_raw(), value.map_or(ptr::null_mut(), ComPtr::as_raw));
+            hresult::check(hr)
+        }
+    }
+    pub fn get_is_week_number_visible(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_is_week_number_visible)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_is_week_number_visible(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_week_number_visible)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
+    pub fn get_week_number_rule(&self) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_week_number_rule)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_week_number_rule(&self, value: i32) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_week_number_rule)(self.as_raw(), value);
             hresult::check(hr)
         }
     }
@@ -12195,6 +12311,8 @@ struct IAvnCalendarDatePickerVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, *mut f64) -> i32,
@@ -12232,6 +12350,10 @@ struct IAvnCalendarDatePickerVtbl {
     set_horizontal_content_alignment: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, i32) -> i32,
     get_vertical_content_alignment: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, *mut i32) -> i32,
     set_vertical_content_alignment: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, i32) -> i32,
+    get_is_week_number_visible: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, *mut i32) -> i32,
+    set_is_week_number_visible: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, i32) -> i32,
+    get_week_number_rule: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, *mut i32) -> i32,
+    set_week_number_rule: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, i32) -> i32,
     clear: unsafe extern "system" fn(*mut IAvnCalendarDatePicker) -> i32,
     advise_calendar_closed: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, *mut IAvnCalendarDatePickerCalendarClosedHandler, *mut i64) -> i32,
     unadvise_calendar_closed: unsafe extern "system" fn(*mut IAvnCalendarDatePicker, i64) -> i32,
@@ -12965,6 +13087,21 @@ impl ComPtr<IAvnCalendarDatePicker> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -13229,6 +13366,34 @@ impl ComPtr<IAvnCalendarDatePicker> {
     pub fn set_vertical_content_alignment(&self, value: i32) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_vertical_content_alignment)(self.as_raw(), value);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_is_week_number_visible(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_is_week_number_visible)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_is_week_number_visible(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_week_number_visible)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
+    pub fn get_week_number_rule(&self) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_week_number_rule)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_week_number_rule(&self, value: i32) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_week_number_rule)(self.as_raw(), value);
             hresult::check(hr)
         }
     }
@@ -14085,6 +14250,8 @@ struct IAvnCarouselVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnCarousel, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnCarousel, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnCarousel, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnCarousel, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnCarousel, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnCarousel, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnCarousel, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnCarousel, *mut f64) -> i32,
@@ -14848,6 +15015,21 @@ impl ComPtr<IAvnCarousel> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -15231,6 +15413,8 @@ struct IAvnCheckBoxVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnCheckBox, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnCheckBox, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnCheckBox, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnCheckBox, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnCheckBox, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnCheckBox, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnCheckBox, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnCheckBox, *mut f64) -> i32,
@@ -15992,6 +16176,21 @@ impl ComPtr<IAvnCheckBox> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -16363,6 +16562,8 @@ struct IAvnComboBoxVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnComboBox, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnComboBox, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnComboBox, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnComboBox, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnComboBox, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnComboBox, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnComboBox, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnComboBox, *mut f64) -> i32,
@@ -17139,6 +17340,21 @@ impl ComPtr<IAvnComboBox> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -17614,6 +17830,8 @@ struct IAvnComboBoxItemVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnComboBoxItem, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnComboBoxItem, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnComboBoxItem, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnComboBoxItem, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnComboBoxItem, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnComboBoxItem, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnComboBoxItem, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnComboBoxItem, *mut f64) -> i32,
@@ -18354,6 +18572,21 @@ impl ComPtr<IAvnComboBoxItem> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -18578,6 +18811,8 @@ struct IAvnCommandBarVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnCommandBar, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnCommandBar, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnCommandBar, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnCommandBar, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnCommandBar, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnCommandBar, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnCommandBar, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnCommandBar, *mut f64) -> i32,
@@ -19342,6 +19577,21 @@ impl ComPtr<IAvnCommandBar> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -19734,6 +19984,8 @@ struct IAvnCommandBarButtonVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnCommandBarButton, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnCommandBarButton, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnCommandBarButton, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnCommandBarButton, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnCommandBarButton, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnCommandBarButton, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnCommandBarButton, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnCommandBarButton, *mut f64) -> i32,
@@ -20501,6 +20753,21 @@ impl ComPtr<IAvnCommandBarButton> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -20916,6 +21183,8 @@ struct IAvnCommandBarSeparatorVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnCommandBarSeparator, *mut f64) -> i32,
@@ -21650,6 +21919,21 @@ impl ComPtr<IAvnCommandBarSeparator> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -21832,6 +22116,8 @@ struct IAvnCommandBarToggleButtonVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnCommandBarToggleButton, *mut f64) -> i32,
@@ -22605,6 +22891,21 @@ impl ComPtr<IAvnCommandBarToggleButton> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -23061,6 +23362,8 @@ struct IAvnContentControlVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnContentControl, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnContentControl, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnContentControl, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnContentControl, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnContentControl, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnContentControl, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnContentControl, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnContentControl, *mut f64) -> i32,
@@ -23799,6 +24102,21 @@ impl ComPtr<IAvnContentControl> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -24009,6 +24327,8 @@ struct IAvnContextMenuVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnContextMenu, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnContextMenu, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnContextMenu, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnContextMenu, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnContextMenu, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnContextMenu, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnContextMenu, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnContextMenu, *mut f64) -> i32,
@@ -24794,6 +25114,21 @@ impl ComPtr<IAvnContextMenu> {
     pub fn set_font_stretch(&self, value: i32) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_stretch)(self.as_raw(), value);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
             hresult::check(hr)
         }
     }
@@ -26008,6 +26343,8 @@ struct IAvnDatePickerVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnDatePicker, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnDatePicker, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnDatePicker, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnDatePicker, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnDatePicker, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnDatePicker, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnDatePicker, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnDatePicker, *mut f64) -> i32,
@@ -26758,6 +27095,21 @@ impl ComPtr<IAvnDatePicker> {
     pub fn set_font_stretch(&self, value: i32) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_stretch)(self.as_raw(), value);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
             hresult::check(hr)
         }
     }
@@ -28501,6 +28853,8 @@ struct IAvnDropDownButtonVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnDropDownButton, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnDropDownButton, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnDropDownButton, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnDropDownButton, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnDropDownButton, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnDropDownButton, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnDropDownButton, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnDropDownButton, *mut f64) -> i32,
@@ -29256,6 +29610,21 @@ impl ComPtr<IAvnDropDownButton> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -29586,6 +29955,8 @@ struct IAvnExpanderVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnExpander, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnExpander, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnExpander, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnExpander, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnExpander, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnExpander, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnExpander, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnExpander, *mut f64) -> i32,
@@ -30340,6 +30711,21 @@ impl ComPtr<IAvnExpander> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -30543,6 +30929,801 @@ impl ComPtr<IAvnExpander> {
     pub fn unadvise_expanding(&self, subscription_id: i64) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_expanding)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+}
+
+pub const I_AVN_FLEX_PANEL_IID: Guid = Guid { data1: 0x4498AD9B, data2: 0x5B64, data3: 0x52E2, data4: [0xB2, 0x63, 0xF3, 0x19, 0xB0, 0x00, 0xBD, 0x13] };
+
+#[repr(C)]
+struct IAvnFlexPanelVtbl {
+    query_interface: unsafe extern "system" fn(*mut IUnknown, *const Guid, *mut *mut c_void) -> i32,
+    add_ref: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    release: unsafe extern "system" fn(*mut IUnknown) -> u32,
+    get_object_id: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut i64) -> i32,
+    get_lifetime_token: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut i64) -> i32,
+    get_name: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut *mut u16) -> i32,
+    set_name: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut u16) -> i32,
+    get_classes: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut *mut IAvnStringList) -> i32,
+    get_data_context: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut AvnVariant) -> i32,
+    set_data_context: unsafe extern "system" fn(*mut IAvnFlexPanel, AvnVariant) -> i32,
+    get_is_initialized: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut i32) -> i32,
+    get_templated_parent: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut *mut IAvnAvaloniaObject) -> i32,
+    get_parent: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut *mut IAvnStyledElement) -> i32,
+    get_actual_theme_variant: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut *mut u16) -> i32,
+    advise_attached_to_logical_tree: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnStyledElementAttachedToLogicalTreeHandler, *mut i64) -> i32,
+    unadvise_attached_to_logical_tree: unsafe extern "system" fn(*mut IAvnFlexPanel, i64) -> i32,
+    advise_detached_from_logical_tree: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnStyledElementDetachedFromLogicalTreeHandler, *mut i64) -> i32,
+    unadvise_detached_from_logical_tree: unsafe extern "system" fn(*mut IAvnFlexPanel, i64) -> i32,
+    advise_data_context_changed: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnStyledElementDataContextChangedHandler, *mut i64) -> i32,
+    unadvise_data_context_changed: unsafe extern "system" fn(*mut IAvnFlexPanel, i64) -> i32,
+    advise_initialized: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnStyledElementInitializedHandler, *mut i64) -> i32,
+    unadvise_initialized: unsafe extern "system" fn(*mut IAvnFlexPanel, i64) -> i32,
+    advise_resources_changed: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnStyledElementResourcesChangedHandler, *mut i64) -> i32,
+    unadvise_resources_changed: unsafe extern "system" fn(*mut IAvnFlexPanel, i64) -> i32,
+    advise_actual_theme_variant_changed: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnStyledElementActualThemeVariantChangedHandler, *mut i64) -> i32,
+    unadvise_actual_theme_variant_changed: unsafe extern "system" fn(*mut IAvnFlexPanel, i64) -> i32,
+    get_is_visible: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut i32) -> i32,
+    set_is_visible: unsafe extern "system" fn(*mut IAvnFlexPanel, i32) -> i32,
+    get_opacity: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut f64) -> i32,
+    set_opacity: unsafe extern "system" fn(*mut IAvnFlexPanel, f64) -> i32,
+    get_context_menu: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut *mut IAvnContextMenu) -> i32,
+    set_context_menu: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnContextMenu) -> i32,
+    get_context_flyout: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut *mut IAvnFlyoutBase) -> i32,
+    set_context_flyout: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnFlyoutBase) -> i32,
+    get_is_loaded: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut i32) -> i32,
+    get_tag: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut AvnVariant) -> i32,
+    set_tag: unsafe extern "system" fn(*mut IAvnFlexPanel, AvnVariant) -> i32,
+    get_width: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut f64) -> i32,
+    set_width: unsafe extern "system" fn(*mut IAvnFlexPanel, f64) -> i32,
+    get_height: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut f64) -> i32,
+    set_height: unsafe extern "system" fn(*mut IAvnFlexPanel, f64) -> i32,
+    get_min_width: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut f64) -> i32,
+    set_min_width: unsafe extern "system" fn(*mut IAvnFlexPanel, f64) -> i32,
+    get_max_width: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut f64) -> i32,
+    set_max_width: unsafe extern "system" fn(*mut IAvnFlexPanel, f64) -> i32,
+    get_min_height: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut f64) -> i32,
+    set_min_height: unsafe extern "system" fn(*mut IAvnFlexPanel, f64) -> i32,
+    get_max_height: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut f64) -> i32,
+    set_max_height: unsafe extern "system" fn(*mut IAvnFlexPanel, f64) -> i32,
+    get_margin: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut AvnThickness) -> i32,
+    set_margin: unsafe extern "system" fn(*mut IAvnFlexPanel, AvnThickness) -> i32,
+    get_horizontal_alignment: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut i32) -> i32,
+    set_horizontal_alignment: unsafe extern "system" fn(*mut IAvnFlexPanel, i32) -> i32,
+    get_vertical_alignment: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut i32) -> i32,
+    set_vertical_alignment: unsafe extern "system" fn(*mut IAvnFlexPanel, i32) -> i32,
+    get_focusable: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut i32) -> i32,
+    set_focusable: unsafe extern "system" fn(*mut IAvnFlexPanel, i32) -> i32,
+    get_is_enabled: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut i32) -> i32,
+    set_is_enabled: unsafe extern "system" fn(*mut IAvnFlexPanel, i32) -> i32,
+    focus_with_navigation_method_and_key_modifiers: unsafe extern "system" fn(*mut IAvnFlexPanel, i32, i32, *mut i32) -> i32,
+    advise_loaded: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnControlLoadedHandler, *mut i64) -> i32,
+    unadvise_loaded: unsafe extern "system" fn(*mut IAvnFlexPanel, i64) -> i32,
+    advise_unloaded: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnControlUnloadedHandler, *mut i64) -> i32,
+    unadvise_unloaded: unsafe extern "system" fn(*mut IAvnFlexPanel, i64) -> i32,
+    advise_size_changed: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnControlSizeChangedHandler, *mut i64) -> i32,
+    unadvise_size_changed: unsafe extern "system" fn(*mut IAvnFlexPanel, i64) -> i32,
+    advise_got_focus: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnControlGotFocusHandler, *mut i64) -> i32,
+    unadvise_got_focus: unsafe extern "system" fn(*mut IAvnFlexPanel, i64) -> i32,
+    advise_lost_focus: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnControlLostFocusHandler, *mut i64) -> i32,
+    unadvise_lost_focus: unsafe extern "system" fn(*mut IAvnFlexPanel, i64) -> i32,
+    advise_key_down: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnControlKeyDownHandler, *mut i64) -> i32,
+    unadvise_key_down: unsafe extern "system" fn(*mut IAvnFlexPanel, i64) -> i32,
+    advise_key_up: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnControlKeyUpHandler, *mut i64) -> i32,
+    unadvise_key_up: unsafe extern "system" fn(*mut IAvnFlexPanel, i64) -> i32,
+    advise_pointer_entered: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnControlPointerEnteredHandler, *mut i64) -> i32,
+    unadvise_pointer_entered: unsafe extern "system" fn(*mut IAvnFlexPanel, i64) -> i32,
+    advise_pointer_exited: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnControlPointerExitedHandler, *mut i64) -> i32,
+    unadvise_pointer_exited: unsafe extern "system" fn(*mut IAvnFlexPanel, i64) -> i32,
+    advise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnControlPointerWheelChangedHandler, *mut i64) -> i32,
+    unadvise_pointer_wheel_changed: unsafe extern "system" fn(*mut IAvnFlexPanel, i64) -> i32,
+    advise_tapped: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnControlTappedHandler, *mut i64) -> i32,
+    unadvise_tapped: unsafe extern "system" fn(*mut IAvnFlexPanel, i64) -> i32,
+    advise_double_tapped: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnControlDoubleTappedHandler, *mut i64) -> i32,
+    unadvise_double_tapped: unsafe extern "system" fn(*mut IAvnFlexPanel, i64) -> i32,
+    get_children: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut *mut IAvnControlList) -> i32,
+    get_background: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut *mut IAvnBrush) -> i32,
+    set_background: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut IAvnBrush) -> i32,
+    get_direction: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut i32) -> i32,
+    set_direction: unsafe extern "system" fn(*mut IAvnFlexPanel, i32) -> i32,
+    get_justify_content: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut i32) -> i32,
+    set_justify_content: unsafe extern "system" fn(*mut IAvnFlexPanel, i32) -> i32,
+    get_align_items: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut i32) -> i32,
+    set_align_items: unsafe extern "system" fn(*mut IAvnFlexPanel, i32) -> i32,
+    get_align_content: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut i32) -> i32,
+    set_align_content: unsafe extern "system" fn(*mut IAvnFlexPanel, i32) -> i32,
+    get_wrap: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut i32) -> i32,
+    set_wrap: unsafe extern "system" fn(*mut IAvnFlexPanel, i32) -> i32,
+    get_column_spacing: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut f64) -> i32,
+    set_column_spacing: unsafe extern "system" fn(*mut IAvnFlexPanel, f64) -> i32,
+    get_row_spacing: unsafe extern "system" fn(*mut IAvnFlexPanel, *mut f64) -> i32,
+    set_row_spacing: unsafe extern "system" fn(*mut IAvnFlexPanel, f64) -> i32,
+}
+
+#[repr(C)]
+pub struct IAvnFlexPanel {
+    vtbl: *const IAvnFlexPanelVtbl,
+}
+
+unsafe impl ComInterface for IAvnFlexPanel {
+    const IID: Guid = I_AVN_FLEX_PANEL_IID;
+}
+
+impl ComPtr<IAvnFlexPanel> {
+    pub fn object_id(&self) -> Result<i64> {
+        unsafe {
+            let mut value = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_object_id)(self.as_raw(), &mut value);
+            hresult::check(hr).map(|_| value)
+        }
+    }
+    pub fn lifetime_token(&self) -> Result<*mut IUnknown> {
+        unsafe {
+            let mut value = 0i64;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_lifetime_token)(self.as_raw(), &mut value);
+            hresult::check(hr).map(|_| value as usize as *mut IUnknown)
+        }
+    }
+    pub fn get_name(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_name)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_name(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_name)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
+    pub fn get_classes(&self) -> Result<ComPtr<IAvnStringList>> {
+        unsafe {
+            let mut value: *mut IAvnStringList = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_classes)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            ComPtr::from_raw(value).ok_or(Error(hresult::E_POINTER))
+        }
+    }
+    pub fn get_data_context(&self) -> Result<AvnVariant> {
+        unsafe {
+            let mut value: AvnVariant = AvnVariant::default();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_data_context)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_data_context(&self, value: &AvnVariant) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_data_context)(self.as_raw(), *value);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_is_initialized(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_is_initialized)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn get_templated_parent(&self) -> Result<Option<ComPtr<IAvnAvaloniaObject>>> {
+        unsafe {
+            let mut value: *mut IAvnAvaloniaObject = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_templated_parent)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            if value.is_null() { Ok(None) } else { Ok(Some(ComPtr::from_projected_raw(value)?)) }
+        }
+    }
+    pub fn get_parent(&self) -> Result<Option<ComPtr<IAvnStyledElement>>> {
+        unsafe {
+            let mut value: *mut IAvnStyledElement = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_parent)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            if value.is_null() { Ok(None) } else { Ok(Some(ComPtr::from_projected_raw(value)?)) }
+        }
+    }
+    pub fn get_actual_theme_variant(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_actual_theme_variant)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn advise_attached_to_logical_tree(&self, handler: &ComPtr<IAvnStyledElementAttachedToLogicalTreeHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_attached_to_logical_tree)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_attached_to_logical_tree(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_attached_to_logical_tree)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_detached_from_logical_tree(&self, handler: &ComPtr<IAvnStyledElementDetachedFromLogicalTreeHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_detached_from_logical_tree)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_detached_from_logical_tree(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_detached_from_logical_tree)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_data_context_changed(&self, handler: &ComPtr<IAvnStyledElementDataContextChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_data_context_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_data_context_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_data_context_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_initialized(&self, handler: &ComPtr<IAvnStyledElementInitializedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_initialized)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_initialized(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_initialized)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_resources_changed(&self, handler: &ComPtr<IAvnStyledElementResourcesChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_resources_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_resources_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_resources_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_actual_theme_variant_changed(&self, handler: &ComPtr<IAvnStyledElementActualThemeVariantChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_actual_theme_variant_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_actual_theme_variant_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_actual_theme_variant_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_is_visible(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_is_visible)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_is_visible(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_visible)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
+    pub fn get_opacity(&self) -> Result<f64> {
+        unsafe {
+            let mut value: f64 = 0.0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_opacity)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_opacity(&self, value: f64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_opacity)(self.as_raw(), value);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_context_menu(&self) -> Result<Option<ComPtr<IAvnContextMenu>>> {
+        unsafe {
+            let mut value: *mut IAvnContextMenu = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_context_menu)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            if value.is_null() { Ok(None) } else { Ok(Some(ComPtr::from_projected_raw(value)?)) }
+        }
+    }
+    pub fn set_context_menu(&self, value: Option<&ComPtr<IAvnContextMenu>>) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_context_menu)(self.as_raw(), value.map_or(ptr::null_mut(), ComPtr::as_raw));
+            hresult::check(hr)
+        }
+    }
+    pub fn get_context_flyout(&self) -> Result<Option<ComPtr<IAvnFlyoutBase>>> {
+        unsafe {
+            let mut value: *mut IAvnFlyoutBase = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_context_flyout)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            if value.is_null() { Ok(None) } else { Ok(Some(ComPtr::from_projected_raw(value)?)) }
+        }
+    }
+    pub fn set_context_flyout(&self, value: Option<&ComPtr<IAvnFlyoutBase>>) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_context_flyout)(self.as_raw(), value.map_or(ptr::null_mut(), ComPtr::as_raw));
+            hresult::check(hr)
+        }
+    }
+    pub fn get_is_loaded(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_is_loaded)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn get_tag(&self) -> Result<AvnVariant> {
+        unsafe {
+            let mut value: AvnVariant = AvnVariant::default();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_tag)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_tag(&self, value: &AvnVariant) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_tag)(self.as_raw(), *value);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_width(&self) -> Result<f64> {
+        unsafe {
+            let mut value: f64 = 0.0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_width)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_width(&self, value: f64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_width)(self.as_raw(), value);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_height(&self) -> Result<f64> {
+        unsafe {
+            let mut value: f64 = 0.0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_height)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_height(&self, value: f64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_height)(self.as_raw(), value);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_min_width(&self) -> Result<f64> {
+        unsafe {
+            let mut value: f64 = 0.0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_min_width)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_min_width(&self, value: f64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_min_width)(self.as_raw(), value);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_max_width(&self) -> Result<f64> {
+        unsafe {
+            let mut value: f64 = 0.0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_max_width)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_max_width(&self, value: f64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_max_width)(self.as_raw(), value);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_min_height(&self) -> Result<f64> {
+        unsafe {
+            let mut value: f64 = 0.0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_min_height)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_min_height(&self, value: f64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_min_height)(self.as_raw(), value);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_max_height(&self) -> Result<f64> {
+        unsafe {
+            let mut value: f64 = 0.0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_max_height)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_max_height(&self, value: f64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_max_height)(self.as_raw(), value);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_margin(&self) -> Result<AvnThickness> {
+        unsafe {
+            let mut value: AvnThickness = Default::default();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_margin)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_margin(&self, value: AvnThickness) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_margin)(self.as_raw(), value);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_horizontal_alignment(&self) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_horizontal_alignment)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_horizontal_alignment(&self, value: i32) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_horizontal_alignment)(self.as_raw(), value);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_vertical_alignment(&self) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_vertical_alignment)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_vertical_alignment(&self, value: i32) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_vertical_alignment)(self.as_raw(), value);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_focusable(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_focusable)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_focusable(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_focusable)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
+    pub fn get_is_enabled(&self) -> Result<bool> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_is_enabled)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value != 0)
+        }
+    }
+    pub fn set_is_enabled(&self, value: bool) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_is_enabled)(self.as_raw(), i32::from(value));
+            hresult::check(hr)
+        }
+    }
+    pub fn focus_with_navigation_method_and_key_modifiers(&self, method: i32, key_modifiers: i32) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().focus_with_navigation_method_and_key_modifiers)(self.as_raw(), method, key_modifiers, &mut value);
+            hresult::check(hr).map(|_| value)
+        }
+    }
+    pub fn advise_loaded(&self, handler: &ComPtr<IAvnControlLoadedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_loaded)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_loaded(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_loaded)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_unloaded(&self, handler: &ComPtr<IAvnControlUnloadedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_unloaded)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_unloaded(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_unloaded)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_size_changed(&self, handler: &ComPtr<IAvnControlSizeChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_size_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_size_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_size_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_got_focus(&self, handler: &ComPtr<IAvnControlGotFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_got_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_got_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_got_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_lost_focus(&self, handler: &ComPtr<IAvnControlLostFocusHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_lost_focus)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_lost_focus(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_lost_focus)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_down(&self, handler: &ComPtr<IAvnControlKeyDownHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_down)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_down(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_down)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_key_up(&self, handler: &ComPtr<IAvnControlKeyUpHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_key_up)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_key_up(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_key_up)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_pointer_entered(&self, handler: &ComPtr<IAvnControlPointerEnteredHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_entered)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_entered(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_entered)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_pointer_exited(&self, handler: &ComPtr<IAvnControlPointerExitedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_exited)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_exited(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_exited)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_pointer_wheel_changed(&self, handler: &ComPtr<IAvnControlPointerWheelChangedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_pointer_wheel_changed)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_pointer_wheel_changed(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_pointer_wheel_changed)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_tapped(&self, handler: &ComPtr<IAvnControlTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn advise_double_tapped(&self, handler: &ComPtr<IAvnControlDoubleTappedHandler>) -> Result<i64> {
+        unsafe {
+            let mut subscription_id = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().advise_double_tapped)(self.as_raw(), handler.as_raw(), &mut subscription_id);
+            hresult::check(hr).map(|_| subscription_id)
+        }
+    }
+    pub fn unadvise_double_tapped(&self, subscription_id: i64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().unadvise_double_tapped)(self.as_raw(), subscription_id);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_children(&self) -> Result<ComPtr<IAvnControlList>> {
+        unsafe {
+            let mut value: *mut IAvnControlList = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_children)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            ComPtr::from_raw(value).ok_or(Error(hresult::E_POINTER))
+        }
+    }
+    pub fn get_background(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
+        unsafe {
+            let mut value: *mut IAvnBrush = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_background)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(ComPtr::from_raw(value))
+        }
+    }
+    pub fn set_background(&self, value: Option<&ComPtr<IAvnBrush>>) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_background)(self.as_raw(), value.map_or(ptr::null_mut(), ComPtr::as_raw));
+            hresult::check(hr)
+        }
+    }
+    pub fn get_direction(&self) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_direction)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_direction(&self, value: i32) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_direction)(self.as_raw(), value);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_justify_content(&self) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_justify_content)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_justify_content(&self, value: i32) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_justify_content)(self.as_raw(), value);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_align_items(&self) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_align_items)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_align_items(&self, value: i32) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_align_items)(self.as_raw(), value);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_align_content(&self) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_align_content)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_align_content(&self, value: i32) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_align_content)(self.as_raw(), value);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_wrap(&self) -> Result<i32> {
+        unsafe {
+            let mut value: i32 = 0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_wrap)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_wrap(&self, value: i32) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_wrap)(self.as_raw(), value);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_column_spacing(&self) -> Result<f64> {
+        unsafe {
+            let mut value: f64 = 0.0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_column_spacing)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_column_spacing(&self, value: f64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_column_spacing)(self.as_raw(), value);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_row_spacing(&self) -> Result<f64> {
+        unsafe {
+            let mut value: f64 = 0.0;
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_row_spacing)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_row_spacing(&self, value: f64) -> Result<()> {
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_row_spacing)(self.as_raw(), value);
             hresult::check(hr)
         }
     }
@@ -31813,6 +32994,8 @@ struct IAvnGridSplitterVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnGridSplitter, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnGridSplitter, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnGridSplitter, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnGridSplitter, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnGridSplitter, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnGridSplitter, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnGridSplitter, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnGridSplitter, *mut f64) -> i32,
@@ -32559,6 +33742,21 @@ impl ComPtr<IAvnGridSplitter> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -32822,6 +34020,8 @@ struct IAvnGroupBoxVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnGroupBox, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnGroupBox, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnGroupBox, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnGroupBox, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnGroupBox, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnGroupBox, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnGroupBox, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnGroupBox, *mut f64) -> i32,
@@ -33564,6 +34764,21 @@ impl ComPtr<IAvnGroupBox> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -33802,6 +35017,8 @@ struct IAvnHyperlinkButtonVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnHyperlinkButton, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnHyperlinkButton, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnHyperlinkButton, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnHyperlinkButton, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnHyperlinkButton, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnHyperlinkButton, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnHyperlinkButton, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnHyperlinkButton, *mut f64) -> i32,
@@ -34561,6 +35778,21 @@ impl ComPtr<IAvnHyperlinkButton> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -34920,6 +36152,8 @@ struct IAvnIconElementVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnIconElement, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnIconElement, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnIconElement, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnIconElement, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnIconElement, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnIconElement, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnIconElement, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnIconElement, *mut f64) -> i32,
@@ -35647,6 +36881,21 @@ impl ComPtr<IAvnIconElement> {
     pub fn set_font_stretch(&self, value: i32) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_stretch)(self.as_raw(), value);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
             hresult::check(hr)
         }
     }
@@ -36527,6 +37776,8 @@ struct IAvnItemsControlVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnItemsControl, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnItemsControl, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnItemsControl, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnItemsControl, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnItemsControl, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnItemsControl, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnItemsControl, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnItemsControl, *mut f64) -> i32,
@@ -37269,6 +38520,21 @@ impl ComPtr<IAvnItemsControl> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -37507,6 +38773,8 @@ struct IAvnLabelVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnLabel, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnLabel, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnLabel, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnLabel, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnLabel, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnLabel, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnLabel, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnLabel, *mut f64) -> i32,
@@ -38244,6 +39512,21 @@ impl ComPtr<IAvnLabel> {
     pub fn set_font_stretch(&self, value: i32) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_stretch)(self.as_raw(), value);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
             hresult::check(hr)
         }
     }
@@ -39177,6 +40460,8 @@ struct IAvnListBoxVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnListBox, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnListBox, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnListBox, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnListBox, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnListBox, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnListBox, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnListBox, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnListBox, *mut f64) -> i32,
@@ -39937,6 +41222,21 @@ impl ComPtr<IAvnListBox> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -40298,6 +41598,8 @@ struct IAvnListBoxItemVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnListBoxItem, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnListBoxItem, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnListBoxItem, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnListBoxItem, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnListBoxItem, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnListBoxItem, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnListBoxItem, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnListBoxItem, *mut f64) -> i32,
@@ -41038,6 +42340,21 @@ impl ComPtr<IAvnListBoxItem> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -41262,6 +42579,8 @@ struct IAvnMaskedTextBoxVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnMaskedTextBox, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnMaskedTextBox, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnMaskedTextBox, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnMaskedTextBox, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnMaskedTextBox, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnMaskedTextBox, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnMaskedTextBox, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnMaskedTextBox, *mut f64) -> i32,
@@ -42092,6 +43411,21 @@ impl ComPtr<IAvnMaskedTextBox> {
     pub fn set_font_stretch(&self, value: i32) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_stretch)(self.as_raw(), value);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
             hresult::check(hr)
         }
     }
@@ -42968,6 +44302,8 @@ struct IAvnMenuVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnMenu, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnMenu, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnMenu, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnMenu, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnMenu, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnMenu, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnMenu, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnMenu, *mut f64) -> i32,
@@ -43731,6 +45067,21 @@ impl ComPtr<IAvnMenu> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -44112,6 +45463,8 @@ struct IAvnMenuBaseVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnMenuBase, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnMenuBase, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnMenuBase, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnMenuBase, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnMenuBase, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnMenuBase, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnMenuBase, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnMenuBase, *mut f64) -> i32,
@@ -44875,6 +46228,21 @@ impl ComPtr<IAvnMenuBase> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -45609,6 +46977,8 @@ struct IAvnMenuItemVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnMenuItem, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnMenuItem, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnMenuItem, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnMenuItem, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnMenuItem, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnMenuItem, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnMenuItem, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnMenuItem, *mut f64) -> i32,
@@ -46399,6 +47769,21 @@ impl ComPtr<IAvnMenuItem> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -46973,6 +48358,8 @@ struct IAvnNotificationCardVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnNotificationCard, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnNotificationCard, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnNotificationCard, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnNotificationCard, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnNotificationCard, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnNotificationCard, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnNotificationCard, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnNotificationCard, *mut f64) -> i32,
@@ -47719,6 +49106,21 @@ impl ComPtr<IAvnNotificationCard> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -47984,6 +49386,8 @@ struct IAvnWindowNotificationManagerVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnWindowNotificationManager, *mut f64) -> i32,
@@ -48723,6 +50127,21 @@ impl ComPtr<IAvnWindowNotificationManager> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -48935,6 +50354,8 @@ struct IAvnNumericUpDownVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnNumericUpDown, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnNumericUpDown, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnNumericUpDown, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnNumericUpDown, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnNumericUpDown, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnNumericUpDown, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnNumericUpDown, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnNumericUpDown, *mut f64) -> i32,
@@ -49702,6 +51123,21 @@ impl ComPtr<IAvnNumericUpDown> {
     pub fn set_font_stretch(&self, value: i32) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_stretch)(self.as_raw(), value);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
             hresult::check(hr)
         }
     }
@@ -50827,6 +52263,8 @@ struct IAvnPathIconVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnPathIcon, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnPathIcon, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnPathIcon, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnPathIcon, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnPathIcon, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnPathIcon, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnPathIcon, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnPathIcon, *mut f64) -> i32,
@@ -51559,6 +52997,21 @@ impl ComPtr<IAvnPathIcon> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -51728,6 +53181,8 @@ struct IAvnPipsPagerVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnPipsPager, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnPipsPager, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnPipsPager, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnPipsPager, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnPipsPager, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnPipsPager, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnPipsPager, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnPipsPager, *mut f64) -> i32,
@@ -52472,6 +53927,21 @@ impl ComPtr<IAvnPipsPager> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -52829,6 +54299,8 @@ struct IAvnHeaderedContentControlVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnHeaderedContentControl, *mut f64) -> i32,
@@ -53571,6 +55043,21 @@ impl ComPtr<IAvnHeaderedContentControl> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -53809,6 +55296,8 @@ struct IAvnHeaderedItemsControlVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnHeaderedItemsControl, *mut f64) -> i32,
@@ -54555,6 +56044,21 @@ impl ComPtr<IAvnHeaderedItemsControl> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -54821,6 +56325,8 @@ struct IAvnHeaderedSelectingItemsControlVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnHeaderedSelectingItemsControl, *mut f64) -> i32,
@@ -55578,6 +57084,21 @@ impl ComPtr<IAvnHeaderedSelectingItemsControl> {
     pub fn set_font_stretch(&self, value: i32) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_stretch)(self.as_raw(), value);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
             hresult::check(hr)
         }
     }
@@ -57280,6 +58801,8 @@ struct IAvnRangeBaseVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnRangeBase, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnRangeBase, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnRangeBase, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnRangeBase, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnRangeBase, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnRangeBase, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnRangeBase, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnRangeBase, *mut f64) -> i32,
@@ -58022,6 +59545,21 @@ impl ComPtr<IAvnRangeBase> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -58259,6 +59797,8 @@ struct IAvnSelectingItemsControlVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnSelectingItemsControl, *mut f64) -> i32,
@@ -59015,6 +60555,21 @@ impl ComPtr<IAvnSelectingItemsControl> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -59350,6 +60905,8 @@ struct IAvnTemplatedControlVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnTemplatedControl, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnTemplatedControl, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnTemplatedControl, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnTemplatedControl, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnTemplatedControl, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnTemplatedControl, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnTemplatedControl, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnTemplatedControl, *mut f64) -> i32,
@@ -60080,6 +61637,21 @@ impl ComPtr<IAvnTemplatedControl> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -60234,6 +61806,8 @@ struct IAvnThumbVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnThumb, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnThumb, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnThumb, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnThumb, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnThumb, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnThumb, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnThumb, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnThumb, *mut f64) -> i32,
@@ -60970,6 +62544,21 @@ impl ComPtr<IAvnThumb> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -61163,6 +62752,8 @@ struct IAvnToggleButtonVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnToggleButton, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnToggleButton, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnToggleButton, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnToggleButton, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnToggleButton, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnToggleButton, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnToggleButton, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnToggleButton, *mut f64) -> i32,
@@ -61921,6 +63512,21 @@ impl ComPtr<IAvnToggleButton> {
     pub fn set_font_stretch(&self, value: i32) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_stretch)(self.as_raw(), value);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
             hresult::check(hr)
         }
     }
@@ -63058,6 +64664,8 @@ struct IAvnProgressBarVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnProgressBar, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnProgressBar, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnProgressBar, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnProgressBar, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnProgressBar, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnProgressBar, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnProgressBar, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnProgressBar, *mut f64) -> i32,
@@ -63809,6 +65417,21 @@ impl ComPtr<IAvnProgressBar> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -64111,6 +65734,8 @@ struct IAvnRadioButtonVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnRadioButton, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnRadioButton, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnRadioButton, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnRadioButton, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnRadioButton, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnRadioButton, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnRadioButton, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnRadioButton, *mut f64) -> i32,
@@ -64874,6 +66499,21 @@ impl ComPtr<IAvnRadioButton> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -65260,6 +66900,8 @@ struct IAvnRefreshContainerVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnRefreshContainer, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnRefreshContainer, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnRefreshContainer, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnRefreshContainer, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnRefreshContainer, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnRefreshContainer, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnRefreshContainer, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnRefreshContainer, *mut f64) -> i32,
@@ -66002,6 +67644,21 @@ impl ComPtr<IAvnRefreshContainer> {
     pub fn set_font_stretch(&self, value: i32) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_stretch)(self.as_raw(), value);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
             hresult::check(hr)
         }
     }
@@ -66945,6 +68602,8 @@ struct IAvnRepeatButtonVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnRepeatButton, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnRepeatButton, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnRepeatButton, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnRepeatButton, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnRepeatButton, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnRepeatButton, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnRepeatButton, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnRepeatButton, *mut f64) -> i32,
@@ -67704,6 +69363,21 @@ impl ComPtr<IAvnRepeatButton> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -68062,6 +69736,8 @@ struct IAvnScrollViewerVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnScrollViewer, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnScrollViewer, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnScrollViewer, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnScrollViewer, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnScrollViewer, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnScrollViewer, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnScrollViewer, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnScrollViewer, *mut f64) -> i32,
@@ -68845,6 +70521,21 @@ impl ComPtr<IAvnScrollViewer> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -69358,6 +71049,8 @@ struct IAvnSelectableTextBlockVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, *mut IAvnBrush) -> i32,
     get_line_height: unsafe extern "system" fn(*mut IAvnSelectableTextBlock, *mut f64) -> i32,
@@ -70075,6 +71768,21 @@ impl ComPtr<IAvnSelectableTextBlock> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -70432,6 +72140,8 @@ struct IAvnSeparatorVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnSeparator, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnSeparator, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnSeparator, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnSeparator, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnSeparator, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnSeparator, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnSeparator, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnSeparator, *mut f64) -> i32,
@@ -71159,6 +72869,21 @@ impl ComPtr<IAvnSeparator> {
     pub fn set_font_stretch(&self, value: i32) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_stretch)(self.as_raw(), value);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
             hresult::check(hr)
         }
     }
@@ -78754,6 +80479,8 @@ struct IAvnSliderVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnSlider, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnSlider, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnSlider, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnSlider, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnSlider, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnSlider, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnSlider, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnSlider, *mut f64) -> i32,
@@ -79508,6 +81235,21 @@ impl ComPtr<IAvnSlider> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -79830,6 +81572,8 @@ struct IAvnSpinnerVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnSpinner, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnSpinner, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnSpinner, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnSpinner, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnSpinner, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnSpinner, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnSpinner, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnSpinner, *mut f64) -> i32,
@@ -80572,6 +82316,21 @@ impl ComPtr<IAvnSpinner> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -80809,6 +82568,8 @@ struct IAvnSplitButtonVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnSplitButton, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnSplitButton, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnSplitButton, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnSplitButton, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnSplitButton, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnSplitButton, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnSplitButton, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnSplitButton, *mut f64) -> i32,
@@ -81557,6 +83318,21 @@ impl ComPtr<IAvnSplitButton> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -81837,6 +83613,8 @@ struct IAvnSplitViewVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnSplitView, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnSplitView, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnSplitView, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnSplitView, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnSplitView, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnSplitView, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnSplitView, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnSplitView, *mut f64) -> i32,
@@ -82598,6 +84376,21 @@ impl ComPtr<IAvnSplitView> {
     pub fn set_font_stretch(&self, value: i32) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_stretch)(self.as_raw(), value);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
             hresult::check(hr)
         }
     }
@@ -83736,6 +85529,8 @@ struct IAvnTabControlVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnTabControl, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnTabControl, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnTabControl, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnTabControl, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnTabControl, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnTabControl, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnTabControl, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnTabControl, *mut f64) -> i32,
@@ -84504,6 +86299,21 @@ impl ComPtr<IAvnTabControl> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -84925,6 +86735,8 @@ struct IAvnTabItemVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnTabItem, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnTabItem, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnTabItem, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnTabItem, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnTabItem, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnTabItem, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnTabItem, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnTabItem, *mut f64) -> i32,
@@ -85676,6 +87488,21 @@ impl ComPtr<IAvnTabItem> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -85978,6 +87805,8 @@ struct IAvnTableViewVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnTableView, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnTableView, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnTableView, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnTableView, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnTableView, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnTableView, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnTableView, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnTableView, *mut f64) -> i32,
@@ -86742,6 +88571,21 @@ impl ComPtr<IAvnTableView> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -87131,6 +88975,8 @@ struct IAvnTableViewCellVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnTableViewCell, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnTableViewCell, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnTableViewCell, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnTableViewCell, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnTableViewCell, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnTableViewCell, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnTableViewCell, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnTableViewCell, *mut f64) -> i32,
@@ -87869,6 +89715,21 @@ impl ComPtr<IAvnTableViewCell> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -88431,6 +90292,8 @@ struct IAvnTableViewRowVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnTableViewRow, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnTableViewRow, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnTableViewRow, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnTableViewRow, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnTableViewRow, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnTableViewRow, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnTableViewRow, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnTableViewRow, *mut f64) -> i32,
@@ -89171,6 +91034,21 @@ impl ComPtr<IAvnTableViewRow> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -89389,6 +91267,8 @@ struct IAvnTextBlockVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnTextBlock, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnTextBlock, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnTextBlock, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnTextBlock, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnTextBlock, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnTextBlock, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnTextBlock, *mut IAvnBrush) -> i32,
     get_line_height: unsafe extern "system" fn(*mut IAvnTextBlock, *mut f64) -> i32,
@@ -90091,6 +91971,21 @@ impl ComPtr<IAvnTextBlock> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -90345,6 +92240,8 @@ struct IAvnTextBoxVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnTextBox, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnTextBox, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnTextBox, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnTextBox, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnTextBox, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnTextBox, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnTextBox, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnTextBox, *mut f64) -> i32,
@@ -91161,6 +93058,21 @@ impl ComPtr<IAvnTextBox> {
     pub fn set_font_stretch(&self, value: i32) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_stretch)(self.as_raw(), value);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
             hresult::check(hr)
         }
     }
@@ -92643,6 +94555,8 @@ struct IAvnTimePickerVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnTimePicker, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnTimePicker, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnTimePicker, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnTimePicker, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnTimePicker, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnTimePicker, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnTimePicker, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnTimePicker, *mut f64) -> i32,
@@ -93388,6 +95302,21 @@ impl ComPtr<IAvnTimePicker> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -93647,6 +95576,8 @@ struct IAvnToggleSplitButtonVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnToggleSplitButton, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnToggleSplitButton, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnToggleSplitButton, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnToggleSplitButton, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnToggleSplitButton, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnToggleSplitButton, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnToggleSplitButton, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnToggleSplitButton, *mut f64) -> i32,
@@ -94399,6 +96330,21 @@ impl ComPtr<IAvnToggleSplitButton> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -94706,6 +96652,8 @@ struct IAvnToggleSwitchVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnToggleSwitch, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnToggleSwitch, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnToggleSwitch, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnToggleSwitch, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnToggleSwitch, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnToggleSwitch, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnToggleSwitch, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnToggleSwitch, *mut f64) -> i32,
@@ -95475,6 +97423,21 @@ impl ComPtr<IAvnToggleSwitch> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -95902,6 +97865,8 @@ struct IAvnToolTipVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnToolTip, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnToolTip, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnToolTip, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnToolTip, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnToolTip, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnToolTip, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnToolTip, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnToolTip, *mut f64) -> i32,
@@ -96640,6 +98605,21 @@ impl ComPtr<IAvnToolTip> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -96850,6 +98830,8 @@ struct IAvnTransitioningContentControlVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnTransitioningContentControl, *mut f64) -> i32,
@@ -97592,6 +99574,21 @@ impl ComPtr<IAvnTransitioningContentControl> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -97963,6 +99960,8 @@ struct IAvnTreeViewVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnTreeView, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnTreeView, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnTreeView, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnTreeView, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnTreeView, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnTreeView, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnTreeView, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnTreeView, *mut f64) -> i32,
@@ -98721,6 +100720,21 @@ impl ComPtr<IAvnTreeView> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -99066,6 +101080,8 @@ struct IAvnTreeViewItemVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnTreeViewItem, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnTreeViewItem, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnTreeViewItem, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnTreeViewItem, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnTreeViewItem, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnTreeViewItem, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnTreeViewItem, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnTreeViewItem, *mut f64) -> i32,
@@ -99821,6 +101837,21 @@ impl ComPtr<IAvnTreeViewItem> {
             hresult::check(hr)
         }
     }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
+            hresult::check(hr)
+        }
+    }
     pub fn get_foreground(&self) -> Result<Option<ComPtr<IAvnBrush>>> {
         unsafe {
             let mut value: *mut IAvnBrush = ptr::null_mut();
@@ -100149,6 +102180,8 @@ struct IAvnUserControlVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnUserControl, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnUserControl, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnUserControl, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnUserControl, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnUserControl, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnUserControl, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnUserControl, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnUserControl, *mut f64) -> i32,
@@ -100884,6 +102917,21 @@ impl ComPtr<IAvnUserControl> {
     pub fn set_font_stretch(&self, value: i32) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_stretch)(self.as_raw(), value);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
             hresult::check(hr)
         }
     }
@@ -101803,6 +103851,8 @@ struct IAvnWindowVtbl {
     set_font_weight: unsafe extern "system" fn(*mut IAvnWindow, i32) -> i32,
     get_font_stretch: unsafe extern "system" fn(*mut IAvnWindow, *mut i32) -> i32,
     set_font_stretch: unsafe extern "system" fn(*mut IAvnWindow, i32) -> i32,
+    get_font_variations: unsafe extern "system" fn(*mut IAvnWindow, *mut *mut u16) -> i32,
+    set_font_variations: unsafe extern "system" fn(*mut IAvnWindow, *mut u16) -> i32,
     get_foreground: unsafe extern "system" fn(*mut IAvnWindow, *mut *mut IAvnBrush) -> i32,
     set_foreground: unsafe extern "system" fn(*mut IAvnWindow, *mut IAvnBrush) -> i32,
     get_letter_spacing: unsafe extern "system" fn(*mut IAvnWindow, *mut f64) -> i32,
@@ -102579,6 +104629,21 @@ impl ComPtr<IAvnWindow> {
     pub fn set_font_stretch(&self, value: i32) -> Result<()> {
         unsafe {
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_stretch)(self.as_raw(), value);
+            hresult::check(hr)
+        }
+    }
+    pub fn get_font_variations(&self) -> Result<*mut u16> {
+        unsafe {
+            let mut value: *mut u16 = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().get_font_variations)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            Ok(value)
+        }
+    }
+    pub fn set_font_variations(&self, value: Option<&[u16]>) -> Result<()> {
+        let value = value.map(crate::terminated_utf16);
+        unsafe {
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().set_font_variations)(self.as_raw(), value.as_ref().map_or(ptr::null_mut(), |v| v.as_ptr().cast_mut()));
             hresult::check(hr)
         }
     }
@@ -104503,6 +106568,7 @@ struct IAvnControlFactoryVtbl {
     create_drop_down_button: unsafe extern "system" fn(*mut IAvnControlFactory, *mut *mut IAvnDropDownButton) -> i32,
     create_ellipse: unsafe extern "system" fn(*mut IAvnControlFactory, *mut *mut IAvnEllipse) -> i32,
     create_expander: unsafe extern "system" fn(*mut IAvnControlFactory, *mut *mut IAvnExpander) -> i32,
+    create_flex_panel: unsafe extern "system" fn(*mut IAvnControlFactory, *mut *mut IAvnFlexPanel) -> i32,
     create_flyout: unsafe extern "system" fn(*mut IAvnControlFactory, *mut *mut IAvnFlyout) -> i32,
     create_grid: unsafe extern "system" fn(*mut IAvnControlFactory, *mut *mut IAvnGrid) -> i32,
     create_grid_splitter: unsafe extern "system" fn(*mut IAvnControlFactory, *mut *mut IAvnGridSplitter) -> i32,
@@ -104798,6 +106864,14 @@ impl ComPtr<IAvnControlFactory> {
         unsafe {
             let mut value = ptr::null_mut();
             let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().create_expander)(self.as_raw(), &mut value);
+            hresult::check(hr)?;
+            ComPtr::from_projected_raw(value)
+        }
+    }
+    pub fn create_flex_panel(&self) -> Result<ComPtr<IAvnFlexPanel>> {
+        unsafe {
+            let mut value = ptr::null_mut();
+            let hr = ((*self.as_raw()).vtbl.as_ref().unwrap().create_flex_panel)(self.as_raw(), &mut value);
             hresult::check(hr)?;
             ComPtr::from_projected_raw(value)
         }

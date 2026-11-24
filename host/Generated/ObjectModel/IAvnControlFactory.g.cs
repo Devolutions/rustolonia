@@ -89,6 +89,9 @@ public partial interface IAvnControlFactory
     int CreateExpander(out IAvnExpander? value);
 
     [PreserveSig]
+    int CreateFlexPanel(out IAvnFlexPanel? value);
+
+    [PreserveSig]
     int CreateFlyout(out IAvnFlyout? value);
 
     [PreserveSig]
@@ -712,6 +715,21 @@ public sealed partial class AvnControlFactory : IAvnControlFactory
         {
             global::Avalonia.Threading.Dispatcher.UIThread.VerifyAccess();
             value = (IAvnExpander)ProjectionRuntime.Wrap(new global::Avalonia.Controls.Expander())!;
+            return global::Avalonia.Host.HResults.S_OK;
+        }
+        catch (global::System.Exception e)
+        {
+            return global::System.Runtime.InteropServices.Marshal.GetHRForException(e);
+        }
+    }
+
+    public int CreateFlexPanel(out IAvnFlexPanel? value)
+    {
+        value = null;
+        try
+        {
+            global::Avalonia.Threading.Dispatcher.UIThread.VerifyAccess();
+            value = (IAvnFlexPanel)ProjectionRuntime.Wrap(new global::Avalonia.Controls.FlexPanel())!;
             return global::Avalonia.Host.HResults.S_OK;
         }
         catch (global::System.Exception e)

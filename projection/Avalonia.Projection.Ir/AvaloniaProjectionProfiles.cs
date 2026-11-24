@@ -55,12 +55,13 @@ public static class AvaloniaProjectionProfiles
             // Wave C. Remaining layout panels plus the Thumb base GridSplitter needs.
             // RelativePanel's object-valued attached properties (Above/LeftOf/…) stay gaps:
             // a COM-valued attached property has no ABI shape. The Align*WithPanel bools do
-            // cross. FlexPanel is not in the pinned 12.1.x line (it ships in a later upstream
-            // minor), so it is not projected yet.
+            // cross. Flex's attached properties live on the static Flex class, which is not
+            // an AvaloniaObject, so Order/Grow/Shrink/Basis/AlignSelf stay gaps too.
             "Avalonia.Controls.WrapPanel",
             "Avalonia.Controls.Primitives.UniformGrid",
             "Avalonia.Controls.RelativePanel",
             "Avalonia.Controls.Viewbox",
+            "Avalonia.Controls.FlexPanel",
             "Avalonia.Controls.Primitives.Thumb",
             "Avalonia.Controls.GridSplitter",
             // Wave D. Button family plus context menus. Flyout on SplitButton/Button stays a
@@ -191,7 +192,7 @@ public static class AvaloniaProjectionProfiles
                 "Text", "FontSize", "FontWeight", "FontFamily", "FontStyle", "FontStretch",
                 "Foreground", "Background", "Padding", "TextAlignment", "LetterSpacing",
                 "LineSpacing", "LineHeight", "BaselineOffset", "MaxLines", "TextWrapping",
-                "TextTrimming", "FontFeatures",
+                "TextTrimming", "FontFeatures", "FontVariations",
             ],
             ["Avalonia.Controls.Image"] =
                 ["Source", "Stretch", "StretchDirection", "BlendMode"],
@@ -294,6 +295,11 @@ public static class AvaloniaProjectionProfiles
                 ["Rows", "Columns", "FirstColumn", "RowSpacing", "ColumnSpacing"],
             ["Avalonia.Controls.RelativePanel"] = [],
             ["Avalonia.Controls.Viewbox"] = ["Child", "Stretch", "StretchDirection"],
+            ["Avalonia.Controls.FlexPanel"] =
+            [
+                "Direction", "JustifyContent", "AlignItems", "AlignContent", "Wrap",
+                "ColumnSpacing", "RowSpacing",
+            ],
             ["Avalonia.Controls.Primitives.Thumb"] =
                 ["DragStarted", "DragDelta", "DragCompleted"],
             ["Avalonia.Controls.GridSplitter"] =
@@ -332,8 +338,8 @@ public static class AvaloniaProjectionProfiles
                 "Text", "PlaceholderText", "MinimumPrefixLength", "MaxDropDownHeight",
                 "IsDropDownOpen", "FilterMode", "IsTextCompletionEnabled",
                 "CaretIndex", "ClearSelectionOnLostFocus", "SearchText", "MaxLength",
-                "PlaceholderForeground", "InnerLeftContent", "InnerRightContent",
-                "PopulateComplete", "DropDownOpened", "DropDownClosed",
+                "PlaceholderForeground", "UseFloatingPlaceholder", "InnerLeftContent",
+                "InnerRightContent", "PopulateComplete", "DropDownOpened", "DropDownClosed",
                 "MinimumPopulateDelay", "TextChanged", "ItemsSource",
                 "Populating", "DropDownOpening", "DropDownClosing", "SelectedItem", "ItemTemplate",
                 "ItemFilter", "TextFilter", "ItemSelector", "TextSelector", "AsyncPopulator",
@@ -352,7 +358,7 @@ public static class AvaloniaProjectionProfiles
             [
                 "SelectedDate", "DisplayDate", "DisplayDateStart", "DisplayDateEnd",
                 "DisplayMode", "SelectionMode", "IsTodayHighlighted", "FirstDayOfWeek",
-                "HeaderBackground",
+                "HeaderBackground", "IsWeekNumberVisible", "WeekNumberRule",
                 "AllowTapRangeSelection", "DisplayModeChanged", "DisplayDateChanged",
                 "SelectedDates", "BlackoutDates", "SelectedDatesChanged",
             ],
@@ -360,10 +366,10 @@ public static class AvaloniaProjectionProfiles
             [
                 "SelectedDate", "DisplayDate", "DisplayDateStart", "DisplayDateEnd",
                 "IsDropDownOpen", "IsTodayHighlighted", "SelectedDateFormat",
-                "CustomDateFormatString", "Text", "PlaceholderText",
+                "CustomDateFormatString", "Text", "PlaceholderText", "IsWeekNumberVisible",
                 "FirstDayOfWeek", "UseFloatingPlaceholder", "PlaceholderForeground",
                 "DateValidationError",
-                "HorizontalContentAlignment", "VerticalContentAlignment",
+                "HorizontalContentAlignment", "VerticalContentAlignment", "WeekNumberRule",
                 "CalendarOpened", "CalendarClosed", "Clear", "BlackoutDates", "SelectedDateChanged",
             ],
             ["Avalonia.Controls.Carousel"] =
@@ -440,7 +446,7 @@ public static class AvaloniaProjectionProfiles
             [
                 "Background", "BorderBrush", "BorderThickness", "CornerRadius", "FontSize",
                 "FontFamily", "FontStyle", "FontWeight", "FontStretch", "LetterSpacing",
-                "Foreground", "Padding", "FontFeatures", "BackgroundSizing",
+                "Foreground", "Padding", "FontFeatures", "FontVariations", "BackgroundSizing",
             ],
             ["Avalonia.Controls.TextBox"] =
             [
@@ -601,6 +607,18 @@ public static class AvaloniaProjectionProfiles
             {
                 Kind = MarshallingKind.StringUtf16,
                 StringConverterTypeName = "Avalonia.Host.Com.AvnFontFeatures",
+                IsNullable = true,
+            },
+            ["Avalonia.Controls.TextBlock.FontVariations"] = new()
+            {
+                Kind = MarshallingKind.StringUtf16,
+                StringConverterTypeName = "Avalonia.Host.Com.AvnFontVariations",
+                IsNullable = true,
+            },
+            ["Avalonia.Controls.Primitives.TemplatedControl.FontVariations"] = new()
+            {
+                Kind = MarshallingKind.StringUtf16,
+                StringConverterTypeName = "Avalonia.Host.Com.AvnFontVariations",
                 IsNullable = true,
             },
             ["Avalonia.Controls.Calendar.SelectedDates"] = new()
