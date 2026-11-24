@@ -80,7 +80,7 @@
            Text="RustoloniaBrowserApp must be named rustolonia_app.a (the host imports its entry point from module 'rustolonia_app')." />
   </Target>
   <Target Name="ValidateAvaloniaBrowserAssets" BeforeTargets="PrepareForBuild">
-    <Error Condition="!Exists('$(AvaloniaProducerRoot)\src\Browser\Avalonia.Browser\staticwebassets\avalonia.js')"
+    <Error Condition="!Exists('$(AvaloniaProducerRoot)\src\Browser\Avalonia.Browser\wwwroot\avalonia.js')"
            Text="Avalonia.Browser's JavaScript modules have not been built. Run: dotnet msbuild $(AvaloniaProducerRoot)\src\Browser\Avalonia.Browser\Avalonia.Browser.csproj -t:BunRunBuild (rust/build-browser.ps1 does this)." />
   </Target>
   <ItemGroup>
