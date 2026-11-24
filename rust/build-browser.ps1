@@ -85,7 +85,12 @@ $appLib = Join-Path $appDir 'rustolonia_app.a'
 # 3. Avalonia.Browser's JavaScript modules (avalonia.js, ...) are bundled by a
 #    target that only runs in its multi-targeting build, and the host picks
 #    them up at evaluation time, so produce them before publishing.
+#    BunRunBuild builds Avalonia.Browser.BuildTasks (the input layout
+#    generator) with a plain MSBuild call that does not restore, so restore
+#    that project first.
 $avaloniaBrowser = Join-Path $repoRoot 'avalonia-src/src/Browser/Avalonia.Browser/Avalonia.Browser.csproj'
+$browserBuildTasks = Join-Path $repoRoot 'avalonia-src/src/tools/Avalonia.Browser.BuildTasks/Avalonia.Browser.BuildTasks.csproj'
+& dotnet restore $browserBuildTasks -nologo -v:minimal @DotnetArgs
 & dotnet msbuild $avaloniaBrowser -t:BunRunBuild -nologo -v:minimal @DotnetArgs
 
 # 4. .NET: publish the browser host with the Rust app linked in.
